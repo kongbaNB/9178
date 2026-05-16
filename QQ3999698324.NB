@@ -893,9 +893,8 @@ do
                 return btn
             end
 
-            createCopyButton(page, "群一", "657189404", 10, startY)
-            createCopyButton(page, "群二", "1097289502", page.AbsoluteSize.X * 0.52, startY)
-
+            -- 修改后的通知页：仅保留 QQ群 和 QQ
+            createCopyButton(page, "QQ群", "1106203175", 10, startY)
             createCopyButton(page, "QQ", "3999698324", 10, startY + 45)
 
         elseif i == 2 then
