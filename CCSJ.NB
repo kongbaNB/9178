@@ -542,6 +542,7 @@ local function loadFlightScript()
     end
 end
 
+-- 持续更新移动速度
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -555,7 +556,8 @@ task.spawn(function()
     end
 end)
 
--local Window = Library:CreateWindow({
+-- 创建主窗口
+local Window = Library:CreateWindow({
     Title = "吃吃世界脚本",
     Footer = "By 恐拜大帝 | QQ:3999698324",
     Icon = 131153193945220,
@@ -565,7 +567,7 @@ end)
 
 local Tabs = {
     Main = Window:AddTab("主要", "star"),
-    Visual = Window:AddTab("自瞄", "star"),
+    Visual = Window:AddTab("视觉", "eye"),
     Other = Window:AddTab("其他", "settings"),
 }
 
@@ -630,6 +632,7 @@ RightGroup:AddButton({
     DoubleClick = false
 })
 
+-- 视觉标签页
 local VisualLeft = Tabs.Visual:AddLeftGroupbox("自瞄设置")
 local VisualRight = Tabs.Visual:AddRightGroupbox("其他视觉")
 
