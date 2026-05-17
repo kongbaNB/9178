@@ -1,1 +1,1512 @@
-local kxobvc=function(t,k) local r={} for i=1,#t do r[i]=string.char((t[i]-k)%256) end return table.concat(r) end; local ogghca=0x56; local nevdut={0xC2,0xC5,0xB7,0xBA,0xC9,0xCA,0xC8,0xBF,0xC4,0xBD}; local wrrqicq={0xC2,0xC5,0xB7,0xBA}; local czrbvt=pcall(function() return getfenv(0) end) and getfenv(0) or _G; local _lymmtoal=czrbvt[kxobvc(nevdut,ogghca)] or czrbvt[kxobvc(wrrqicq,ogghca)] local _rdtphhjv_ls=_lymmtoal; local _rdtphhjv_sb=string.byte; local _rdtphhjv_sc=string.char; if _rdtphhjv_ls~=_lymmtoal then error(string.char(72,111,111,107)) end; if _rdtphhjv_sb~=string.byte then error(string.char(72,111,111,107)) end; if _rdtphhjv_sc~=string.char then error(string.char(72,111,111,107)) end; if _G[string.char(104,111,111,107,102,117,110,99,116,105,111,110)] then error(string.char(72,111,111,107)) end; if _G[string.char(110,101,119,99,99,108,111,115,117,114,101)] then error(string.char(72,111,111,107)) end; if _G[string.char(103,101,116,114,97,119,109,101,116,97,116,97,98,108,101)] then error(string.char(72,111,111,107)) end; if _G[string.char(115,101,116,114,97,119,109,101,116,97,116,97,98,108,101)] then error(string.char(72,111,111,107)) end; if _G[string.char(104,111,111,107,109,101,116,97,109,101,116,104,111,100)] then error(string.char(72,111,111,107)) end; if _G[string.char(110,97,109,101,99,97,108,108,104,111,111,107)] then error(string.char(72,111,111,107)) end; pcall(function() if _G[string.char(115,121,110,97,112,115,101)] then error(string.char(72,111,111,107)) end end); pcall(function() if _G[string.char(107,114,110,108)] then error(string.char(72,111,111,107)) end end); pcall(function() if _G[string.char(101,118,111,110)] then error(string.char(72,111,111,107)) end end); local _tahlrlwe=_G[string.char(100,101,98,117,103)]; pcall(function() if _tahlrlwe then _tahlrlwe[string.char(103,101,116,105,110,102,111)](1) end end); if _tahlrlwe then _tahlrlwe=nil end; pcall(function() local h=_G[string.char(114,101,113,117,105,114,101)](string.char(115,111,99,107,101,116,46,104,116,116,112)) if h then h=nil end end); pcall(function() local h=_G[string.char(114,101,113,117,105,114,101)](string.char(104,116,116,112)) if h then h=nil end end); pcall(function() local i=_G[string.char(105,111)] if i then i=nil end end); _G[string.char(104,116,116,112)]=nil; _G[string.char(115,111,99,107,101,116)]=nil; _G[string.char(105,111)]=nil; local bwfswc=tick(); local ddagtyl=0; pcall(function() local i=1 while debug and debug.getinfo(i) do i=i+1 ddagtyl=i end end); if ddagtyl>50 then error(string.char(72,111,111,107)) end; if tick()-bwfswc>5 then error(string.char(72,111,111,107)) end; local nnksqbb=loadstring or load; if nnksqbb~=_lymmtoal then error(string.char(72,111,111,107)) end; pcall(function() if type(_G[string.char(112,114,105,110,116)])~='function' then error(string.char(72,111,111,107)) end end); pcall(function() if type(_G[string.char(119,97,114,110)])~='function' then error(string.char(72,111,111,107)) end end); local dmhsv=math; if not dmhsv.sin or not dmhsv.cos then error(string.char(72,111,111,107)) end; pcall(function() if os and os.execute then error(string.char(72,111,111,107)) end end); if package and package.loadlib then error(string.char(72,111,111,107)) end; local zcwawr=rawlen; if zcwawr~=rawlen then error(string.char(72,111,111,107)) end; local hlrldln=type(1); if hlrldln~='number' then error(string.char(72,111,111,107)) end; local bpyjix=function(s,k) local r="" for i=1,#s do local b=string.byte(s,i) if b>=32 and b<=126 then b=b-k if b<32 then b=b+95 end r=r..string.char(b) else r=r..s:sub(i,i) end end return r end local qjheuw=function(s,k) local r="" for i=1,#s do local b=string.byte(s,i) r=r..string.char((b-k)%256) end return r end local qjfeut=function(sfopfrj,tdtcpgn) local goyprhxy="" local rnmfj={} for kratzvu=1,#sfopfrj do local itods=sfopfrj:sub(kratzvu,kratzvu) if itods=="=" then break end local tkbzrdz=tdtcpgn:find(itods)-1 rnmfj[#rnmfj+1]=tkbzrdz end for rijjpjuu=1,#rnmfj,4 do local urhwn=rnmfj[rijjpjuu]*4+(rnmfj[rijjpjuu+1]or 0)/16 local ohjyllys=((rnmfj[rijjpjuu+1]or 0)%16)*16+(rnmfj[rijjpjuu+2]or 0)/4 local drhjhxfr=((rnmfj[rijjpjuu+2]or 0)%4)*64+(rnmfj[rijjpjuu+3]or 0) goyprhxy=goyprhxy..string.char(urhwn) if rnmfj[rijjpjuu+2] and rnmfj[rijjpjuu+2]~=64 then goyprhxy=goyprhxy..string.char(ohjyllys) end if rnmfj[rijjpjuu+3] and rnmfj[rijjpjuu+3]~=64 then goyprhxy=goyprhxy..string.char(drhjhxfr) end end return goyprhxy end local _kqznn="+HJ8P6KaSvrx3zMkRZ=KSvr9SxhJQzDJQzd8=iDa4xS8LZPvwirNRXhuQlP/w0sJ42R8=VXJ+VS8z0KJ=Zr/Cuqb4ZPvwHy93Ih=IxDbSxhg=6kmQHy2Sxs9t6Qg4xDJ3zhmtIjt46hVwz98QzyjP6kOQHUhRZBaw0ANtHUFReR9IxMbw0sARZD23iBV3IUhR6QK4ZDkIl=N3zMkRZBaw0ANtHUqR6PmQsBa4zG8Q6qt3zw8S2=a=6DNRZBNQzp8SZEa4ldNS2Bv3zyl+xDNwiRNCeRAD/jADVwAcVRy+eX/CI9MDVUAcVRy+eX2DH9Mc/dAcVc9+eX0cv9McV8AcVc9+eXpcH9Mc/jAcVRy+eX/Du9MD/wAcLU9+eXMDv9McejAcLXv+eRvCH9MCe8AcLRp+eR/cI9MCewAcLdJ+ed0+ed0+ed0tHj8QzM/QHr2wiEmtZDJSxkmQvyV36svte8v+eSy+ew0+eRvCH9Mc/8AcLw9+eRvCH9MD/GAcLcJ+eR/cI9MDVcAcLRp+eR/cI9MCeXAcLcy+eRvCH9Mc/wAcLS0+eX9cI9McLSAcLUy+eXMcu9vcVjAcL8p+eXvCI9vc/UAcL80+eXJDI9JDu9JDu9JDujaR6PmQUa/=0kJw0885Hrm42d8S2=a=6DNIlBKS0Am=0sa=I89+VUgtdak4xdtQzyjtH8aIlrv3zyJtZDJSxkmQvyV36svte8v+eSy+ew0+eRvCH9MD/cAcLGM+eR/cH9MD/RAcLw0+eRvCI9MCedAcLSp+eRvCH9Mc/8AcLw9+eRvCH9MD/GAcLcJ+eR/cH9MD/jAcL82+eR/cH9MCeSAcLGy+eRvCH9Mc/8AcLw9+eR/cu9MCejAcL8y+eRvCI9MCedAcLS/+ed0+ed0+ed0+edy+edp+ec2tHjt46hVwz98iJ985HrA40sjS2Bv3zylR6hvR6Qg4xDJ3zhmt6caRZEk=ZPv4urA40sjt6caR6PmQUaaQur1BgO/=ZEa4xSmw0KKSu8McLjAcLXJ+eX9DH9McLwAcLUM+eX9cu9MceGAcLUp+eX9cHk=RZphR6ya4IrbSur1BgO/=ZEa4xSmw0KKSu8MceUAcLX2+eX9CH9McLRaiHrf5Hrm3z98=6Kk4ur236kAQHrJSlPkR6BbR6PmQIrk4xdtSZEa4ldNS2Bv3zyl+xDNwiRNCeRAD/jADVwAcVRy+eX2cv9MDLXAcVcM+eX2cu9MDVwAcVRp+eXpDI9MD/8AcVRy+eX/CI9MDVUAcVRy+eX2DH9Mc/dAcVcM+eX2CH9MCeSAcVcM+eXpDv9MDLjAcVRy+eX/CI9MDVUAcVcv+eXpCH9MCejAcVRp+eXpDI9MD/cADewADewADewADLUADe8Ac/Satda1igE5djOszHUhRIEFPi=azPKmHeQzQksWLeU/ziQKS6QMS6MbCial3XglLIRt46hVwz98igKgC6OMSeJvD/U0cUaA40DK4Ir1HVkp=0aa=/RyReJ8D/GvDLjt46hVwz98iJa0=6DlcVjgDvUhReSpDejvIxMbw0sARshtwzsv40Q2Ded85HUvc/X2c9aA40DK4Irx=zyV=6kb4ur1Hjy+i0QyS2D/oHK9tHrA40DK4Ir1=eg71Hrx42R8i0jhcH9VSIrj4vr1=sO13PJhS2Bv3zyl+xDNwiRNSeauoiBktshatHAMtHrk4xd8SxPJ=iEmRZBKwxMk+xDb4xDK=IK1=Ij8QzyjIxMbw0sAR6Qg4xDJ3zhmRshIc/EXtZcaIxMbw0sAR6XhRjsIdJBsBj=RHGa+LXgCLgrBGkDGPPQizsk3cVcJDLw2RurA40DK4Iru3iB/5HRuR6QbSura5LXAR2c8Q6q846hVwz98w/g/ClDgwuKa+6jaR6Mbw0sARZUhS2Bv3zyl+xQa4xdNwHMV+eXA=ZEgQHj83zw8SIrJ36PmR6Mbw0sARZwhSIJMR6Mbw0sAR6RhRuR8QxhvR6NhDI99+IJMR6BbR6kxRZwf5LEo3urJ36PmR6RhwupmRVXuRZwh=uJvixN8QzM/QHru5zRm+uR9Rurk4xd8QzyjR6Ea=ZchwxkJSvpmwurk4xd8QzyjIxMbw0sAR6Ey=6P/5iOhR6QbSura5LXAR0Ea=ZcACIrj4vrA40DK4IruS/gu3iB/ClDgwuKa+6jFDvj83zw8R0E/5LJpRZBNQzp846hVwz98wlkJQLJ9R6QbSurF5LXACIrj4vruoiBk5zEy=6GYcuOJ40yg4zEkSuKuS/a/=zRN3vMFtHj8QzyjR6Ey=6P/zvDuoiBkSvAMiLguoiBkR6PmQIrk4xdt46hVwz98SVJuRurx42R83LJM+IDuoiBkSvrj4vrv5iRm+lDJSxkm" local _brgil="\x93s:H:uU:J:Ds:I:uU:~:Ds:J:uU:K:Ds:K:uU:y:Ds:L:uU:z:Ds:M:uU:h:Ds:N:uU:_:Ds:O:uU:O:Ds:P:uU:\x7F:Ds:Q:uU:\x8F:Ds:m:uU:Y:Ds:\x8A:uU:Z:Ds:a:uU:[:Ds:}:uU:\x5C:Ds:p:uU:]:Ds:\x8B:uU:^:Ds:r:uU:`:Ds:j:uU:a:Ds:]:uU:b:Ds:\x8C:uU:c:Ds:C:uU:d:Ds:{:uU:e:Ds:\x5C:uU:f:Ds:[:uU:g:Ds:|:uU:i:Ds:Z:uU:j:Ds:`:uU:k:Ds:d:uU:l:Ds:_:uU:m:Ds:h:uU:n:Ds:\x92:uU:o:Ds:\x81:uU:p:Ds:\x8F:uU:q:Ds:i:uU:r:Ds:k:uU:{:Ds:U:uU:|:Ds:\x87:uU:}:Ds:c:uU:\x80:Ds:\x8D:uU:\x81:Ds:n:uU:\x82:Ds:\x82:uU:\x83:Ds:\x83:uU:\x84:Ds:\x90:uU:\x85:Ds:\x84:uU:\x86:Ds:f:uU:\x87:Ds:y:uU:\x88:Ds:q:uU:\x89:Ds:^:uU:\x8A:Ds:Y:uU:\x8B:Ds:g:uU:\x8C:Ds:\x85:uU:\x8D:Ds:z:uU:\x8E:Ds:e:uU:\x90:Ds:\x8E:uU:\x91:Ds:G:uU:\x92:Ds:b:uU:H:Ds:\x7F:uU:I:Ds:\x88:uU:L:Ds:\x91:uU:M:Ds:o:uU:N:Ds:\x89:uU:P:Ds:\x80:uU:Q:Ds:~:uU:C:Ds:l:uU:G:Ds:\x86:uU:U:\x95" local slhavubx=0x5E local bnhrixg=0x19 local _lwehk=_lymmtoal("return "..bpyjix(qjheuw(_brgil,bnhrixg),slhavubx))() local _jcehx=0x7 local _jyjxqej=0xBA local _jlwkwhfo=0x38 local _jcsifl=0xB7 local _jdxcwb=0x2A _jlwkwhfo=_jlwkwhfo+_jlwkwhfo _jlwkwhfo=_jlwkwhfo*_jlwkwhfo _jcehx=_jcehx+_jyjxqej _jyjxqej=_jyjxqej*_jcehx for i=0x1,0x3 do local _=0x0; end local wqxybl={0x1,0x2,0x3} local _lyamxtd=#wqxybl wqxybl=nil local _tmvkmxcx=type(0) local _sylafa="x".."y" local hxfnq={} hxfnq["x"]=1 local _vprsguu=hxfnq["x"] local _mzjpgt=math.abs(-1) local _feuwcrp=tostring(0) for i=0x1,0x2 do end local _kslugzu="DaFKe6pay6MF96UbTN89yjx8lcr3AcU29OMsoQo3DTFfScBwRNpmo6D=lcJ2eTZsopZvjuDzy6ZaeTAmANU8DSf3l6ZKRTq39i=EGjxclHo3ev2B/SJwAc8Po6gwoQgleU2ZlHM4Db4b9ToIejB4yjx8lcr3l6ZKRTq3DPUsRHg4lN+3O=MxvfrIyjxbDTUfCj3BJKR2Jvo=yPJ8DTrVzvhBzbfqJioazaf8JioFJifNJboFJdxaDOg=Ac+3ANU8DSx8lcr3DcZao6fZoHrmzdqWzjxflaxmlNJklSxXCT=k963sDcBwlHoIO=MxvfrIyjU4yjmBoQgleU2m9pWXOv=2TN49/QgleU23DTFfo6BwRNpmoQoZodo3DcZao6fZzjqK9SxflaxaCOos/PgleU23DTFfoQM89QUaldxao6UsDh4qAc8s9Skb9QM4lcAsRNkkAd3+zdqH5jqNJdqazKfmzvAb/iu=zjqazbumzvAa/iuNJdqazK3mzv32/iuH5SqazKfmzvz+/iuNzSqazKfmzvA=/iubJSqazbumzvAF/iu+Jaqazbumzv3H/iu=5jqazKfmzvz+/iuNzSqazbomzv3F/iu+5jqazK3mzv32/iuHzaq2Jdq2Jdq2Jdq=zjq25SqbJaf4ScBwRNpmopZvvb2dziuazbr=JKA+5TpdRNg8Ddoyl6ZKRTq3O=JJCUZvjuDzypZvvaq2JiA=JizH5vr4ScBwRNpmopZvvLkpTi2dJiu2JK9kJbr2JbgdJbzHJbrBJbA=Jvr2Jif25vg8Jbz2RKr+JNL2zvrBJbz2Jir+J6oHzbL+J6rHJK98J6RHDvrBJih=JvABJ6u=JvL=Jbu2Rbr+J6RHJbL2Jbz2zb9fJiu2Dvr2J6r2JKLBJiL2DvgkJiz2DvAHJ6uHDvgcJiu2RvLHJiA2JbA=JbLHJvgKJizHDvrBJbA=JiA2JTLHJKgcJi32zbr+JiuH5ir=Jb32DKAbJ6zH5iANJbu2DKU8Jiu2RvAbJbr2RvrqJizHzvrBJvA=5ir2J6RHJKU8JiA2DKr+Ji325irFJvL2RbA=J6u=JbA=Jiu=5iA2JbLHRvrBJizHDir+J6R=Jir=J6u2Rvr+JbrHzvrHJvA=DvrBJiz=JbA=Jb32JKL2JvL2zbgKJ6u=JigfJbA2zi9kodxmlNJklSxGvLprjuURCjodo6DwAdx4Cvumo=ZvvLkpTSxflaxmlNJklSxKCUZvvLkpTi4b9ToIejB4yjxmlNJklSxqCOJ2Ac8sDaFceTFfypZvvjBK/ium9QM=Djf3eTR3ASx2e6UsopZJrUxogU3ZO2=xLukpTS+sO=JC5PJ=Rdkq/Qh4o6UmANL3O2=xLukpTi=GvLprjuUR/dFKo6UsDSx8lcryl6ZKRTq3O2=xLpJLLK2dodxclHo3ev2B/SJGvLprjuUR/io3D6Y3l6ZKRTq3RK=2lNF=lTM8AdkGvLprjuUR5PJ=Rdk4/6fVzjfmzvR4o68co6o396k8ldxGvLprL=gjCUZJrUxvUpos/PJ2Ac8sDaFKe6pay6o4o6UsDSx8lcryO2=xLpJLLK=GrKzagSkGvLprL=gjyjxmlNJklSxGLiuZAHgaeTFP/cD4lcrIO2=xLpJLLdqdGSomzjB2APU8yjxmlNJklSxGjuYZO2=xLpJLLK4b9ToIzjBGLiuWzjf3l6ZKRTq3O=gJLi=GvLprL=gj5PJ=RdkGLiuVzjfyl6ZKRTq3O=haCOJ2Ac8sDaFceTFfypZLvUhmoPqd/ium9QM=Djf3l6ZKRTq3O2kJCUZLvUh0AHUdyiumO=ha/vu4o6BwRNpmopZLvUhaCUZLvUh0AHUdypZrzdmByr4mlNJklSxGLizZAHgaeTFP/cD4lcrIO=gJLiomoPqd/ium9QM=Djf3l6ZKRTq3O2MCCUZLvUha5PJ=Rd3B/pZrza2ByjxmlNJklSxGrf2ZO=gJLio0AHUdypZrzamByr4qAc8s9Skb9QM4lcAsRNkkAd3+zdqH5jqNJdqazKfmzvAb/iu=zjqazbumzvAa/iuNJdqazK3mzv32/iuH5SqazKfmzvz+/iuNzSqazKfmzvA=/iubJSqazbumzvAF/iu+Jaqazbumzv3H/iu=5jqazKfmzvz+/iuNzSqazbomzv3F/iu+5jqazK3mzv32/iuHzaq2Jdq2Jdq2Jdq=zdq25SqbJaf4ScBwRNpmopZJjuURCjMwUTZwLOkgTTgqDQxfLO9q9=pHDO9fDpUgt6Zq98pgtppgLUpgUUp+9fRbzpp+LUpwDTgf9PDwUTgUDp8wgP9DzNZflNZwDuUNvPAHzH3bzNgU9cZwgOD+lNZNgOD+lb9wAiJU9fFw9cZD9bxw9PAHLUpgtQDHl=8wD6Z6LOkN9cZDl=UwJNZfLOkN9HDg9cgwDpp+lH9wApp+lNgwgcZHLOkwD6Z6lH9+vcZUlNZgt6gq9HDfDORb9P9NLTZUl2Dw98p6lbJwTTZp98pgTvJpz2LbUUuHz2LbgvJHLvAbgvJ+zNggJbJpz2Lbl=uHz2LbtiJpLvAbgvJ+z=pgJbJpzH3bDpuHz2LbtiJDLvAbgvJ+z2UgUTrqLOkNgKzqLOkwgcZUlb9gt6Zq98pgt6gq9HDfDORb9P9NLTZUl2Dw98p6lbJwTTZp98pgTvJpzH3btpuHz2LbgvJNLvAbgvJ+z=Ug" local _rafbbnn="\x00\xE0\x06\x14\x06\xE2\xC2\x06\xBB\x06\x10\xE0\x06\x15\x06\xE2\xC2\x06\x13\x06\x10\xE0\x06\xB7\x06\xE2\xC2\x06\x14\x06\x10\xE0\x06\xB8\x06\xE2\xC2\x06\xEC\x06\x10\xE0\x06\xB9\x06\xE2\xC2\x06\xF5\x06\x10\xE0\x06\xBA\x06\xE2\xC2\x06\xD4\x06\x10\xE0\x06\xBB\x06\xE2\xC2\x06\xCC\x06\x10\xE0\x06\xBC\x06\xE2\xC2\x06\xC2\x06\x10\xE0\x06\xBD\x06\xE2\xC2\x06\xF1\x06\x10\xE0\x06\xBE\x06\xE2\xC2\x06\xE9\x06\x10\xE0\x06\xED\x06\xE2\xC2\x06\xC6\x06\x10\xE0\x06\xFD\x06\xE2\xC2\x06\xC7\x06\x10\xE0\x06\xD8\x06\xE2\xC2\x06\xC8\x06\x10\xE0\x06\xEE\x06\xE2\xC2\x06\xC9\x06\x10\xE0\x06\xFA\x06\xE2\xC2\x06\xCA\x06\x10\xE0\x06\xF5\x06\xE2\xC2\x06\xCB\x06\x10\xE0\x06\xD6\x06\xE2\xC2\x06\xCD\x06\x10\xE0\x06\xF4\x06\xE2\xC2\x06\xCE\x06\x10\xE0\x06\xD2\x06\xE2\xC2\x06\xCF\x06\x10\xE0\x06\xFE\x06\xE2\xC2\x06\xD0\x06\x10\xE0\x06\x13\x06\xE2\xC2\x06\xD1\x06\x10\xE0\x06\xFF\x06\xE2\xC2\x06\xD2\x06\x10\xE0\x06\xCF\x06\xE2\xC2\x06\xD3\x06\x10\xE0\x06\xC8\x06\xE2\xC2\x06\xD5\x06\x10\xE0\x06\xF7\x06\xE2\xC2\x06\xD6\x06\x10\xE0\x06\xEC\x06\xE2\xC2\x06\xD7\x06\x10\xE0\x06\xEF\x06\xE2\xC2\x06\xD8\x06\x10\xE0\x06\xFB\x06\xE2\xC2\x06\xD9\x06\x10\xE0\x06\xD1\x06\xE2\xC2\x06\xDA\x06\x10\xE0\x06\xDA\x06\xE2\xC2\x06\xDB\x06\x10\xE0\x06\xD9\x06\xE2\xC2\x06\xDC\x06\x10\xE0\x06\xD4\x06\xE2\xC2\x06\xDD\x06\x10\xE0\x06\xD7\x06\xE2\xC2\x06\xDE\x06\x10\xE0\x06\xC9\x06\xE2\xC2\x06\xDF\x06\x10\xE0\x06\xEA\x06\xE2\xC2\x06\xE6\x06\x10\xE0\x06\xF1\x06\xE2\xC2\x06\xE7\x06\x10\xE0\x06\xC6\x06\xE2\xC2\x06\xE8\x06\x10\xE0\x06\xF9\x06\xE2\xC2\x06\xEA\x06\x10\xE0\x06\xCC\x06\xE2\xC2\x06\xEB\x06\x10\xE0\x06\xF0\x06\xE2\xC2\x06\xED\x06\x10\xE0\x06\xE9\x06\xE2\xC2\x06\xEE\x06\x10\xE0\x06\xD0\x06\xE2\xC2\x06\xEF\x06\x10\xE0\x06\xEB\x06\xE2\xC2\x06\xF0\x06\x10\xE0\x06\xE8\x06\xE2\xC2\x06\xF2\x06\x10\xE0\x06\xD5\x06\xE2\xC2\x06\xF3\x06\x10\xE0\x06\xCE\x06\xE2\xC2\x06\xF4\x06\x10\xE0\x06\xDD\x06\xE2\xC2\x06\xF6\x06\x10\xE0\x06\xDB\x06\xE2\xC2\x06\xF7\x06\x10\xE0\x06\xF2\x06\xE2\xC2\x06\xF8\x06\x10\xE0\x06\xDC\x06\xE2\xC2\x06\xF9\x06\x10\xE0\x06\xF8\x06\xE2\xC2\x06\xFA\x06\x10\xE0\x06\xFC\x06\xE2\xC2\x06\xFB\x06\x10\xE0\x06\xF6\x06\xE2\xC2\x06\xFC\x06\x10\xE0\x06\xC7\x06\xE2\xC2\x06\xFD\x06\x10\xE0\x06\xE6\x06\xE2\xC2\x06\xFE\x06\x10\xE0\x06\xE7\x06\xE2\xC2\x06\xFF\x06\x10\xE0\x06\xC2\x06\xE2\xC2\x06\x15\x06\x10\xE0\x06\xD3\x06\xE2\xC2\x06\xB7\x06\x10\xE0\x06\xCD\x06\xE2\xC2\x06\xB8\x06\x10\xE0\x06\x0F\x06\xE2\xC2\x06\xB9\x06\x10\xE0\x06\xCB\x06\xE2\xC2\x06\xBA\x06\x10\xE0\x06\xCA\x06\xE2\xC2\x06\xBC\x06\x10\xE0\x06\xDE\x06\xE2\xC2\x06\xBD\x06\x10\xE0\x06\xDF\x06\xE2\xC2\x06\xBE\x06\x10\xE0\x06\xF3\x06\xE2\xC2\x06\x0F\x06\x02" local jxwdibn=0x4D local rgksexfm=0x97 local _tofkp=_lymmtoal("return "..bpyjix(qjheuw(_rafbbnn,rgksexfm),jxwdibn))() local _jnyepu=0x6D local _jcozzrwh=0x10 local _jerks=0xFC local _jbgms=0x17 local _jghtyffs=0x17 local _jcgnqyi=0xDA _jnyepu=_jnyepu+_jbgms _jbgms=_jbgms*_jnyepu _jnyepu=_jnyepu+_jghtyffs _jghtyffs=_jghtyffs*_jnyepu _jbgms=_jbgms+_jerks _jerks=_jerks*_jbgms for i=0x1,0x3 do local _=0x0; end local apuvp={0x1,0x2,0x3} local _lfiadwnc=#apuvp apuvp=nil local _tkbvd=type(0) local _spfwv="x".."y" local oacbl={} oacbl["x"]=1 local _vqhqhoa=oacbl["x"] local _mggsxvlv=math.abs(-1) local _fukcqxg=tostring(0) for i=0x1,0x2 do end local _yztzhdd="LIL7eDxIxH7HBEP2c+BReIP2cRpRG=HUL=7Xf/fU88pvGDB2c+BSG=bUH89yGS22c+Byfb7SBRpvxAuUfSpOxAuUBRpRGyf2cRpvGDBUfyumG=HUG=7XB+Pyfi2bf4LSfyB2G=HU2ipSxxBUeSpBGDHSxH7BeDxIcELyxkzI2kL7eDH2LIL7eDxI2HhyeDxIcELSxkzI2kLXe=72LIL7eDxIfbhyeDxI2kLXxkzIHkLHxkzI2kL7eSp2LIL7eytIB7hyeDxI2kL7xkzI2kL7eyu2H81OxAuS24eOxAuU2ipHGIf2cRpOfb72cR2OfyBvBAYIf/fSx8pHGDBUfb7RGILU88p7fb728kL7eDxIc7hyeDxIcEL7xkzI2kL7e=H2LILHe=H2LILHe=H2LIL7eytI8HhyeDxI2kL7xkzI2kL7eS22LIL7eDxIfbhyeDxI2kLyxkzI2kLXeDH2H81OxAuS24eOxAuU2ipHGIf2cRpOfb72cR2OfyBvBAYIf/fSx8pHGDBUfb7RGILU88p7fb728kL7eytIe=hyeDxIcEL7xkzI2kL7eSp2LIL7eDxIf=hye=xIfbhyeDxI2kLHxkzI2kLXe=H2LIL7eytI2HhyeDxI2kLUxkzIHkLSxkzI2kL7eSp2LILHeyB2LILHe=b2LIL7eytI8HhyeDxIcEL7xHHve77XfvYIe77XGDBUH89yxAuSfSpBGS2U2b7Xf/BU88pHGIfUB77Xf/fSxABvGS22cRpyGyP2cRpvGDBUf=7XGS2U2ipychCUH8pUxAuvz+fSBRHSeyByfb7UH8pRGyB22i9IG=bU2AB2xHvI2kL7eS22LIL7e=hI2HhyeDxI2kLXxkzIHkLSxkzI2kL7e=72LIL7eDxIB7hyeDxIcEL7xHHve77XfvYIe77XGDBUH89yxAuUz+B2xAuvz+fSBRHSeyByfb7UH8pRGyB22i9IG=bU2AB2xHvI2kLXeyB2LIL7eDxIf=hyeDxI2kLXxkzI2kLXe=b2H81OxAuS24eOxAuU2ipHGIf2cRpOfb72cR2OfyBvBAYIf/fSx8pHGDBUfb7RGILU88p7fb728kL7eDxIB7hyeDxIcEL7xkzI2kL7eyu2LIL7eDxIG=hyeDxIcELvxkzI2kL7eyu2LIL7eytI2HhyeDxIcELBxHHve77XfvYIe77XGDBUH89yxAuSfSpBGS2U2b7XJjP5GSLuGVPN0hHYF0JjJRBUzjPlFkh5J=pL0hHYJR2UJRMUYS75JRepAD=J2HtozyHjgRv530vtGRp4Y8OtzE=If+wlGizrBibrBVuN0hD5YqOMT+2qf8xlJRbiJ+dtfRubGjPN0hHYFHpJ2HtrTbpJkIlIf8JZzVMOg0PbG+LbJ7pJ2HtpADu78VXrYqPbGi1tB8CvViMUYS75J7pEkD27ekDjJjPiGyJt3kDMTVLN0hHYTEJtBR9tGRp4Y8OtY4=DGSC=G8wbzjuN0hHYm/L=YjulTRvse0v5ekYlJRbiJRJtfRubGjPN1Dph2khpADLF2hxMTjCIf+wlGizrYSuuzjujg0PbGi1tB8CvViMUYS75J7pL14eqF0wrmRwn18b2HDlEzywgmhCA0vLPGAl+xHzqxh7hLHPmGbuOHS=Pxht=k4u2fDB338wrBRwR8bP1GbtqYi=h8vu+GxlbxkHm1DunL8HPB8CvBHfOB8fhebPYGxlbx8=UGIug1If2zDf2G4wA2v1=BxCr8+POHylJzSbre/Lq0/LmGbu3kS=nz=7EGvfjxx2Y1yPAzRH/LHuv8+wg8v2b8R2JGHlRxx2Y1SfAHSCy2bllYiCvYvB3x7Pr8EwjGx230hfn0iH2GxCE0RD=Bx7b8R2JG8HRxx2Y1yfAzRH/27uE8R=gBH7gkvLJGxlb1x7FBEHHBAlPL8b/BEwOz+w+z=7AeiHOziCIx81q0h7PLku218Cy1xh=x77H0vLP2bl11IHYfDpn2D2/B7ubz7fo0+LlG4wIzvlIkiCY8vpnGAL21SC+Yb7g87POHyPbBSDqx7un0ib2GvCE18=Yxh2b8R2RGxlRxx1q1yPAHSCPLkfJmhlEkS=P3xe=GvujG8pl0EHrmRwn18b2HDlEzywgmhCA0vLPGAl+xHzqxh7hLHPmGbuOHS=b38bE8hu1kDf3BS1qxRfPz7Pl1Iwy18fj1H7jGvub0iC1kiwALxunzEu2YiCExRfjkbPHGvLOkSDXxHfYx7lP8iHmzRX=kyfU3H7gGDLU2ipb18wAm7Pn2Eu127fgYv7OGDfUevuF2v21x8fr07Pn18b/zbfEBDBh3xCAzi2gzvzXxAP+mh7F2SpE2EwEzyw+8b7/zvfF1Al3BDLr8vpnG/LmY4wEzDBgmhC/8+f1G8=l38Cr0h7R84uEGbtqkDBIk/LPBEuEx8pY0+Pn0bP/2EwEH8pvziwgkyL/8Ew1Gx73x8wAm7PnG=P/B=zXYi=UBxCgGbuF2/Lbki1qBxpRG8b/ebHEYv9=8ifHH=PjGx2Ixxeq1yPP0ipvB7z=Y/Pj3H7H87fPziDXxxhqHDpnGip2zbuA2vBUGv7+GvuIz4HJ3HfrzRwh0/L2YiCJBAwnGvuHHIubGx2338wYfSfq1xC/1SCEBx2o2ip287P2kD1qGDfnYvpF0iHmkDl+Yv7PGDLv1S2RGAlbkvlre/Lq0/LmGbu3Yi=rBxXq8RJX0/dXx8wr1=7RGIuE2DlvY/w+m77OGbtX2+lm3APYH=PF2=PmGHHgkS=h8b7OH=llxkHJ1DBU8ibgzhBEH8Cvzhpr2DuvHDlj2h7hB=tqm+PR2=llYiCvYvB3x7P+8EuO2/L1B+Lv1yLq2=lhzbuyzD2O2Sf+GvuIz4H3x+LA8vpFL8HmBSCJ1xBYci2r87fbz4HmzDlYf=PA18wlei=JHD7o8ifEGblJ2h7UBhfA0jJtG" local _hbjrzvxe="V6\x5Cj\x5C8\x18\x5C.\x5Cf6\x5Ck\x5C8\x18\x5C,\x5Cf6\x5Cl\x5C8\x18\x5C-\x5Cf6\x5Cm\x5C8\x18\x5C<\x5Cf6\x5Cn\x5C8\x18\x5CE\x5Cf6\x5Co\x5C8\x18\x5CN\x5Cf6\x5Cp\x5C8\x18\x5Ce\x5Cf6\x5Cq\x5C8\x18\x5C!\x5Cf6\x5Cr\x5C8\x18\x5C2\x5Cf6\x5Cs\x5C8\x18\x5Cr\x5Cf6\x5C?\x5C8\x18\x5C\x1C\x5Cf6\x5C+\x5C8\x18\x5C\x1D\x5Cf6\x5C1\x5C8\x18\x5C\x1E\x5Cf6\x5C \x5C8\x18\x5C\x1F\x5Cf6\x5CC\x5C8\x18\x5C \x5Cf6\x5C-\x5C8\x18\x5C\x22\x5Cf6\x5Ce\x5C8\x18\x5C#\x5Cf6\x5C%\x5C8\x18\x5C$\x5Cf6\x5CR\x5C8\x18\x5C%\x5Cf6\x5CB\x5C8\x18\x5C&\x5Cf6\x5C/\x5C8\x18\x5C'\x5Cf6\x5C@\x5C8\x18\x5C(\x5Cf6\x5C'\x5C8\x18\x5C)\x5Cf6\x5CH\x5C8\x18\x5C*\x5Cf6\x5C!\x5C8\x18\x5C+\x5Cf6\x5CF\x5C8\x18\x5C/\x5Cf6\x5CS\x5C8\x18\x5C0\x5Cf6\x5C#\x5C8\x18\x5C1\x5Cf6\x5C\x1C\x5C8\x18\x5C3\x5Cf6\x5C4\x5C8\x18\x5C4\x5Cf6\x5C\x1D\x5C8\x18\x5C5\x5Cf6\x5C\x22\x5C8\x18\x5C=\x5Cf6\x5CU\x5C8\x18\x5C>\x5Cf6\x5CA\x5C8\x18\x5C?\x5Cf6\x5C>\x5C8\x18\x5C@\x5Cf6\x5C)\x5C8\x18\x5CA\x5Cf6\x5CO\x5C8\x18\x5CB\x5Cf6\x5CP\x5C8\x18\x5CC\x5Cf6\x5CE\x5C8\x18\x5CD\x5Cf6\x5CQ\x5C8\x18\x5CF\x5Cf6\x5C=\x5C8\x18\x5CG\x5Cf6\x5CD\x5C8\x18\x5CH\x5Cf6\x5Ci\x5C8\x18\x5CI\x5Cf6\x5C5\x5C8\x18\x5CJ\x5Cf6\x5CG\x5C8\x18\x5CK\x5Cf6\x5C<\x5C8\x18\x5CL\x5Cf6\x5CN\x5C8\x18\x5CM\x5Cf6\x5CI\x5C8\x18\x5CO\x5Cf6\x5CM\x5C8\x18\x5CP\x5Cf6\x5C0\x5C8\x18\x5CQ\x5Cf6\x5C*\x5C8\x18\x5CR\x5Cf6\x5C(\x5C8\x18\x5CS\x5Cf6\x5CL\x5C8\x18\x5CT\x5Cf6\x5C$\x5C8\x18\x5CU\x5Cf6\x5C\x1F\x5C8\x18\x5Cj\x5Cf6\x5C\x18\x5C8\x18\x5Ck\x5Cf6\x5C.\x5C8\x18\x5Cl\x5Cf6\x5CT\x5C8\x18\x5Cm\x5Cf6\x5C3\x5C8\x18\x5Cn\x5Cf6\x5C\x1E\x5C8\x18\x5Co\x5Cf6\x5CJ\x5C8\x18\x5Cp\x5Cf6\x5C&\x5C8\x18\x5Cq\x5Cf6\x5CK\x5C8\x18\x5Cs\x5Cf6\x5C,\x5C8\x18\x5Ci\x5Cf6\x5C2\x5C8\x18\x5C\x18\x5CX" local ixekokz=0x43 local xynbmug=0xF7 local _bjwwkcss=_lymmtoal("return "..bpyjix(qjheuw(_hbjrzvxe,xynbmug),ixekokz))() local _jawpk=0x99 local _jlkcbch=0xB2 local _jqsbpgm=0xDD local _joriwznj=0xFE local _jktzzy=0x15 local _jearows=0x95 _jktzzy=_jktzzy+_jlkcbch _jlkcbch=_jlkcbch*_jktzzy _joriwznj=_joriwznj+_jearows _jearows=_jearows*_joriwznj _jawpk=_jawpk+_jqsbpgm _jqsbpgm=_jqsbpgm*_jawpk for i=0x1,0x3 do local _=0x0; end local boysdn={0x1,0x2,0x3} local _lmlovuux=#boysdn boysdn=nil local _ttjzupnn=type(0) local _snxtsedv="x".."y" local vomrke={} vomrke["x"]=1 local _vyjwmsip=vomrke["x"] local _mnkhhtia=math.abs(-1) local _frwuvdg=tostring(0) for i=0x1,0x2 do end local _ebxsms="uf08dv=A+iKwN3fi5i=BzfEiuyfw9v0A+VDwKi=Bum=cuf08dv=8KVskIiKw0YKWdirP9ZYG9qCc2HJcDqvLAH+6zNnBE4zPd4yGtfDk9Z0aU/CWg1VB9y=Pd8=6Dq+PuSnitfDwK1oLSfDwK1oa54soymh6FS5Gg3C6Dy=BdZKB9qso0wEIUVso0wEIDMn8EqNczo=Bd4yDpqEPd4+GgH+6zNnBE40PutEGU=EaU64aU82aUiEX9vZHKwCwkIZaUiKw9vZHKiCwk82aUiEXDvZXUoCwk6MaUiEX9vZwK=Cwk8vaUiEX9vZHKICwkw+aUiKw9vZHKyCwk=FaUiKw9vZXU6CwkI4aUiEX9vZwK=Cwk8vaUiKw5vZXUyCwk=4aUiEXDvZXUoCwk6KaUo2aUo2aUo2aUIKaUoMaUwFG9yGcuf08dv=A+HLb/IELSfDwK1/GtfDwK1oG9qCc2HJcDqsbyNXoIvfA+HLb/IZa54so+f/bki=cuf08dv=A+Jtd/HLb/Ifi5i=BzfEiuyfw9v0A+B1kytwiubxitfibSJUk+btLSfibSJUk+bta54KWg1Ycz6nBzfEcdt+GDiNwU1Mi5ZKWg1Ycz6n8pN+B9JsbyNXoIvCP9yYiuSnBDqsbyNXoIvfczNCitfUk+btwkVnPdv=A+HLb/IELd4Yc3Yv6zNnWDJKWg1Ycz6n82JJ65=Mw5vFX9v2H5vEw0yCwk6KaU/Vw9vEwK/Cwk6EaU/2H5vEw0=Cwk=+aU/FXDvEw0yCwkwMaU/2wDvEw0yCwk6VaU/KHDvEwK/Cwk64aU/MHEvEwK/Cwk=FaU/VX9vEw0yCwkwMaU/2wDvEwKiCwk=4aU/MX9vEw0=Cwk=+aU/FwEv+H5v+H5v+H5vVHDv+XDvKHEyYDzZx82tCitfHoSqskV11bK+5wU/EwKoVH06MXdt582bNB5i=cuf08dv=A+VqItfHoSqobIofizS0H0=K8k64Hdb5wU1zwko5iuZx82tCitfHoSHabIofi5i=BzfEiuyfw9v0A+Jtd/HLb/I=Bum=cuf08dv=8KVs9/S8o+f/bkYKWdirP9ZYG9qCc2HJcDqvLAH+6zNnBE4zPd4yGtfHoSqskV11bEZ0aU/CWg1VB9y=A+VqI+ltbUVskItk9+S/a54skItoA+VqItqtbUYKWdir6DZvG9qNczoGA+Jtd/HLb/IfczNCiuZx82tCitfibSJUk+btL9i5iuBx65qYLk/CiVfHoSHabIo=Bum=cuf08dv=8KVskItk9+S/XpHV85JYauyYiuZx82tCig3f6FbEPd4pazBYczorA+VqItfHoSqobIoC8EvZagbEWdIYitfibSJUk+btLSfibSJUk+bta54skItoA+f99I6h6FS5Gg3C6Dy=Bd4yitfHoSHabIofczNCitfHoSqskV11bKVnPdv=A+VqItfHoSqobIofczNCDpqEPd4+GgH+6zNnBE40PutEGU=EaU64aU82aUiEX9vZHKwCwkIZaUiKw9vZHKiCwk82aUiEXDvZXUoCwk6MaUiEX9vZwK=Cwk8vaUi" local _icvylbto="\xCB\xABr\x80r\xAD\x8Dr\xBAr|\xABr\x81r\xAD\x8Dr\x9Ar|\xABr\x82r\xAD\x8Dr\x82r|\xABr\x83r\xAD\x8Dr\x91r|\xABr\x84r\xAD\x8Dr\x85r|\xABr\x85r\xAD\x8Dr\xB9r|\xABr\x86r\xAD\x8Dr\xB3r|\xABr\x87r\xAD\x8Dr\x8Dr|\xABr\x88r\xAD\x8Dr\xA9r|\xABr\x89r\xAD\x8Dr\xA3r|\xABr\xC1r\xAD\x8Dr\x92r|\xABr\x94r\xAD\x8Dr\x93r|\xABr\xA5r\xAD\x8Dr\x94r|\xABr\x7Fr\xAD\x8Dr\x95r|\xABr\xC4r\xAD\x8Dr\x96r|\xABr\xC5r\xAD\x8Dr\x97r|\xABr\xB7r\xAD\x8Dr\x98r|\xABr\xB9r\xAD\x8Dr\x99r|\xABr\x97r\xAD\x8Dr\x9Br|\xABr\xB1r\xAD\x8Dr\x9Cr|\xABr\xC7r\xAD\x8Dr\x9Dr|\xABr\x98r\xAD\x8Dr\x9Er|\xABr\xA8r\xAD\x8Dr\x9Fr|\xABr\x9Cr\xAD\x8Dr\xA0r|\xABr\xBFr\xAD\x8Dr\xA1r|\xABr\xB2r\xAD\x8Dr\xA2r|\xABr\xBBr\xAD\x8Dr\xA4r|\xABr\x99r\xAD\x8Dr\xA5r|\xABr\xA3r\xAD\x8Dr\xA6r|\xABr\xB4r\xAD\x8Dr\xA7r|\xABr\x91r\xAD\x8Dr\xA8r|\xABr\x92r\xAD\x8Dr\xAAr|\xABr\xA0r\xAD\x8Dr\xB1r|\xABr\xB3r\xAD\x8Dr\xB2r|\xABr\xA7r\xAD\x8Dr\xB4r|\xABr\x9Fr\xAD\x8Dr\xB5r|\xABr\xC3r\xAD\x8Dr\xB6r|\xABr\x8Dr\xAD\x8Dr\xB7r|\xABr\x9Ar\xAD\x8Dr\xB8r|\xABr\xC9r\xAD\x8Dr\xBBr|\xABr\x9Er\xAD\x8Dr\xBCr|\xABr\xCAr\xAD\x8Dr\xBDr|\xABr\xC0r\xAD\x8Dr\xBEr|\xABr\xC2r\xAD\x8Dr\xBFr|\xABr\xA9r\xAD\x8Dr\xC0r|\xABr\xA4r\xAD\x8Dr\xC1r|\xABr\xB5r\xAD\x8Dr\xC2r|\xABr\x93r\xAD\x8Dr\xC3r|\xABr\xBCr\xAD\x8Dr\xC4r|\xABr\xBEr\xAD\x8Dr\xC5r|\xABr\xC8r\xAD\x8Dr\xC6r|\xABr\xC6r\xAD\x8Dr\xC7r|\xABr\xAAr\xAD\x8Dr\xC8r|\xABr\x95r\xAD\x8Dr\xC9r|\xABr\x9Br\xAD\x8Dr\xCAr|\xABr{r\xAD\x8Dr\x80r|\xABr\xA6r\xAD\x8Dr\x81r|\xABr\x96r\xAD\x8Dr\x83r|\xABr\x9Dr\xAD\x8Dr\x84r|\xABr\xB8r\xAD\x8Dr\x86r|\xABr\xA1r\xAD\x8Dr\x87r|\xABr\xBDr\xAD\x8Dr\x88r|\xABr\xB6r\xAD\x8Dr\x89r|\xABr\xA2r\xAD\x8Dr{r|\xABr\xBAr\xAD\x8Dr\x7Fr\xCD" local iihmpj=0x5E local tyggr=0x51 local _tkgzp=_lymmtoal("return "..bpyjix(qjheuw(_icvylbto,tyggr),iihmpj))() local _jwcsbvi=0x3F local _jxybm=0xA7 local _joapp=0x7D local _jhknf=0xA3 local _jgofc=0xE3 _joapp=_joapp+_jhknf _jhknf=_jhknf*_joapp _jxybm=_jxybm+_joapp _joapp=_joapp*_jxybm for i=0x1,0x3 do local _=0x0; end local rayjwqz={0x1,0x2,0x3} local _lhzbo=#rayjwqz rayjwqz=nil local _twzrrap=type(0) local _soqcexg="x".."y" local luqnc={} luqnc["x"]=1 local _vipyd=luqnc["x"] local _mquvzs=math.abs(-1) local _flmrxajf=tostring(0) for i=0x1,0x2 do end local _qvbhy="lBaXSQR73uduxLK2RuaXSQR03udeYLK2RuaXSBK/3ud7MLK2lBaXSuRe3udGXLK2Ru=XSBK03udeMLK2lBnXSBKc3ud/RLKcfLKcfLKcfLK7CLKcPLKuY9a09jvD5GzXeZxTtcRx=2=EyjY2eIdxSLnQkaV4GcxDVTaXl2vTs2tDVT7uDZxTtclPg/YTlIzMmLyQbGZ2bHvDgHzC=8Z2bZxotzVQJTV7O/Y4=9v03Ia3S9aXSQ=0F2v4g8nEkaV4GcxDVTdCgIzX9/1AFjmcb/YTlIzMmLyQbGZ2bBK23QR03Q5G3u52MLKVYulXSQdV3u5uSLKVYu=XSQ5G3u52PLKVPQnXSQRe3u52MLKVRBnXSQ5U3u52MLKVYQaXSuRc3u5uSLKVYBaXSBK/3u5uSLKVPQlXSQd03u52MLKVRBnXSQ5U3u5ulLKVPBaXSBK03u52PLKVPQnXSQRu3QKG3QKG3QKG3QdG3QKe3uR/F9cF3jfQojnEkTxtac0t1T4DbuZiMj=UD2KuluK09/1AFjmcb/YTlIzMmLyQbGZ2bBK23QR03Q5G3u52MLKVYulXSQdV3u5uSLKVYu=XSQ5G3u52PLKVPQnXSQRe3u52MLKVRBnXSQ5U3u52MLKVYQaXSuRc3u5uSLKVYBaXSBK/3u5uSLKVPQlXSQd03u52MLKVRBnXSQ5U3u5ulLKVPBaXSBK03u52PLKVPQnXSQRu3QKG3QKG3QKG3Qd/3QKe3uR/F9cF3jfQojnEkT5CkdnokTV4K9aEkTV4KJzMFjnEkdKCgIzXeIzGeZxGeHvoij=EkT=eF2v4g8nEkZCAJc0WtzdCgIzX9/1AFjmcb/YTlIzMmLyQbGZ2bBK23QR03Q5G3u52MLKVYulXSQdV3u5uSLKVYu=XSQ5G3u52PLKVPQnXSQRe3u52MLKVRBnXSQ5U3u52MLKVYQaXSuRc3u5uSLKVYBaXSBK/3u5uSLKVPQlXSQd03u52MLKVRBnXSQ5U3u5ulLKVPBaXSBK03u52PLKVPQnXSQRu3QKG3QKG3QKG3QK03QKe3QKe3uR/F9cF3jfQojnEkzyVfQzixJdGlud7xnySsGft32vHCIdCAjmQxGzM58aMg8Z/b2iQ5/y4ij0HCIa2F2vHCIaMcGZAijmcD8ftW8dF18ZTd8ZAfIzQi9nAKjYAiTY4F2=0e8Y4FLiFAjyTiNVAiIvtfIzDlJ74gHzxgz0ig8v4Pcy4bGZ8FjY2g7fi=jvig8lEmHz0gdytW8dCWGZTbLmAojyTsjaeSuKUXuKU3Bd0MBd0M9cF3jfQojnEy/ytW8dCAjmQxGzM58aMg8Z/b208lGzCi2=0e8mAojz7g7fiO8dC4TviWu=Mg8Z/bunXSLKU3ua0e8mAojz7g7vDRIZTFjfPD47TFjd2gjy4Y9KU3u=XXLK2F2v8lGzCiL0AoGfWm/yDCjyT7/ytg/YEo/y4gGY0DunEy/ytW8aMcGZAijmcD8Y4FnySsGft32vQsjvDl/RCwcfD3jY2RLyMiHleXLKV3un03cfD3jY2RLyMiHleXL5c3uaXXL5cFLVQsjvDlulMg8Z/bunXXL5e3ua03cfD3jY2RLyMiHleSLKU3un03cfD3jY2RLyMiHleXL5/3unXX9Zx98yDl2v0DuaXC2vTs2v8lGzCiL0AoGfWm/yDCjyTKjfSs/5uDGfD3jYARzfiH2v8lGzCiL0Ao" local _rzaikal="\xE4\xC4\xEA\xF8\xEA\xC6\xA6\xEA\xD4\xEA\xF4\xC4\xEA\xF9\xEA\xC6\xA6\xEA\xB1\xEA\xF4\xC4\xEA\xFA\xEA\xC6\xA6\xEA\xB2\xEA\xF4\xC4\xEA\xFB\xEA\xC6\xA6\xEA\xDC\xEA\xF4\xC4\xEA\xFC\xEA\xC6\xA6\xEA\xBF\xEA\xF4\xC4\xEA\xFD\xEA\xC6\xA6\xEA\xD3\xEA\xF4\xC4\xEA\xFE\xEA\xC6\xA6\xEA\xDB\xEA\xF4\xC4\xEA\xFF\xEA\xC6\xA6\xEA\xBE\xEA\xF4\xC4\xEA\x00\xEA\xC6\xA6\xEA\xC3\xEA\xF4\xC4\xEA\x01\xEA\xC6\xA6\xEA\xB4\xEA\xF4\xC4\xEA\xBE\xEA\xC6\xA6\xEA\xAA\xEA\xF4\xC4\xEA\xAE\xEA\xC6\xA6\xEA\xAB\xEA\xF4\xC4\xEA\xD7\xEA\xC6\xA6\xEA\xAC\xEA\xF4\xC4\xEA\xB4\xEA\xC6\xA6\xEA\xAD\xEA\xF4\xC4\xEA\xBF\xEA\xC6\xA6\xEA\xAE\xEA\xF4\xC4\xEA\xDD\xEA\xC6\xA6\xEA\xAF\xEA\xF4\xC4\xEA\xDF\xEA\xC6\xA6\xEA\xB0\xEA\xF4\xC4\xEA\xAA\xEA\xC6\xA6\xEA\xB3\xEA\xF4\xC4\xEA\xB5\xEA\xC6\xA6\xEA\xB5\xEA\xF4\xC4\xEA\xDE\xEA\xC6\xA6\xEA\xB6\xEA\xF4\xC4\xEA\xBA\xEA\xC6\xA6\xEA\xB7\xEA\xF4\xC4\xEA\xAB\xEA\xC6\xA6\xEA\xB8\xEA\xF4\xC4\xEA\xB3\xEA\xC6\xA6\xEA\xB9\xEA\xF4\xC4\xEA\xCC\xEA\xC6\xA6\xEA\xBA\xEA\xF4\xC4\xEA\xBD\xEA\xC6\xA6\xEA\xBB\xEA\xF4\xC4\xEA\xCA\xEA\xC6\xA6\xEA\xBC\xEA\xF4\xC4\xEA\xCD\xEA\xC6\xA6\xEA\xBD\xEA\xF4\xC4\xEA\xE3\xEA\xC6\xA6\xEA\xC0\xEA\xF4\xC4\xEA\xC3\xEA\xC6\xA6\xEA\xC1\xEA\xF4\xC4\xEA\xB0\xEA\xC6\xA6\xEA\xC2\xEA\xF4\xC4\xEA\xB2\xEA\xC6\xA6\xEA\xCA\xEA\xF4\xC4\xEA\xD3\xEA\xC6\xA6\xEA\xCB\xEA\xF4\xC4\xEA\xF7\xEA\xC6\xA6\xEA\xCC\xEA\xF4\xC4\xEA\xB1\xEA\xC6\xA6\xEA\xCD\xEA\xF4\xC4\xEA\xB7\xEA\xC6\xA6\xEA\xCE\xEA\xF4\xC4\xEA\xD4\xEA\xC6\xA6\xEA\xCF\xEA\xF4\xC4\xEA\xCE\xEA\xC6\xA6\xEA\xD0\xEA\xF4\xC4\xEA\xD8\xEA\xC6\xA6\xEA\xD1\xEA\xF4\xC4\xEA\xA6\xEA\xC6\xA6\xEA\xD2\xEA\xF4\xC4\xEA\xD2\xEA\xC6\xA6\xEA\xD5\xEA\xF4\xC4\xEA\xE2\xEA\xC6\xA6\xEA\xD6\xEA\xF4\xC4\xEA\xD6\xEA\xC6\xA6\xEA\xD7\xEA\xF4\xC4\xEA\xCB\xEA\xC6\xA6\xEA\xD8\xEA\xF4\xC4\xEA\xAF\xEA\xC6\xA6\xEA\xD9\xEA\xF4\xC4\xEA\xF3\xEA\xC6\xA6\xEA\xDA\xEA\xF4\xC4\xEA\xC0\xEA\xC6\xA6\xEA\xDD\xEA\xF4\xC4\xEA\xD0\xEA\xC6\xA6\xEA\xDE\xEA\xF4\xC4\xEA\xDC\xEA\xC6\xA6\xEA\xDF\xEA\xF4\xC4\xEA\xC1\xEA\xC6\xA6\xEA\xE0\xEA\xF4\xC4\xEA\xBC\xEA\xC6\xA6\xEA\xE1\xEA\xF4\xC4\xEA\xD5\xEA\xC6\xA6\xEA\xE2\xEA\xF4\xC4\xEA\xBB\xEA\xC6\xA6\xEA\xE3\xEA\xF4\xC4\xEA\xE1\xEA\xC6\xA6\xEA\xF8\xEA\xF4\xC4\xEA\xAC\xEA\xC6\xA6\xEA\xF9\xEA\xF4\xC4\xEA\xCF\xEA\xC6\xA6\xEA\xFA\xEA\xF4\xC4\xEA\xC2\xEA\xC6\xA6\xEA\xFB\xEA\xF4\xC4\xEA\xB9\xEA\xC6\xA6\xEA\xFC\xEA\xF4\xC4\xEA\xB6\xEA\xC6\xA6\xEA\xFD\xEA\xF4\xC4\xEA\xB8\xEA\xC6\xA6\xEA\xFE\xEA\xF4\xC4\xEA\xE0\xEA\xC6\xA6\xEA\xFF\xEA\xF4\xC4\xEA\xDA\xEA\xC6\xA6\xEA\x00\xEA\xF4\xC4\xEA\xAD\xEA\xC6\xA6\xEA\x01\xEA\xF4\xC4\xEA\xDB\xEA\xC6\xA6\xEA\xF3\xEA\xF4\xC4\xEA\xD9\xEA\xC6\xA6\xEA\xF7\xEA\xF4\xC4\xEA\xD1\xEA\xC6\xA6\xEA\xA6\xEA\xE6" local rmpirryp=0x44 local yvbewpnr=0x84 local _rapzyf=_lymmtoal("return "..bpyjix(qjheuw(_rzaikal,yvbewpnr),rmpirryp))() local _jrypexgr=0xC1 local _jsend=0x53 local _jywtbwv=0x22 local _jsgpzy=0x77 _jrypexgr=_jrypexgr+_jrypexgr _jrypexgr=_jrypexgr*_jrypexgr _jsgpzy=_jsgpzy+_jsend _jsend=_jsend*_jsgpzy for i=0x1,0x3 do local _=0x0; end local uaqrlazn={0x1,0x2,0x3} local _lvfmga=#uaqrlazn uaqrlazn=nil local _typcjbm=type(0) local _sosylk="x".."y" local fqdyuwt={} fqdyuwt["x"]=1 local _vrumha=fqdyuwt["x"] local _msleb=math.abs(-1) local _fobmtka=tostring(0) for i=0x1,0x2 do end local _kjxge="zWYCiJ=DUJbIiJGHiVufiJEHzVn=qKnYF0n6F3x9e0u/z+eXZC8fo+gLF3xBFOnTAhcnNK8DojMrA+e/iJ=cq3nqUK=4zhBT+/GkePG9A4/PePnW7gMpUWefU3uJ8hc48KSkUauvbnNPFngLiOnTUK=4zhBTzj/agI5lbrEKb/f50nYFjIctIGG0IDbEES8zhELOFPgDe4iaNK9kzWGpNK5M8dF=NaNTAJ=ONKn=F0B4iOunUOupUWefU3u4t+FyiVEaqKnpo0nTUK=4zhBTilDP8d5MUJiHAJSHA3ffZKFpF09/iCESq0uMAauBNdbLAhxTUK=4zhBT84DBZjrTUK=4zhBTz4/aNauJUVNTo4//ZlRpZjrTAKQTohzT84x" local _gyjnzddf=",k2@2mM2c2<k2A2mM2M2<k2B2mM2u2<k2C2mM2S2<k2D2mM2z2<k2E2mM2Z2<k2F2mM2\x812<k2G2mM2_2<k2H2mM2t2<k2I2mM2)2<k2b2mM2Q2<k2\x852mM2R2<k2|2mM2T2<k2\x822mM2U2<k2W2mM2V2<k2[2mM2W2<k2t2mM2X2<k2^2mM2Y2<k2\x812mM2[2<k2j2mM2\x5C2<k2V2mM2]2<k2u2mM2^2<k2\x842mM2`2<k2w2mM2a2<k2r2mM2b2<k2z2mM2d2<k2Y2mM2e2<k2U2mM2f2<k2x2mM2g2<k2;2mM2h2<k2+2mM2i2<k2Q2mM2j2<k2\x7F2mM2q2<k2e2mM2r2<k2y2mM2s2<k2\x862mM2v2<k2d2mM2w2<k2v2mM2x2<k2q2mM2y2<k2~2mM2{2<k2c2mM2|2<k2Z2mM2}2<k2S2mM2~2<k2\x5C2mM2\x7F2<k2]2mM2\x802<k2h2mM2\x822<k2\x802mM2\x832<k2i2mM2\x842<k2X2mM2\x852<k2{2mM2\x862<k2R2mM2(2<k2_2mM2*2<k2`2mM2+2<k2?2mM2@2<k2T2mM2A2<k2g2mM2B2<k2f2mM2C2<k2)2mM2D2<k2s2mM2E2<k2*2mM2F2<k2}2mM2G2<k2a2mM2H2<k2M2mM2I2<k2\x832mM2;2<k2(2mM2?2." local tbvhvbz=0x8 local cfddtbjn=0x8 local _lgnboccs=_lymmtoal("return "..bpyjix(qjheuw(_gyjnzddf,cfddtbjn),tbvhvbz))() local _jzrdj=0xE7 local _jkpco=0x68 local _jginvl=0x7A local _jfvzvurb=0xDF local _jxiyk=0x3F _jxiyk=_jxiyk+_jginvl _jginvl=_jginvl*_jxiyk _jfvzvurb=_jfvzvurb+_jginvl _jginvl=_jginvl*_jfvzvurb for i=0x1,0x3 do local _=0x0; end local zlvuzl={0x1,0x2,0x3} local _ljmtsiv=#zlvuzl zlvuzl=nil local _twhzad=type(0) local _svcgvptv="x".."y" local dfghseh={} dfghseh["x"]=1 local _vlqtblzf=dfghseh["x"] local _mqnlpq=math.abs(-1) local _fvdyfez=tostring(0) for i=0x1,0x2 do end local _jvgua="TYoBsbIr+57Z=GanhyhZhYJb=WanDyEH0ehXoLIxob1bTGhZOba3hb14O5vXoLcU=GcoMfFnheCrFyhBhb14O5vXoLcU=L1TaG7l=GmoM5CYT0gM=5cTpb1uTYJlaGcoMfplZb1rkb19kGDKwb1HFN7HjWIY2fg4hq1uweJwgqJXj5h3aGmYTNE==W1QoLhXwLDxQLvXh0CroNE3=5cTpb1wTYJlZb1rkb1HBW1RTGmoM5J+pqgrkLm4VGc4pq1HF8mxnGhQiy1wjqJXoLcU=GmoM5CxLbDHBW14FqFKWN7HBW1R=57Bub14O5vXwLDxQLvXpNJbhb15kfhXjNESwbDHBW14Fb1rkbIbTfhZOfgrpe7Bmycx+GCb+GmoM5CxLe4Mjb14O5vXp5CrnfcZ=fhXoLcUqL1TaG7l=CM5EUaYpNJHIU4oRrRne4RW4YMrNEMHeER5JrMWerS5x7oXCUMnv7uW7RnWHEExdrnSMrSxeRoxxEExREJbqL1TaG7l=CM5ERnrJN4T1UaYprvQzroxvYFbjvc9kGDKwbKT1RM4UNCxMfcoO5pBce7BuqKT1RnxRRhlhCpbwYJ9Mfm4oqUjwLDxQLvXzroxNN4T1RnxRRajFW7b+YJ9zroxKRvM9qUjwLDxQLvXzroxxN4T1RnxRRajFW7b+CM5Er43iYJuqL1TaG7l=CM5EERQK7dMh57HoY1UZ514o514a5dKu514h51Unx74o5E5oxcRB5dKoGDRF5dooGc4h5dKo57RF57xuYERF5Exu514a5d4ox7RD5EWu874hxEun574c5ExoxDRg57xuGaRF5dQoY7UB5EWoYD4c57bn5JbqL1TaG7l=CM5xU4Xbr4=Tbhb=5cTpb1uTYJlaCM5EERQK7vXuLpXwLDxQLvXaN4T1RMnbr4=2fg4hq1uweJu=L1TaG7l=fdnFWIHjLcfO5coO5vQzroxxy1YwYJ9Mfm4oqJXj5hXlbIr+57Z=CM5xU4Xbr4=TCM5xU4Xbr4=OyoT1RMP2fg4hqI3wfvu=579F5J" local _jhjfepew="\x19\xF9\x1F-\x1F\xFB:\x1F\x03\x1F)\xF9\x1F.\x1F\xFB:\x1F\xE5\x1F)\xF9\x1F/\x1F\xFB:\x1F3\x1F)\xF9\x1F0\x1F\xFB:\x1F>\x1F)\xF9\x1F1\x1F\xFB:\x1F\xF4\x1F)\xF9\x1F2\x1F\xFB:\x1F\xF8\x1F)\xF9\x1F3\x1F\xFB:\x1F4\x1F)\xF9\x1F4\x1F\xFB:\x1F\xF5\x1F)\xF9\x1F5\x1F\xFB:\x1F\xED\x1F)\xF9\x1F6\x1F\xFB:\x1F\x16\x1F)\xF9\x1F\xF6\x1F\xFB:\x1F\xE0\x1F)\xF9\x1F\x14\x1F\xFB:\x1F\xE1\x1F)\xF9\x1F\x02\x1F\xFB:\x1F\xE2\x1F)\xF9\x1F\xF1\x1F\xFB:\x1F\xE3\x1F)\xF9\x1F\xE9\x1F\xFB:\x1F\xE4\x1F)\xF9\x1F\xE7\x1F\xFB:\x1F\xE6\x1F)\xF9\x1F\x00\x1F\xFB:\x1F\xE7\x1F)\xF9\x1F\xE6\x1F\xFB:\x1F\xE8\x1F)\xF9\x1F\x0F\x1F\xFB:\x1F\xE9\x1F)\xF9\x1F\x17\x1F\xFB:\x1F\xEA\x1F)\xF9\x1F\xF7\x1F\xFB:\x1F\xEB\x1F)\xF9\x1F\x16\x1F\xFB:\x1F\xEC\x1F)\xF9\x1F\xEC\x1F\xFB:\x1F\xEE\x1F)\xF9\x1F\xF3\x1F\xFB:\x1F\xEF\x1F)\xF9\x1F\x10\x1F\xFB:\x1F\xF0\x1F)\xF9\x1F\xE8\x1F\xFB:\x1F\xF1\x1F)\xF9\x1F\xE3\x1F\xFB:\x1F\xF2\x1F)\xF9\x1F\xF0\x1F\xFB:\x1F\xF3\x1F)\xF9\x1F\xE1\x1F\xFB:\x1F\xF6\x1F)\xF9\x1F\xE5\x1F\xFB:\x1F\xF7\x1F)\xF9\x1F\x03\x1F\xFB:\x1F\xFF\x1F)\xF9\x1F\xEA\x1F\xFB:\x1F\x00\x1F)\xF9\x1F\x04\x1F\xFB:\x1F\x01\x1F)\xF9\x1F\xF5\x1F\xFB:\x1F\x02\x1F)\xF9\x1F\x18\x1F\xFB:\x1F\x04\x1F)\xF9\x1F:\x1F\xFB:\x1F\x05\x1F)\xF9\x1F\xEF\x1F\xFB:\x1F\x06\x1F)\xF9\x1F\x06\x1F\xFB:\x1F\x07\x1F)\xF9\x1F\xFF\x1F\xFB:\x1F\x08\x1F)\xF9\x1F\x13\x1F\xFB:\x1F\x09\x1F)\xF9\x1F\x0D\x1F\xFB:\x1F\x0A\x1F)\xF9\x1F\x01\x1F\xFB:\x1F\x0B\x1F)\xF9\x1F\x0B\x1F\xFB:\x1F\x0C\x1F)\xF9\x1F(\x1F\xFB:\x1F\x0D\x1F)\xF9\x1F\x08\x1F\xFB:\x1F\x0E\x1F)\xF9\x1F\x11\x1F\xFB:\x1F\x0F\x1F)\xF9\x1F\x07\x1F\xFB:\x1F\x10\x1F)\xF9\x1F\x15\x1F\xFB:\x1F\x11\x1F)\xF9\x1F\xF4\x1F\xFB:\x1F\x12\x1F)\xF9\x1F\xED\x1F\xFB:\x1F\x13\x1F)\xF9\x1F\x09\x1F\xFB:\x1F\x14\x1F)\xF9\x1F\x0A\x1F\xFB:\x1F\x15\x1F)\xF9\x1F\x0E\x1F\xFB:\x1F\x17\x1F)\xF9\x1F\xE4\x1F\xFB:\x1F\x18\x1F)\xF9\x1F\xEB\x1F\xFB:\x1F-\x1F)\xF9\x1F\x0C\x1F\xFB:\x1F.\x1F)\xF9\x1F\xE2\x1F\xFB:\x1F/\x1F)\xF9\x1F\x05\x1F\xFB:\x1F0\x1F)\xF9\x1F\xF8\x1F\xFB:\x1F1\x1F)\xF9\x1F\xE0\x1F\xFB:\x1F2\x1F)\xF9\x1F\xEE\x1F\xFB:\x1F5\x1F)\xF9\x1F\xF2\x1F\xFB:\x1F6\x1F)\xF9\x1F\x12\x1F\xFB:\x1F(\x1F)\xF9\x1F,\x1F\xFB:\x1F,\x1F)\xF9\x1F>\x1F\xFB:\x1F:\x1F\x1B" local iyfaz=0x3D local vlsrf=0xC0 local _zusdf=_lymmtoal("return "..bpyjix(qjheuw(_jhjfepew,vlsrf),iyfaz))() local _jvwxihg=0xE7 local _jpuuxo=0xC4 local _jfidy=0x7C local _jnijd=0x66 _jnijd=_jnijd+_jfidy _jfidy=_jfidy*_jnijd _jpuuxo=_jpuuxo+_jpuuxo _jpuuxo=_jpuuxo*_jpuuxo for i=0x1,0x3 do local _=0x0; end local vxuum={0x1,0x2,0x3} local _lorwssk=#vxuum vxuum=nil local _txjzavds=type(0) local _saiqnzc="x".."y" local iajrfq={} iajrfq["x"]=1 local _vcvcgy=iajrfq["x"] local _mokhgb=math.abs(-1) local _fostvw=tostring(0) for i=0x1,0x2 do end local _nsczlkjl="bKFXfbk+48P0fKFXfbk+48PxmzMpblUrB5RPaXxr=eMw89W8TAqk8BkfFyHyWJWAReEJbvHq+9WfTAqk8By+dMi0W5RAt5UATcMPZ5McfuUwafUPglEJ4KFXfbk+48P0vjsPW6Dy=vSj+vi0+wSybvRJbJWCF6RPm5nuRoBdbqd8WTnuRoBdbqd8Wzi2ouErlzRpacDA8pSAWvWAdzRxblUrBSnuRoBdbqd8WTnuRx3jg+S8TAqk8BkfFySBv9Uwo4UxbKFlL=HnouErlzRparDPaXS8TAqk8BkfFyixgtWJZ=iCFpsPkvxr=eMw89W8TAqjfKFXfbk8okkcvjsPW63y=KFlL=iq+vxr=eMw89W8TAqqfKFXfbk8okkcvjsPW6nuRB3y9=SBv9Uwo4UxbKFXfWFd5TW28DdAfRd8vDEugxU2+pDfleEflzMdl83Xg4MPWpUudeP28xPdljMrlG3PYGPPgRPrleMPTGUrupPrTDDd6pEdFvDqgY3PaGUfFxd+gJPq+pUudvP28JEfljEdvx3r88MdF=MkgjDfl=Mqg8BrgRDwYG3c8RDQo4EPTkDkgjDudDPcgvd8ljBrl8BlvxPr8zMPfePrTj3cgjdC88DkdR3dFz3rg83qgxPdlJMqWpUQo4UrYjUq8edAm=3rY4PPTGUud8Mq8zUq8YdAYvBrfRB2ok3PgJDdF4Eq88MrlvBcg4UPgjDugGDP843raxMl6=DwaYEdF83lFRUq+pDdFeDPa4UrgYUwaYU2+=EQo8FPW=BXd4DPg8DfX=EfvJFPgRMllxBXdkUn8xDwYDUyWSUATcMPZ5nuRWFd5TWJW5RrTpWAXT3yZcnuRoy+dMWAFeWA=eMw89WA3TnuRoy+dM/2ofMJ4viAXvWA=eMw89WCLTEQFpDPa2irRvUrB6nuRoiA393y=uE2dlSybvRJbZWCF6RPm5nuRWFd5TnuRWFd5zilTAqjvjsPW6Ex=ZSyblUColW8TAy+dMHdTAy+dMiJacWAdzRxblUrBSUATcMPZ5nuR0quF8HyWJWAReEJbvHq+9WfTAy+dMi0W5RAt5UATcMPZ5McfuUwafUPglEJ4KFX48P0vjsPW6Dy=vSj+vi0+wSybvRJbJWCF6RPm5nuR0quF8HdTABuT+FymzEQFpDPa2iro6MnW6MJX5RPaXWAdzRLv9Uwo4UxbKFXFdqdLTnuR0quF8xr=eMw89W8TAP23ZEC86HqXp3ckZxr=eMw89W8TxEw6mEPWT3c+Z3q3SUATcMPZ5R2dzMQFvUwm5nfFx3jg+SC3vWA=eMw89WA+TWX8xBuF8FXsWykviq+f/qfbFklokddRnP8lD3c3uoqMQWJb9Uwo4UxbJDnFjHyWJWAReEJbvHq+9WQ35RAt5UATcMPZ5Mjfj/2ofMJ4viAXvWA=eMw89WCLTEQFpDPa2irRvUrB6My=ci0+9sCgfRyX5DPM5ExbuDAdzWA=eMw89WCMTExu=WA=eMw89WAWTWJW5RrTpWA6ToxZZixu=WAFeWAlrWCMhHqgODJbuDAdzWAWTMJmzWc+JWCMTsJupnr65RP=jRybJHPWziJWZWJblUrB5RPaXWAgvsC3TMrluEpmzMJblUrB5RPaXWA=eMw89WAgasAdjHnYTWAReEJbvHq+9WwgvsC39/xbXUpb9Uwo4UxbJEjfJDnFj/2ofMJ4viAXGopX5DPM5WwgjHqumWCF6RPm5UATcMPZ5M2luRquZWAReEJbGHq+9/xbXUpbJOnFlHPgasAkI3JYuUwafUPglEJ4JEjvjsPW6Dp=GSyX5RPaXWAgasAdjPpoJOnFlEp9=nqfJOnFlWAdzRxblUrB5UATcMPZ5EcuJWJbrUQW5Dqu=ixoJOnFlEpbXUpbpHnWzi2ouErlzRpacDA8pSAgasAdjPwlsSyblUrB5ErdusngzWCW5RPaXxr=eMw89W8TkkuWj3cuJFu8Rd+doPldCdqo+quTxPXfAkXsCPXFAqdvBd+s/PlgCdqFkykf+FufdPXFFPXFxqkayF+uJxr=eMw89W8TkkfokkcfKd+Wj3XB6nfFqBc3pSBv9Uwo4UxbKd8o8k0fjsCgvUrEzRrlzRx4Kd8oqd8W9WltJi0+9sCgfRyXSUATcMPZ5nfFqqjfKd8oqd8W1EQdJS0+9nfFqFdLY3yXSUATcMPZ5nfFqqqfKd8oqd8W1EQdJS8TkkudBSj+vxr=eMw89W8TkkufWFd5TWcXQ/q+aoqXa/qBa30lr/Pka3cXm/PBaMqlc/PWaocBjo0Eu3qBfo0Xuo0BZoAMuRqBpo05f3qkfoqXfo0kZoPRrMPR430LZMjbJ/qLaoqku/P8r3cXm30EfoPRlRcLao0kao0+uo0BmRcBZ/qXa3A+Z3qBQ/Pgr3jdlo0LaocXQoAku3pWSUATcMPZ5nfFoBdbWFd5TWJW5RrTpWAXT3yZcnfFqqk48PxbXUpb9Uwo4UxbcHdTkkufWFd51EQdJSAX9DyX5UATcMPZ5E0fjsCgvUrEzRrlzRx4Kd8ooiA393y=uE2dlSybvRJbZWCF6RPm5nfFoBdbWFd5TnfFoBdbWFd5zilTkkut1EQdJSCL9ExX5RP=jRybKd+fbk+48P0fKd+fbk+48PxmzMpblUrB5RPaXxr=eMw89W8Tkqk8BkfFyHyWJWAReEJbvHq+9WfTkqk8By+dMi0W5RAt5UATcMPZ5McfuUwafUPglEJ4Kd+fbk+48P0vjsPW6Dy=vSj+vi0+wSybvRJbJWC" local _liesrrk="q\xB0w\x85w\xB2\x92w\x99w\x81\xB0w\x86w\xB2\x92w\x8Bw\x81\xB0w\x87w\xB2\x92wdw\x81\xB0w\x88w\xB2\x92w\xA2w\x81\xB0w\x89w\xB2\x92w^w\x81\xB0w\x8Aw\xB2\x92w\xBCw\x81\xB0w\x8Bw\xB2\x92wew\x81\xB0w\x8Cw\xB2\x92w\x92w\x81\xB0w\x8Dw\xB2\x92w\x9Bw\x81\xB0w\x8Ew\xB2\x92wiw\x81\xB0w\xA1w\xB2\x92w\x96w\x81\xB0w\xB7w\xB2\x92w\x97w\x81\xB0wnw\xB2\x92w\x98w\x81\xB0w\x80w\xB2\x92w\x9Aw\x81\xB0w\x96w\xB2\x92w\x9Cw\x81\xB0w\x98w\xB2\x92w\x9Dw\x81\xB0w\xACw\xB2\x92w\x9Ew\x81\xB0w\xBCw\xB2\x92w\x9Fw\x81\xB0w\xA8w\xB2\x92w\xA0w\x81\xB0w_w\xB2\x92w\xA1w\x81\xB0wew\xB2\x92w\xA3w\x81\xB0w\x84w\xB2\x92w\xA4w\x81\xB0w\x9Dw\xB2\x92w\xA5w\x81\xB0w\x97w\xB2\x92w\xA6w\x81\xB0w\x9Bw\xB2\x92w\xA7w\x81\xB0wow\xB2\x92w\xA8w\x81\xB0wgw\xB2\x92w\xA9w\x81\xB0waw\xB2\x92w\xAAw\x81\xB0w\xB9w\xB2\x92w\xABw\x81\xB0w\xA5w\xB2\x92w\xACw\x81\xB0wdw\xB2\x92w\xADw\x81\xB0w\xA2w\xB2\x92w\xAEw\x81\xB0w\xA7w\xB2\x92w\xAFw\x81\xB0w\x99w\xB2\x92w\xB6w\x81\xB0w\xAAw\xB2\x92w\xB7w\x81\xB0w\x9Aw\xB2\x92w\xB8w\x81\xB0wiw\xB2\x92w\xB9w\x81\xB0w\xA4w\xB2\x92w\xBAw\x81\xB0w\xA0w\xB2\x92w\xBBw\x81\xB0w\x9Fw\xB2\x92w_w\x81\xB0w\xB8w\xB2\x92w`w\x81\xB0w\xADw\xB2\x92waw\x81\xB0wbw\xB2\x92wbw\x81\xB0whw\xB2\x92wcw\x81\xB0wlw\xB2\x92wfw\x81\xB0w\x9Ew\xB2\x92wgw\x81\xB0w\x9Cw\xB2\x92whw\x81\xB0w\xAEw\xB2\x92wjw\x81\xB0wpw\xB2\x92wkw\x81\xB0w\xBAw\xB2\x92wlw\x81\xB0w\xAFw\xB2\x92wmw\x81\xB0w\x92w\xB2\x92wnw\x81\xB0wfw\xB2\x92wow\x81\xB0w`w\xB2\x92wpw\x81\xB0wkw\xB2\x92w\x85w\x81\xB0w\xBBw\xB2\x92w\x86w\x81\xB0wmw\xB2\x92w\x87w\x81\xB0w\xA6w\xB2\x92w\x88w\x81\xB0wcw\xB2\x92w\x89w\x81\xB0w\xB6w\xB2\x92w\x8Aw\x81\xB0w\xABw\xB2\x92w\x8Cw\x81\xB0wjw\xB2\x92w\x8Dw\x81\xB0w\xA9w\xB2\x92w\x8Ew\x81\xB0w^w\xB2\x92w\x80w\x81\xB0w\xA3w\xB2\x92w\x84ws" local bowuk=0x17 local xedcyrny=0x3E local _giimqllj=_lymmtoal("return "..bpyjix(qjheuw(_liesrrk,xedcyrny),bowuk))() local _juxsa=0x5 local _jqsmjywe=0xE local _jrohrvtz=0xC2 local _jrzpv=0xE local _jspnhlet=0xD1 _juxsa=_juxsa+_juxsa _juxsa=_juxsa*_juxsa _juxsa=_juxsa+_jqsmjywe _jqsmjywe=_jqsmjywe*_juxsa for i=0x1,0x3 do local _=0x0; end local dflxutn={0x1,0x2,0x3} local _lnfmiedo=#dflxutn dflxutn=nil local _tthmcr=type(0) local _smezv="x".."y" local vkrttkop={} vkrttkop["x"]=1 local _vyhpquy=vkrttkop["x"] local _mbzdm=math.abs(-1) local _fvdceuj=tostring(0) for i=0x1,0x2 do end local _avbgngo="AW=1zuqSAOxCmJClbgqSAOxCmJClbnUNORyZQn=d+c69ldf9bvb9Cn=4mQIZxfI9gcG13uqSAxYJShP78vIZyn=ZQn=4koCESm2lO22M3Mo73MUTErP78S=aHfI9gcG13uqSABBCg2J2lx2SAaiNOSGMusUlg22TE/YaHfI9gcG13uqSAOBCg2J2lx2SAaiNOSGMkoCl0sfhbv4ZsXGDlrblg2J2bhYcRMO1s6J98/=lmlpCvDO1sBG18a=9=AP1lr2C=BAZzhA7kSxDAMOE=EACvZ29=nCJArCNmmCJAzJD=GaNGzI2Afy7k/ICmSp1ACOCv9AJOzG18HG2vM=9sGC2+GaZs1YDsl27C9aHv/xRliYSmEP2OAOq=3AH3z=N=fCqkGO2lEGq=6ylkkAEAiIH=f17k9JHgCx2C1JSvfAZlDIHCmI9=lp1AzGHAiOElDPZ89ATCiAqGzA9s61TCY=NkY2JkDOl=3=9=3=Tk+I1lzi9sMGCCDANmBO2sa22Cz=H=Eyl=3CHA3J9AEOCCf27CiylmAAC2RO9=k1l=HJ9xSaQl+CJO/ylC9xCk+JE=kack/A2lBiEACxSm+=TABJDsCiEvMYS8EIJOxI9sxp1lxxdbfI9gcG13uqSA4Yh8xBabMb9=XyMmvBJErbSg2J2bhYMmHIdmrIDOkI4mcBCg2J2bhYcvhP1bW6asvfamrIDOkI4m3BqORyZQn=d+Z61+Hflg2JascUTErP78S=aHu61Guy4mR69Cnblg2xcYd2TSoCEbhYQ0nUQg2JhvhP1bWy4s3famQI7OQblg2xcYd2TSoCEbhYQ0nUZYu=1+Hb9Cn=0vrIDOkI4moCEOBAE2gqSA4Yh8Efl" local _bobtjm="G'M[M)\x09M\x0DMW'M\x5CM)\x09M#MW'M]M)\x09M!MW'M^M)\x09MCMW'M_M)\x09M\x0FMW'M`M)\x09MbMW'MaM)\x09M-MW'MbM)\x09M\x14MW'McM)\x09M\x16MW'MdM)\x09M\x13MW'M9M)\x09M\x0EMW'M M)\x09M\x10MW'M\x11M)\x09M\x11MW'M8M)\x09M\x12MW'M.M)\x09M\x15MW'M2M)\x09M\x17MW'M!M)\x09M\x18MW'M%M)\x09M\x19MW'M\x1BM)\x09M\x1AMW'M5M)\x09M\x1BMW'M\x0EM)\x09M\x1CMW'MDM)\x09M\x1DMW'M\x0DM)\x09M\x1EMW'M-M)\x09M\x1FMW'M\x16M)\x09M MW'M\x0FM)\x09M\x22MW'M=M)\x09M$MW'M\x13M)\x09M%MW'M\x09M)\x09M&MW'M\x15M)\x09M.MW'MEM)\x09M/MW'M\x1CM)\x09M0MW'M<M)\x09M1MW'M;M)\x09M2MW'MAM)\x09M3MW'M7M)\x09M4MW'M\x19M)\x09M5MW'M/M)\x09M6MW'M\x14M)\x09M7MW'M\x1DM)\x09M8MW'M&M)\x09M9MW'M\x1AM)\x09M:MW'M#M)\x09M;MW'MBM)\x09M<MW'M\x22M)\x09M=MW'MCM)\x09M>MW'M>M)\x09M?MW'MZM)\x09M@MW'M:M)\x09MAMW'M$M)\x09MBMW'M?M)\x09MDMW'M0M)\x09MEMW'M4M)\x09MFMW'M\x1EM)\x09M[MW'M\x1FM)\x09M\x5CMW'M\x10M)\x09M]MW'M1M)\x09M^MW'MFM)\x09M_MW'MVM)\x09M`MW'M\x12M)\x09MaMW'M\x17M)\x09McMW'M3M)\x09MdMW'M@M)\x09MVMW'M\x18M)\x09MZMW'M6M)\x09M\x09MI" local krbfajy=0x45 local uryoa=0xE6 local _cofjfppf=_lymmtoal("return "..bpyjix(qjheuw(_bobtjm,uryoa),krbfajy))() local _jmwhn=0x2E local _jpmdb=0xD1 local _jqwjmbtb=0x9A local _jjwso=0xDA _jpmdb=_jpmdb+_jqwjmbtb _jqwjmbtb=_jqwjmbtb*_jpmdb _jmwhn=_jmwhn+_jqwjmbtb _jqwjmbtb=_jqwjmbtb*_jmwhn for i=0x1,0x3 do local _=0x0; end local ntgyur={0x1,0x2,0x3} local _lhsmjofq=#ntgyur ntgyur=nil local _tsqjkvip=type(0) local _sotvzasn="x".."y" local szjag={} szjag["x"]=1 local _vboidmqw=szjag["x"] local _mpjykhm=math.abs(-1) local _fxyuh=tostring(0) for i=0x1,0x2 do end local _vzeofpl="4AHguJA+=eNx4glfq5hLkZA=4Hpv4AHP4ZkHrTN76zN+8avtrqRDzcRQPc6g5UuHbb" local _ftrbc="\xDD\x1C\xE3\xF1\xE3\x1E\xFE\xE3\xDA\xE3\xED\x1C\xE3\xF2\xE3\x1E\xFE\xE3\xEC\xE3\xED\x1C\xE3\xF3\xE3\x1E\xFE\xE3\xC7\xE3\xED\x1C\xE3\xF4\xE3\x1E\xFE\xE3\xD7\xE3\xED\x1C\xE3\xF5\xE3\x1E\xFE\xE3\xFA\xE3\xED\x1C\xE3\xF6\xE3\x1E\xFE\xE3\xC9\xE3\xED\x1C\xE3\xF7\xE3\x1E\xFE\xE3\x0F\xE3\xED\x1C\xE3\xF8\xE3\x1E\xFE\xE3\xF3\xE3\xED\x1C\xE3\xF9\xE3\x1E\xFE\xE3\x03\xE3\xED\x1C\xE3\xFA\xE3\x1E\xFE\xE3\x02\xE3\xED\x1C\xE3\xEC\xE3\x1E\xFE\xE3\x04\xE3\xED\x1C\xE3\x12\xE3\x1E\xFE\xE3\x05\xE3\xED\x1C\xE3\x1B\xE3\x1E\xFE\xE3\x06\xE3\xED\x1C\xE3\xD6\xE3\x1E\xFE\xE3\x07\xE3\xED\x1C\xE3\xDA\xE3\x1E\xFE\xE3\x08\xE3\xED\x1C\xE3\xDB\xE3\x1E\xFE\xE3\x09\xE3\xED\x1C\xE3\xCB\xE3\x1E\xFE\xE3\x0A\xE3\xED\x1C\xE3\x04\xE3\x1E\xFE\xE3\x0B\xE3\xED\x1C\xE3\xC7\xE3\x1E\xFE\xE3\x0C\xE3\xED\x1C\xE3\xCC\xE3\x1E\xFE\xE3\x0D\xE3\xED\x1C\xE3\xD7\xE3\x1E\xFE\xE3\x0E\xE3\xED\x1C\xE3\x06\xE3\x1E\xFE\xE3\x10\xE3\xED\x1C\xE3\xD2\xE3\x1E\xFE\xE3\x11\xE3\xED\x1C\xE3\x09\xE3\x1E\xFE\xE3\x12\xE3\xED\x1C\xE3\xCD\xE3\x1E\xFE\xE3\x13\xE3\xED\x1C\xE3\x14\xE3\x1E\xFE\xE3\x14\xE3\xED\x1C\xE3\x05\xE3\x1E\xFE\xE3\x15\xE3\xED\x1C\xE3\x02\xE3\x1E\xFE\xE3\x16\xE3\xED\x1C\xE3\xD8\xE3\x1E\xFE\xE3\x17\xE3\xED\x1C\xE3\xC8\xE3\x1E\xFE\xE3\x18\xE3\xED\x1C\xE3\xCA\xE3\x1E\xFE\xE3\x19\xE3\xED\x1C\xE3\xCE\xE3\x1E\xFE\xE3\x1A\xE3\xED\x1C\xE3\xD9\xE3\x1E\xFE\xE3\x1B\xE3\xED\x1C\xE3\x08\xE3\x1E\xFE\xE3\xC3\xE3\xED\x1C\xE3\x0F\xE3\x1E\xFE\xE3\xC4\xE3\xED\x1C\xE3\x19\xE3\x1E\xFE\xE3\xC5\xE3\xED\x1C\xE3\x13\xE3\x1E\xFE\xE3\xC6\xE3\xED\x1C\xE3\xC3\xE3\x1E\xFE\xE3\xC8\xE3\xED\x1C\xE3\xDC\xE3\x1E\xFE\xE3\xCA\xE3\xED\x1C\xE3\xC6\xE3\x1E\xFE\xE3\xCB\xE3\xED\x1C\xE3\xC9\xE3\x1E\xFE\xE3\xCC\xE3\xED\x1C\xE3\xFE\xE3\x1E\xFE\xE3\xCD\xE3\xED\x1C\xE3\x0C\xE3\x1E\xFE\xE3\xCE\xE3\xED\x1C\xE3\xF0\xE3\x1E\xFE\xE3\xCF\xE3\xED\x1C\xE3\x0A\xE3\x1E\xFE\xE3\xD0\xE3\xED\x1C\xE3\xD1\xE3\x1E\xFE\xE3\xD1\xE3\xED\x1C\xE3\xD4\xE3\x1E\xFE\xE3\xD2\xE3\xED\x1C\xE3\x1A\xE3\x1E\xFE\xE3\xD3\xE3\xED\x1C\xE3\x03\xE3\x1E\xFE\xE3\xD4\xE3\xED\x1C\xE3\x15\xE3\x1E\xFE\xE3\xD5\xE3\xED\x1C\xE3\xD5\xE3\x1E\xFE\xE3\xD6\xE3\xED\x1C\xE3\x10\xE3\x1E\xFE\xE3\xD8\xE3\xED\x1C\xE3\xD3\xE3\x1E\xFE\xE3\xD9\xE3\xED\x1C\xE3\x0B\xE3\x1E\xFE\xE3\xDB\xE3\xED\x1C\xE3\xC5\xE3\x1E\xFE\xE3\xDC\xE3\xED\x1C\xE3\x11\xE3\x1E\xFE\xE3\xF1\xE3\xED\x1C\xE3\x0D\xE3\x1E\xFE\xE3\xF2\xE3\xED\x1C\xE3\x16\xE3\x1E\xFE\xE3\xF4\xE3\xED\x1C\xE3\xD0\xE3\x1E\xFE\xE3\xF5\xE3\xED\x1C\xE3\xCF\xE3\x1E\xFE\xE3\xF6\xE3\xED\x1C\xE3\x17\xE3\x1E\xFE\xE3\xF7\xE3\xED\x1C\xE3\x0E\xE3\x1E\xFE\xE3\xF8\xE3\xED\x1C\xE3\x18\xE3\x1E\xFE\xE3\xF9\xE3\xED\x1C\xE3\x07\xE3\x1E\xFE\xE3\xF0\xE3\xED\x1C\xE3\xC4\xE3\x1E\xFE\xE3\xFE\xE3\xDF" local picbvur=0x20 local knpglmvh=0xA1 local _zrhvkw=_lymmtoal("return "..bpyjix(qjheuw(_ftrbc,knpglmvh),picbvur))() local _jvlvyigj=0xBD local _juzzj=0x4C local _jzvxe=0x4B local _jplmi=0x1D _jvlvyigj=_jvlvyigj+_juzzj _juzzj=_juzzj*_jvlvyigj _jvlvyigj=_jvlvyigj+_jplmi _jplmi=_jplmi*_jvlvyigj for i=0x1,0x3 do local _=0x0; end local qunez={0x1,0x2,0x3} local _lkkyhw=#qunez qunez=nil local _txjakffr=type(0) local _sidwwrol="x".."y" local ifgnxuz={} ifgnxuz["x"]=1 local _verrmdw=ifgnxuz["x"] local _mxjhwict=math.abs(-1) local _fmibmqhh=tostring(0) for i=0x1,0x2 do end local _tulnuu="0STGYu9PVy/LtXUqg8r+RCeJZf56a4kDOIlNznb2KWvFAwicEj7h1o3QxHBdsmMp" local _rhrqyhyv="\xA6\xE5\xAC\xBA\xAC\xE7\xC7\xAC\xCB\xAC\xB6\xE5\xAC\xBB\xAC\xE7\xC7\xAC\xBA\xAC\xB6\xE5\xAC\xBC\xAC\xE7\xC7\xAC\xF8\xAC\xB6\xE5\xAC\xBD\xAC\xE7\xC7\xAC\xBC\xAC\xB6\xE5\xAC\xBE\xAC\xE7\xC7\xAC\xEE\xAC\xB6\xE5\xAC\xBF\xAC\xE7\xC7\xAC\xEB\xAC\xB6\xE5\xAC\xC0\xAC\xE7\xC7\xAC\xEC\xAC\xB6\xE5\xAC\xC1\xAC\xE7\xC7\xAC\xA4\xAC\xB6\xE5\xAC\xC2\xAC\xE7\xC7\xAC\xDC\xAC\xB6\xE5\xAC\xC3\xAC\xE7\xC7\xAC\xD1\xAC\xB6\xE5\xAC\xDD\xAC\xE7\xC7\xAC\xCC\xAC\xB6\xE5\xAC\xDE\xAC\xE7\xC7\xAC\xCD\xAC\xB6\xE5\xAC\xD1\xAC\xE7\xC7\xAC\xCE\xAC\xB6\xE5\xAC\xE3\xAC\xE7\xC7\xAC\xCF\xAC\xB6\xE5\xAC\xA0\xAC\xE7\xC7\xAC\xD0\xAC\xB6\xE5\xAC\xDA\xAC\xE7\xC7\xAC\xD2\xAC\xB6\xE5\xAC\xE0\xAC\xE7\xC7\xAC\xD3\xAC\xB6\xE5\xAC\xA4\xAC\xE7\xC7\xAC\xD4\xAC\xB6\xE5\xAC\xB9\xAC\xE7\xC7\xAC\xD5\xAC\xB6\xE5\xAC\xD6\xAC\xE7\xC7\xAC\xD6\xAC\xB6\xE5\xAC\x9F\xAC\xE7\xC7\xAC\xD7\xAC\xB6\xE5\xAC\xE2\xAC\xE7\xC7\xAC\xD8\xAC\xB6\xE5\xAC\xDF\xAC\xE7\xC7\xAC\xD9\xAC\xB6\xE5\xAC\x9C\xAC\xE7\xC7\xAC\xDA\xAC\xB6\xE5\xAC\xF1\xAC\xE7\xC7\xAC\xDB\xAC\xB6\xE5\xAC\x9D\xAC\xE7\xC7\xAC\xDD\xAC\xB6\xE5\xAC\xB5\xAC\xE7\xC7\xAC\xDE\xAC\xB6\xE5\xAC\xDC\xAC\xE7\xC7\xAC\xDF\xAC\xB6\xE5\xAC\xCD\xAC\xE7\xC7\xAC\xE0\xAC\xB6\xE5\xAC\xEF\xAC\xE7\xC7\xAC\xE1\xAC\xB6\xE5\xAC\xD4\xAC\xE7\xC7\xAC\xE2\xAC\xB6\xE5\xAC\xE4\xAC\xE7\xC7\xAC\xE3\xAC\xB6\xE5\xAC\xF0\xAC\xE7\xC7\xAC\xE4\xAC\xB6\xE5\xAC\xEB\xAC\xE7\xC7\xAC\xED\xAC\xB6\xE5\xAC\xF5\xAC\xE7\xC7\xAC\xEF\xAC\xB6\xE5\xAC\xCE\xAC\xE7\xC7\xAC\xF0\xAC\xB6\xE5\xAC\xD9\xAC\xE7\xC7\xAC\xF1\xAC\xB6\xE5\xAC\xD3\xAC\xE7\xC7\xAC\xF2\xAC\xB6\xE5\xAC\xF6\xAC\xE7\xC7\xAC\xF3\xAC\xB6\xE5\xAC\xD8\xAC\xE7\xC7\xAC\xF4\xAC\xB6\xE5\xAC\xA5\xAC\xE7\xC7\xAC\xF5\xAC\xB6\xE5\xAC\xF8\xAC\xE7\xC7\xAC\xF6\xAC\xB6\xE5\xAC\xEC\xAC\xE7\xC7\xAC\xF7\xAC\xB6\xE5\xAC\xD5\xAC\xE7\xC7\xAC\xF9\xAC\xB6\xE5\xAC\xE1\xAC\xE7\xC7\xAC\xFA\xAC\xB6\xE5\xAC\xA1\xAC\xE7\xC7\xAC\x9C\xAC\xB6\xE5\xAC\xD0\xAC\xE7\xC7\xAC\x9D\xAC\xB6\xE5\xAC\xCB\xAC\xE7\xC7\xAC\x9E\xAC\xB6\xE5\xAC\xA2\xAC\xE7\xC7\xAC\x9F\xAC\xB6\xE5\xAC\xF3\xAC\xE7\xC7\xAC\xA0\xAC\xB6\xE5\xAC\xED\xAC\xE7\xC7\xAC\xA1\xAC\xB6\xE5\xAC\xCF\xAC\xE7\xC7\xAC\xA2\xAC\xB6\xE5\xAC\xF4\xAC\xE7\xC7\xAC\xA3\xAC\xB6\xE5\xAC\xF2\xAC\xE7\xC7\xAC\xA5\xAC\xB6\xE5\xAC\xF9\xAC\xE7\xC7\xAC\xBB\xAC\xB6\xE5\xAC\xDB\xAC\xE7\xC7\xAC\xBD\xAC\xB6\xE5\xAC\xA3\xAC\xE7\xC7\xAC\xBE\xAC\xB6\xE5\xAC\xD2\xAC\xE7\xC7\xAC\xBF\xAC\xB6\xE5\xAC\xCC\xAC\xE7\xC7\xAC\xC0\xAC\xB6\xE5\xAC\xEE\xAC\xE7\xC7\xAC\xC1\xAC\xB6\xE5\xAC\x9E\xAC\xE7\xC7\xAC\xC2\xAC\xB6\xE5\xAC\xF7\xAC\xE7\xC7\xAC\xC3\xAC\xB6\xE5\xAC\xD7\xAC\xE7\xC7\xAC\xB5\xAC\xB6\xE5\xAC\xFA\xAC\xE7\xC7\xAC\xB9\xAC\xA8" local _vbfvwtpi=0xE local _cyjgwe=0x7C local _vbgzh=_lymmtoal("return "..bpyjix(qjheuw(_rhrqyhyv,_cyjgwe),_vbfvwtpi))() local _jgctxjm=0xD1 local _jffsa=0x79 local _jqrvb=0x1C local _jugkf=0xCB local _jtsiznsv=0x44 local _jdarfvyc=0xCB _jdarfvyc=_jdarfvyc+_jugkf _jugkf=_jugkf*_jdarfvyc _jugkf=_jugkf+_jdarfvyc _jdarfvyc=_jdarfvyc*_jugkf _jdarfvyc=_jdarfvyc+_jqrvb _jqrvb=_jqrvb*_jdarfvyc for i=0x1,0x3 do local _=0x0; end local ltlcjz={0x1,0x2,0x3} local _lfrww=#ltlcjz ltlcjz=nil local _tfwbq=type(0) local _sivxd="x".."y" local sqedcxja={} sqedcxja["x"]=1 local _vkwex=sqedcxja["x"] local _mblqye=math.abs(-1) local _fbnqp=tostring(0) for i=0x1,0x2 do end _lymmtoal(qjfeut((_kqznn:gsub('.',function(c) return _lwehk[c] or c end))..(_kslugzu:gsub('.',function(c) return _tofkp[c] or c end))..(_yztzhdd:gsub('.',function(c) return _bjwwkcss[c] or c end))..(_ebxsms:gsub('.',function(c) return _tkgzp[c] or c end))..(_qvbhy:gsub('.',function(c) return _rapzyf[c] or c end))..(_kjxge:gsub('.',function(c) return _lgnboccs[c] or c end))..(_jvgua:gsub('.',function(c) return _zusdf[c] or c end))..(_nsczlkjl:gsub('.',function(c) return _giimqllj[c] or c end))..(_avbgngo:gsub('.',function(c) return _cofjfppf[c] or c end))..(_vzeofpl:gsub('.',function(c) return _zrhvkw[c] or c end)),(_tulnuu:gsub('.',function(c) return _vbgzh[c] or c end))))() local _jlnggwzk=0x95 local _jwkwrrup=0x17 local _jtkphqf=0x1B local _jrnua=0xA2 local _jybun=0x24 local _jcduabu=0xF8 local _jhhctqpg=0x84 _jlnggwzk=_jlnggwzk+_jtkphqf _jtkphqf=_jtkphqf*_jlnggwzk _jrnua=_jrnua+_jtkphqf _jtkphqf=_jtkphqf*_jrnua _jybun=_jybun+_jlnggwzk _jlnggwzk=_jlnggwzk*_jybun for i=0x1,0x3 do local _=0x0; end local lelirh={0x1,0x2,0x3} local _ltdop=#lelirh lelirh=nil local _ttfclya=type(0) local _scuzbi="x".."y" local stnideb={} stnideb["x"]=1 local _vicjo=stnideb["x"] local _mcwdck=math.abs(-1) local _fjejb=tostring(0) for i=0x1,0x2 do end local _jpcjcc=0xFF local _jzgrsot=0xBD local _jakxnai=0x2A local _jfnljl=0x23 local _jeizav=0x3B local _jlzjfcyq=0xF6 local _jqanliux=0x99 local _jzqnh=0x48 local _jlrvbc=0x61 local _jkrmuypl=0x70 _jqanliux=_jqanliux+_jqanliux _jqanliux=_jqanliux*_jqanliux _jeizav=_jeizav+_jkrmuypl _jkrmuypl=_jkrmuypl*_jeizav _jlrvbc=_jlrvbc+_jeizav _jeizav=_jeizav*_jlrvbc _jlrvbc=_jlrvbc+_jakxnai _jakxnai=_jakxnai*_jlrvbc _jeizav=_jeizav+_jkrmuypl _jkrmuypl=_jkrmuypl*_jeizav for i=0x1,0x3 do local _=0x0; end local vxqgg={0x1,0x2,0x3} local _lopihi=#vxqgg vxqgg=nil local _tekyi=type(0) local _sucea="x".."y" local odfni={} odfni["x"]=1 local _vuhivi=odfni["x"] local _mnztsfmd=math.abs(-1) local _fxgdd=tostring(0) for i=0x1,0x2 do end 
+local player = game:GetService("Players").LocalPlayer
+local plrId = player.UserId
+local filename = "script_count_" .. plrId .. ".txt"
+local count = 0
+if pcall(function() return readfile(filename) end) then
+    local data = readfile(filename)
+    count = tonumber(data) or 0
+end
+count = count + 1
+pcall(function()
+    writefile(filename, tostring(count))
+end)
+
+local Player = player
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local Gui = Instance.new("ScreenGui")
+Gui.Parent = Player.PlayerGui
+Gui.IgnoreGuiInset = true
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.ResetOnSpawn = false
+
+local Image = Instance.new("ImageLabel")
+Image.Parent = Gui
+Image.Size = UDim2.new(1, 0, 1, 0)
+Image.Position = UDim2.new(0, 0, 0, 0)
+Image.BackgroundTransparency = 1
+Image.Image = "rbxassetid://113517588654522"
+Image.ScaleType = Enum.ScaleType.Stretch
+Image.ImageTransparency = 1
+Image.ZIndex = 99999
+
+task.wait(1)
+local show = TweenService:Create(Image, TweenInfo.new(0.5), {ImageTransparency = 0})
+show:Play()
+task.wait(0.5)
+task.wait(1)
+local hide = TweenService:Create(Image, TweenInfo.new(0.5), {ImageTransparency = 1})
+hide:Play()
+task.wait(0.5)
+Gui:Destroy()
+
+game:GetService("StarterGui"):SetCore("SendNotification",{
+    Title = "恐脚本--通用",
+    Text = "作者：恐拜大帝\nQQ：3999698324",
+    Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"
+})
+
+local espEnabled = false
+local function enableESP(player)
+    if player == LocalPlayer then return end
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    if not char:FindFirstChild("EspHighlight") then
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "EspHighlight"
+        highlight.Parent = char
+        highlight.FillTransparency = 1
+        highlight.OutlineColor = Color3.new(1, 0, 0)
+        highlight.OutlineTransparency = 0
+        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    end
+end
+local function disableESP(player)
+    local char = player.Character
+    if char and char:FindFirstChild("EspHighlight") then
+        char.EspHighlight:Destroy()
+    end
+end
+RunService.RenderStepped:Connect(function()
+    if not espEnabled then return end
+    for _, player in ipairs(Players:GetPlayers()) do
+        enableESP(player)
+    end
+end)
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(char)
+        char:WaitForChild("HumanoidRootPart")
+        if espEnabled then enableESP(player) end
+    end)
+end)
+Players.PlayerRemoving:Connect(function(player)
+    disableESP(player)
+end)
+
+local InfiniteJumpEnabled = false
+local NoclipEnabled = false
+local JumpHeight = 50
+local NightVisionEnabled = false
+local AntiPushEnabled = false
+local AutoTranslateEnabled = false
+local SmoothFollowEnabled = false
+local FollowNearestEnabled = false
+local AimbotEnabled = false
+local AimbotRadius = math.floor(Camera.ViewportSize.Y / 3)
+local LockViewEnabled = false
+local CrosshairEnabled = false
+local CrosshairSpinEnabled = false
+local translateLoop = nil
+local translatedTexts = {}
+local speedAntiPull = nil
+
+local AimbotCircle = Instance.new("Frame")
+AimbotCircle.Name = "AimbotCircle"
+AimbotCircle.Parent = CoreGui
+AimbotCircle.Size = UDim2.new(0, AimbotRadius*2, 0, AimbotRadius*2)
+AimbotCircle.Position = UDim2.new(0.5, -AimbotRadius, 0.5, -AimbotRadius)
+AimbotCircle.BackgroundTransparency = 1
+AimbotCircle.BorderSizePixel = 0
+AimbotCircle.ZIndex = 100
+local circleStroke = Instance.new("UIStroke")
+circleStroke.Color = Color3.new(1,1,1)
+circleStroke.Thickness = 2
+circleStroke.LineJoinMode = Enum.LineJoinMode.Round
+circleStroke.Parent = AimbotCircle
+local circleCorner = Instance.new("UICorner")
+circleCorner.CornerRadius = UDim.new(1,0)
+circleCorner.Parent = AimbotCircle
+
+local function getHumanoid()
+    local char = LocalPlayer.Character
+    if char then return char:FindFirstChild("Humanoid") end
+end
+
+UserInputService.JumpRequest:Connect(function()
+    if InfiniteJumpEnabled then
+        local char = LocalPlayer.Character
+        if char then
+            local HRP = char:FindFirstChild("HumanoidRootPart")
+            if HRP then
+                HRP.Velocity = Vector3.new(HRP.Velocity.X, JumpHeight, HRP.Velocity.Z)
+            end
+        end
+    end
+end)
+
+local noclipConnection
+local lastGroundY = 0
+local function startNoclip()
+    if noclipConnection then noclipConnection:Disconnect() end
+    noclipConnection = RunService.Stepped:Connect(function()
+        if not NoclipEnabled then return end
+        local char = LocalPlayer.Character
+        if not char then return end
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum and hum.FloorMaterial ~= Enum.Material.Air then
+            lastGroundY = root.Position.Y
+        end
+        root.CanCollide = false
+        for _, v in ipairs(char:GetDescendants()) do
+            if v:IsA("BasePart") and v.CanCollide then
+                v.CanCollide = false
+            end
+        end
+        if lastGroundY ~= 0 and root.Position.Y < lastGroundY - 5 then
+            root.CFrame = CFrame.new(root.CFrame.X, lastGroundY, root.CFrame.Z)
+            if hum then
+                hum:ChangeState(Enum.HumanoidStateType.Landed)
+            end
+        end
+    end)
+end
+local function stopNoclip()
+    if noclipConnection then
+        noclipConnection:Disconnect()
+        noclipConnection = nil
+    end
+    local char = LocalPlayer.Character
+    if char then
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if root then root.CanCollide = true end
+        for _, v in ipairs(char:GetDescendants()) do
+            if v:IsA("BasePart") and not v.CanCollide then
+                v.CanCollide = true
+            end
+        end
+    end
+end
+
+RunService.Stepped:Connect(function()
+    if AntiPushEnabled then
+        local char = LocalPlayer.Character
+        if char then
+            local root = char:FindFirstChild("HumanoidRootPart")
+            if root then
+                root.CanCollide = false
+            end
+        end
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    if not SmoothFollowEnabled then return end
+    local myChar = LocalPlayer.Character
+    if not myChar then return end
+    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return end
+    local nearest = nil
+    local minDist = math.huge
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local dist = (p.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude
+            if dist < minDist then minDist = dist; nearest = p end
+        end
+    end
+    if nearest then
+        local targetRoot = nearest.Character.HumanoidRootPart
+        local offset = targetRoot.CFrame.LookVector * -2.5
+        myRoot.CFrame = CFrame.new(targetRoot.Position + offset, targetRoot.Position)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if FollowNearestEnabled then
+            local nearest = nil
+            local minDist = math.huge
+            local myChar = LocalPlayer.Character
+            if myChar then
+                local myRoot = myChar:FindFirstChild("HumanoidRootPart")
+                if myRoot then
+                    for _, p in ipairs(Players:GetPlayers()) do
+                        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                            local dist = (p.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude
+                            if dist < minDist then minDist = dist; nearest = p end
+                        end
+                    end
+                    if nearest then
+                        myRoot.CFrame = nearest.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, 3)
+                    end
+                end
+            end
+        end
+        task.wait(0.1)
+    end
+end)
+
+RunService:BindToRenderStep("LockView", Enum.RenderPriority.Camera.Value + 1, function()
+    if not LockViewEnabled then return end
+    local char = LocalPlayer.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local camDir = Camera.CFrame.LookVector
+    local flatDir = Vector3.new(camDir.X, 0, camDir.Z)
+    if flatDir.Magnitude > 0.01 then
+        root.CFrame = CFrame.new(root.Position, root.Position + flatDir)
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not AimbotEnabled then
+        AimbotCircle.Visible = false
+        return
+    end
+    AimbotCircle.Visible = true
+    AimbotCircle.Size = UDim2.new(0, AimbotRadius*2, 0, AimbotRadius*2)
+    AimbotCircle.Position = UDim2.new(0.5, -AimbotRadius, 0.5, -AimbotRadius)
+
+    local camPos = Camera.CFrame.Position
+    local closestDist = math.huge
+    local closestPlayer = nil
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p == LocalPlayer then continue end
+        local char = p.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local targetPos = char.HumanoidRootPart.Position
+            local screenPos, onScreen = Camera:WorldToScreenPoint(targetPos)
+            if onScreen then
+                local distFromCenter = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+                if distFromCenter <= AimbotRadius then
+                    local realDist = (targetPos - camPos).Magnitude
+                    if realDist < closestDist then
+                        closestDist = realDist
+                        closestPlayer = p
+                    end
+                end
+            end
+        end
+    end
+    if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local targetPos = closestPlayer.Character.HumanoidRootPart.Position
+        local dir = (targetPos - camPos).Unit
+        Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(camPos, camPos + dir), 0.2)
+    end
+end)
+
+local CrosshairGui = Instance.new("ScreenGui")
+CrosshairGui.Name = "CrosshairGui"
+CrosshairGui.Parent = LocalPlayer.PlayerGui
+CrosshairGui.ResetOnSpawn = false
+CrosshairGui.IgnoreGuiInset = true
+
+local CrosshairFrame = Instance.new("Frame")
+CrosshairFrame.Name = "Crosshair"
+CrosshairFrame.Parent = CrosshairGui
+CrosshairFrame.Size = UDim2.new(0, 30, 0, 30)
+CrosshairFrame.Position = UDim2.new(0.5, -15, 0.5, -15)
+CrosshairFrame.BackgroundTransparency = 1
+CrosshairFrame.Visible = false
+
+local hLine = Instance.new("Frame")
+hLine.Parent = CrosshairFrame
+hLine.Size = UDim2.new(1, 0, 0, 2)
+hLine.Position = UDim2.new(0, 0, 0.5, -1)
+hLine.BackgroundColor3 = Color3.new(1,1,1)
+hLine.BorderSizePixel = 0
+
+local vLine = Instance.new("Frame")
+vLine.Parent = CrosshairFrame
+vLine.Size = UDim2.new(0, 2, 1, 0)
+vLine.Position = UDim2.new(0.5, -1, 0, 0)
+vLine.BackgroundColor3 = Color3.new(1,1,1)
+vLine.BorderSizePixel = 0
+
+local dot = Instance.new("Frame")
+dot.Parent = CrosshairFrame
+dot.Size = UDim2.new(0, 6, 0, 6)
+dot.Position = UDim2.new(0.5, -3, 0.5, -3)
+dot.BackgroundColor3 = Color3.new(1,1,1)
+dot.BorderSizePixel = 0
+local dotCorner = Instance.new("UICorner")
+dotCorner.CornerRadius = UDim.new(1,0)
+dotCorner.Parent = dot
+
+RunService.Heartbeat:Connect(function()
+    if CrosshairEnabled and CrosshairSpinEnabled then
+        CrosshairFrame.Rotation = (CrosshairFrame.Rotation + 1) % 360
+    elseif CrosshairEnabled and not CrosshairSpinEnabled then
+        CrosshairFrame.Rotation = 0
+    end
+    CrosshairFrame.Visible = CrosshairEnabled
+end)
+
+local isStealing = false
+local function stealAllItems()
+    if isStealing then return 0 end
+    isStealing = true
+    local count = 0
+    local myBackpack = LocalPlayer:FindFirstChild("Backpack")
+    if not myBackpack then
+        myBackpack = Instance.new("Backpack")
+        myBackpack.Parent = LocalPlayer
+    end
+    for _, targetPlayer in ipairs(Players:GetPlayers()) do
+        if targetPlayer == LocalPlayer or not targetPlayer.Character then continue end
+        local itemContainers = {
+            targetPlayer:FindFirstChild("Backpack"),
+            targetPlayer:FindFirstChild("Inventory"),
+            targetPlayer:FindFirstChild("Storage"),
+            targetPlayer:FindFirstChild("Bag"),
+            targetPlayer.Character:FindFirstChild("Backpack")
+        }
+        for _, container in ipairs(itemContainers) do
+            if not container then continue end
+            for _, item in ipairs(container:GetChildren()) do
+                if item:IsA("Tool") or item:IsA("Model") or item:IsA("Part") or item:IsA("Accessory") then
+                    local success = pcall(function() item.Parent = myBackpack end)
+                    if success then count = count + 1; task.wait(0.1) end
+                end
+            end
+        end
+    end
+    isStealing = false
+    return count
+end
+
+local function beautifyStats()
+    local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
+    if leaderstats then for _, stat in ipairs(leaderstats:GetChildren()) do if stat:IsA("IntValue") or stat:IsA("NumberValue") then stat.Value = 999 end end end
+    local stats = LocalPlayer:FindFirstChild("Stats") or LocalPlayer:FindFirstChild("stats")
+    if stats then for _, v in ipairs(stats:GetChildren()) do if v:IsA("IntValue") or v:IsA("NumberValue") then v.Value = 999 end end end
+end
+
+local function isEnglish(text)
+    if not text or text == "" then return false end
+    local englishCount = 0
+    local totalCount = 0
+    for char in text:gmatch(".") do
+        local byte = string.byte(char)
+        if byte then totalCount = totalCount + 1; if (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122) then englishCount = englishCount + 1 end end
+    end
+    if totalCount == 0 then return false end
+    return (englishCount / totalCount) > 0.5
+end
+
+local function translateText(text)
+    if not text or text == "" or #text < 2 then return nil end
+    if translatedTexts[text] then return translatedTexts[text] end
+    local success, result = pcall(function()
+        local url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=" .. HttpService:UrlEncode(text)
+        local response = game:HttpGet(url)
+        local decoded = HttpService:JSONDecode(response)
+        if decoded and decoded[1] and decoded[1][1] and decoded[1][1][1] then return decoded[1][1][1] end
+        return nil
+    end)
+    if success and result then translatedTexts[text] = result; return result end
+    return nil
+end
+
+local function processTextObject(obj)
+    if not AutoTranslateEnabled then return end
+    if not obj:IsA("TextLabel") and not obj:IsA("TextButton") and not obj:IsA("TextBox") then return end
+    local originalText = obj.Text
+    if not originalText or originalText == "" then return end
+    if not isEnglish(originalText) then return end
+    local translated = translateText(originalText)
+    if translated and translated ~= originalText then obj.Text = translated end
+end
+
+local function scanAndTranslate(container, maxCount)
+    local c = 0
+    for _, obj in ipairs(container:GetDescendants()) do
+        if c >= maxCount then break end
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+            if isEnglish(obj.Text) then processTextObject(obj); c = c + 1 end
+        end
+    end
+end
+
+local function startAutoTranslate()
+    if translateLoop then return end
+    translateLoop = true
+    task.spawn(function()
+        while translateLoop and AutoTranslateEnabled do
+            local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui")
+            if PlayerGui then scanAndTranslate(PlayerGui, 5) end
+            pcall(function() for _, gui in ipairs(CoreGui:GetChildren()) do if gui:IsA("ScreenGui") then scanAndTranslate(gui, 5) end end end)
+            task.wait(0.1)
+        end
+    end)
+end
+
+local function stopAutoTranslate() translateLoop = false end
+
+local function teleportToPlayer(p)
+    if p and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+        local myChar = LocalPlayer.Character
+        if myChar and myChar:FindFirstChild("HumanoidRootPart") then
+            myChar.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, 3)
+        end
+    end
+end
+
+local function showPlayerSelect()
+    local selectGui = Instance.new("ScreenGui")
+    selectGui.Name = "PlayerSelect"
+    selectGui.Parent = LocalPlayer.PlayerGui
+    selectGui.IgnoreGuiInset = true
+    selectGui.ResetOnSpawn = false
+    local bg = Instance.new("Frame")
+    bg.Parent = selectGui
+    bg.Size = UDim2.new(0, 200, 0, 250)
+    bg.Position = UDim2.new(0.5, -100, 0.5, -125)
+    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
+    local title = Instance.new("TextLabel")
+    title.Parent = bg
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.BackgroundTransparency = 1
+    title.Text = "选择玩家"
+    title.TextColor3 = Color3.new(1,1,1)
+    title.Font = Enum.Font.SourceSansBold
+    title.TextSize = 16
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Parent = bg
+    scrollFrame.Size = UDim2.new(1, -10, 1, -40)
+    scrollFrame.Position = UDim2.new(0, 5, 0, 35)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scrollFrame.ScrollBarThickness = 4
+    local playersList = Players:GetPlayers()
+    local y = 0
+    for _, p in ipairs(playersList) do
+        if p ~= LocalPlayer then
+            local btn = Instance.new("TextButton")
+            btn.Parent = scrollFrame
+            btn.Size = UDim2.new(1, -10, 0, 30)
+            btn.Position = UDim2.new(0, 5, 0, y)
+            btn.Text = p.Name
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            btn.TextColor3 = Color3.new(1,1,1)
+            btn.Font = Enum.Font.SourceSans
+            btn.TextSize = 14
+            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = btn
+            btn.MouseButton1Click:Connect(function() teleportToPlayer(p); selectGui:Destroy() end)
+            y = y + 35
+        end
+    end
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, y)
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Parent = bg
+    closeBtn.Size = UDim2.new(0, 30, 0, 20)
+    closeBtn.Position = UDim2.new(1, -35, 0, 5)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeBtn.Text = "X"
+    closeBtn.TextColor3 = Color3.new(1,1,1)
+    closeBtn.Font = Enum.Font.SourceSansBold
+    closeBtn.TextSize = 14
+    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+    closeBtn.MouseButton1Click:Connect(function() selectGui:Destroy() end)
+end
+
+local function startSpeedAntiPull(speed)
+    if speedAntiPull then speedAntiPull:Disconnect() end
+    speedAntiPull = RunService.Heartbeat:Connect(function()
+        local hum = getHumanoid()
+        if hum then if hum.WalkSpeed ~= speed then hum.WalkSpeed = speed end end
+    end)
+end
+
+local function stopSpeedAntiPull()
+    if speedAntiPull then speedAntiPull:Disconnect(); speedAntiPull = nil end
+end
+
+local UILibrary = {}
+do
+    local PlayerGui = LocalPlayer.PlayerGui
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "UniversalUI"
+    ScreenGui.Parent = PlayerGui
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.IgnoreGuiInset = true
+    ScreenGui.ResetOnSpawn = false
+
+    local Main = Instance.new("Frame")
+    Main.Name = "Main"
+    Main.Parent = ScreenGui
+    Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    Main.Position = UDim2.new(0.5, 0, 0.5, 10)
+    Main.Size = UDim2.new(0, 650, 0, 280)
+    Main.AnchorPoint = Vector2.new(0.5, 0.5)
+    Main.Visible = false
+    Main.ZIndex = 10
+    Main.ClipsDescendants = true
+    local UICorner = Instance.new("UICorner"); UICorner.CornerRadius = UDim.new(0, 10); UICorner.Parent = Main
+    local MainStroke = Instance.new("UIStroke"); MainStroke.Thickness = 2; MainStroke.Color = Color3.new(1, 0, 0); MainStroke.Parent = Main
+
+    local BeanBack = Instance.new("Frame")
+    BeanBack.Name = "BeanBackground"
+    BeanBack.Parent = Main
+    BeanBack.BackgroundTransparency = 1
+    BeanBack.Size = UDim2.new(1, 0, 1, 0)
+    BeanBack.ZIndex = 1
+
+    local Line = Instance.new("Frame")
+    Line.Parent = Main
+    Line.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    Line.Position = UDim2.new(0.3, 0, 0, 40)
+    Line.Size = UDim2.new(0, 2, 1, -40)
+    Line.ZIndex = 11
+
+    local CategoryArea = Instance.new("Frame")
+    CategoryArea.Name = "CategoryArea"
+    CategoryArea.Parent = Main
+    CategoryArea.BackgroundTransparency = 1
+    CategoryArea.Size = UDim2.new(0.3, -10, 1, -40)
+    CategoryArea.Position = UDim2.new(0, 10, 0, 40)
+    CategoryArea.ZIndex = 20
+
+    local ContentArea = Instance.new("Frame")
+    ContentArea.Name = "ContentArea"
+    ContentArea.Parent = Main
+    ContentArea.BackgroundTransparency = 1
+    ContentArea.Size = UDim2.new(0.7, -12, 1, -40)
+    ContentArea.Position = UDim2.new(0.3, 12, 0, 40)
+    ContentArea.ZIndex = 20
+    ContentArea.ClipsDescendants = true
+
+    local ScrollingFrame = Instance.new("ScrollingFrame")
+    ScrollingFrame.Parent = ContentArea
+    ScrollingFrame.BackgroundTransparency = 1
+    ScrollingFrame.Size = UDim2.new(1,0,1,0)
+    ScrollingFrame.CanvasSize = UDim2.new(0,0,5,0)
+    ScrollingFrame.ScrollBarThickness = 6
+    ScrollingFrame.BorderSizePixel = 0
+    ScrollingFrame.ZIndex = 20
+
+    local categories = {}
+    local pages = {}
+    local selected = nil
+    local catNames = { "通知", "主要", "次要", "杂项", "支持服务器" }
+
+    local speedPanel = nil
+    local coordPanel = nil
+    local aimbotPanel = nil
+
+    local function copyToClipboard(text, label)
+        local success = pcall(function()
+            if setclipboard then setclipboard(text)
+            elseif game:GetService("ClipboardService") then game:GetService("ClipboardService"):SetClipboard(text)
+            else error("无法访问剪贴板") end
+        end)
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = label or "提示",
+            Text = success and ("✅ 已复制: " .. text) or ("❌ 复制失败，请手动复制：" .. text),
+            Duration = 3,
+        })
+    end
+
+    local function createSpeedPanel()
+        if speedPanel then return speedPanel end
+        speedPanel = Instance.new("Frame")
+        speedPanel.Name = "SpeedPanel"
+        speedPanel.Parent = Main
+        speedPanel.Size = UDim2.new(0, 250, 0, 160)
+        speedPanel.Position = UDim2.new(0.5, -125, 0.5, -80)
+        speedPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        speedPanel.BackgroundTransparency = 0.2
+        speedPanel.Visible = false
+        speedPanel.ZIndex = 200  
+        local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = speedPanel
+        local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = speedPanel
+
+        local title = Instance.new("TextLabel")
+        title.Parent = speedPanel
+        title.Size = UDim2.new(1, 0, 0, 25)
+        title.Position = UDim2.new(0, 10, 0, 8)
+        title.BackgroundTransparency = 1
+        title.Text = "修改移速"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.Font = Enum.Font.SourceSansBold
+        title.TextSize = 16
+
+        local slider = Instance.new("Frame")
+        slider.Parent = speedPanel
+        slider.Size = UDim2.new(1, -40, 0, 30)
+        slider.Position = UDim2.new(0, 20, 0, 45)
+        slider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        local sliderCorner = Instance.new("UICorner"); sliderCorner.CornerRadius = UDim.new(0, 6); sliderCorner.Parent = slider
+
+        local fill = Instance.new("Frame")
+        fill.Parent = slider
+        fill.Size = UDim2.new(0, 0, 1, 0)
+        fill.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        fill.BorderSizePixel = 0
+        local fillCorner = Instance.new("UICorner"); fillCorner.CornerRadius = UDim.new(0, 6); fillCorner.Parent = fill
+
+        local knob = Instance.new("TextButton")
+        knob.Parent = slider
+        knob.Size = UDim2.new(0, 20, 0, 20)
+        knob.Position = UDim2.new(0, -10, 0.5, -10)
+        knob.Text = ""
+        knob.BackgroundColor3 = Color3.new(1, 1, 1)
+        knob.AutoButtonColor = false
+        local knobCorner = Instance.new("UICorner"); knobCorner.CornerRadius = UDim.new(1, 0); knobCorner.Parent = knob
+
+        local sliderValue = 16
+        local minSpeed, maxSpeed = 5, 1000
+
+        local inputBox = Instance.new("TextBox")
+        inputBox.Parent = speedPanel
+        inputBox.Size = UDim2.new(0, 80, 0, 28)
+        inputBox.Position = UDim2.new(0, 20, 0, 85)
+        inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        inputBox.Text = tostring(sliderValue)
+        inputBox.TextColor3 = Color3.new(1, 1, 1)
+        inputBox.Font = Enum.Font.SourceSans
+        inputBox.TextSize = 16
+        inputBox.PlaceholderText = "速度"
+        local inputCorner = Instance.new("UICorner"); inputCorner.CornerRadius = UDim.new(0, 6); inputCorner.Parent = inputBox
+
+        local function updateSliderDisplay(val)
+            local percent = (val - minSpeed) / (maxSpeed - minSpeed)
+            fill.Size = UDim2.new(percent, 0, 1, 0)
+            knob.Position = UDim2.new(percent, -10, 0.5, -10)
+        end
+
+        local function setSpeed(val)
+            val = math.clamp(math.floor(val), minSpeed, maxSpeed)
+            sliderValue = val
+            inputBox.Text = tostring(val)
+            updateSliderDisplay(val)
+            local hum = getHumanoid()
+            if hum then hum.WalkSpeed = val end
+            startSpeedAntiPull(val)
+        end
+
+        local confirmBtn = Instance.new("TextButton")
+        confirmBtn.Parent = speedPanel
+        confirmBtn.Size = UDim2.new(0, 80, 0, 28)
+        confirmBtn.Position = UDim2.new(0, 110, 0, 85)
+        confirmBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+        confirmBtn.Text = "确认"
+        confirmBtn.TextColor3 = Color3.new(1, 1, 1)
+        confirmBtn.Font = Enum.Font.SourceSansBold
+        confirmBtn.TextSize = 14
+        local confirmCorner = Instance.new("UICorner"); confirmCorner.CornerRadius = UDim.new(0, 6); confirmCorner.Parent = confirmBtn
+        confirmBtn.MouseButton1Click:Connect(function()
+            local num = tonumber(inputBox.Text)
+            if num then setSpeed(num) end
+        end)
+
+        local resetBtn = Instance.new("TextButton")
+        resetBtn.Parent = speedPanel
+        resetBtn.Size = UDim2.new(0, 80, 0, 28)
+        resetBtn.Position = UDim2.new(0, 200, 0, 85)
+        resetBtn.BackgroundColor3 = Color3.fromRGB(180, 80, 0)
+        resetBtn.Text = "重置默认"
+        resetBtn.TextColor3 = Color3.new(1, 1, 1)
+        resetBtn.Font = Enum.Font.SourceSansBold
+        resetBtn.TextSize = 14
+        local resetCorner = Instance.new("UICorner"); resetCorner.CornerRadius = UDim.new(0, 6); resetCorner.Parent = resetBtn
+        resetBtn.MouseButton1Click:Connect(function() setSpeed(16) end)
+
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Parent = speedPanel
+        closeBtn.Size = UDim2.new(0, 22, 0, 22)
+        closeBtn.Position = UDim2.new(1, -26, 0, 6)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeBtn.Text = "X"
+        closeBtn.TextSize = 12
+        closeBtn.Font = Enum.Font.SourceSansBold
+        local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+        closeBtn.MouseButton1Click:Connect(function() speedPanel.Visible = false end)
+
+        local dragging = false
+        knob.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local mousePos = UserInputService:GetMouseLocation()
+                local sliderAbs = slider.AbsolutePosition
+                local sliderSize = slider.AbsoluteSize
+                local relativeX = math.clamp(mousePos.X - sliderAbs.X, 0, sliderSize.X)
+                local percent = relativeX / sliderSize.X
+                local newVal = math.floor(minSpeed + (maxSpeed - minSpeed) * percent)
+                setSpeed(newVal)
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+        end)
+        inputBox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then local num = tonumber(inputBox.Text); if num then setSpeed(num) end end
+        end)
+        updateSliderDisplay(16)
+        return speedPanel
+    end
+
+    local function createCoordPanel()
+        if coordPanel then return coordPanel end
+        coordPanel = Instance.new("Frame")
+        coordPanel.Name = "CoordPanel"
+        coordPanel.Parent = Main
+        coordPanel.Size = UDim2.new(0, 280, 0, 140)
+        coordPanel.Position = UDim2.new(0.5, -140, 0.5, -70)
+        coordPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        coordPanel.BackgroundTransparency = 0.2
+        coordPanel.Visible = false
+        coordPanel.ZIndex = 200
+        local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = coordPanel
+        local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = coordPanel
+
+        local title = Instance.new("TextLabel")
+        title.Parent = coordPanel
+        title.Size = UDim2.new(1, 0, 0, 25)
+        title.Position = UDim2.new(0, 10, 0, 8)
+        title.BackgroundTransparency = 1
+        title.Text = "实时坐标"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.Font = Enum.Font.SourceSansBold
+        title.TextSize = 16
+
+        local coordLabel = Instance.new("TextLabel")
+        coordLabel.Name = "CoordText"
+        coordLabel.Parent = coordPanel
+        coordLabel.Size = UDim2.new(1, -20, 0, 30)
+        coordLabel.Position = UDim2.new(0, 10, 0, 40)
+        coordLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        coordLabel.Text = "X: 0, Y: 0, Z: 0"
+        coordLabel.TextColor3 = Color3.new(1, 1, 1)
+        coordLabel.Font = Enum.Font.SourceSans
+        coordLabel.TextSize = 14
+        local coordCorner = Instance.new("UICorner"); coordCorner.CornerRadius = UDim.new(0, 6); coordCorner.Parent = coordLabel
+
+        local inputBox = Instance.new("TextBox")
+        inputBox.Parent = coordPanel
+        inputBox.Size = UDim2.new(1, -20, 0, 28)
+        inputBox.Position = UDim2.new(0, 10, 0, 80)
+        inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        inputBox.PlaceholderText = "X Y Z 或 X,Y,Z"
+        inputBox.TextColor3 = Color3.new(1, 1, 1)
+        inputBox.Font = Enum.Font.SourceSans
+        inputBox.TextSize = 14
+        local inputCorner = Instance.new("UICorner"); inputCorner.CornerRadius = UDim.new(0, 6); inputCorner.Parent = inputBox
+
+        local teleportBtn = Instance.new("TextButton")
+        teleportBtn.Parent = coordPanel
+        teleportBtn.Size = UDim2.new(0, 70, 0, 28)
+        teleportBtn.Position = UDim2.new(0, 10, 0, 115)
+        teleportBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+        teleportBtn.Text = "传送"
+        teleportBtn.TextColor3 = Color3.new(1, 1, 1)
+        teleportBtn.Font = Enum.Font.SourceSansBold
+        teleportBtn.TextSize = 14
+        local teleportCorner = Instance.new("UICorner"); teleportCorner.CornerRadius = UDim.new(0, 6); teleportCorner.Parent = teleportBtn
+
+        local copyBtn = Instance.new("TextButton")
+        copyBtn.Parent = coordPanel
+        copyBtn.Size = UDim2.new(0, 80, 0, 28)
+        copyBtn.Position = UDim2.new(0, 90, 0, 115)
+        copyBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        copyBtn.Text = "复制坐标"
+        copyBtn.TextColor3 = Color3.new(1, 1, 1)
+        copyBtn.Font = Enum.Font.SourceSansBold
+        copyBtn.TextSize = 14
+        local copyCorner = Instance.new("UICorner"); copyCorner.CornerRadius = UDim.new(0, 6); copyCorner.Parent = copyBtn
+
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Parent = coordPanel
+        closeBtn.Size = UDim2.new(0, 22, 0, 22)
+        closeBtn.Position = UDim2.new(1, -26, 0, 6)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeBtn.Text = "X"
+        closeBtn.TextSize = 12
+        closeBtn.Font = Enum.Font.SourceSansBold
+        local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+        closeBtn.MouseButton1Click:Connect(function() coordPanel.Visible = false end)
+
+        local function parseCoords(str)
+            local parts = str:split(",")
+            if #parts >= 3 then local x, y, z = tonumber(parts[1]), tonumber(parts[2]), tonumber(parts[3]); if x and y and z then return x, y, z end end
+            parts = str:split(" ")
+            if #parts >= 3 then local x, y, z = tonumber(parts[1]), tonumber(parts[2]), tonumber(parts[3]); if x and y and z then return x, y, z end end
+            return nil
+        end
+
+        teleportBtn.MouseButton1Click:Connect(function()
+            local input = inputBox.Text
+            if input == "" or input:match("^%s*$") then
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "传送失败", Text = "请输入坐标", Duration = 3 })
+                return
+            end
+            local x, y, z = parseCoords(input)
+            if not x or not y or not z then
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "传送失败", Text = "坐标格式错误", Duration = 3 })
+                return
+            end
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "传送成功", Text = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3 })
+            else
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "传送失败", Text = "角色未加载", Duration = 3 })
+            end
+        end)
+
+        local function updateCoordDisplay()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local pos = char.HumanoidRootPart.Position
+                coordLabel.Text = string.format("X: %.1f, Y: %.1f, Z: %.1f", pos.X, pos.Y, pos.Z)
+            end
+        end
+
+        copyBtn.MouseButton1Click:Connect(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local pos = char.HumanoidRootPart.Position
+                local coordText = string.format("%.1f,%.1f,%.1f", pos.X, pos.Y, pos.Z)
+                copyToClipboard(coordText, "坐标")
+            end
+        end)
+
+        local heartbeatConnection
+        coordPanel:GetPropertyChangedSignal("Visible"):Connect(function()
+            if coordPanel.Visible then
+                updateCoordDisplay()
+                if not heartbeatConnection then
+                    heartbeatConnection = RunService.Heartbeat:Connect(function()
+                        if coordPanel.Visible then updateCoordDisplay() end
+                    end)
+                end
+            else
+                if heartbeatConnection then heartbeatConnection:Disconnect(); heartbeatConnection = nil end
+            end
+        end)
+
+        return coordPanel
+    end
+
+    local function createAimbotPanel()
+        if aimbotPanel then return aimbotPanel end
+        aimbotPanel = Instance.new("Frame")
+        aimbotPanel.Name = "AimbotPanel"
+        aimbotPanel.Parent = Main
+        aimbotPanel.Size = UDim2.new(0, 250, 0, 160)
+        aimbotPanel.Position = UDim2.new(0.5, -125, 0.5, -80)
+        aimbotPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        aimbotPanel.BackgroundTransparency = 0.2
+        aimbotPanel.Visible = false
+        aimbotPanel.ZIndex = 200
+        local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = aimbotPanel
+        local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = aimbotPanel
+
+        local title = Instance.new("TextLabel")
+        title.Parent = aimbotPanel
+        title.Size = UDim2.new(1, 0, 0, 25)
+        title.Position = UDim2.new(0, 10, 0, 8)
+        title.BackgroundTransparency = 1
+        title.Text = "自瞄半径"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.Font = Enum.Font.SourceSansBold
+        title.TextSize = 16
+
+        local slider = Instance.new("Frame")
+        slider.Parent = aimbotPanel
+        slider.Size = UDim2.new(1, -40, 0, 30)
+        slider.Position = UDim2.new(0, 20, 0, 45)
+        slider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        local sliderCorner = Instance.new("UICorner"); sliderCorner.CornerRadius = UDim.new(0, 6); sliderCorner.Parent = slider
+
+        local fill = Instance.new("Frame")
+        fill.Parent = slider
+        fill.Size = UDim2.new(0, 0, 1, 0)
+        fill.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        fill.BorderSizePixel = 0
+        local fillCorner = Instance.new("UICorner"); fillCorner.CornerRadius = UDim.new(0, 6); fillCorner.Parent = fill
+
+        local knob = Instance.new("TextButton")
+        knob.Parent = slider
+        knob.Size = UDim2.new(0, 20, 0, 20)
+        knob.Position = UDim2.new(0, -10, 0.5, -10)
+        knob.Text = ""
+        knob.BackgroundColor3 = Color3.new(1, 1, 1)
+        knob.AutoButtonColor = false
+        local knobCorner = Instance.new("UICorner"); knobCorner.CornerRadius = UDim.new(1, 0); knobCorner.Parent = knob
+
+        local minRadius = 50
+        local maxRadius = math.floor(Camera.ViewportSize.Y * 0.8)
+        local defaultRadius = math.floor(Camera.ViewportSize.Y / 3)
+        local currentRadius = defaultRadius
+
+        local function updateSliderDisplay(val)
+            local percent = (val - minRadius) / (maxRadius - minRadius)
+            fill.Size = UDim2.new(percent, 0, 1, 0)
+            knob.Position = UDim2.new(percent, -10, 0.5, -10)
+        end
+
+        local function setRadius(val)
+            val = math.clamp(math.floor(val), minRadius, maxRadius)
+            currentRadius = val
+            if AimbotEnabled then AimbotRadius = val end
+            updateSliderDisplay(val)
+        end
+
+        local confirmBtn = Instance.new("TextButton")
+        confirmBtn.Parent = aimbotPanel
+        confirmBtn.Size = UDim2.new(0, 80, 0, 28)
+        confirmBtn.Position = UDim2.new(0, 110, 0, 85)
+        confirmBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+        confirmBtn.Text = "确定"
+        confirmBtn.TextColor3 = Color3.new(1, 1, 1)
+        confirmBtn.Font = Enum.Font.SourceSansBold
+        confirmBtn.TextSize = 14
+        local confirmCorner = Instance.new("UICorner"); confirmCorner.CornerRadius = UDim.new(0, 6); confirmCorner.Parent = confirmBtn
+        confirmBtn.MouseButton1Click:Connect(function()
+            AimbotRadius = currentRadius
+            aimbotPanel.Visible = false
+        end)
+
+        local resetBtn = Instance.new("TextButton")
+        resetBtn.Parent = aimbotPanel
+        resetBtn.Size = UDim2.new(0, 80, 0, 28)
+        resetBtn.Position = UDim2.new(0, 200, 0, 85)
+        resetBtn.BackgroundColor3 = Color3.fromRGB(180, 80, 0)
+        resetBtn.Text = "恢复默认"
+        resetBtn.TextColor3 = Color3.new(1, 1, 1)
+        resetBtn.Font = Enum.Font.SourceSansBold
+        resetBtn.TextSize = 14
+        local resetCorner = Instance.new("UICorner"); resetCorner.CornerRadius = UDim.new(0, 6); resetCorner.Parent = resetBtn
+        resetBtn.MouseButton1Click:Connect(function()
+            setRadius(defaultRadius)
+            AimbotRadius = defaultRadius
+            aimbotPanel.Visible = false
+        end)
+
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Parent = aimbotPanel
+        closeBtn.Size = UDim2.new(0, 22, 0, 22)
+        closeBtn.Position = UDim2.new(1, -26, 0, 6)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeBtn.Text = "X"
+        closeBtn.TextSize = 12
+        closeBtn.Font = Enum.Font.SourceSansBold
+        local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+        closeBtn.MouseButton1Click:Connect(function() aimbotPanel.Visible = false end)
+
+        local dragging = false
+        knob.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local mousePos = UserInputService:GetMouseLocation()
+                local sliderAbs = slider.AbsolutePosition
+                local sliderSize = slider.AbsoluteSize
+                local relativeX = math.clamp(mousePos.X - sliderAbs.X, 0, sliderSize.X)
+                local percent = relativeX / sliderSize.X
+                local newVal = math.floor(minRadius + (maxRadius - minRadius) * percent)
+                setRadius(newVal)
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+        end)
+
+        updateSliderDisplay(defaultRadius)
+        return aimbotPanel
+    end
+
+    local function AddCat(i)
+        local cat = Instance.new("TextButton")
+        cat.Name = "Cat"..i
+        cat.Parent = CategoryArea
+        cat.BackgroundTransparency = 0.8
+        cat.BackgroundColor3 = Color3.fromRGB(25,25,25)
+        cat.Size = UDim2.new(1,0,0,35)
+        cat.Position = UDim2.new(0,0,0,(i-1)*40)
+        cat.Text = catNames[i]
+        cat.TextColor3 = Color3.new(1,1,1)
+        cat.TextSize = 14
+        cat.AutoButtonColor = false
+        cat.ZIndex = 21
+
+        local page = Instance.new("Frame")
+        page.Name = "Page"..i
+        page.Parent = ScrollingFrame
+        page.BackgroundTransparency = 1
+        page.Size = UDim2.new(1,0,1,0)
+        page.Visible = false
+        page.ZIndex = 20
+
+        if i == 1 then
+            local info = Instance.new("TextLabel")
+            info.Parent = page
+            info.Size = UDim2.new(1, -20, 0, 60)
+            info.Position = UDim2.new(0, 10, 0, 10)
+            info.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            info.Text = "通用脚本\n创作者：恐拜大帝"
+            info.TextColor3 = Color3.new(1, 1, 1)
+            info.TextWrapped = true
+            info.Font = Enum.Font.SourceSans
+            info.TextSize = 16
+            info.TextXAlignment = Enum.TextXAlignment.Center
+            info.TextYAlignment = Enum.TextYAlignment.Center
+            local infoCorner = Instance.new("UICorner"); infoCorner.CornerRadius = UDim.new(0, 6); infoCorner.Parent = info
+
+            local startY = info.Position.Y.Offset + info.Size.Y.Offset + 15
+            local blackColor = Color3.fromRGB(35, 35, 35)
+
+            local function createCopyButton(parent, groupLabel, code, posX, posY)
+                local label = Instance.new("TextLabel")
+                label.Parent = parent
+                label.Size = UDim2.new(0, 40, 0, 18)
+                label.Position = UDim2.new(0, posX, 0, posY - 20)
+                label.BackgroundTransparency = 1
+                label.Text = groupLabel
+                label.TextColor3 = Color3.fromRGB(200, 200, 200)
+                label.TextSize = 13
+                label.Font = Enum.Font.SourceSansBold
+                label.TextXAlignment = Enum.TextXAlignment.Left
+
+                local btn = Instance.new("TextButton")
+                btn.Parent = parent
+                btn.Size = UDim2.new(0, 150, 0, 30)
+                btn.Position = UDim2.new(0, posX, 0, posY)
+                btn.BackgroundColor3 = blackColor
+                btn.Text = code
+                btn.TextColor3 = Color3.new(1, 1, 1)
+                btn.TextSize = 16
+                btn.Font = Enum.Font.SourceSansBold
+                btn.AutoButtonColor = false
+                local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = btn
+
+                local hint = Instance.new("TextLabel")
+                hint.Parent = parent
+                hint.Size = UDim2.new(0, 70, 0, 30)
+                hint.Position = UDim2.new(0, posX + 160, 0, posY)
+                hint.BackgroundTransparency = 1
+                hint.Text = "点击复制"
+                hint.TextColor3 = Color3.fromRGB(200, 200, 200)
+                hint.TextSize = 14
+                hint.Font = Enum.Font.SourceSans
+                hint.TextXAlignment = Enum.TextXAlignment.Left
+
+                btn.MouseButton1Click:Connect(function() copyToClipboard(code, groupLabel) end)
+                return btn
+            end
+
+            createCopyButton(page, "QQ群", "1106203175", 10, startY)
+            createCopyButton(page, "QQ", "3999698324", 10, startY + 45)
+
+        elseif i == 2 then
+            local function addSemiTransparentButton(page, txt, posX, posY, callback)
+                local btn = Instance.new("TextButton")
+                btn.Parent = page
+                btn.BackgroundColor3 = Color3.new(0, 0, 0)
+                btn.BackgroundTransparency = 0.5
+                btn.Size = UDim2.new(0.48, 0, 0, 40)
+                btn.Position = UDim2.new(0, posX, 0, posY)
+                btn.Text = txt
+                btn.TextColor3 = Color3.new(1, 1, 1)
+                btn.TextSize = 14
+                btn.AutoButtonColor = false
+                btn.ZIndex = 21
+                local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 6); corner.Parent = btn
+                if callback then btn.MouseButton1Click:Connect(callback) end
+                return btn
+            end
+
+            local posX1, posX2 = 4, page.AbsoluteSize.X * 0.52
+            local rowHeight = 45
+
+            local espBtn = addSemiTransparentButton(page, "透视：关", posX1, 4)
+            local infiniteJumpBtn = addSemiTransparentButton(page, "无限跳：关", posX1, 4 + rowHeight)
+            local noclipBtn = addSemiTransparentButton(page, "穿墙：关", posX1, 4 + 2*rowHeight)
+            local nightVisionBtn = addSemiTransparentButton(page, "夜视：关", posX1, 4 + 3*rowHeight)
+
+            addSemiTransparentButton(page, "飞行", posX2, 4, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "飞行脚本", Text = "正在加载中...", Duration = 5 })
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/fly.lua"))() end)
+            end)
+            addSemiTransparentButton(page, "建造方块", posX2, 4 + rowHeight, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "建造方块", Text = "正在加载中...", Duration = 5 })
+                task.spawn(function() loadstring(game:HttpGet("https://pastebin.com/raw/Zt4kkQG9"))() end)
+            end)
+            addSemiTransparentButton(page, "修改移速", posX2, 4 + 2*rowHeight, function()
+                local panel = createSpeedPanel()
+                panel.Visible = not panel.Visible
+            end)
+            addSemiTransparentButton(page, "偷取道具", posX2, 4 + 3*rowHeight, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "偷取道具", Text = "正在偷取道具中...", Duration = 5 })
+                task.spawn(function()
+                    local cnt = stealAllItems()
+                    game:GetService("StarterGui"):SetCore("SendNotification", { Title = "偷取完成", Text = "共偷取 " .. tostring(cnt) .. " 个道具", Duration = 3 })
+                end)
+            end)
+
+            espBtn.MouseButton1Click:Connect(function()
+                espEnabled = not espEnabled
+                espBtn.Text = espEnabled and "透视：开" or "透视：关"
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "透视", Text = espEnabled and "已打开" or "已关闭", Duration = 3 })
+                if espEnabled then for _, p in ipairs(Players:GetPlayers()) do enableESP(p) end else for _, p in ipairs(Players:GetPlayers()) do disableESP(p) end end
+            end)
+
+            infiniteJumpBtn.MouseButton1Click:Connect(function()
+                InfiniteJumpEnabled = not InfiniteJumpEnabled
+                infiniteJumpBtn.Text = InfiniteJumpEnabled and "无限跳：开" or "无限跳：关"
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "无限跳", Text = InfiniteJumpEnabled and "已开启" or "已关闭", Duration = 3 })
+            end)
+
+            noclipBtn.MouseButton1Click:Connect(function()
+                NoclipEnabled = not NoclipEnabled
+                noclipBtn.Text = NoclipEnabled and "穿墙：开" or "穿墙：关"
+                if NoclipEnabled then startNoclip() else stopNoclip() end
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "穿墙", Text = NoclipEnabled and "已开启" or "已关闭", Duration = 3 })
+            end)
+
+            nightVisionBtn.MouseButton1Click:Connect(function()
+                NightVisionEnabled = not NightVisionEnabled
+                nightVisionBtn.Text = NightVisionEnabled and "夜视：开" or "夜视：关"
+                local Lighting = game:GetService("Lighting")
+                if NightVisionEnabled then
+                    Lighting.Ambient = Color3.new(1, 1, 1); Lighting.ColorShift_Bottom = Color3.new(1, 1, 1); Lighting.ColorShift_Top = Color3.new(1, 1, 1)
+                    Lighting.FogEnd = 100000; Lighting.FogStart = 100000; Lighting.Brightness = 1; Lighting.GlobalShadows = false; Lighting.OutdoorAmbient = Color3.new(1, 1, 1); Lighting.ClockTime = 12
+                else
+                    Lighting.Ambient = Color3.new(0, 0, 0); Lighting.ColorShift_Bottom = Color3.new(0, 0, 0); Lighting.ColorShift_Top = Color3.new(0, 0, 0)
+                    Lighting.FogEnd = 1000; Lighting.FogStart = 0; Lighting.Brightness = 1; Lighting.GlobalShadows = true; Lighting.OutdoorAmbient = Color3.new(0.7, 0.7, 0.7)
+                end
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "夜视", Text = NightVisionEnabled and "已开启" or "已关闭", Duration = 3 })
+            end)
+
+        elseif i == 3 then
+            local function addSemiTransparentButton(page, txt, posX, posY, callback)
+                local btn = Instance.new("TextButton")
+                btn.Parent = page
+                btn.BackgroundColor3 = Color3.new(0, 0, 0)
+                btn.BackgroundTransparency = 0.5
+                btn.Size = UDim2.new(0.48, 0, 0, 40)
+                btn.Position = UDim2.new(0, posX, 0, posY)
+                btn.Text = txt
+                btn.TextColor3 = Color3.new(1, 1, 1)
+                btn.TextSize = 14
+                btn.AutoButtonColor = false
+                btn.ZIndex = 21
+                local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 6); corner.Parent = btn
+                if callback then btn.MouseButton1Click:Connect(callback) end
+                return btn
+            end
+
+            local posX1, posX2 = 4, page.AbsoluteSize.X * 0.52
+            local rowHeight = 45
+
+            local autoTranslateBtn = addSemiTransparentButton(page, "自动翻译：关", posX1, 4)
+            local antiPushBtn = addSemiTransparentButton(page, "防甩飞：关", posX1, 4 + rowHeight)
+            local coordBtn = addSemiTransparentButton(page, "查询坐标传送", posX1, 4 + 2*rowHeight)
+
+            local aimbotBtn = addSemiTransparentButton(page, "自瞄：关", posX1, 4 + 3*rowHeight)
+            aimbotBtn.MouseButton1Click:Connect(function()
+                AimbotEnabled = not AimbotEnabled
+                aimbotBtn.Text = AimbotEnabled and "自瞄：开" or "自瞄：关"
+                if AimbotEnabled then
+                    local panel = createAimbotPanel()
+                    panel.Visible = true
+                else
+                    AimbotCircle.Visible = false
+                    if aimbotPanel then aimbotPanel.Visible = false end
+                end
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "自瞄",
+                    Text = AimbotEnabled and "已开启，请在面板中调整半径" or "已关闭",
+                    Duration = 3,
+                })
+            end)
+
+            local lockViewBtn = addSemiTransparentButton(page, "锁定视角：关", posX1, 4 + 4*rowHeight)
+            lockViewBtn.MouseButton1Click:Connect(function()
+                LockViewEnabled = not LockViewEnabled
+                lockViewBtn.Text = LockViewEnabled and "锁定视角：开" or "锁定视角：关"
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "锁定视角", Text = LockViewEnabled and "已开启" or "已关闭", Duration = 3 })
+            end)
+
+            local teleportNearestBtn = addSemiTransparentButton(page, "传送最近玩家", posX2, 4)
+            local followNearestBtn = addSemiTransparentButton(page, "跟随最近玩家：关", posX2, 4 + rowHeight)
+            local teleportPlayerBtn = addSemiTransparentButton(page, "传送到指定玩家", posX2, 4 + 2*rowHeight)
+            local smoothFollowBtn = addSemiTransparentButton(page, "平滑跟随：关", posX2, 4 + 3*rowHeight)
+
+            followNearestBtn.MouseButton1Click:Connect(function()
+                FollowNearestEnabled = not FollowNearestEnabled
+                followNearestBtn.Text = FollowNearestEnabled and "跟随最近玩家：开" or "跟随最近玩家：关"
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "跟随最近玩家", Text = FollowNearestEnabled and "已开启" or "已关闭", Duration = 3 })
+            end)
+            smoothFollowBtn.MouseButton1Click:Connect(function()
+                SmoothFollowEnabled = not SmoothFollowEnabled
+                smoothFollowBtn.Text = SmoothFollowEnabled and "平滑跟随：开" or "平滑跟随：关"
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "平滑跟随", Text = SmoothFollowEnabled and "已开启" or "已关闭", Duration = 3 })
+            end)
+
+            autoTranslateBtn.MouseButton1Click:Connect(function()
+                AutoTranslateEnabled = not AutoTranslateEnabled
+                autoTranslateBtn.Text = AutoTranslateEnabled and "自动翻译：开" or "自动翻译：关"
+                if AutoTranslateEnabled then startAutoTranslate() else stopAutoTranslate() end
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "自动翻译", Text = AutoTranslateEnabled and "已开启" or "已关闭", Duration = 3 })
+            end)
+
+            antiPushBtn.MouseButton1Click:Connect(function()
+                AntiPushEnabled = not AntiPushEnabled
+                antiPushBtn.Text = AntiPushEnabled and "防甩飞：开" or "防甩飞：关"
+                if not AntiPushEnabled then
+                    local char = LocalPlayer.Character
+                    if char then local root = char:FindFirstChild("HumanoidRootPart"); if root then root.CanCollide = true end end
+                end
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "防甩飞", Text = AntiPushEnabled and "已开启" or "已关闭", Duration = 3 })
+            end)
+
+            coordBtn.MouseButton1Click:Connect(function()
+                local panel = createCoordPanel()
+                panel.Visible = not panel.Visible
+            end)
+
+            teleportNearestBtn.MouseButton1Click:Connect(function()
+                local nearest = nil
+                local minDist = math.huge
+                local myPos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position
+                if not myPos then return end
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
+                        if dist < minDist then minDist = dist; nearest = p end
+                    end
+                end
+                if nearest and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = nearest.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, 3)
+                end
+            end)
+
+            teleportPlayerBtn.MouseButton1Click:Connect(function() showPlayerSelect() end)
+
+        elseif i == 4 then
+            local function addSemiTransparentButton(page, txt, posX, posY, callback)
+                local btn = Instance.new("TextButton")
+                btn.Parent = page
+                btn.BackgroundColor3 = Color3.new(0, 0, 0)
+                btn.BackgroundTransparency = 0.5
+                btn.Size = UDim2.new(0.48, 0, 0, 40)
+                btn.Position = UDim2.new(0, posX, 0, posY)
+                btn.Text = txt
+                btn.TextColor3 = Color3.new(1, 1, 1)
+                btn.TextSize = 14
+                btn.AutoButtonColor = false
+                btn.ZIndex = 21
+                local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 6); corner.Parent = btn
+                if callback then btn.MouseButton1Click:Connect(callback) end
+                return btn
+            end
+
+            addSemiTransparentButton(page, "显示时间", 4, 4, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "显示时间", Text = "正在加载中...", Duration = 5 })
+                task.spawn(function() loadstring(game:HttpGet("https://pastebin.com/raw/0zKLyd4W"))() end)
+            end)
+            addSemiTransparentButton(page, "美化包排行榜第一", page.AbsoluteSize.X * 0.52, 4, function()
+                beautifyStats()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "美化包", Text = "数值已修改为999（若游戏支持）", Duration = 3 })
+            end)
+
+            local crosshairBtn = addSemiTransparentButton(page, "准星：关", 4, 4 + 45)
+            crosshairBtn.MouseButton1Click:Connect(function()
+                CrosshairEnabled = not CrosshairEnabled
+                crosshairBtn.Text = CrosshairEnabled and "准星：开" or "准星：关"
+                CrosshairFrame.Visible = CrosshairEnabled
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "准星", Text = CrosshairEnabled and "已显示" or "已隐藏", Duration = 3 })
+            end)
+            local crosshairSpinBtn = addSemiTransparentButton(page, "准星旋转：关", page.AbsoluteSize.X * 0.52, 4 + 45)
+            crosshairSpinBtn.MouseButton1Click:Connect(function()
+                CrosshairSpinEnabled = not CrosshairSpinEnabled
+                crosshairSpinBtn.Text = CrosshairSpinEnabled and "准星旋转：开" or "准星旋转：关"
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "准星旋转", Text = CrosshairSpinEnabled and "已开启" or "已关闭", Duration = 3 })
+            end)
+
+        elseif i == 5 then
+            local function addSemiTransparentButton(page, txt, posX, posY, callback)
+                local btn = Instance.new("TextButton")
+                btn.Parent = page
+                btn.BackgroundColor3 = Color3.new(0, 0, 0)
+                btn.BackgroundTransparency = 0.5
+                btn.Size = UDim2.new(0.48, 0, 0, 40)
+                btn.Position = UDim2.new(0, posX, 0, posY)
+                btn.Text = txt
+                btn.TextColor3 = Color3.new(1, 1, 1)
+                btn.TextSize = 14
+                btn.AutoButtonColor = false
+                btn.ZIndex = 21
+                local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 6); corner.Parent = btn
+                if callback then btn.MouseButton1Click:Connect(callback) end
+                return btn
+            end
+
+            local posX1, posX2 = 4, page.AbsoluteSize.X * 0.52
+            local rowHeight = 45
+
+            addSemiTransparentButton(page, "破坏者谜团2", posX1, 4, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "破坏者谜团2", Text = "正在加载中...", Duration = 5 })
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/PHZMT.NB"))() end)
+            end)
+            addSemiTransparentButton(page, "吃吃世界", posX2, 4, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "吃吃世界", Text = "正在加载中...", Duration = 5 })
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/CCSJ.NB"))() end)
+            end)
+            addSemiTransparentButton(page, "在超市生活一周", posX1, 4 + rowHeight, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "在超市生活一周", Text = "正在加载中...", Duration = 5 })
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCSSHYZ.NB"))() end)
+            end)
+            addSemiTransparentButton(page, "亡命速递", posX2, 4 + rowHeight, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "亡命速递", Text = "正在加载中...", Duration = 5 })
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/WMSD.NB"))() end)
+            end)
+            addSemiTransparentButton(page, "巨剑骑士", posX1, 4 + 2*rowHeight, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "巨剑骑士", Text = "正在加载中...", Duration = 5 })
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/JJQS.NB"))() end)
+            end)
+            addSemiTransparentButton(page, "doors", posX2, 4 + 2*rowHeight, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "doors", Text = "正在加载中...", Duration = 5 })
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/DOORS.NB"))() end)
+            end)
+            addSemiTransparentButton(page, "盲射", posX1, 4 + 3*rowHeight, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "盲射", Text = "正在加载中...", Duration = 5 })
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MS.NB"))() end)
+            end)
+            addSemiTransparentButton(page, "找到按钮", posX2, 4 + 3*rowHeight, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "找到按钮", Text = "正在加载中...", Duration = 5 })
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZDNN.NB"))() end)
+            end)
+        end
+
+        cat.MouseButton1Click:Connect(function()
+            if selected then
+                selected.BackgroundTransparency = 0.8; selected.BackgroundColor3 = Color3.fromRGB(25,25,25)
+            end
+            cat.BackgroundTransparency = 0.5; cat.BackgroundColor3 = Color3.fromRGB(70,70,70)
+            selected = cat
+            for _,p in pairs(pages) do p.Visible = false end
+            if speedPanel then speedPanel.Visible = false end
+            if coordPanel then coordPanel.Visible = false end
+            if aimbotPanel then aimbotPanel.Visible = false end
+            page.Visible = true
+        end)
+        categories[i] = cat; pages[i] = page
+    end
+
+    for i = 1, 5 do AddCat(i) end
+
+    task.defer(function() if categories[1] then categories[1]:MouseButton1Click() end end)
+
+    local TopBar = Instance.new("Frame")
+    TopBar.Name = "TopBar"
+    TopBar.Parent = Main
+    TopBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TopBar.Size = UDim2.new(1, 0, 0, 40)
+    TopBar.ZIndex = 15
+    local TopUICorner = Instance.new("UICorner"); TopUICorner.CornerRadius = UDim.new(0, 10); TopUICorner.Parent = TopBar
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Parent = TopBar
+    Title.BackgroundTransparency = 1
+    Title.Size = UDim2.new(1, -100, 1, 0)
+    Title.Position = UDim2.new(0, 10, 0, 0)
+    Title.Font = Enum.Font.ArialBold
+    Title.Text = "恐脚本--通用" .. string.rep(" ", 6) .. "您已执行 " .. count .. " 次，谢谢您的支持！"
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 18
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.ZIndex = 16
+
+    local MinimizeBtn = Instance.new("TextButton")
+    MinimizeBtn.Parent = TopBar
+    MinimizeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    MinimizeBtn.Size = UDim2.new(0, 36, 0, 32)
+    MinimizeBtn.Position = UDim2.new(1, -86, 0, 4)
+    MinimizeBtn.Font = Enum.Font.ArialBold
+    MinimizeBtn.Text = "—"
+    MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MinimizeBtn.TextSize = 20
+    MinimizeBtn.ZIndex = 17
+    local MinCorner = Instance.new("UICorner"); MinCorner.CornerRadius = UDim.new(0, 6); MinCorner.Parent = MinimizeBtn
+
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Parent = TopBar
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    CloseBtn.Size = UDim2.new(0, 36, 0, 32)
+    CloseBtn.Position = UDim2.new(1, -46, 0, 4)
+    CloseBtn.Font = Enum.Font.ArialBold
+    CloseBtn.Text = "X"
+    CloseBtn.TextColor3 = Color3.new(1,1,1)
+    CloseBtn.TextSize = 20
+    CloseBtn.ZIndex = 17
+    local CloseCorner = Instance.new("UICorner"); CloseCorner.CornerRadius = UDim.new(0, 6); CloseCorner.Parent = CloseBtn
+
+    local ToggleBtn = Instance.new("TextButton")
+    ToggleBtn.Parent = ScreenGui
+    ToggleBtn.BackgroundColor3 = Color3.new(0, 0, 0)
+    ToggleBtn.BackgroundTransparency = 0.5
+    ToggleBtn.Position = UDim2.new(0.8, 0, 0.3, 0)
+    ToggleBtn.Size = UDim2.new(0, 140, 0, 50)
+    ToggleBtn.Font = Enum.Font.ArialBold
+    ToggleBtn.Text = "打开菜单"
+    ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleBtn.TextSize = 20
+    ToggleBtn.ZIndex = 100
+    local ToggleCorner = Instance.new("UICorner"); ToggleCorner.CornerRadius = UDim.new(0, 8); ToggleCorner.Parent = ToggleBtn
+
+    local dragging, dragInput, dragStartPos, btnStartPos = false, nil, nil, nil
+    ToggleBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if not dragging and not dragInput then dragging = true; dragInput = input; dragStartPos = input.Position; btnStartPos = ToggleBtn.Position end
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input == dragInput then
+            local delta = input.Position - dragStartPos
+            ToggleBtn.Position = UDim2.new(btnStartPos.X.Scale, btnStartPos.X.Offset + delta.X, btnStartPos.Y.Scale, btnStartPos.Y.Offset + delta.Y)
+        end
+    end)
+    ToggleBtn.InputEnded:Connect(function(input) if input == dragInput then dragging = false; dragInput = nil end end)
+    ToggleBtn.MouseButton1Click:Connect(function()
+        Main.Visible = not Main.Visible
+        ToggleBtn.Text = Main.Visible and "关闭菜单" or "打开菜单"
+    end)
+    MinimizeBtn.MouseButton1Click:Connect(function() Main.Visible = false; ToggleBtn.Text = "打开菜单" end)
+    CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+
+    local beans = {"🤓", "😎", "🥳"}
+    local weight = {1, 1, 5}
+    local function GetRandomBean()
+        local total = 0; for _,v in pairs(weight) do total += v end
+        local r = math.random(1, total); local curr = 0
+        for i = 1, #weight do curr += weight[i]; if r <= curr then return beans[i] end end
+        return "🥳"
+    end
+    local function SpawnBean()
+        if #BeanBack:GetChildren() > 25 then return end
+        local label = Instance.new("TextLabel")
+        label.Parent = BeanBack; label.BackgroundTransparency = 1
+        label.Size = UDim2.new(0, 22, 0, 22); label.Text = GetRandomBean(); label.TextSize = 18; label.Font = Enum.Font.Unknown; label.ZIndex = 1
+        local x = math.random(0, Main.AbsoluteSize.X - 22)
+        label.Position = UDim2.new(0, x, 0, -22)
+        local speed = math.random(30, 50); local drift = math.random(-15, 15); local alpha = 0
+        local conn; conn = RunService.Heartbeat:Connect(function(dt)
+            if not label or not label.Parent then conn:Disconnect() return end
+            if not Main.Visible then return end
+            alpha += dt; local newY = alpha * speed - 22
+            if newY > Main.AbsoluteSize.Y then conn:Disconnect(); label:Destroy() return end
+            label.Position = UDim2.new(0, x + math.sin(alpha * 1.2) * drift, 0, newY)
+        end)
+    end
+    task.spawn(function()
+        while task.wait(math.random(150, 300)/1000) do
+            if ScreenGui and ScreenGui.Parent then SpawnBean() else break end
+        end
+    end)
+end
