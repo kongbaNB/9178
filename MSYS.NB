@@ -1,0 +1,751 @@
+local repo = 'https://raw.githubusercontent.com/KingScriptAE/No-sirve-nada./refs/heads/main/'
+
+local function safeLoad(url)
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet(url))()
+    end)
+    if not success then
+        warn("加载失败: " .. url)
+        return nil
+    end
+    return result
+end
+
+local Library = safeLoad(repo .. 'Library.lua')
+local ThemeManager = safeLoad(repo .. 'addons/ThemeManager.lua')
+local SaveManager = safeLoad(repo .. 'addons/SaveManager.lua')
+
+if not Library then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "错误",
+        Text = "UI 库加载失败，请检查网络或脚本资源",
+        Duration = 5,
+    })
+    return
+end
+
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Window = Library:CreateWindow({
+    Title = "墨水游戏脚本",
+    Footer = "By 恐拜大帝",
+    Icon = 131153193945220,
+    NotifySide = "Right",
+    ShowCustomCursor = true,
+})
+
+local Tabs = {
+    Main = Window:AddTab("主要", "info"),
+    ESP = Window:AddTab("透视", "eye"),
+    Misc = Window:AddTab("杂项", "list"),
+    Settings = Window:AddTab("设置", "settings"),
+}
+
+local function smoothTeleport(targetPos)
+    local char = LocalPlayer.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local startPos = root.Position
+    local distance = (targetPos - startPos).Magnitude
+    if distance < 1 then
+        root.CFrame = CFrame.new(targetPos)
+        return
+    end
+    local duration = math.clamp(distance / 200, 0.3, 1.5)
+    local startTime = tick()
+    while tick() - startTime < duration do
+        local progress = (tick() - startTime) / duration
+        local eased = 1 - (1 - progress) * (1 - progress)
+        pcall(function()
+            root.CFrame = CFrame.new(startPos:Lerp(targetPos, eased))
+        end)
+        task.wait()
+    end
+    root.CFrame = CFrame.new(targetPos)
+end
+
+local function fireWoodEvents()
+    task.wait(0.5)
+    pcall(function()
+        ReplicatedStorage.Remotes.TemporaryReachedBindable:FireServer(nil, {})
+    end)
+    pcall(function()
+        ReplicatedStorage.Remotes.Miau:FireServer({
+            "C[Y@W\\\\RW\\B\\PW_\2\5",
+            "CYTOVA\\RPJBQ^U_\6\3",
+            "CTXLW]YPOE@]WU]\7\n",
+            "D^T@TV\\SWAZPWW\\\t\0",
+            "G^QHVZ[TOKFXRQZ\t\5",
+            "D^T@TV\\SWAZPWW\\\t\0"
+        })
+    end)
+end
+
+local WoodGroup = Tabs.Main:AddLeftGroupbox("木头人")
+
+WoodGroup:AddButton({
+    Text = '木头人传送到终点',
+    Func = function()
+        smoothTeleport(Vector3.new(-37.0, 1023.1, 158.9))
+        fireWoodEvents()
+    end,
+})
+
+WoodGroup:AddButton({
+    Text = '传送到终点后面墙壁',
+    Func = function()
+        smoothTeleport(Vector3.new(114.6, 1023.1, 168.0))
+        fireWoodEvents()
+    end,
+})
+
+local godModeEnabled = false
+WoodGroup:AddToggle('GodMode', {
+    Text = '防子弹打死防受伤',
+    Default = false,
+    Callback = function(Value)
+        godModeEnabled = Value
+    end
+})
+
+local removeBulletsEnabled = false
+WoodGroup:AddToggle('RemoveBullets', {
+    Text = '移除子弹（仅视觉 不卡）',
+    Default = false,
+    Callback = function(Value)
+        removeBulletsEnabled = Value
+    end
+})
+
+task.spawn(function()
+    while true do
+        if removeBulletsEnabled then
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    local name = v.Name:lower()
+                    if name:find("bullet") or name:find("projectile") or name:find("ammo") then
+                        v.Transparency = 1
+                        v.CanCollide = false
+                    end
+                end
+            end
+        end
+        task.wait(0.3)
+    end
+end)
+
+local CandyGroup = Tabs.Main:AddLeftGroupbox("抠糖饼")
+
+local candyPatterns = {
+    ["Pig"] = {
+        "B^XLQ]]VQBZZPT^\2\n\7",
+        "I_UM[A\\SQFA_PUW\0\5",
+        "B_UIPY\\[XGZPPW^\3\4\0",
+        "HXSJWXZQSGZQVQY\2\7",
+        "DYQITXYRXEZPSU\\\t\n",
+        "DXVK[]^[VJZ\\TVY\7\5"
+    },
+}
+
+local keywordMap = {
+    Pig = {"pig","porco","cerdo","cochon","schwein","maiale","piggy","piglet","豚","돼지","ブタ","свинья"},
+    Star = {"star","estrella","estrela","étoile","stern","stella","звезда","별","星","ster"},
+    Umbrella = {"umbrella","paraguas","guarda-chuva","parapluie","regenschirm","ombrello","зонтик","傘","우산","ombrel","parasol"}
+}
+
+local function scanGUI(gui, pattern)
+    if gui:IsA("TextLabel") then
+        local text = gui.Text:lower()
+        for _, kw in ipairs(keywordMap[pattern]) do
+            if text:find(kw, 1, true) then return true end
+        end
+    elseif gui:IsA("ImageLabel") then
+        local img = gui.Image:lower()
+        for _, kw in ipairs(keywordMap[pattern]) do
+            if img:find(kw, 1, true) then return true end
+        end
+    end
+    for _, child in ipairs(gui:GetChildren()) do
+        if scanGUI(child, pattern) then return true end
+    end
+    return false
+end
+
+local function detectPattern()
+    local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+    if playerGui then
+        for name, _ in pairs(keywordMap) do
+            if scanGUI(playerGui, name) then return name end
+        end
+    end
+    local coreGui = game:GetService("CoreGui")
+    if coreGui then
+        for name, _ in pairs(keywordMap) do
+            if scanGUI(coreGui, name) then return name end
+        end
+    end
+    return nil
+end
+
+CandyGroup:AddButton({
+    Text = '一键抠糖饼（等动画后）',
+    Func = function()
+        task.wait(3)
+        local pattern = detectPattern() or "Pig"
+        if not candyPatterns[pattern] then
+            Library:Notify("图案 " .. pattern .. " 密文未添加，请抓包", 5)
+            return
+        end
+        local miauData = candyPatterns[pattern]
+        pcall(function() ReplicatedStorage.Remotes.RandomOtherRemotes:FireServer(nil, {}) end)
+        task.wait(0.05)
+        pcall(function() ReplicatedStorage.Remotes.JoeGurtEvent:FireServer({}) end)
+        task.wait(0.05)
+        pcall(function() ReplicatedStorage.Replication.Event:FireServer("Clicked") end)
+        task.wait(0.05)
+        pcall(function() ReplicatedStorage.Remotes.Miau:FireServer(miauData) end)
+        task.wait(0.1)
+        pcall(function() ReplicatedStorage.Remotes.DALGONATEMPREMTE:FireServer({Completed = true}) end)
+        pcall(function()
+            local kill = ReplicatedStorage.Remotes:FindFirstChild("KillRemote")
+            if kill then kill:FireServer({}) end
+        end)
+    end,
+})
+
+local unbreakableRunning = false
+CandyGroup:AddButton({
+    Text = '糖饼不破',
+    Func = function()
+        unbreakableRunning = not unbreakableRunning
+        if unbreakableRunning then
+            Library:Notify("糖饼不破已开启", 3)
+            task.spawn(function()
+                while unbreakableRunning do
+                    pcall(function()
+                        ReplicatedStorage.Remotes.DALGONATEMPREMTE:FireServer({
+                            CrackAmount = 0,
+                            FullyCracked = false,
+                            ShapeName = detectPattern() or "Pig"
+                        })
+                    end)
+                    task.wait(0.3)
+                end
+            end)
+        else
+            Library:Notify("糖饼不破已关闭", 3)
+        end
+    end,
+})
+
+CandyGroup:AddButton({
+    Text = '死亡（点一下就死，不要随便点）',
+    Func = function()
+        pcall(function()
+            local kill = ReplicatedStorage.Remotes:FindFirstChild("KillRemote")
+            if kill then kill:InvokeServer({}) end
+        end)
+    end,
+})
+
+local DarkGroup = Tabs.Main:AddLeftGroupbox("熄灯")
+DarkGroup:AddButton({
+    Text = '传送到安全点',
+    Func = function()
+        smoothTeleport(Vector3.new(334.5, 50.8, -20.9))
+    end,
+})
+
+local TaskGroup = Tabs.Misc:AddLeftGroupbox("做任务")
+
+TaskGroup:AddButton({
+    Text = '一秒拍照（过完木头人休息阶段用）',
+    Func = function()
+        smoothTeleport(Vector3.new(-206.6, 187.3, 332.9))
+    end,
+})
+
+local holdJumpEnabled = false
+local autoJump5Enabled = false
+local autoJump1Enabled = false
+local autoJumpConnection = nil
+
+local function updateAutoJump()
+    if autoJumpConnection then
+        autoJumpConnection:Disconnect()
+        autoJumpConnection = nil
+    end
+
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+
+    if autoJump5Enabled or autoJump1Enabled then
+        local power = autoJump5Enabled and 5 or 1
+        hum.JumpPower = power
+        hum:ChangeState(Enum.HumanoidStateType.Jumping)
+
+        autoJumpConnection = hum.StateChanged:Connect(function(oldState, newState)
+            if newState == Enum.HumanoidStateType.Landed or newState == Enum.HumanoidStateType.Running then
+                local currentChar = LocalPlayer.Character
+                local currentHum = currentChar and currentChar:FindFirstChildOfClass("Humanoid")
+                if currentHum and currentHum.Health > 0 then
+                    if autoJump5Enabled then
+                        currentHum.JumpPower = 5
+                        currentHum:ChangeState(Enum.HumanoidStateType.Jumping)
+                    elseif autoJump1Enabled then
+                        currentHum.JumpPower = 1
+                        currentHum:ChangeState(Enum.HumanoidStateType.Jumping)
+                    end
+                end
+            end
+        end)
+    else
+        hum.JumpPower = 50
+    end
+end
+
+TaskGroup:AddToggle('HoldJump', {
+    Text = '按住连跳(5)',
+    Default = false,
+    Callback = function(Value)
+        holdJumpEnabled = Value
+        if Value then
+            task.spawn(function()
+                while holdJumpEnabled do
+                    local char = LocalPlayer.Character
+                    local hum = char and char:FindFirstChildOfClass("Humanoid")
+                    if hum and hum.Health > 0 then
+                        hum.JumpPower = 5
+                        hum:ChangeState(Enum.HumanoidStateType.Jumping)
+                    end
+                    task.wait()
+                end
+            end)
+        end
+    end
+})
+
+TaskGroup:AddToggle('AutoJump5', {
+    Text = '自动跳(5)',
+    Default = false,
+    Callback = function(Value)
+        autoJump5Enabled = Value
+        updateAutoJump()
+    end
+})
+
+TaskGroup:AddToggle('AutoJump1', {
+    Text = '高度1自动跳',
+    Default = false,
+    Callback = function(Value)
+        autoJump1Enabled = Value
+        updateAutoJump()
+    end
+})
+
+LocalPlayer.CharacterAdded:Connect(function()
+    holdJumpEnabled = false
+    updateAutoJump()
+end)
+
+local MoveGroup = Tabs.Misc:AddLeftGroupbox("移动")
+
+local ghostStepEnabled = false
+local normalSprintEnabled = false
+
+MoveGroup:AddToggle('GhostStep', {
+    Text = '解锁幽灵步（会死）',
+    Default = false,
+    Callback = function(Value)
+        ghostStepEnabled = Value
+        if Value then
+            task.spawn(function()
+                while ghostStepEnabled do
+                    pcall(function()
+                        ReplicatedStorage.Remotes.RandomOtherRemotes:FireServer(nil, {})
+                        ReplicatedStorage.Remotes.DashRequest:FireServer()
+                    end)
+                    task.wait(0.08)
+                end
+            end)
+        end
+    end
+})
+
+MoveGroup:AddToggle('NormalSprint', {
+    Text = '加快移速',
+    Default = false,
+    Callback = function(Value)
+        normalSprintEnabled = Value
+    end
+})
+
+RunService.Stepped:Connect(function()
+    local char = LocalPlayer.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            if ghostStepEnabled then
+                hum.WalkSpeed = 150
+            elseif normalSprintEnabled then
+                hum.WalkSpeed = 50
+            else
+                hum.WalkSpeed = 16
+            end
+        end
+    end
+end)
+
+local SafetyGroup = Tabs.Misc:AddLeftGroupbox("安全")
+
+local safe1Enabled = true
+local safe2Enabled = true
+
+SafetyGroup:AddToggle('Safe1', {
+    Text = '安全1（别关）',
+    Default = true,
+    Callback = function(Value)
+        safe1Enabled = Value
+    end
+})
+
+SafetyGroup:AddToggle('Safe2', {
+    Text = '安全2（别关）',
+    Default = true,
+    Callback = function(Value)
+        safe2Enabled = Value
+    end
+})
+
+task.spawn(function()
+    while true do
+        if safe1Enabled then
+            pcall(function()
+                ReplicatedStorage.Replication.Event:FireServer("Clicked")
+                ReplicatedStorage.Remotes.JoeGurtEvent:FireServer({})
+            end)
+        end
+        task.wait(2)
+    end
+end)
+
+local ESPGroup = Tabs.ESP:AddLeftGroupbox("透视选项")
+
+local playerESPEnabled = false
+local playerESPColor = Color3.fromRGB(255, 255, 255)
+local healthESPEnabled = false
+local healthESPColor = Color3.fromRGB(0, 255, 0)
+local distanceESPEnabled = false
+local distanceESPColor = Color3.fromRGB(255, 255, 0)
+
+local playerHighlights = {}
+local playerHealthGUIs = {}
+local playerDistanceGUIs = {}
+
+local function clearESP(player)
+    if playerHighlights[player] then
+        playerHighlights[player]:Destroy()
+        playerHighlights[player] = nil
+    end
+    if playerHealthGUIs[player] then
+        playerHealthGUIs[player].bill:Destroy()
+        playerHealthGUIs[player] = nil
+    end
+    if playerDistanceGUIs[player] then
+        playerDistanceGUIs[player].bill:Destroy()
+        playerDistanceGUIs[player] = nil
+    end
+end
+
+local function clearAllESP()
+    for player, _ in pairs(playerHighlights) do
+        clearESP(player)
+    end
+    for player, _ in pairs(playerHealthGUIs) do
+        clearESP(player)
+    end
+    for player, _ in pairs(playerDistanceGUIs) do
+        clearESP(player)
+    end
+end
+
+local function createBillboardGui(parent)
+    local bill = Instance.new("BillboardGui")
+    bill.Size = UDim2.new(0, 200, 0, 50)
+    bill.AlwaysOnTop = true
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.TextStrokeTransparency = 0
+    label.TextScaled = true
+    label.Parent = bill
+    bill.Parent = parent
+    return bill, label
+end
+
+local function setupCharacterESP(player, character)
+    clearESP(player)
+    local head = character:FindFirstChild("Head")
+    if not head then return end
+
+    local highlight = Instance.new("Highlight")
+    highlight.FillTransparency = 1
+    highlight.OutlineTransparency = 0
+    highlight.OutlineColor = playerESPColor
+    highlight.Adornee = character
+    highlight.Parent = character
+    highlight.Enabled = playerESPEnabled
+    playerHighlights[player] = highlight
+
+    local healthBill, healthLabel = createBillboardGui(head)
+    healthBill.StudsOffset = Vector3.new(0, 4, 0)
+    healthLabel.TextColor3 = healthESPColor
+    healthBill.Enabled = healthESPEnabled
+    playerHealthGUIs[player] = { bill = healthBill, label = healthLabel }
+
+    local distBill, distLabel = createBillboardGui(head)
+    distBill.StudsOffset = Vector3.new(0, 2.5, 0)
+    distLabel.TextColor3 = distanceESPColor
+    distBill.Enabled = distanceESPEnabled
+    playerDistanceGUIs[player] = { bill = distBill, label = distLabel }
+
+    character.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            clearESP(player)
+        end
+    end)
+end
+
+local function updateAllHighlights()
+    for player, hl in pairs(playerHighlights) do
+        if hl and hl.Parent then
+            hl.Enabled = playerESPEnabled
+            hl.OutlineColor = playerESPColor
+        end
+    end
+end
+
+local function updateAllHealthGUIs()
+    for player, data in pairs(playerHealthGUIs) do
+        if data and data.bill and data.bill.Parent then
+            data.bill.Enabled = healthESPEnabled
+            data.label.TextColor3 = healthESPColor
+        end
+    end
+end
+
+local function updateAllDistanceGUIs()
+    for player, data in pairs(playerDistanceGUIs) do
+        if data and data.bill and data.bill.Parent then
+            data.bill.Enabled = distanceESPEnabled
+            data.label.TextColor3 = distanceESPColor
+        end
+    end
+end
+
+local function updateHealthTexts()
+    if not healthESPEnabled then return end
+    for player, data in pairs(playerHealthGUIs) do
+        local char = player.Character
+        if char and data and data.bill and data.bill.Parent then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                data.label.Text = tostring(math.floor(hum.Health))
+            else
+                data.label.Text = "?"
+            end
+        end
+    end
+end
+
+local function updateDistanceTexts()
+    if not distanceESPEnabled then return end
+    local localChar = LocalPlayer.Character
+    if not localChar then return end
+    local localRoot = localChar:FindFirstChild("HumanoidRootPart")
+    if not localRoot then return end
+    for player, data in pairs(playerDistanceGUIs) do
+        local char = player.Character
+        if char and data and data.bill and data.bill.Parent then
+            local root = char:FindFirstChild("HumanoidRootPart")
+            if root then
+                local dist = (localRoot.Position - root.Position).Magnitude
+                data.label.Text = string.format("%.1fm", dist)
+            else
+                data.label.Text = "?m"
+            end
+        end
+    end
+end
+
+local function onCharacterAdded(player, character)
+    setupCharacterESP(player, character)
+end
+
+local function onPlayerAdded(player)
+    if player == LocalPlayer then return end
+    if player.Character then
+        onCharacterAdded(player, player.Character)
+    end
+    player.CharacterAdded:Connect(function(char)
+        onCharacterAdded(player, char)
+    end)
+end
+
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        onPlayerAdded(player)
+    end
+end
+Players.PlayerAdded:Connect(onPlayerAdded)
+
+local playerESP = ESPGroup:AddToggle('PlayerESP', {
+    Text = '人物透视',
+    Default = false,
+    Callback = function(Value)
+        playerESPEnabled = Value
+        updateAllHighlights()
+    end
+})
+
+if playerESP and playerESP.AddColorPicker then
+    playerESP:AddColorPicker('PlayerESPColor', {
+        Default = Color3.fromRGB(255, 255, 255),
+        Title = '人物透视颜色',
+        Callback = function(Value)
+            playerESPColor = Value
+            if playerESPEnabled then
+                updateAllHighlights()
+            end
+        end
+    })
+else
+    ESPGroup:AddColorPicker('PlayerESPColor', {
+        Default = Color3.fromRGB(255, 255, 255),
+        Title = '人物透视颜色',
+        Callback = function(Value)
+            playerESPColor = Value
+            if playerESPEnabled then
+                updateAllHighlights()
+            end
+        end
+    })
+end
+
+local healthESP = ESPGroup:AddToggle('HealthESP', {
+    Text = '血量透视',
+    Default = false,
+    Callback = function(Value)
+        healthESPEnabled = Value
+        updateAllHealthGUIs()
+    end
+})
+
+if healthESP and healthESP.AddColorPicker then
+    healthESP:AddColorPicker('HealthESPColor', {
+        Default = Color3.fromRGB(0, 255, 0),
+        Title = '血量透视颜色',
+        Callback = function(Value)
+            healthESPColor = Value
+            if healthESPEnabled then
+                updateAllHealthGUIs()
+            end
+        end
+    })
+else
+    ESPGroup:AddColorPicker('HealthESPColor', {
+        Default = Color3.fromRGB(0, 255, 0),
+        Title = '血量透视颜色',
+        Callback = function(Value)
+            healthESPColor = Value
+            if healthESPEnabled then
+                updateAllHealthGUIs()
+            end
+        end
+    })
+end
+
+local distanceESP = ESPGroup:AddToggle('DistanceESP', {
+    Text = '距离透视',
+    Default = false,
+    Callback = function(Value)
+        distanceESPEnabled = Value
+        updateAllDistanceGUIs()
+    end
+})
+
+if distanceESP and distanceESP.AddColorPicker then
+    distanceESP:AddColorPicker('DistanceESPColor', {
+        Default = Color3.fromRGB(255, 255, 0),
+        Title = '距离透视颜色',
+        Callback = function(Value)
+            distanceESPColor = Value
+            if distanceESPEnabled then
+                updateAllDistanceGUIs()
+            end
+        end
+    })
+else
+    ESPGroup:AddColorPicker('DistanceESPColor', {
+        Default = Color3.fromRGB(255, 255, 0),
+        Title = '距离透视颜色',
+        Callback = function(Value)
+            distanceESPColor = Value
+            if distanceESPEnabled then
+                updateAllDistanceGUIs()
+            end
+        end
+    })
+end
+
+RunService.Heartbeat:Connect(function()
+    updateHealthTexts()
+    updateDistanceTexts()
+    if godModeEnabled then
+        local char = LocalPlayer.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health < hum.MaxHealth then
+                hum.Health = hum.MaxHealth
+            end
+        end
+    end
+end)
+
+local MenuGroup = Tabs.Settings:AddLeftGroupbox('菜单')
+
+MenuGroup:AddButton('卸载脚本', function()
+    clearAllESP()
+    Library:Unload()
+end)
+
+MenuGroup:AddButton('重载界面', function()
+    loadstring(game:HttpGet("https://pastebin.com/raw/你的脚本地址"))()
+end)
+
+MenuGroup:AddLabel('菜单快捷键'):AddKeyPicker('MenuKeybind', {
+    Default = 'RightShift',
+    NoUI = true,
+    Text = 'Menu keybind'
+})
+
+Library.ToggleKeybind = Library.Options.MenuKeybind
+
+if ThemeManager then
+    ThemeManager:SetLibrary(Library)
+    ThemeManager:SetFolder("墨水游戏脚本_主题")
+    ThemeManager:ApplyToTab(Tabs.Settings)
+end
+
+if SaveManager then
+    SaveManager:SetLibrary(Library)
+    SaveManager:IgnoreThemeSettings()
+    SaveManager:SetFolder("墨水游戏脚本_配置")
+    SaveManager:BuildConfigSection(Tabs.Settings)
+end
