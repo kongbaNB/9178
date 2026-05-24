@@ -159,36 +159,6 @@ local TabsUI = {
     Settings = Window:AddTab("界面设置", "settings"),
 }
 
-local Maid = {}
-Maid.__index = Maid
-
-function Maid.new()
-    return setmetatable({Tasks = {}}, Maid)
-end
-
-function Maid:Add(task)
-    if typeof(task) == "RBXScriptConnection" or (typeof(task) == "Instance" and task.Destroy) or typeof(task) == "function" then
-        table.insert(self.Tasks, task)
-    end
-    return task
-end
-
-function Maid:Clean()
-    for _, task in ipairs(self.Tasks) do
-        pcall(function()
-            if typeof(task) == "RBXScriptConnection" then
-                task:Disconnect()
-            elseif typeof(task) == "Instance" then
-                task:Destroy()
-            elseif typeof(task) == "function" then
-                task()
-            end
-        end)
-    end
-    table.clear(self.Tasks)
-    self.Tasks = {}
-end
-
 local lplr = Players.LocalPlayer
 local localPlayer = lplr
 local camera = workspace.CurrentCamera
@@ -196,19 +166,6 @@ local camera = workspace.CurrentCamera
 local Script = {
     GameStateChanged = Instance.new("BindableEvent"),
     GameState = "unknown",
-    Services = setmetatable({}, {
-        __index = function(self, key)
-            local suc, service = pcall(game.GetService, game, key)
-            if suc and service then
-                self[key] = service
-                return service
-            else
-                warn(`[Services] 警告: "{key}" 不是有效的Roblox服务。`)
-                return nil
-            end
-        end
-    }),
-    Maid = Maid.new(),
     Connections = {},
     Functions = {},
     ESPTable = {
@@ -303,16 +260,12 @@ function Script.Functions.ESP(args)
     end
 
     function ESPManager.Destroy()
-        if ESPManager.RSConnection then
-            ESPManager.RSConnection:Disconnect()
-        end
+        if ESPManager.RSConnection then ESPManager.RSConnection:Disconnect() end
         if ESPManager.IsEntity and ESPManager.Object then
             if ESPManager.Object.PrimaryPart then
                 ESPManager.Object.PrimaryPart.Transparency = ESPManager.Object.PrimaryPart:GetAttribute("Transparency")
             end
-            if ESPManager.Humanoid then
-                ESPManager.Humanoid:Destroy()
-            end
+            if ESPManager.Humanoid then ESPManager.Humanoid:Destroy() end
         end
         for _, h in pairs(ESPManager.Highlights) do h:Destroy() end
         if billboardGui then billboardGui:Destroy() end
@@ -351,11 +304,11 @@ function Script.Functions.ESP(args)
     return ESPManager
 end
 
-function Script.Functions.SeekerESP(player)
-    if player:GetAttribute("IsHunter") and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+function Script.Functions.SeekerESP(plr)
+    if plr:GetAttribute("IsHunter") and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
         Script.Functions.ESP({
-            Object = player.Character,
-            Text = player.Name .. " (抓捕者)",
+            Object = plr.Character,
+            Text = plr.Name .. " (抓捕者)",
             Color = Options.SeekerEspColor and Options.SeekerEspColor.Value or Color3.fromRGB(255, 0, 0),
             Offset = Vector3.new(0, 3, 0),
             Type = "Seeker"
@@ -363,19 +316,17 @@ function Script.Functions.SeekerESP(player)
     end
 end
 
-function Script.Functions.HiderESP(player)
-    if player:GetAttribute("IsHider") and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+function Script.Functions.HiderESP(plr)
+    if plr:GetAttribute("IsHider") and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
         local esp = Script.Functions.ESP({
-            Object = player.Character,
-            Text = player.Name .. " (躲藏者)",
+            Object = plr.Character,
+            Text = plr.Name .. " (躲藏者)",
             Color = Options.HiderEspColor and Options.HiderEspColor.Value or Color3.fromRGB(0, 255, 0),
             Offset = Vector3.new(0, 3, 0),
             Type = "Hider"
         })
-        player:GetAttributeChangedSignal("IsHider"):Once(function()
-            if not player:GetAttribute("IsHider") then
-                esp.Destroy()
-            end
+        plr:GetAttributeChangedSignal("IsHider"):Once(function()
+            if not plr:GetAttribute("IsHider") then esp.Destroy() end
         end)
     end
 end
@@ -419,18 +370,18 @@ function Script.Functions.GuardESP(character)
     end
 end
 
-function Script.Functions.PlayerESP(player)
-    if not (player.Character and player.Character.PrimaryPart and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0) then return end
+function Script.Functions.PlayerESP(plr)
+    if not (plr.Character and plr.Character.PrimaryPart and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0) then return end
     local playerEsp = Script.Functions.ESP({
         Type = "Player",
-        Object = player.Character,
-        Text = string.format("%s [%s]", player.DisplayName, player.Character.Humanoid.Health),
-        TextParent = player.Character.PrimaryPart,
+        Object = plr.Character,
+        Text = string.format("%s [%s]", plr.DisplayName, plr.Character.Humanoid.Health),
+        TextParent = plr.Character.PrimaryPart,
         Color = Options.PlayerEspColor and Options.PlayerEspColor.Value or Color3.fromRGB(255, 255, 255)
     })
-    playerEsp.GiveSignal(player.Character.Humanoid.HealthChanged:Connect(function(newHealth)
+    playerEsp.GiveSignal(plr.Character.Humanoid.HealthChanged:Connect(function(newHealth)
         if newHealth > 0 then
-            playerEsp.Text = string.format("%s [%s]", player.DisplayName, newHealth)
+            playerEsp.Text = string.format("%s [%s]", plr.DisplayName, newHealth)
         else
             playerEsp.Destroy()
         end
@@ -793,7 +744,6 @@ function Script.Functions.WinGlassBridge()
     if call then task.delay(0.5, Script.Functions.EnableAntiFling) end
 end
 
--- UI construction
 local MainESPGroup = TabsUI.Visuals:AddLeftGroupbox("主要 ESP")
 MainESPGroup:AddToggle('PlayerESP', { Text = '玩家', Default = false })
 MainESPGroup:AddColorPicker('PlayerEspColor', { Default = Color3.fromRGB(255, 255, 255), Title = '玩家颜色' })
@@ -806,7 +756,7 @@ Toggles.PlayerESP:OnChanged(function(call)
             if pl ~= localPlayer then Script.Functions.PlayerESP(pl) end
         end
     else
-        for _, esp in pairs(Script.ESPTable["玩家"] or Script.ESPTable["Player"]) do esp.Destroy() end
+        for _, esp in pairs(Script.ESPTable["Player"]) do esp.Destroy() end
     end
 end)
 
@@ -821,7 +771,7 @@ Toggles.GuardESP:OnChanged(function(call)
             end
         end
     else
-        for _, esp in pairs(Script.ESPTable["守卫"] or Script.ESPTable["Guard"]) do esp.Destroy() end
+        for _, esp in pairs(Script.ESPTable["Guard"]) do esp.Destroy() end
     end
 end)
 
@@ -842,48 +792,50 @@ HSGroup:AddColorPicker('KeyEspColor', { Default = Color3.fromRGB(255, 255, 0), T
 HSGroup:AddToggle('DoorESP', { Text = '门', Default = false })
 HSGroup:AddColorPicker('DoorEspColor', { Default = Color3.fromRGB(0, 128, 255), Title = '门颜色' })
 
-local function toggleHSESP(call, meta)
-    if not call then
-        for _, esp in pairs(Script.ESPTable[meta.text]) do esp.Destroy() end
-        return
-    end
-    if not string.find(Script.GameState, "HideAndSeek") then return end
-    if meta.checktype == "player" then
-        for _, pl in pairs(Players:GetPlayers()) do
-            Script.Functions[meta.metaName](pl)
+local HS_META = {
+    { metaName = "HiderESP", text = "Hider", checktype = "player", func = Script.Functions.HiderESP },
+    { metaName = "SeekerESP", text = "Seeker", checktype = "player", func = Script.Functions.SeekerESP },
+    { metaName = "KeyESP", text = "Key", checktype = "key", func = Script.Functions.KeyESP },
+    { metaName = "DoorESP", text = "Door", checktype = "door", func = Script.Functions.DoorESP },
+}
+
+for _, meta in ipairs(HS_META) do
+    Toggles[meta.metaName]:OnChanged(function(call)
+        if not call then
+            for _, esp in pairs(Script.ESPTable[meta.text]) do esp.Destroy() end
+            return
         end
-    elseif meta.checktype == "key" then
-        local map = workspace:FindFirstChild("HideAndSeekMap")
-        if map then
-            local keysFolder = map:FindFirstChild("KEYS")
-            if keysFolder then for _, key in pairs(keysFolder:GetChildren()) do Script.Functions.KeyESP(key) end end
-        end
-    elseif meta.checktype == "door" then
-        local map = workspace:FindFirstChild("HideAndSeekMap")
-        if map then
-            local doors = map:FindFirstChild("NEWFIXEDDOORS")
-            if doors then
-                for _, floor in pairs(doors:GetChildren()) do
-                    if floor.Name:match("^Floor") then
-                        for _, door in pairs(floor:GetChildren()) do Script.Functions.DoorESP(door) end
+        if not string.find(Script.GameState, "HideAndSeek") then return end
+        if meta.checktype == "player" then
+            for _, pl in pairs(Players:GetPlayers()) do
+                meta.func(pl)
+            end
+        elseif meta.checktype == "key" then
+            local map = workspace:FindFirstChild("HideAndSeekMap")
+            if map then
+                local keysFolder = map:FindFirstChild("KEYS")
+                if keysFolder then for _, key in pairs(keysFolder:GetChildren()) do Script.Functions.KeyESP(key) end end
+            end
+        elseif meta.checktype == "door" then
+            local map = workspace:FindFirstChild("HideAndSeekMap")
+            if map then
+                local doors = map:FindFirstChild("NEWFIXEDDOORS")
+                if doors then
+                    for _, floor in pairs(doors:GetChildren()) do
+                        if floor.Name:match("^Floor") then
+                            for _, door in pairs(floor:GetChildren()) do Script.Functions.DoorESP(door) end
+                        end
                     end
                 end
             end
         end
-    end
+    end)
 end
 
-local HS_META = {
-    { metaName = "HiderESP", text = "躲藏者", checktype = "player" },
-    { metaName = "SeekerESP", text = "抓捕者", checktype = "player" },
-    { metaName = "KeyESP", text = "钥匙", checktype = "key" },
-    { metaName = "DoorESP", text = "门", checktype = "door" },
-}
-
-for _, meta in ipairs(HS_META) do
-    Toggles[meta.metaName]:OnChanged(function(call) toggleHSESP(call, meta) end)
-    Options[meta.metaName.."Color"]:OnChanged(function(value)
-        for _, esp in pairs(Script.ESPTable[meta.text]) do esp.SetColor(value) end
+for _, meta in ipairs({"Hider", "Seeker", "Key", "Door"}) do
+    Options[meta.."EspColor"]:OnChanged(function(value)
+        local txt = meta == "Door" and "Door" or meta
+        for _, esp in pairs(Script.ESPTable[txt]) do esp.SetColor(value) end
     end)
 end
 
@@ -1327,9 +1279,9 @@ MiscGroup:AddButton({ Text = '修复玩家可见性', Func = Script.Functions.Ch
 local PlayerGroup = TabsUI.Main:AddLeftGroupbox("玩家")
 PlayerGroup:AddSlider('SpeedSlider', { Text = '行走速度', Default = 16, Min = 0, Max = 300, Rounding = 1 })
 PlayerGroup:AddToggle('SpeedToggle', { Text = '速度', Default = false })
-PlayerGroup:AddKeyPicker('SpeedKey', { Mode = 'Toggle', Default = 'C', Text = '速度热键', SyncToggleState = true })
+PlayerGroup:AddLabel("速度热键"):AddKeyPicker('SpeedKey', { Mode = 'Toggle', Default = 'C', Text = '速度热键', SyncToggleState = true })
 PlayerGroup:AddToggle('Noclip', { Text = '穿墙', Default = false })
-PlayerGroup:AddKeyPicker('NoclipKey', { Mode = 'Toggle', Default = 'N', Text = '穿墙热键', SyncToggleState = true })
+PlayerGroup:AddLabel("穿墙热键"):AddKeyPicker('NoclipKey', { Mode = 'Toggle', Default = 'N', Text = '穿墙热键', SyncToggleState = true })
 PlayerGroup:AddToggle('InfiniteJump', { Text = '无限跳跃', Default = false })
 PlayerGroup:AddToggle('Fly', { Text = '飞行', Default = false })
 PlayerGroup:AddSlider('FlySpeed', { Text = '飞行速度', Default = 20, Min = 10, Max = 300, Rounding = 1 })
@@ -1476,10 +1428,11 @@ local SecurityGroup = TabsUI.Main:AddRightGroupbox("安全")
 SecurityGroup:AddToggle('AntiAfk', { Text = '防挂机', Default = true })
 Toggles.AntiAfk:OnChanged(function(call)
     if call then
+        local VirtualUser = game:GetService("VirtualUser")
         Script.Temp.AntiAfkConnection = lplr.Idled:Connect(function()
-            Services.VirtualUser:Button2Down(Vector2.new(0,0), camera.CFrame)
+            VirtualUser:Button2Down(Vector2.new(0,0), camera.CFrame)
             wait(1)
-            Services.VirtualUser:Button2Up(Vector2.new(0,0), camera.CFrame)
+            VirtualUser:Button2Up(Vector2.new(0,0), camera.CFrame)
         end)
     else
         if Script.Temp.AntiAfkConnection then pcall(function() Script.Temp.AntiAfkConnection:Disconnect() end) end
@@ -1493,12 +1446,12 @@ Toggles.StaffDetector:OnChanged(function(call)
         local STAFF_MIN_RANK = 120
         local staffRoles = { [120] = "版主", [254] = "开发者", [255] = "所有者" }
         Script.Temp.DetectedStaff = {}
-        local function check(player)
-            local suc, rank = pcall(function() return player:GetRankInGroup(STAFF_GROUP_ID) end)
+        local function check(pl)
+            local suc, rank = pcall(function() return pl:GetRankInGroup(STAFF_GROUP_ID) end)
             if suc and rank and rank >= STAFF_MIN_RANK then
                 local role = staffRoles[rank] or ("等级 "..rank)
-                Script.Functions.Alert("[管理员检测] 检测到管理员: " .. player.Name .. " (" .. role .. ")", 10)
-                Script.Temp.DetectedStaff[player.UserId] = {Name = player.Name, Role = role}
+                Script.Functions.Alert("[管理员检测] 检测到管理员: " .. pl.Name .. " (" .. role .. ")", 10)
+                Script.Temp.DetectedStaff[pl.UserId] = {Name = pl.Name, Role = role}
             end
         end
         for _, pl in pairs(Players:GetPlayers()) do if pl ~= lplr then check(pl) end end
@@ -1629,8 +1582,9 @@ end))
 task.spawn(function() pcall(Script.Functions.OnLoad) end)
 
 Library:OnUnload(function()
-    pcall(function() Script.Maid:Clean() end)
-    for _, conn in pairs(Script.Connections) do pcall(function() conn:Disconnect() end) end
+    pcall(function()
+        for _, conn in pairs(Script.Connections) do pcall(function() conn:Disconnect() end) end
+    end)
     pcall(Script.Functions.RevertAntiFlingDetection)
     if SaveManager then SaveManager:Save() end
     Library.Unloaded = true
@@ -1666,6 +1620,5 @@ if SaveManager then
     SaveManager:IgnoreThemeSettings()
     SaveManager:SetFolder("RTaOHUB_linoria/ink_game")
     SaveManager:BuildConfigSection(TabsUI.Settings)
+    SaveManager:LoadAutoloadConfig()
 end
-
-SaveManager:LoadAutoloadConfig()
