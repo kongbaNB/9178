@@ -593,6 +593,8 @@ do
     local speedPanel = nil
     local coordPanel = nil
     local aimbotPanel = nil
+    local flingPanel = nil
+    local jumpPanel = nil
 
     local function copyToClipboard(text, label)
         local success = pcall(function()
@@ -1020,6 +1022,362 @@ do
         return aimbotPanel
     end
 
+    local function createFlingPanel()
+        if flingPanel then return flingPanel end
+        flingPanel = Instance.new("Frame")
+        flingPanel.Name = "FlingPanel"
+        flingPanel.Parent = Main
+        flingPanel.Size = UDim2.new(0, 300, 0, 200)
+        flingPanel.Position = UDim2.new(0.5, -150, 0.5, -100)
+        flingPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        flingPanel.BackgroundTransparency = 0.2
+        flingPanel.Visible = false
+        flingPanel.ZIndex = 200
+        local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = flingPanel
+        local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = flingPanel
+
+        local title = Instance.new("TextLabel")
+        title.Parent = flingPanel
+        title.Size = UDim2.new(1, 0, 0, 25)
+        title.Position = UDim2.new(0, 10, 0, 8)
+        title.BackgroundTransparency = 1
+        title.Text = "甩飞控制"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.Font = Enum.Font.SourceSansBold
+        title.TextSize = 16
+
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Parent = flingPanel
+        closeBtn.Size = UDim2.new(0, 22, 0, 22)
+        closeBtn.Position = UDim2.new(1, -26, 0, 6)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeBtn.Text = "X"
+        closeBtn.TextSize = 12
+        closeBtn.Font = Enum.Font.SourceSansBold
+        local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+        closeBtn.MouseButton1Click:Connect(function() flingPanel.Visible = false end)
+
+        local refreshBtn = Instance.new("TextButton")
+        refreshBtn.Parent = flingPanel
+        refreshBtn.Size = UDim2.new(0, 100, 0, 28)
+        refreshBtn.Position = UDim2.new(0, 20, 0, 45)
+        refreshBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        refreshBtn.Text = "刷新玩家列表"
+        refreshBtn.TextColor3 = Color3.new(1, 1, 1)
+        refreshBtn.Font = Enum.Font.SourceSansBold
+        refreshBtn.TextSize = 14
+        local refreshCorner = Instance.new("UICorner"); refreshCorner.CornerRadius = UDim.new(0, 6); refreshCorner.Parent = refreshBtn
+
+        local dropdownLabel = Instance.new("TextLabel")
+        dropdownLabel.Parent = flingPanel
+        dropdownLabel.Size = UDim2.new(1, -20, 0, 20)
+        dropdownLabel.Position = UDim2.new(0, 10, 0, 80)
+        dropdownLabel.BackgroundTransparency = 1
+        dropdownLabel.Text = "选择甩飞目标"
+        dropdownLabel.TextColor3 = Color3.new(1, 1, 1)
+        dropdownLabel.Font = Enum.Font.SourceSans
+        dropdownLabel.TextSize = 14
+
+        local dropdownContainer = Instance.new("Frame")
+        dropdownContainer.Parent = flingPanel
+        dropdownContainer.Size = UDim2.new(1, -20, 0, 30)
+        dropdownContainer.Position = UDim2.new(0, 10, 0, 105)
+        dropdownContainer.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        dropdownContainer.BorderSizePixel = 0
+        local dropdownCorner = Instance.new("UICorner"); dropdownCorner.CornerRadius = UDim.new(0, 6); dropdownCorner.Parent = dropdownContainer
+
+        local dropdownText = Instance.new("TextLabel")
+        dropdownText.Parent = dropdownContainer
+        dropdownText.Size = UDim2.new(1, -10, 1, 0)
+        dropdownText.Position = UDim2.new(0, 5, 0, 0)
+        dropdownText.BackgroundTransparency = 1
+        dropdownText.Text = "点击刷新列表"
+        dropdownText.TextColor3 = Color3.new(1, 1, 1)
+        dropdownText.Font = Enum.Font.SourceSans
+        dropdownText.TextSize = 14
+        dropdownText.TextXAlignment = Enum.TextXAlignment.Left
+
+        local selectedPlayers = {}
+        local playerNamesList = {}
+        local dropdownOpen = false
+        local dropdownScroll = nil
+
+        local function buildDropdown()
+            if dropdownScroll then dropdownScroll:Destroy() end
+            dropdownScroll = Instance.new("ScrollingFrame")
+            dropdownScroll.Parent = flingPanel
+            dropdownScroll.Size = UDim2.new(1, -20, 0, 100)
+            dropdownScroll.Position = UDim2.new(0, 10, 0, 140)
+            dropdownScroll.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            dropdownScroll.Visible = false
+            dropdownScroll.ZIndex = 250
+            dropdownScroll.ScrollBarThickness = 4
+            dropdownScroll.CanvasSize = UDim2.new(0, 0, 0, #playerNamesList * 25)
+            local scrollCorner = Instance.new("UICorner"); scrollCorner.CornerRadius = UDim.new(0, 4); scrollCorner.Parent = dropdownScroll
+
+            local yPos = 0
+            for _, name in ipairs(playerNamesList) do
+                local item = Instance.new("TextButton")
+                item.Parent = dropdownScroll
+                item.Size = UDim2.new(1, 0, 0, 25)
+                item.Position = UDim2.new(0, 0, 0, yPos)
+                item.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                item.Text = name
+                item.TextColor3 = Color3.new(1, 1, 1)
+                item.Font = Enum.Font.SourceSans
+                item.TextSize = 14
+                item.AutoButtonColor = false
+                item.BorderSizePixel = 0
+                item.ZIndex = 251
+                item.MouseButton1Click:Connect(function()
+                    if selectedPlayers[name] then
+                        selectedPlayers[name] = nil
+                    else
+                        selectedPlayers[name] = true
+                    end
+                    local names = {}
+                    for n, _ in pairs(selectedPlayers) do table.insert(names, n) end
+                    dropdownText.Text = #names > 0 and table.concat(names, ", ") or "点击刷新列表"
+                end)
+                yPos += 25
+            end
+        end
+
+        local function refreshPlayers()
+            playerNamesList = {}
+            selectedPlayers = {}
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer then
+                    table.insert(playerNamesList, p.Name)
+                end
+            end
+            if #playerNamesList == 0 then
+                playerNamesList = {"无玩家"}
+            end
+            dropdownText.Text = "点击刷新列表"
+            buildDropdown()
+        end
+
+        refreshBtn.MouseButton1Click:Connect(refreshPlayers)
+        dropdownContainer.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dropdownOpen = not dropdownOpen
+                if dropdownScroll then dropdownScroll.Visible = dropdownOpen end
+            end
+        end)
+
+        local flingBtn = Instance.new("TextButton")
+        flingBtn.Parent = flingPanel
+        flingBtn.Size = UDim2.new(0, 120, 0, 28)
+        flingBtn.Position = UDim2.new(0, 20, 0, 250)
+        flingBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+        flingBtn.Text = "甩飞选中玩家"
+        flingBtn.TextColor3 = Color3.new(1, 1, 1)
+        flingBtn.Font = Enum.Font.SourceSansBold
+        flingBtn.TextSize = 14
+        local flingCorner = Instance.new("UICorner"); flingCorner.CornerRadius = UDim.new(0, 6); flingCorner.Parent = flingBtn
+        flingBtn.MouseButton1Click:Connect(function()
+            for name, _ in pairs(selectedPlayers) do
+                local target = Players:FindFirstChild(name)
+                if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                    local char = LocalPlayer.Character
+                    if char and char:FindFirstChild("HumanoidRootPart") then
+                        local root = char.HumanoidRootPart
+                        local targetRoot = target.Character.HumanoidRootPart
+                        root.CFrame = targetRoot.CFrame + Vector3.new(0, 3, 0)
+                        task.wait(0.05)
+                        local oldVel = root.Velocity
+                        root.Velocity = oldVel * 10000 + Vector3.new(0, 10000, 0)
+                        RunService.RenderStepped:Wait()
+                        root.Velocity = oldVel
+                    end
+                end
+            end
+        end)
+
+        local loopFlingEnabled = false
+        local loopFlingBtn = Instance.new("TextButton")
+        loopFlingBtn.Parent = flingPanel
+        loopFlingBtn.Size = UDim2.new(0, 120, 0, 28)
+        loopFlingBtn.Position = UDim2.new(0, 150, 0, 250)
+        loopFlingBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
+        loopFlingBtn.Text = "锁定甩飞：关"
+        loopFlingBtn.TextColor3 = Color3.new(1, 1, 1)
+        loopFlingBtn.Font = Enum.Font.SourceSansBold
+        loopFlingBtn.TextSize = 14
+        local loopCorner = Instance.new("UICorner"); loopCorner.CornerRadius = UDim.new(0, 6); loopCorner.Parent = loopFlingBtn
+        loopFlingBtn.MouseButton1Click:Connect(function()
+            loopFlingEnabled = not loopFlingEnabled
+            loopFlingBtn.Text = loopFlingEnabled and "锁定甩飞：开" or "锁定甩飞：关"
+            if loopFlingEnabled then
+                task.spawn(function()
+                    while loopFlingEnabled do
+                        for name, _ in pairs(selectedPlayers) do
+                            local target = Players:FindFirstChild(name)
+                            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                                local char = LocalPlayer.Character
+                                if char and char:FindFirstChild("HumanoidRootPart") then
+                                    local root = char.HumanoidRootPart
+                                    local targetRoot = target.Character.HumanoidRootPart
+                                    root.CFrame = targetRoot.CFrame + Vector3.new(0, 3, 0)
+                                    task.wait(0.05)
+                                    local oldVel = root.Velocity
+                                    root.Velocity = oldVel * 10000 + Vector3.new(0, 10000, 0)
+                                    RunService.RenderStepped:Wait()
+                                    root.Velocity = oldVel
+                                end
+                            end
+                        end
+                        task.wait(0.3)
+                    end
+                end)
+            end
+        end)
+
+        refreshPlayers()
+        return flingPanel
+    end
+
+    local function createJumpPanel()
+        if jumpPanel then return jumpPanel end
+        jumpPanel = Instance.new("Frame")
+        jumpPanel.Name = "JumpPanel"
+        jumpPanel.Parent = Main
+        jumpPanel.Size = UDim2.new(0, 250, 0, 160)
+        jumpPanel.Position = UDim2.new(0.5, -125, 0.5, -80)
+        jumpPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        jumpPanel.BackgroundTransparency = 0.2
+        jumpPanel.Visible = false
+        jumpPanel.ZIndex = 200
+        local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = jumpPanel
+        local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = jumpPanel
+
+        local title = Instance.new("TextLabel")
+        title.Parent = jumpPanel
+        title.Size = UDim2.new(1, 0, 0, 25)
+        title.Position = UDim2.new(0, 10, 0, 8)
+        title.BackgroundTransparency = 1
+        title.Text = "跳跃高度"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.Font = Enum.Font.SourceSansBold
+        title.TextSize = 16
+
+        local slider = Instance.new("Frame")
+        slider.Parent = jumpPanel
+        slider.Size = UDim2.new(1, -40, 0, 30)
+        slider.Position = UDim2.new(0, 20, 0, 45)
+        slider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        local sliderCorner = Instance.new("UICorner"); sliderCorner.CornerRadius = UDim.new(0, 6); sliderCorner.Parent = slider
+
+        local fill = Instance.new("Frame")
+        fill.Parent = slider
+        fill.Size = UDim2.new(0, 0, 1, 0)
+        fill.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        fill.BorderSizePixel = 0
+        local fillCorner = Instance.new("UICorner"); fillCorner.CornerRadius = UDim.new(0, 6); fillCorner.Parent = fill
+
+        local knob = Instance.new("TextButton")
+        knob.Parent = slider
+        knob.Size = UDim2.new(0, 20, 0, 20)
+        knob.Position = UDim2.new(0, -10, 0.5, -10)
+        knob.Text = ""
+        knob.BackgroundColor3 = Color3.new(1, 1, 1)
+        knob.AutoButtonColor = false
+        local knobCorner = Instance.new("UICorner"); knobCorner.CornerRadius = UDim.new(1, 0); knobCorner.Parent = knob
+
+        local sliderValue = 50
+        local minVal, maxVal = 1, 1000
+
+        local inputBox = Instance.new("TextBox")
+        inputBox.Parent = jumpPanel
+        inputBox.Size = UDim2.new(0, 80, 0, 28)
+        inputBox.Position = UDim2.new(0, 20, 0, 85)
+        inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        inputBox.Text = tostring(sliderValue)
+        inputBox.TextColor3 = Color3.new(1, 1, 1)
+        inputBox.Font = Enum.Font.SourceSans
+        inputBox.TextSize = 16
+        inputBox.PlaceholderText = "高度"
+        local inputCorner = Instance.new("UICorner"); inputCorner.CornerRadius = UDim.new(0, 6); inputCorner.Parent = inputBox
+
+        local function updateSliderDisplay(val)
+            local percent = (val - minVal) / (maxVal - minVal)
+            fill.Size = UDim2.new(percent, 0, 1, 0)
+            knob.Position = UDim2.new(percent, -10, 0.5, -10)
+        end
+
+        local function setJump(val)
+            val = math.clamp(math.floor(val), minVal, maxVal)
+            sliderValue = val
+            inputBox.Text = tostring(val)
+            updateSliderDisplay(val)
+            local hum = getHumanoid()
+            if hum then hum.JumpPower = val end
+        end
+
+        local confirmBtn = Instance.new("TextButton")
+        confirmBtn.Parent = jumpPanel
+        confirmBtn.Size = UDim2.new(0, 80, 0, 28)
+        confirmBtn.Position = UDim2.new(0, 110, 0, 85)
+        confirmBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+        confirmBtn.Text = "确认"
+        confirmBtn.TextColor3 = Color3.new(1, 1, 1)
+        confirmBtn.Font = Enum.Font.SourceSansBold
+        confirmBtn.TextSize = 14
+        local confirmCorner = Instance.new("UICorner"); confirmCorner.CornerRadius = UDim.new(0, 6); confirmCorner.Parent = confirmBtn
+        confirmBtn.MouseButton1Click:Connect(function()
+            local num = tonumber(inputBox.Text)
+            if num then setJump(num) end
+        end)
+
+        local resetBtn = Instance.new("TextButton")
+        resetBtn.Parent = jumpPanel
+        resetBtn.Size = UDim2.new(0, 80, 0, 28)
+        resetBtn.Position = UDim2.new(0, 200, 0, 85)
+        resetBtn.BackgroundColor3 = Color3.fromRGB(180, 80, 0)
+        resetBtn.Text = "重置默认"
+        resetBtn.TextColor3 = Color3.new(1, 1, 1)
+        resetBtn.Font = Enum.Font.SourceSansBold
+        resetBtn.TextSize = 14
+        local resetCorner = Instance.new("UICorner"); resetCorner.CornerRadius = UDim.new(0, 6); resetCorner.Parent = resetBtn
+        resetBtn.MouseButton1Click:Connect(function() setJump(50) end)
+
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Parent = jumpPanel
+        closeBtn.Size = UDim2.new(0, 22, 0, 22)
+        closeBtn.Position = UDim2.new(1, -26, 0, 6)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeBtn.Text = "X"
+        closeBtn.TextSize = 12
+        closeBtn.Font = Enum.Font.SourceSansBold
+        local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+        closeBtn.MouseButton1Click:Connect(function() jumpPanel.Visible = false end)
+
+        local dragging = false
+        knob.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local mousePos = UserInputService:GetMouseLocation()
+                local sliderAbs = slider.AbsolutePosition
+                local sliderSize = slider.AbsoluteSize
+                local relativeX = math.clamp(mousePos.X - sliderAbs.X, 0, sliderSize.X)
+                local percent = relativeX / sliderSize.X
+                local newVal = math.floor(minVal + (maxVal - minVal) * percent)
+                setJump(newVal)
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+        end)
+        inputBox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then local num = tonumber(inputBox.Text); if num then setJump(num) end end
+        end)
+        updateSliderDisplay(50)
+        return jumpPanel
+    end
+
     local function AddCat(i)
         local cat = Instance.new("TextButton")
         cat.Name = "Cat"..i
@@ -1146,6 +1504,15 @@ do
                     local cnt = stealAllItems()
                     game:GetService("StarterGui"):SetCore("SendNotification", { Title = "偷取完成", Text = "共偷取 " .. tostring(cnt) .. " 个道具", Duration = 3 })
                 end)
+            end)
+
+            addSemiTransparentButton(page, "甩飞", posX2, 4 + 4*rowHeight, function()
+                local panel = createFlingPanel()
+                panel.Visible = not panel.Visible
+            end)
+            addSemiTransparentButton(page, "跳跃高度", posX2, 4 + 5*rowHeight, function()
+                local panel = createJumpPanel()
+                panel.Visible = not panel.Visible
             end)
 
             espBtn.MouseButton1Click:Connect(function()
@@ -1382,6 +1749,10 @@ do
                 game:GetService("StarterGui"):SetCore("SendNotification", { Title = "找到按钮", Text = "正在加载中...", Duration = 5 })
                 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZDNN.NB"))() end)
             end)
+            addSemiTransparentButton(page, "墨水游戏", posX1, 4 + 4*rowHeight, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "墨水游戏", Text = "正在加载中...", Duration = 5 })
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MSYS.NB"))() end)
+            end)
         end
 
         cat.MouseButton1Click:Connect(function()
@@ -1394,6 +1765,8 @@ do
             if speedPanel then speedPanel.Visible = false end
             if coordPanel then coordPanel.Visible = false end
             if aimbotPanel then aimbotPanel.Visible = false end
+            if flingPanel then flingPanel.Visible = false end
+            if jumpPanel then jumpPanel.Visible = false end
             page.Visible = true
         end)
         categories[i] = cat; pages[i] = page
