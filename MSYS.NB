@@ -28,6 +28,9 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local VirtualUser = game:GetService("VirtualUser")
 
 local Window = Library:CreateWindow({
     Title = "墨水游戏脚本",
@@ -38,11 +41,16 @@ local Window = Library:CreateWindow({
 })
 
 local Tabs = {
-    Main = Window:AddTab("主要", "info"),
+    Notice = Window:AddTab("通知", "info"),
+    Game = Window:AddTab("游戏", "info"),
     ESP = Window:AddTab("透视", "eye"),
     Misc = Window:AddTab("杂项", "list"),
     Settings = Window:AddTab("设置", "settings"),
 }
+
+local NoticeGroup = Tabs.Notice:AddLeftGroupbox("公告")
+NoticeGroup:AddLabel("恐拜大帝持续更新此脚本")
+NoticeGroup:AddLabel("QQ3999698324")
 
 local function smoothTeleport(targetPos)
     local char = LocalPlayer.Character
@@ -85,8 +93,7 @@ local function fireWoodEvents()
     end)
 end
 
-local WoodGroup = Tabs.Main:AddLeftGroupbox("木头人")
-
+local WoodGroup = Tabs.Game:AddLeftGroupbox("木头人")
 WoodGroup:AddButton({
     Text = '木头人传送到终点',
     Func = function()
@@ -94,7 +101,6 @@ WoodGroup:AddButton({
         fireWoodEvents()
     end,
 })
-
 WoodGroup:AddButton({
     Text = '传送到终点后面墙壁',
     Func = function()
@@ -107,18 +113,14 @@ local godModeEnabled = false
 WoodGroup:AddToggle('GodMode', {
     Text = '防子弹打死防受伤',
     Default = false,
-    Callback = function(Value)
-        godModeEnabled = Value
-    end
+    Callback = function(Value) godModeEnabled = Value end
 })
 
 local removeBulletsEnabled = false
 WoodGroup:AddToggle('RemoveBullets', {
     Text = '移除子弹（仅视觉 不卡）',
     Default = false,
-    Callback = function(Value)
-        removeBulletsEnabled = Value
-    end
+    Callback = function(Value) removeBulletsEnabled = Value end
 })
 
 task.spawn(function()
@@ -138,8 +140,7 @@ task.spawn(function()
     end
 end)
 
-local CandyGroup = Tabs.Main:AddLeftGroupbox("抠糖饼")
-
+local CandyGroup = Tabs.Game:AddLeftGroupbox("抠糖饼")
 local candyPatterns = {
     ["Pig"] = {
         "B^XLQ]]VQBZZPT^\2\n\7",
@@ -150,13 +151,11 @@ local candyPatterns = {
         "DXVK[]^[VJZ\\TVY\7\5"
     },
 }
-
 local keywordMap = {
     Pig = {"pig","porco","cerdo","cochon","schwein","maiale","piggy","piglet","豚","돼지","ブタ","свинья"},
     Star = {"star","estrella","estrela","étoile","stern","stella","звезда","별","星","ster"},
     Umbrella = {"umbrella","paraguas","guarda-chuva","parapluie","regenschirm","ombrello","зонтик","傘","우산","ombrel","parasol"}
 }
-
 local function scanGUI(gui, pattern)
     if gui:IsA("TextLabel") then
         local text = gui.Text:lower()
@@ -174,7 +173,6 @@ local function scanGUI(gui, pattern)
     end
     return false
 end
-
 local function detectPattern()
     local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
     if playerGui then
@@ -252,7 +250,74 @@ CandyGroup:AddButton({
     end,
 })
 
-local DarkGroup = Tabs.Main:AddLeftGroupbox("熄灯")
+local TugGroup = Tabs.Game:AddLeftGroupbox("拔河")
+local autoPullEnabled = false
+local perfectPullEnabled = true
+TugGroup:AddToggle('AutoPull', {
+    Text = '自动拉绳',
+    Default = false,
+    Callback = function(Value)
+        autoPullEnabled = Value
+        if Value then
+            task.spawn(function()
+                while autoPullEnabled do
+                    pcall(function()
+                        ReplicatedStorage.Remotes.TemporaryReachedBindable:FireServer({PerfectQTE = perfectPullEnabled})
+                    end)
+                    task.wait()
+                end
+            end)
+        end
+    end
+})
+TugGroup:AddToggle('PerfectPull', {
+    Text = '完美QTE',
+    Default = true,
+    Callback = function(Value) perfectPullEnabled = Value end
+})
+
+local GlassGroup = Tabs.Game:AddLeftGroupbox("玻璃桥")
+local revealGlassEnabled = false
+GlassGroup:AddToggle('RevealGlass', {
+    Text = '显示安全玻璃',
+    Default = false,
+    Callback = function(Value)
+        revealGlassEnabled = Value
+        if Value then
+            task.spawn(function()
+                while revealGlassEnabled do
+                    local glassHolder = workspace:FindFirstChild("GlassBridge") and workspace.GlassBridge:FindFirstChild("GlassHolder")
+                    if glassHolder then
+                        for _, tilePair in pairs(glassHolder:GetChildren()) do
+                            for _, tileModel in pairs(tilePair:GetChildren()) do
+                                if tileModel:IsA("Model") and tileModel.PrimaryPart then
+                                    local primaryPart = tileModel.PrimaryPart
+                                    local isBreakable = primaryPart:GetAttribute("exploitingisevil") == true
+                                    local targetColor = isBreakable and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
+                                    for _, part in pairs(tileModel:GetDescendants()) do
+                                        if part:IsA("BasePart") then
+                                            part.Color = targetColor
+                                            part.Transparency = 0.5
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    task.wait(0.5)
+                end
+            end)
+        end
+    end
+})
+GlassGroup:AddButton({
+    Text = '传送到终点',
+    Func = function()
+        smoothTeleport(Vector3.new(-203.9, 520.7, -1534.35))
+    end,
+})
+
+local DarkGroup = Tabs.Game:AddRightGroupbox("熄灯")
 DarkGroup:AddButton({
     Text = '传送到安全点',
     Func = function()
@@ -260,8 +325,82 @@ DarkGroup:AddButton({
     end,
 })
 
-local TaskGroup = Tabs.Misc:AddLeftGroupbox("做任务")
+local HideSeekGroup = Tabs.Game:AddRightGroupbox("捉迷藏")
+HideSeekGroup:AddButton({
+    Text = '传送到躲藏者',
+    Func = function()
+        local hider = nil
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr == LocalPlayer then continue end
+            if plr:GetAttribute("IsHider") and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                hider = plr.Character
+                break
+            end
+        end
+        if hider then
+            smoothTeleport(hider.HumanoidRootPart.Position)
+        else
+            Library:Notify("未找到躲藏者", 3)
+        end
+    end,
+})
 
+local RebelGroup = Tabs.Game:AddRightGroupbox("反叛")
+local expandHitboxEnabled = false
+RebelGroup:AddToggle('ExpandHitbox', {
+    Text = '扩大守卫碰撞箱',
+    Default = false,
+    Callback = function(Value)
+        expandHitboxEnabled = Value
+        if Value then
+            task.spawn(function()
+                while expandHitboxEnabled do
+                    local liveFolder = workspace:FindFirstChild("Live")
+                    if liveFolder then
+                        for _, model in pairs(liveFolder:GetChildren()) do
+                            if model:IsA("Model") and model.Name:find("Guard") then
+                                local head = model:FindFirstChild("Head")
+                                if head and head:IsA("BasePart") then
+                                    head.Size = Vector3.new(4, 4, 4)
+                                    head.CanCollide = false
+                                end
+                            end
+                        end
+                    end
+                    task.wait(3)
+                end
+            end)
+        end
+    end
+})
+
+local CarouselGroup = Tabs.Game:AddRightGroupbox("旋转木马")
+CarouselGroup:AddToggle('CarouselQTE', {
+    Text = '自动QTE',
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            task.spawn(function()
+                while Toggles.CarouselQTE and Toggles.CarouselQTE.Value do
+                    pcall(function()
+                        local char = LocalPlayer.Character
+                        if char then
+                            local remote = char:FindFirstChild("RemoteForQTE")
+                            if remote and remote:IsA("RemoteEvent") then
+                                remote:FireServer()
+                            else
+                                ReplicatedStorage.Replication.Event:FireServer("Clicked")
+                            end
+                        end
+                    end)
+                    task.wait(0.5)
+                end
+            end)
+        end
+    end
+})
+
+local TaskGroup = Tabs.Misc:AddLeftGroupbox("做任务")
 TaskGroup:AddButton({
     Text = '一秒拍照（过完木头人休息阶段用）',
     Func = function()
@@ -279,17 +418,14 @@ local function updateAutoJump()
         autoJumpConnection:Disconnect()
         autoJumpConnection = nil
     end
-
     local char = LocalPlayer.Character
     if not char then return end
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not hum then return end
-
     if autoJump5Enabled or autoJump1Enabled then
         local power = autoJump5Enabled and 5 or 1
         hum.JumpPower = power
         hum:ChangeState(Enum.HumanoidStateType.Jumping)
-
         autoJumpConnection = hum.StateChanged:Connect(function(oldState, newState)
             if newState == Enum.HumanoidStateType.Landed or newState == Enum.HumanoidStateType.Running then
                 local currentChar = LocalPlayer.Character
@@ -330,7 +466,6 @@ TaskGroup:AddToggle('HoldJump', {
         end
     end
 })
-
 TaskGroup:AddToggle('AutoJump5', {
     Text = '自动跳(5)',
     Default = false,
@@ -339,7 +474,6 @@ TaskGroup:AddToggle('AutoJump5', {
         updateAutoJump()
     end
 })
-
 TaskGroup:AddToggle('AutoJump1', {
     Text = '高度1自动跳',
     Default = false,
@@ -354,11 +488,147 @@ LocalPlayer.CharacterAdded:Connect(function()
     updateAutoJump()
 end)
 
-local MoveGroup = Tabs.Misc:AddLeftGroupbox("移动")
+local PlayerGroup = Tabs.Misc:AddLeftGroupbox("玩家")
+local noclipEnabled = false
+local flyEnabled = false
+local flySpeed = 50
+local infiniteJumpEnabled = false
+local walkSpeedEnabled = false
+local walkSpeedValue = 50
 
+PlayerGroup:AddToggle('Noclip', {
+    Text = '穿墙',
+    Default = false,
+    Callback = function(Value)
+        noclipEnabled = Value
+        if Value then
+            task.spawn(function()
+                while noclipEnabled do
+                    local char = LocalPlayer.Character
+                    if char then
+                        for _, child in pairs(char:GetDescendants()) do
+                            if child:IsA("BasePart") and child.CanCollide then
+                                child.CanCollide = false
+                            end
+                        end
+                    end
+                    task.wait()
+                end
+            end)
+        end
+    end
+})
+
+PlayerGroup:AddToggle('Fly', {
+    Text = '飞行',
+    Default = false,
+    Callback = function(Value)
+        flyEnabled = Value
+        local char = LocalPlayer.Character
+        if not char then return end
+        local root = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not root or not hum then return end
+        hum.PlatformStand = Value
+        if Value then
+            local flyBody = Instance.new("BodyVelocity")
+            flyBody.Velocity = Vector3.zero
+            flyBody.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+            flyBody.Parent = root
+            task.spawn(function()
+                local camera = workspace.CurrentCamera
+                while flyEnabled do
+                    local moveDir = Vector3.zero
+                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + camera.CFrame.LookVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camera.CFrame.LookVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camera.CFrame.RightVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camera.CFrame.RightVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+                    flyBody.Velocity = moveDir.Unit * flySpeed
+                    task.wait()
+                end
+                flyBody:Destroy()
+            end)
+        end
+    end
+})
+
+PlayerGroup:AddToggle('InfiniteJump', {
+    Text = '无限跳',
+    Default = false,
+    Callback = function(Value) infiniteJumpEnabled = Value end
+})
+
+PlayerGroup:AddToggle('WalkSpeed', {
+    Text = '加快移速',
+    Default = false,
+    Callback = function(Value)
+        walkSpeedEnabled = Value
+    end
+})
+PlayerGroup:AddSlider('WalkSpeedValue', {
+    Text = '移动速度',
+    Default = 50,
+    Min = 16,
+    Max = 300,
+    Rounding = 0,
+    Callback = function(Value) walkSpeedValue = Value end
+})
+
+PlayerGroup:AddToggle('AutoQTE', {
+    Text = '自动QTE',
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            task.spawn(function()
+                while Toggles.AutoQTE and Toggles.AutoQTE.Value do
+                    pcall(function()
+                        local char = LocalPlayer.Character
+                        if char then
+                            local remote = char:FindFirstChild("RemoteForQTE")
+                            if remote and remote:IsA("RemoteEvent") then
+                                remote:FireServer()
+                            else
+                                ReplicatedStorage.Replication.Event:FireServer("Clicked")
+                            end
+                        end
+                    end)
+                    task.wait(0.5)
+                end
+            end)
+        end
+    end
+})
+
+RunService.Stepped:Connect(function()
+    local char = LocalPlayer.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            if walkSpeedEnabled then
+                hum.WalkSpeed = walkSpeedValue
+            else
+                hum.WalkSpeed = 16
+            end
+        end
+    end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if infiniteJumpEnabled then
+        local char = LocalPlayer.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+    end
+end)
+
+local MoveGroup = Tabs.Misc:AddRightGroupbox("移动")
 local ghostStepEnabled = false
-local normalSprintEnabled = false
-
 MoveGroup:AddToggle('GhostStep', {
     Text = '解锁幽灵步（会死）',
     Default = false,
@@ -378,40 +648,88 @@ MoveGroup:AddToggle('GhostStep', {
     end
 })
 
-MoveGroup:AddToggle('NormalSprint', {
-    Text = '加快移速',
-    Default = false,
-    Callback = function(Value)
-        normalSprintEnabled = Value
-    end
-})
-
-RunService.Stepped:Connect(function()
-    local char = LocalPlayer.Character
-    if char then
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then
-            if ghostStepEnabled then
-                hum.WalkSpeed = 150
-            elseif normalSprintEnabled then
-                hum.WalkSpeed = 50
-            else
-                hum.WalkSpeed = 16
-            end
-        end
-    end
-end)
-
-local SafetyGroup = Tabs.Misc:AddLeftGroupbox("安全")
-
+local SafetyGroup = Tabs.Misc:AddRightGroupbox("安全")
 local safe1Enabled = true
 local safe2Enabled = true
+
+local antiAfkConnection = nil
+local function enableAntiAfk()
+    if antiAfkConnection then return end
+    antiAfkConnection = LocalPlayer.Idled:Connect(function()
+        VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        task.wait(0.1)
+        VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    end)
+end
+local function disableAntiAfk()
+    if antiAfkConnection then
+        antiAfkConnection:Disconnect()
+        antiAfkConnection = nil
+    end
+end
+
+local staffDetectorConnections = {}
+local detectedStaff = {}
+local STAFF_GROUP_ID = 12398672
+local STAFF_MIN_RANK = 120
+local staffRoles = {
+    [120] = "moderator",
+    [254] = "dev",
+    [255] = "owner"
+}
+
+local function checkPlayerStaff(player)
+    local success, rank = pcall(function()
+        return player:GetRankInGroup(STAFF_GROUP_ID)
+    end)
+    if success and rank and rank >= STAFF_MIN_RANK then
+        local roleName = staffRoles[rank] or ("rank " .. tostring(rank))
+        Library:Notify("[安全] 管理员进入: " .. player.Name .. " (" .. roleName .. ")", 10)
+        detectedStaff[player.UserId] = {Name = player.Name, Role = roleName}
+        return true
+    end
+    return false
+end
+
+local function enableStaffDetector()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            checkPlayerStaff(player)
+        end
+    end
+    staffDetectorConnections.PlayerAdded = Players.PlayerAdded:Connect(function(player)
+        if player ~= LocalPlayer then
+            task.wait(1)
+            checkPlayerStaff(player)
+        end
+    end)
+    staffDetectorConnections.PlayerRemoving = Players.PlayerRemoving:Connect(function(player)
+        local staffInfo = detectedStaff[player.UserId]
+        if staffInfo then
+            Library:Notify("[安全] 管理员离开: " .. staffInfo.Name .. " (" .. staffInfo.Role .. ")", 10)
+            detectedStaff[player.UserId] = nil
+        end
+    end)
+end
+
+local function disableStaffDetector()
+    for _, conn in pairs(staffDetectorConnections) do
+        pcall(function() conn:Disconnect() end)
+    end
+    staffDetectorConnections = {}
+    detectedStaff = {}
+end
 
 SafetyGroup:AddToggle('Safe1', {
     Text = '安全1（别关）',
     Default = true,
     Callback = function(Value)
         safe1Enabled = Value
+        if Value then
+            enableAntiAfk()
+        else
+            disableAntiAfk()
+        end
     end
 })
 
@@ -420,8 +738,16 @@ SafetyGroup:AddToggle('Safe2', {
     Default = true,
     Callback = function(Value)
         safe2Enabled = Value
+        if Value then
+            enableStaffDetector()
+        else
+            disableStaffDetector()
+        end
     end
 })
+
+enableAntiAfk()
+enableStaffDetector()
 
 task.spawn(function()
     while true do
@@ -436,7 +762,6 @@ task.spawn(function()
 end)
 
 local ESPGroup = Tabs.ESP:AddLeftGroupbox("透视选项")
-
 local playerESPEnabled = false
 local playerESPColor = Color3.fromRGB(255, 255, 255)
 local healthESPEnabled = false
@@ -449,30 +774,15 @@ local playerHealthGUIs = {}
 local playerDistanceGUIs = {}
 
 local function clearESP(player)
-    if playerHighlights[player] then
-        playerHighlights[player]:Destroy()
-        playerHighlights[player] = nil
-    end
-    if playerHealthGUIs[player] then
-        playerHealthGUIs[player].bill:Destroy()
-        playerHealthGUIs[player] = nil
-    end
-    if playerDistanceGUIs[player] then
-        playerDistanceGUIs[player].bill:Destroy()
-        playerDistanceGUIs[player] = nil
-    end
+    if playerHighlights[player] then playerHighlights[player]:Destroy(); playerHighlights[player] = nil end
+    if playerHealthGUIs[player] then playerHealthGUIs[player].bill:Destroy(); playerHealthGUIs[player] = nil end
+    if playerDistanceGUIs[player] then playerDistanceGUIs[player].bill:Destroy(); playerDistanceGUIs[player] = nil end
 end
 
 local function clearAllESP()
-    for player, _ in pairs(playerHighlights) do
-        clearESP(player)
-    end
-    for player, _ in pairs(playerHealthGUIs) do
-        clearESP(player)
-    end
-    for player, _ in pairs(playerDistanceGUIs) do
-        clearESP(player)
-    end
+    for player, _ in pairs(playerHighlights) do clearESP(player) end
+    for player, _ in pairs(playerHealthGUIs) do clearESP(player) end
+    for player, _ in pairs(playerDistanceGUIs) do clearESP(player) end
 end
 
 local function createBillboardGui(parent)
@@ -493,7 +803,6 @@ local function setupCharacterESP(player, character)
     clearESP(player)
     local head = character:FindFirstChild("Head")
     if not head then return end
-
     local highlight = Instance.new("Highlight")
     highlight.FillTransparency = 1
     highlight.OutlineTransparency = 0
@@ -516,9 +825,7 @@ local function setupCharacterESP(player, character)
     playerDistanceGUIs[player] = { bill = distBill, label = distLabel }
 
     character.AncestryChanged:Connect(function(_, parent)
-        if not parent then
-            clearESP(player)
-        end
+        if not parent then clearESP(player) end
     end)
 end
 
@@ -555,11 +862,7 @@ local function updateHealthTexts()
         local char = player.Character
         if char and data and data.bill and data.bill.Parent then
             local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                data.label.Text = tostring(math.floor(hum.Health))
-            else
-                data.label.Text = "?"
-            end
+            if hum then data.label.Text = tostring(math.floor(hum.Health)) else data.label.Text = "?" end
         end
     end
 end
@@ -584,123 +887,63 @@ local function updateDistanceTexts()
     end
 end
 
-local function onCharacterAdded(player, character)
-    setupCharacterESP(player, character)
-end
-
+local function onCharacterAdded(player, character) setupCharacterESP(player, character) end
 local function onPlayerAdded(player)
     if player == LocalPlayer then return end
-    if player.Character then
-        onCharacterAdded(player, player.Character)
-    end
-    player.CharacterAdded:Connect(function(char)
-        onCharacterAdded(player, char)
-    end)
+    if player.Character then onCharacterAdded(player, player.Character) end
+    player.CharacterAdded:Connect(function(char) onCharacterAdded(player, char) end)
 end
-
 for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer then
-        onPlayerAdded(player)
-    end
+    if player ~= LocalPlayer then onPlayerAdded(player) end
 end
 Players.PlayerAdded:Connect(onPlayerAdded)
 
 local playerESP = ESPGroup:AddToggle('PlayerESP', {
     Text = '人物透视',
     Default = false,
-    Callback = function(Value)
-        playerESPEnabled = Value
-        updateAllHighlights()
-    end
+    Callback = function(Value) playerESPEnabled = Value; updateAllHighlights() end
 })
-
 if playerESP and playerESP.AddColorPicker then
     playerESP:AddColorPicker('PlayerESPColor', {
-        Default = Color3.fromRGB(255, 255, 255),
-        Title = '人物透视颜色',
-        Callback = function(Value)
-            playerESPColor = Value
-            if playerESPEnabled then
-                updateAllHighlights()
-            end
-        end
+        Default = Color3.fromRGB(255, 255, 255), Title = '人物透视颜色',
+        Callback = function(Value) playerESPColor = Value; if playerESPEnabled then updateAllHighlights() end end
     })
 else
     ESPGroup:AddColorPicker('PlayerESPColor', {
-        Default = Color3.fromRGB(255, 255, 255),
-        Title = '人物透视颜色',
-        Callback = function(Value)
-            playerESPColor = Value
-            if playerESPEnabled then
-                updateAllHighlights()
-            end
-        end
+        Default = Color3.fromRGB(255, 255, 255), Title = '人物透视颜色',
+        Callback = function(Value) playerESPColor = Value; if playerESPEnabled then updateAllHighlights() end end
     })
 end
 
 local healthESP = ESPGroup:AddToggle('HealthESP', {
-    Text = '血量透视',
-    Default = false,
-    Callback = function(Value)
-        healthESPEnabled = Value
-        updateAllHealthGUIs()
-    end
+    Text = '血量透视', Default = false,
+    Callback = function(Value) healthESPEnabled = Value; updateAllHealthGUIs() end
 })
-
 if healthESP and healthESP.AddColorPicker then
     healthESP:AddColorPicker('HealthESPColor', {
-        Default = Color3.fromRGB(0, 255, 0),
-        Title = '血量透视颜色',
-        Callback = function(Value)
-            healthESPColor = Value
-            if healthESPEnabled then
-                updateAllHealthGUIs()
-            end
-        end
+        Default = Color3.fromRGB(0, 255, 0), Title = '血量透视颜色',
+        Callback = function(Value) healthESPColor = Value; if healthESPEnabled then updateAllHealthGUIs() end end
     })
 else
     ESPGroup:AddColorPicker('HealthESPColor', {
-        Default = Color3.fromRGB(0, 255, 0),
-        Title = '血量透视颜色',
-        Callback = function(Value)
-            healthESPColor = Value
-            if healthESPEnabled then
-                updateAllHealthGUIs()
-            end
-        end
+        Default = Color3.fromRGB(0, 255, 0), Title = '血量透视颜色',
+        Callback = function(Value) healthESPColor = Value; if healthESPEnabled then updateAllHealthGUIs() end end
     })
 end
 
 local distanceESP = ESPGroup:AddToggle('DistanceESP', {
-    Text = '距离透视',
-    Default = false,
-    Callback = function(Value)
-        distanceESPEnabled = Value
-        updateAllDistanceGUIs()
-    end
+    Text = '距离透视', Default = false,
+    Callback = function(Value) distanceESPEnabled = Value; updateAllDistanceGUIs() end
 })
-
 if distanceESP and distanceESP.AddColorPicker then
     distanceESP:AddColorPicker('DistanceESPColor', {
-        Default = Color3.fromRGB(255, 255, 0),
-        Title = '距离透视颜色',
-        Callback = function(Value)
-            distanceESPColor = Value
-            if distanceESPEnabled then
-                updateAllDistanceGUIs()
-            end
-        end
+        Default = Color3.fromRGB(255, 255, 0), Title = '距离透视颜色',
+        Callback = function(Value) distanceESPColor = Value; if distanceESPEnabled then updateAllDistanceGUIs() end end
     })
 else
     ESPGroup:AddColorPicker('DistanceESPColor', {
-        Default = Color3.fromRGB(255, 255, 0),
-        Title = '距离透视颜色',
-        Callback = function(Value)
-            distanceESPColor = Value
-            if distanceESPEnabled then
-                updateAllDistanceGUIs()
-            end
-        end
+        Default = Color3.fromRGB(255, 255, 0), Title = '距离透视颜色',
+        Callback = function(Value) distanceESPColor = Value; if distanceESPEnabled then updateAllDistanceGUIs() end end
     })
 end
 
@@ -711,30 +954,22 @@ RunService.Heartbeat:Connect(function()
         local char = LocalPlayer.Character
         if char then
             local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum and hum.Health < hum.MaxHealth then
-                hum.Health = hum.MaxHealth
-            end
+            if hum and hum.Health < hum.MaxHealth then hum.Health = hum.MaxHealth end
         end
     end
 end)
 
 local MenuGroup = Tabs.Settings:AddLeftGroupbox('菜单')
-
 MenuGroup:AddButton('卸载脚本', function()
     clearAllESP()
     Library:Unload()
 end)
-
 MenuGroup:AddButton('重载界面', function()
     loadstring(game:HttpGet("https://pastebin.com/raw/你的脚本地址"))()
 end)
-
 MenuGroup:AddLabel('菜单快捷键'):AddKeyPicker('MenuKeybind', {
-    Default = 'RightShift',
-    NoUI = true,
-    Text = 'Menu keybind'
+    Default = 'RightShift', NoUI = true, Text = 'Menu keybind'
 })
-
 Library.ToggleKeybind = Library.Options.MenuKeybind
 
 if ThemeManager then
@@ -742,7 +977,6 @@ if ThemeManager then
     ThemeManager:SetFolder("墨水游戏脚本_主题")
     ThemeManager:ApplyToTab(Tabs.Settings)
 end
-
 if SaveManager then
     SaveManager:SetLibrary(Library)
     SaveManager:IgnoreThemeSettings()
