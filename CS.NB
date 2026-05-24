@@ -522,6 +522,7 @@ local function stopSpeedAntiPull()
     if speedAntiPull then speedAntiPull:Disconnect(); speedAntiPull = nil end
 end
 
+-- 原版可用的甩飞函数，直接搬用
 local function flingTarget(targetPlayer)
     if not targetPlayer or targetPlayer == LocalPlayer then return end
     local char = targetPlayer.Character
@@ -532,14 +533,13 @@ local function flingTarget(targetPlayer)
     if not myChar then return end
     local myRoot = myChar:FindFirstChild("HumanoidRootPart")
     if not myRoot then return end
-    local networkOwner = root:GetNetworkOwner()
-    if networkOwner == LocalPlayer then
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part:SetNetworkOwner(nil)
-            end
+    -- 夺取网络所有权，确保可以推动
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part:SetNetworkOwner(nil)
         end
     end
+    -- 瞬移到目标头顶并施加速度
     myRoot.CFrame = root.CFrame + Vector3.new(0, 3, 0)
     task.wait(0.05)
     local oldVel = myRoot.Velocity
@@ -1252,20 +1252,10 @@ do
                     end
                     if nearest then flingTarget(nearest) end
                 end},
-                {"飞行", function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/fly.lua"))()
-                end},
-                {"建造方块", function()
-                    loadstring(game:HttpGet("https://pastebin.com/raw/Zt4kkQG9"))()
-                end},
-                {"修改移速", function()
-                    local panel = createSpeedPanel()
-                    panel.Visible = not panel.Visible
-                end},
-                {"偷取道具", function()
-                    local cnt = stealAllItems()
-                    game:GetService("StarterGui"):SetCore("SendNotification", { Title = "偷取完成", Text = "共偷取 " .. tostring(cnt) .. " 个道具", Duration = 3 })
-                end},
+                {"飞行", function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/fly.lua"))() end},
+                {"建造方块", function() loadstring(game:HttpGet("https://pastebin.com/raw/Zt4kkQG9"))() end},
+                {"修改移速", function() local p = createSpeedPanel(); p.Visible = not p.Visible end},
+                {"偷取道具", function() stealAllItems() end},
             }
 
             local colCount = 2
@@ -1398,12 +1388,8 @@ do
                 return btn
             end
 
-            addSemiTransparentButton(page, "显示时间", 4, 4, function()
-                loadstring(game:HttpGet("https://pastebin.com/raw/0zKLyd4W"))()
-            end)
-            addSemiTransparentButton(page, "美化包排行榜第一", page.AbsoluteSize.X * 0.52, 4, function()
-                beautifyStats()
-            end)
+            addSemiTransparentButton(page, "显示时间", 4, 4, function() loadstring(game:HttpGet("https://pastebin.com/raw/0zKLyd4W"))() end)
+            addSemiTransparentButton(page, "美化包排行榜第一", page.AbsoluteSize.X * 0.52, 4, function() beautifyStats() end)
 
             local crosshairBtn = addSemiTransparentButton(page, "准星：关", 4, 4 + 45)
             crosshairBtn.MouseButton1Click:Connect(function()
