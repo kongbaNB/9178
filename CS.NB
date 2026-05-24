@@ -122,7 +122,7 @@ local Options = getgenv().Linoria.Options
 local Toggles = getgenv().Linoria.Toggles
 
 local Window = Library:CreateWindow({
-    Title = "RTaO HUB - Ink Game | Version: 2.0 ",
+    Title = "RTaO HUB - 墨水游戏 | 版本: 2.0",
     Center = true,
     AutoShow = true,
     Resizable = true,
@@ -132,9 +132,9 @@ local Window = Library:CreateWindow({
 })
 
 local Tabs = {
-    Main = Window:AddTab("Main"),
-    Visuals = Window:AddTab("Visuals"),
-    ["UI Settings"] = Window:AddTab("UI Settings"),
+    Main = Window:AddTab("主页"),
+    Visuals = Window:AddTab("视觉"),
+    ["UI Settings"] = Window:AddTab("界面设置"),
 }
 
 local Maid = {}
@@ -174,7 +174,7 @@ local Services = setmetatable({}, {
             self[key] = service
             return service
         else
-            warn(`[Services] Warning: "{key}" is not a valid Roblox service.`)
+            warn(`[Services] 警告: "{key}" 不是有效的Roblox服务。`)
             return nil
         end
     end
@@ -225,15 +225,15 @@ function Script.Functions.Alert(message, time_obj)
 end
 
 function Script.Functions.Warn(message)
-    warn("WARN - RTaOHUB:", message)
+    warn("警告 - RTaOHUB:", message)
 end
 
 function Script.Functions.ESP(args)
-    if not args.Object then return Script.Functions.Warn("ESP Object is nil") end
+    if not args.Object then return Script.Functions.Warn("ESP 对象为空") end
 
     local ESPManager = {
         Object = args.Object,
-        Text = args.Text or "No Text",
+        Text = args.Text or "无文本",
         TextParent = args.TextParent,
         Color = args.Color or Color3.new(),
         Offset = args.Offset or Vector3.zero,
@@ -363,7 +363,7 @@ function Script.Functions.SeekerESP(player)
     if player:GetAttribute("IsHunter") and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         local esp = Script.Functions.ESP({
             Object = player.Character,
-            Text = player.Name .. " (Seeker)",
+            Text = player.Name .. " (抓捕者)",
             Color = Options.SeekerEspColor.Value,
             Offset = Vector3.new(0, 3, 0),
             Type = "Seeker"
@@ -375,7 +375,7 @@ function Script.Functions.HiderESP(player)
     if player:GetAttribute("IsHider") and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         local esp = Script.Functions.ESP({
             Object = player.Character,
-            Text = player.Name .. " (Hider)",
+            Text = player.Name .. " (躲藏者)",
             Color = Options.HiderEspColor.Value,
             Offset = Vector3.new(0, 3, 0),
             Type = "Hider"
@@ -392,7 +392,7 @@ function Script.Functions.KeyESP(key)
     if key:IsA("Model") and key.PrimaryPart then
         local esp = Script.Functions.ESP({
             Object = key,
-            Text = key.Name .. " (Key)",
+            Text = key.Name .. " (钥匙)",
             Color = Options.KeyEspColor.Value,
             Offset = Vector3.new(0, 1, 0),
             Type = "Key",
@@ -403,10 +403,10 @@ end
 
 function Script.Functions.DoorESP(door)
     if door:IsA("Model") and door.Name == "FullDoorAnimated" and door.PrimaryPart then
-        local keyNeeded = door:GetAttribute("KeyNeeded") or "None"
+        local keyNeeded = door:GetAttribute("KeyNeeded") or "无"
         local esp = Script.Functions.ESP({
             Object = door,
-            Text = "Door (Key: " .. keyNeeded .. ")",
+            Text = "门 (需要钥匙: " .. keyNeeded .. ")",
             Color = Options.DoorEspColor.Value,
             Offset = Vector3.new(0, 2, 0),
             Type = "Door",
@@ -419,7 +419,7 @@ function Script.Functions.GuardESP(character)
     if character and character:FindFirstChild("HumanoidRootPart") then
         local esp = Script.Functions.ESP({
             Object = character,
-            Text = "Guard",
+            Text = "守卫",
             Color = Options.GuardEspColor.Value,
             Offset = Vector3.new(0, 3, 0),
             Type = "Guard"
@@ -453,7 +453,7 @@ Script.Functions.SafeRequire = function(module)
         return require(module)
     end)
     if not suc then
-        warn("[SafeRequire]: Failure loading "..tostring(module).." ("..tostring(err)..")")
+        warn("[SafeRequire]: 加载失败 "..tostring(module).." ("..tostring(err)..")")
     else
         Script.Temp[tostring(module)] = err
     end
@@ -495,7 +495,7 @@ Script.Functions.RevealGlassBridge = function()
 
     local glassHolder = workspace:FindFirstChild("GlassBridge") and workspace.GlassBridge:FindFirstChild("GlassHolder")
     if not glassHolder then
-        warn("GlassHolder not found in workspace.GlassBridge")
+        warn("在 workspace.GlassBridge 中未找到 GlassHolder")
         return
     end
 
@@ -530,7 +530,7 @@ Script.Functions.RevealGlassBridge = function()
         AnnouncementOneLine = true,
         FasterTween = true,
         DisplayTime = 10,
-        AnnouncementDisplayText = "[DYHUB]: Safe tiles are green, breakable tiles are red!"
+        AnnouncementDisplayText = "[DYHUB]: 绿色是安全板，红色是会碎裂的板子！"
     })
 end
 
@@ -542,9 +542,9 @@ Script.Functions.OnLoad = function()
         end
     }
 
-    Script.Functions.EffectsNotification("DYHUB - Ink Game loaded!", 5)
-    Script.Functions.EffectsNotification("DYHUB - Press Fix Camera first!", 5)
-    Script.Functions.EffectsNotification("Join our (dsc.gg/dyhub)", 5)
+    Script.Functions.EffectsNotification("DYHUB - 墨水游戏已加载！", 5)
+    Script.Functions.EffectsNotification("DYHUB - 请先点击修复摄像机！", 5)
+    Script.Functions.EffectsNotification("加入我们的 Discord (dsc.gg/dyhub)", 5)
 end
 
 function Script.Functions.EffectsNotification(text, dur)
@@ -864,7 +864,7 @@ Script.Functions.JoinDiscordServer = function()
             }).Body)
         end)
         if not success then
-            warn("Failed to get invite data:\n".. result)
+            warn("获取邀请数据失败:\n".. result)
             return
         end
         return success, result
@@ -893,7 +893,7 @@ Script.Functions.JoinDiscordServer = function()
     end)
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "DYHUB Discord - dsc.gg/dyhub",
-        Text = "Copied to clipboard (dsc.gg/dyhub)",
+        Text = "已复制到剪贴板 (dsc.gg/dyhub)",
         Duration = 10,
     })
 end
@@ -1025,7 +1025,7 @@ end
 local MAIN_ESP_META = {
     {
         metaName = "PlayerESP",
-        text = "Player",
+        text = "玩家",
         default = false,
         color = {
             metaName = "PlayerEspColor",
@@ -1040,7 +1040,7 @@ local MAIN_ESP_META = {
     },
     {
         metaName = "GuardESP",
-        text = "Guard",
+        text = "守卫",
         default = false,
         color = {
             metaName = "GuardEspColor",
@@ -1067,7 +1067,7 @@ local MAIN_ESP_META = {
     }
 }
 
-local MainESPGroup = Tabs.Visuals:AddLeftGroupbox("Main ESP") do
+local MainESPGroup = Tabs.Visuals:AddLeftGroupbox("主要 ESP") do
     for _, meta in pairs(MAIN_ESP_META) do
         MainESPGroup:AddToggle(meta.metaName, {
             Text = meta.text,
@@ -1100,7 +1100,7 @@ end
 local ESP_META = {
     {
         metaName = "HiderESP",
-        text = "Hider",
+        text = "躲藏者",
         default = false,
         color = {
             metaName = "HiderEspColor",
@@ -1110,7 +1110,7 @@ local ESP_META = {
     },
     {
         metaName = "SeekerESP",
-        text = "Seeker",
+        text = "抓捕者",
         default = false,
         color = {
             metaName = "SeekerEspColor",
@@ -1120,7 +1120,7 @@ local ESP_META = {
     },
     {
         metaName = "KeyESP",
-        text = "Key",
+        text = "钥匙",
         default = false,
         color = {
             metaName = "KeyEspColor",
@@ -1137,7 +1137,7 @@ local ESP_META = {
     },
     {
         metaName = "DoorESP",
-        text = "Door",
+        text = "门",
         default = false,
         color = {
             metaName = "DoorEspColor",
@@ -1154,7 +1154,7 @@ local ESP_META = {
     }
 }
 
-local ESPGroupBox = Tabs.Visuals:AddLeftGroupbox("Hide and Seek ESP") do
+local ESPGroupBox = Tabs.Visuals:AddLeftGroupbox("捉迷藏 ESP") do
     for _, meta in pairs(ESP_META) do
         ESPGroupBox:AddToggle(meta.metaName, {
             Text = meta.text,
@@ -1218,19 +1218,19 @@ local ESPGroupBox = Tabs.Visuals:AddLeftGroupbox("Hide and Seek ESP") do
     end
 end
 
-local ESPSettingsGroupBox = Tabs.Visuals:AddRightGroupbox("ESP Settings") do
+local ESPSettingsGroupBox = Tabs.Visuals:AddRightGroupbox("ESP 设置") do
     ESPSettingsGroupBox:AddToggle("ESPHighlight", {
-        Text = "Enable Highlight",
+        Text = "启用高亮",
         Default = true,
     })
 
     ESPSettingsGroupBox:AddToggle("ESPDistance", {
-        Text = "Show Distance",
+        Text = "显示距离",
         Default = true,
     })
 
     ESPSettingsGroupBox:AddSlider("ESPFillTransparency", {
-        Text = "Fill Transparency",
+        Text = "填充透明度",
         Default = 0.75,
         Min = 0,
         Max = 1,
@@ -1238,7 +1238,7 @@ local ESPSettingsGroupBox = Tabs.Visuals:AddRightGroupbox("ESP Settings") do
     })
 
     ESPSettingsGroupBox:AddSlider("ESPOutlineTransparency", {
-        Text = "Outline Transparency",
+        Text = "轮廓透明度",
         Default = 0,
         Min = 0,
         Max = 1,
@@ -1246,7 +1246,7 @@ local ESPSettingsGroupBox = Tabs.Visuals:AddRightGroupbox("ESP Settings") do
     })
 
     ESPSettingsGroupBox:AddSlider("ESPTextSize", {
-        Text = "Text Size",
+        Text = "文本大小",
         Default = 22,
         Min = 16,
         Max = 26,
@@ -1254,13 +1254,13 @@ local ESPSettingsGroupBox = Tabs.Visuals:AddRightGroupbox("ESP Settings") do
     })
 end
 
-local SelfGroupBox = Tabs.Visuals:AddRightGroupbox("Self") do
+local SelfGroupBox = Tabs.Visuals:AddRightGroupbox("自身") do
     SelfGroupBox:AddToggle("FOVToggle", {
-        Text = "FOV",
+        Text = "视野",
         Default = false
     })
     SelfGroupBox:AddSlider("FOVSlider", {
-        Text = "FOV",
+        Text = "视野角度",
         Default = 60,
         Min = 10,
         Max = 120,
@@ -1268,38 +1268,38 @@ local SelfGroupBox = Tabs.Visuals:AddRightGroupbox("Self") do
     })
 end
 
-local FunGroupBox = Tabs.Main:AddLeftGroupbox("DYHUB / Feature") do
+local FunGroupBox = Tabs.Main:AddLeftGroupbox("DYHUB / 功能") do
     FunGroupBox:AddToggle("InkGameAutowin", {
-        Text = "Auto Win (All)",
+        Text = "自动获胜 (全部)",
         Default = false
     })
 
     Toggles.InkGameAutowin:OnChanged(function(call)
         if call then
-            Script.Functions.Alert("Autowin enabled!", 3)
+            Script.Functions.Alert("自动获胜已启用！", 3)
             task.spawn(function()
-                Script.Functions.EffectsNotification("Autowin enabled!", 5)
+                Script.Functions.EffectsNotification("自动获胜已启用！", 5)
             end)
             Script.Functions.HandleAutowin()
         else
-            Script.Functions.Alert("Autowin disabled!", 3)
+            Script.Functions.Alert("自动获胜已禁用！", 3)
         end
     end)
 
     FunGroupBox:AddToggle("FlingAuraToggle", {
-        Text = "Fling Aura",
+        Text = "投掷光环",
         Default = false
     })
 
     FunGroupBox:AddToggle("AntiFlingToggle", {
-        Text = "Anti Fling",
+        Text = "防投掷",
         Default = false
     })
 
     Toggles.AntiFlingToggle:OnChanged(function(call)
         if call then
             Script.Temp.PauseAntiFling = nil
-            Script.Functions.Alert("Anti Fling Enabled", 3)
+            Script.Functions.Alert("防投掷已启用", 3)
             Script.Temp.AntiFlingActive = true
             Script.Temp.AntiFlingLoop = task.spawn(function()
                 local lastSafeCFrame = nil
@@ -1335,7 +1335,7 @@ local FunGroupBox = Tabs.Main:AddLeftGroupbox("DYHUB / Feature") do
                 end
             end)
         else
-            Script.Functions.Alert("Anti Fling Disabled", 3)
+            Script.Functions.Alert("防投掷已禁用", 3)
             Script.Temp.AntiFlingActive = false
             if Script.Temp.AntiFlingLoop then
                 task.cancel(Script.Temp.AntiFlingLoop)
@@ -1344,7 +1344,7 @@ local FunGroupBox = Tabs.Main:AddLeftGroupbox("DYHUB / Feature") do
     end)
 
     FunGroupBox:AddToggle("KillauraInkGame", {
-        Text = "Killaura",
+        Text = "杀戮光环",
         Default = false
     })
 
@@ -1352,7 +1352,7 @@ local FunGroupBox = Tabs.Main:AddLeftGroupbox("DYHUB / Feature") do
         if call then
             local fork = Script.Functions.GetFork()
             if not fork then
-                Script.Functions.Alert("No Weapon found!", 3)
+                Script.Functions.Alert("未找到武器！", 3)
                 Toggles.KillauraInkGame:SetValue(false)
                 return
             end
@@ -1367,9 +1367,9 @@ local FunGroupBox = Tabs.Main:AddLeftGroupbox("DYHUB / Feature") do
     end)
 end
 
-local GreenLightRedLightGroup = Tabs.Main:AddLeftGroupbox("Red Light / Green Light") do
+local GreenLightRedLightGroup = Tabs.Main:AddLeftGroupbox("红灯/绿灯") do
     GreenLightRedLightGroup:AddToggle("RedLightGodmode", {
-        Text = "Godmode",
+        Text = "无敌模式",
         Default = false
     })
 
@@ -1377,7 +1377,7 @@ local GreenLightRedLightGroup = Tabs.Main:AddLeftGroupbox("Red Light / Green Lig
     Toggles.RedLightGodmode:OnChanged(function(enabled)
         if enabled then
             if not hookmetamethod then
-                Script.Functions.Alert("Your executor doesn't support this :(")
+                Script.Functions.Alert("你的执行器不支持此功能 :(")
                 Toggles.RedLightGodMode:SetValue(false)
                 return
             end
@@ -1414,7 +1414,7 @@ local GreenLightRedLightGroup = Tabs.Main:AddLeftGroupbox("Red Light / Green Lig
                 return RLGL_OriginalNamecall(self, ...)
             end)
             Script.Temp.RLGL_OriginalNamecall = RLGL_OriginalNamecall
-            Script.Functions.Alert("Red Light Green Light Godmode Enabled", 3)
+            Script.Functions.Alert("红灯绿灯无敌模式已启用", 3)
         else
             if Script.Temp.RLGL_Connection then
                 pcall(function() Script.Temp.RLGL_Connection:Disconnect() end)
@@ -1424,17 +1424,17 @@ local GreenLightRedLightGroup = Tabs.Main:AddLeftGroupbox("Red Light / Green Lig
                 hookmetamethod(game, "__namecall", Script.Temp.RLGL_OriginalNamecall)
                 Script.Temp.RLGL_OriginalNamecall = nil
             end
-            Script.Functions.Alert("Red Light Green Light Godmode Disabled", 3)
+            Script.Functions.Alert("红灯绿灯无敌模式已禁用", 3)
         end
     end)
-    GreenLightRedLightGroup:AddButton("Complete Red Light / Green Light", function()
+    GreenLightRedLightGroup:AddButton("完成红灯/绿灯", function()
         if not game.Workspace:FindFirstChild("RedLightGreenLight") then
-            Script.Functions.Alert("Game not running")
+            Script.Functions.Alert("游戏未开始")
             return
         end
         Script.Functions.WinRLGL()
     end)
-    GreenLightRedLightGroup:AddButton("Remove Injured Walking", function()
+    GreenLightRedLightGroup:AddButton("移除受伤行走效果", function()
         if lplr.Character and lplr.Character:FindFirstChild("InjuredWalking") then
             lplr.Character.InjuredWalking:Destroy()
         end
@@ -1442,17 +1442,17 @@ local GreenLightRedLightGroup = Tabs.Main:AddLeftGroupbox("Red Light / Green Lig
     end)
 end
 
-local DangolaGameGroup = Tabs.Main:AddLeftGroupbox("Dalgona Game") do
-    DangolaGameGroup:AddButton("Complete Dalgona Game", function()
+local DangolaGameGroup = Tabs.Main:AddLeftGroupbox("椪糖游戏") do
+    DangolaGameGroup:AddButton("完成椪糖游戏", function()
         if not Script.Functions.GetDalgonaRemote() then
-            Script.Functions.Alert("Game hasn't started yet")
+            Script.Functions.Alert("游戏尚未开始")
             return
         end
         Script.Functions.CompleteDalgonaGame()
         Script.Functions.BypassDalgonaGame()
         Script.Functions.FixCamera()
-        Script.Functions.Alert("Completed Dalgona Game!", 2)
-        Script.Functions.Alert("If the camera doesn't fix itself use the Fix Camera button.", 3)
+        Script.Functions.Alert("椪糖游戏已完成！", 2)
+        Script.Functions.Alert("如果镜头没有自动修复，请点击修复镜头按钮。", 3)
         task.spawn(function()
             repeat
                 task.wait(1)
@@ -1461,7 +1461,7 @@ local DangolaGameGroup = Tabs.Main:AddLeftGroupbox("Dalgona Game") do
         end)
     end)
     DangolaGameGroup:AddToggle("ImmuneDalgonaGame", {
-        Text = "Immune Dalgona Game",
+        Text = "免疫椪糖碎裂",
         Default = false
     })
 end
@@ -1469,7 +1469,7 @@ end
 Toggles.ImmuneDalgonaGame:OnChanged(function(call)
     if call then
         if not hookmetamethod then
-            Script.Functions.Alert("Your executor doesn't suport this function :(", 5)
+            Script.Functions.Alert("你的执行器不支持此功能 :(", 5)
             Toggles.ImmuneDalgonaGame:SetValue(false)
             return
         end
@@ -1480,7 +1480,7 @@ Toggles.ImmuneDalgonaGame:OnChanged(function(call)
 
             if tostring(self) == "DALGONATEMPREMPTE" and method == "FireServer" then
                 if args[1] ~= nil and type(args[1]) == "table" and args[1].CrackAmount ~= nil then
-                    Script.Functions.Alert("Prevented your cookie from cracking", 3)
+                    Script.Functions.Alert("已阻止你的饼干碎裂", 3)
                     return nil
                 end
             end
@@ -1488,7 +1488,7 @@ Toggles.ImmuneDalgonaGame:OnChanged(function(call)
             return DalgonaRemoteHook(self, unpack(args))
         end)
         Script.Temp.DalgonaRemoteHook = DalgonaRemoteHook
-        Script.Functions.Alert("Your cookie will not break from now on!", 3)
+        Script.Functions.Alert("从现在开始你的饼干不会碎裂！", 3)
     else
         if not hookmetamethod then return end
         if not Script.Temp.DalgonaRemoteHook then return end
@@ -1496,20 +1496,20 @@ Toggles.ImmuneDalgonaGame:OnChanged(function(call)
     end
 end)
 
-local TugOfWarGroup = Tabs.Main:AddLeftGroupbox("Tug Of War") do
+local TugOfWarGroup = Tabs.Main:AddLeftGroupbox("拔河") do
     TugOfWarGroup:AddToggle("AutoPull", {
-        Text = "Auto Pull",
+        Text = "自动拉绳",
         Default = false
     })
     TugOfWarGroup:AddToggle("PerfectPull", {
-        Text = "Perfect Pull",
+        Text = "完美拉绳",
         Default = true
     })
 end
 
-local MingleGroup = Tabs.Main:AddLeftGroupbox("Mingle") do
+local MingleGroup = Tabs.Main:AddLeftGroupbox("抱团") do
     MingleGroup:AddToggle("AutoMingleQTE", {
-        Text = "Auto Mingle",
+        Text = "自动抱团",
         Default = false
     })
     local RemoteForQTE
@@ -1543,17 +1543,17 @@ local MingleGroup = Tabs.Main:AddLeftGroupbox("Mingle") do
     end)
 end
 
-local GlassBridgeGroup = Tabs.Main:AddLeftGroupbox("Glass Bridge") do
-    GlassBridgeGroup:AddButton("Complete Glass Bridge Game", function()
+local GlassBridgeGroup = Tabs.Main:AddLeftGroupbox("玻璃桥") do
+    GlassBridgeGroup:AddButton("完成玻璃桥游戏", function()
         if not workspace:FindFirstChild("GlassBridge") then
-            Script.Functions.Alert("Game not running")
+            Script.Functions.Alert("游戏未开始")
             return
         end
         Script.Functions.WinGlassBridge()
     end)
-    GlassBridgeGroup:AddButton("Reveal Glass Bridge", function()
+    GlassBridgeGroup:AddButton("揭示玻璃桥", function()
         if not workspace:FindFirstChild("GlassBridge") then
-            Script.Functions.Alert("Game not running")
+            Script.Functions.Alert("游戏未开始")
             return
         end
         Script.Functions.RevealGlassBridge()
@@ -1573,25 +1573,25 @@ function Script.Functions.GetHider()
     end
 end
 
-local HideAndSeekGroup = Tabs.Main:AddLeftGroupbox("Hide And Seek") do
-    HideAndSeekGroup:AddButton("Teleport To Hider", function()
+local HideAndSeekGroup = Tabs.Main:AddLeftGroupbox("捉迷藏") do
+    HideAndSeekGroup:AddButton("传送到躲藏者", function()
         if not lplr.Character then return end
         if Script.GameState ~= "HideAndSeek" then
-            Script.Functions.Alert("Game not running!")
+            Script.Functions.Alert("游戏未开始！")
             return
         end
         local hider = Script.Functions.GetHider()
         if not hider then
-            Script.Functions.Alert("No hider found :(")
+            Script.Functions.Alert("未找到躲藏者 :(")
             return
         end
         lplr.Character:PivotTo(hider:GetPrimaryPartCFrame())
     end)
 end
 
-local RebelGroup = Tabs.Main:AddLeftGroupbox("Rebel") do
+local RebelGroup = Tabs.Main:AddLeftGroupbox("叛军") do
     RebelGroup:AddToggle("ExpandGuardHitbox", {
-        Text = "Expand Guard Hitbox",
+        Text = "扩大守卫碰撞箱",
         Default = false
     })
 
@@ -1668,12 +1668,12 @@ local RebelGroup = Tabs.Main:AddLeftGroupbox("Rebel") do
     end)
 end
 
-local InformationGroup = Tabs.Main:AddRightGroupbox("Information") do
-    InformationGroup:AddLabel("Welcome to DYHUB!")
-    InformationGroup:AddLabel("Make sure to join our discord \n server for updates!")
+local InformationGroup = Tabs.Main:AddRightGroupbox("信息") do
+    InformationGroup:AddLabel("欢迎使用 DYHUB！")
+    InformationGroup:AddLabel("请务必加入我们的 Discord 服务器\n以获取更新！")
     InformationGroup:AddLabel("")
-    InformationGroup:AddButton("Join Discord Server", Script.Functions.JoinDiscordServer)
-    InformationGroup:AddButton("Unload", function() Library:Unload() end)
+    InformationGroup:AddButton("加入 Discord 服务器", Script.Functions.JoinDiscordServer)
+    InformationGroup:AddButton("卸载", function() Library:Unload() end)
 end
 
 function Script.Functions.CleanTable(tab)
@@ -1686,16 +1686,16 @@ end
 
 function Script.Functions.GetEmotesMeta()
     local Animations = ReplicatedStorage:WaitForChild("Animations", 10)
-    if not Animations then Script.Functions.Warn("[GetEmotesMeta]: Animations folder timeout!"); return end
+    if not Animations then Script.Functions.Warn("[GetEmotesMeta]: 动画文件夹超时！"); return end
     local Emotes = Animations:WaitForChild("Emotes", 10)
-    if not Emotes then Script.Functions.Warn("[GetEmotesMeta]: Emotes folder timeout!"); return end
+    if not Emotes then Script.Functions.Warn("[GetEmotesMeta]: 表情文件夹超时！"); return end
     local res = {}
     for i, v in pairs(Emotes:GetChildren()) do
         if v.ClassName ~= "Animation" then continue end
         if not v.AnimationId then continue end
 
         if res[v.Name] then
-            Script.Functions.Warn("[GetEmotesMeta | Resolver]: The emote "..tostring(v.Name).." is duplicated! Overwriting past data...")
+            Script.Functions.Warn("[GetEmotesMeta | 解析器]: 表情 "..tostring(v.Name).." 重复！正在覆盖过去的数据...")
         end
 
         res[v.Name] = {
@@ -1710,8 +1710,8 @@ end
 function Script.Functions.RefreshEmoteList()
     local w = function(str) Script.Functions.Warn("[RefreshEmoteList]: "..tostring(str)) end
     local res = Script.Functions.GetEmotesMeta()
-    if not res then w("res not found!") return end
-    if not Options.EmotesList then w("Emotes List Option not found!") return end
+    if not res then w("未找到资源！") return end
+    if not Options.EmotesList then w("未找到表情列表选项！") return end
     Options.EmotesList:SetValues(Script.Functions.CleanTable(res))
 end
 
@@ -1730,12 +1730,12 @@ end
 function Script.Functions.PlayEmote(emoteId, emoteObject)
     local character = lplr and lplr.Character
     if not character then
-        Script.Functions.Alert("[Emote] No character found!", 3)
+        Script.Functions.Alert("[表情] 未找到角色！", 3)
         return
     end
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     if not humanoid then
-        Script.Functions.Alert("[Emote] No humanoid found!", 3)
+        Script.Functions.Alert("[表情] 未找到人形对象！", 3)
         return
     end
 
@@ -1749,7 +1749,7 @@ function Script.Functions.PlayEmote(emoteId, emoteObject)
         animId = emoteObject.AnimationId
     end
     if not animId or animId == "" then
-        Script.Functions.Alert("[Emote] Invalid AnimationId!", 3)
+        Script.Functions.Alert("[表情] 无效的动画ID！", 3)
         return
     end
     local anim = Instance.new("Animation")
@@ -1762,33 +1762,33 @@ function Script.Functions.PlayEmote(emoteId, emoteObject)
         Script.Temp.EmoteTrack = track
     end)
     if not success or not track then
-        Script.Functions.Alert("[Emote] Failed to play emote!", 3)
+        Script.Functions.Alert("[表情] 播放失败！", 3)
         return
     end
 end
 
-local MiscGroup = Tabs.Main:AddRightGroupbox("Misc / Dupe") do
+local MiscGroup = Tabs.Main:AddRightGroupbox("杂项 / 复制") do
     MiscGroup:AddDropdown("EmotesList", {
-        Text = 'Emotes List',
+        Text = '表情列表',
         Values = {},
         AllowNull = true
     })
     task.spawn(Script.Functions.HookEmotesFolder)
-    MiscGroup:AddButton("Play Emote", function()
+    MiscGroup:AddButton("播放表情", function()
         if Options.EmotesList.Value then
             local emoteId = Script.Functions.ValidateEmote(Options.EmotesList.Value)
             if emoteId and emoteId.anim and emoteId.object then
                 Script.Functions.PlayEmote(emoteId.anim, emoteId.object)
             else
-                Script.Functions.Alert("Error! Invalid emote selected")
+                Script.Functions.Alert("错误！所选表情无效")
                 Options.EmoteList:SetValue(nil)
                 Script.Functions.RefreshEmoteList()
             end
         else
-            Script.Functions.Alert("No Emote Selected!", 3)
+            Script.Functions.Alert("未选择表情！", 3)
         end
     end)
-    MiscGroup:AddButton("Stop Emoting", function()
+    MiscGroup:AddButton("停止表情", function()
         if Script.Temp.EmoteTrack and typeof(Script.Temp.EmoteTrack) == "Instance" and Script.Temp.EmoteTrack:IsA("AnimationTrack") then
             pcall(function() Script.Temp.EmoteTrack:Stop() end)
             Script.Temp.EmoteTrack = nil
@@ -1798,37 +1798,37 @@ local MiscGroup = Tabs.Main:AddRightGroupbox("Misc / Dupe") do
     MiscGroup:AddDivider()
 
     MiscGroup:AddToggle("AntiRagdoll", {
-        Text = "Anti Ragdoll + No Stun",
+        Text = "防布娃娃 + 无眩晕",
         Default = false
     })
 
-    MiscGroup:AddButton("Remove Ragdoll Effect", Script.Functions.BypassRagdoll)
+    MiscGroup:AddButton("移除布娃娃效果", Script.Functions.BypassRagdoll)
 
     MiscGroup:AddDivider()
     MiscGroup:AddToggle("SpectateModeToggler", {
-        Text = "Enable Spectator Mode",
+        Text = "启用观战模式",
         Default = false
     })
     Toggles.SpectateModeToggler:OnChanged(function(call)
         workspace.Values.CanSpectateIfWonGame.Value = call
     end)
     MiscGroup:AddDivider()
-    MiscGroup:AddButton("Fix Camera", Script.Functions.FixCamera)
-    MiscGroup:AddButton("Skip Cutscene", Script.Functions.FixCamera)
-    MiscGroup:AddButton("Teleport To Safe Place", function()
+    MiscGroup:AddButton("修复镜头", Script.Functions.FixCamera)
+    MiscGroup:AddButton("跳过过场", Script.Functions.FixCamera)
+    MiscGroup:AddButton("传送到安全地点", function()
         if not lplr.Character then
-            Script.Functions.Alert("No character found")
+            Script.Functions.Alert("未找到角色")
             return
         end
         Script.Functions.TeleportSafe()
     end)
 
-    MiscGroup:AddButton("Fix Players Visibility", Script.Functions.CheckPlayersVisibility)
+    MiscGroup:AddButton("修复玩家可见性", Script.Functions.CheckPlayersVisibility)
 end
 
 Toggles.AntiRagdoll:OnChanged(function(call)
     if call then
-        Script.Functions.Alert("Anti Ragdoll + No Stun Enabled", 3)
+        Script.Functions.Alert("防布娃娃 + 无眩晕已启用", 3)
         Script.Functions.BypassRagdoll()
         task.spawn(function()
             repeat
@@ -1837,7 +1837,7 @@ Toggles.AntiRagdoll:OnChanged(function(call)
             until not Toggles.AntiRagdoll.Value or Library.Unloaded
         end)
     else
-        Script.Functions.Alert("Anti Ragdoll + No Stun Disabled", 3)
+        Script.Functions.Alert("防布娃娃 + 无眩晕已禁用", 3)
     end
 end)
 
@@ -1861,9 +1861,9 @@ Toggles.FOVToggle:OnChanged(function(call)
     end
 end)
 
-local PlayerGroupBox = Tabs.Main:AddLeftGroupbox("Player") do
+local PlayerGroupBox = Tabs.Main:AddLeftGroupbox("玩家") do
     PlayerGroupBox:AddSlider("SpeedSlider", {
-        Text = "Walk Speed",
+        Text = "行走速度",
         Default = 16,
         Min = 0,
         Max = 300,
@@ -1871,37 +1871,37 @@ local PlayerGroupBox = Tabs.Main:AddLeftGroupbox("Player") do
     })
 
     PlayerGroupBox:AddToggle("SpeedToggle", {
-        Text = "Speed",
+        Text = "速度",
         Default = false
     }):AddKeyPicker("SpeedKey", {
         Mode = "Toggle",
         Default = "C",
-        Text = "Speed",
+        Text = "速度",
         SyncToggleState = true
     })
 
     PlayerGroupBox:AddToggle("Noclip", {
-        Text = "Noclip",
+        Text = "穿墙",
         Default = false
     }):AddKeyPicker("NoclipKey", {
         Mode = "Toggle",
         Default = "N",
-        Text = "Noclip",
+        Text = "穿墙",
         SyncToggleState = true
     })
 
     PlayerGroupBox:AddToggle("InfiniteJump", {
-        Text = "Infinite Jump",
+        Text = "无限跳跃",
         Default = false
     })
 
     PlayerGroupBox:AddToggle("Fly", {
-        Text = "Fly",
+        Text = "飞行",
         Default = false
     })
 
     PlayerGroupBox:AddSlider("FlySpeed", {
-        Text = "Fly Speed",
+        Text = "飞行速度",
         Default = 20,
         Min = 10,
         Max = 300,
@@ -1920,7 +1920,7 @@ function Script.Functions.HookShittyAntiFlingDetection()
     end
     local Main = lplr.Character:WaitForChild("Main")
     if Main.Enabled then
-        Script.Functions.Alert("Patched the Ink Game shitty Anti Fling :omegalul:", 1)
+        Script.Functions.Alert("已修补墨水游戏的垃圾防投掷检测 :omegalul:", 1)
     end
     pcall(function()
         Main.Enabled = false
@@ -1964,7 +1964,7 @@ Toggles.FlingAuraToggle:OnChanged(function(enabled)
     end
 
     if enabled then
-        Script.Functions.Alert("Fling Aura Enabled", 3)
+        Script.Functions.Alert("投掷光环已启用", 3)
         Script.Temp.FlingAuraActive = true
         Script.Functions.HookShittyAntiFlingDetection()
         setNoclip(true)
@@ -1998,7 +1998,7 @@ Toggles.FlingAuraToggle:OnChanged(function(enabled)
             end
         end)
     else
-        Script.Functions.Alert("Fling Aura Disabled", 3)
+        Script.Functions.Alert("投掷光环已禁用", 3)
         Script.Functions.RevertAntiFlingDetection()
         stopFlingAura()
     end
@@ -2009,7 +2009,7 @@ Options.FlySpeed:SetVisible(false)
 
 Toggles.Noclip:OnChanged(function(call)
     if call then
-        Script.Functions.Alert("Noclip Enabled", 3)
+        Script.Functions.Alert("穿墙已启用", 3)
         local function NoclipLoop()
             if lplr.Character ~= nil then
                 for _, child in pairs(lplr.Character:GetDescendants()) do
@@ -2026,7 +2026,7 @@ Toggles.Noclip:OnChanged(function(call)
             until not Toggles.Noclip.Value or Library.Unloaded
         end)
     else
-        Script.Functions.Alert("Noclip Disabled", 3)
+        Script.Functions.Alert("穿墙已禁用", 3)
         if lplr.Character ~= nil then
             for _, child in pairs(lplr.Character:GetDescendants()) do
                 if child:IsA("BasePart") and child.CanCollide == false then
@@ -2046,7 +2046,7 @@ end)
 
 Toggles.SpeedToggle:OnChanged(function(call)
     if call then
-        Script.Functions.Alert("Speed Enabled", 3)
+        Script.Functions.Alert("速度已启用", 3)
         Script.Temp.OldSpeed = lplr.Character.Humanoid.WalkSpeed
         task.spawn(function()
             repeat
@@ -2061,7 +2061,7 @@ Toggles.SpeedToggle:OnChanged(function(call)
             until not Toggles.SpeedToggle.Value or Library.Unloaded
         end)
     else
-        Script.Functions.Alert("Speed Disabled", 3)
+        Script.Functions.Alert("速度已禁用", 3)
         lplr.Character.Humanoid.WalkSpeed = Script.Temp.OldSpeed or 23
     end
 end)
@@ -2099,9 +2099,9 @@ Toggles.Fly:OnChanged(function(value)
     end
 end)
 
-local SecurityGroupBox = Tabs.Main:AddRightGroupbox("Security") do
+local SecurityGroupBox = Tabs.Main:AddRightGroupbox("安全") do
     SecurityGroupBox:AddToggle("AntiAfk", {
-        Text = "Anti AFK",
+        Text = "防挂机",
         Default = true
     })
     Toggles.AntiAfk:OnChanged(function(call)
@@ -2120,7 +2120,7 @@ local SecurityGroupBox = Tabs.Main:AddRightGroupbox("Security") do
         end
     end)
     SecurityGroupBox:AddToggle("StaffDetector", {
-        Text = "Anti-Admin",
+        Text = "管理员检测",
         Default = true
     })
     Toggles.StaffDetector:OnChanged(function(call)
@@ -2128,9 +2128,9 @@ local SecurityGroupBox = Tabs.Main:AddRightGroupbox("Security") do
             local STAFF_GROUP_ID = 12398672
             local STAFF_MIN_RANK = 120
             local staffRoles = {
-                [120] = "moderator",
-                [254] = "dev",
-                [255] = "owner"
+                [120] = "版主",
+                [254] = "开发者",
+                [255] = "所有者"
             }
             Script.Temp.DetectedStaff = Script.Temp.DetectedStaff or {}
             local function checkPlayerStaff(player)
@@ -2138,8 +2138,8 @@ local SecurityGroupBox = Tabs.Main:AddRightGroupbox("Security") do
                     return player:GetRankInGroup(STAFF_GROUP_ID)
                 end)
                 if success and rank and rank >= STAFF_MIN_RANK then
-                    local roleName = staffRoles[rank] or ("rank " .. tostring(rank))
-                    Script.Functions.Alert("[Anti-Admin] Staff detected: " .. player.Name .. " (" .. roleName .. ")", 10)
+                    local roleName = staffRoles[rank] or ("等级 " .. tostring(rank))
+                    Script.Functions.Alert("[管理员检测] 检测到管理员: " .. player.Name .. " (" .. roleName .. ")", 10)
                     Script.Temp.DetectedStaff[player.UserId] = {Name = player.Name, Role = roleName}
                     return true
                 end
@@ -2160,7 +2160,7 @@ local SecurityGroupBox = Tabs.Main:AddRightGroupbox("Security") do
             Script.Temp.StaffDetectorConnections.PlayerRemoving = Players.PlayerRemoving:Connect(function(player)
                 local staffInfo = Script.Temp.DetectedStaff and Script.Temp.DetectedStaff[player.UserId]
                 if staffInfo then
-                    Script.Functions.Alert("[Anti-Admin] Staff left: " .. staffInfo.Name .. " (" .. staffInfo.Role .. ")", 10)
+                    Script.Functions.Alert("[管理员检测] 管理员离开: " .. staffInfo.Name .. " (" .. staffInfo.Role .. ")", 10)
                     Script.Temp.DetectedStaff[player.UserId] = nil
                 end
             end)
@@ -2172,18 +2172,18 @@ local SecurityGroupBox = Tabs.Main:AddRightGroupbox("Security") do
                 Script.Temp.StaffDetectorConnections = nil
             end
             Script.Temp.DetectedStaff = nil
-            Script.Functions.Alert("[Anti-Admin] Staff detection disabled.", 3)
+            Script.Functions.Alert("[管理员检测] 管理员检测已禁用。", 3)
         end
     end)
 end
 
-local PerformanceGroupBox = Tabs.Main:AddRightGroupbox("Performance") do
+local PerformanceGroupBox = Tabs.Main:AddRightGroupbox("性能") do
     PerformanceGroupBox:AddToggle("LowGFX", {
-        Text = "Low GFX",
+        Text = "低画质",
         Default = false
     })
     PerformanceGroupBox:AddToggle("DisableEffects", {
-        Text = "Disable Effects",
+        Text = "禁用特效",
         Default = false
     })
     Toggles.DisableEffects:OnChanged(function(call)
@@ -2203,7 +2203,7 @@ local PerformanceGroupBox = Tabs.Main:AddRightGroupbox("Performance") do
             end
         end
     end)
-    PerformanceGroupBox:AddButton("Clear Effects Cache", function()
+    PerformanceGroupBox:AddButton("清除特效缓存", function()
         if workspace:FindFirstChild("Effects") then
             workspace.Effects:ClearAllChildren()
         end
@@ -2229,16 +2229,16 @@ function Script.Functions.HandleAutowin()
     end)
 
     if States[Script.GameState] then
-        Script.Functions.Alert("[Auto Win]: Running on "..tostring(Script.GameState))
+        Script.Functions.Alert("[自动获胜]: 正在执行 "..tostring(Script.GameState))
         task.spawn(function()
-            Script.Functions.EffectsNotification("[Auto Win]: Running on "..tostring(Script.GameState), 10)
+            Script.Functions.EffectsNotification("[自动获胜]: 正在执行 "..tostring(Script.GameState), 10)
         end)
         lastCleanupFunction = States[Script.GameState]()
     else
         task.spawn(function()
-            Script.Functions.EffectsNotification("[Auto Win]: Waiting for the next game...", 10)
+            Script.Functions.EffectsNotification("[自动获胜]: 正在等待下一场游戏...", 10)
         end)
-        Script.Functions.Alert("[Auto Win]: Waiting for the next game...")
+        Script.Functions.Alert("[自动获胜]: 正在等待下一场游戏...")
     end
 end
 
@@ -2293,7 +2293,7 @@ States = {
         if lplr:GetAttribute("IsHider") then
             Script.Functions.TeleportSafe()
         else
-            Script.Functions.Alert("[Auto Win]: Hide and Seek support for Seekers soon...")
+            Script.Functions.Alert("[自动获胜]: 抓捕者自动获胜功能即将推出...")
         end
     end,
     LightsOut = Script.Functions.TeleportSafe,
@@ -2383,29 +2383,29 @@ Library:OnUnload(function()
     shared.Voidware_InkGame_Library = nil
 end)
 
-local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu")
-local CreditsGroup = Tabs["UI Settings"]:AddRightGroupbox("Credits")
+local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("菜单")
+local CreditsGroup = Tabs["UI Settings"]:AddRightGroupbox("鸣谢")
 
-MenuGroup:AddToggle("KeybindMenuOpen", { Default = false, Text = "Open Keybind Menu", Callback = function(value) Library.KeybindFrame.Visible = value end})
-MenuGroup:AddToggle("ShowCustomCursor", {Text = "Custom Cursor", Default = true, Callback = function(Value) Library.ShowCustomCursor = Value end})
+MenuGroup:AddToggle("KeybindMenuOpen", { Default = false, Text = "打开按键绑定菜单", Callback = function(value) Library.KeybindFrame.Visible = value end})
+MenuGroup:AddToggle("ShowCustomCursor", {Text = "自定义光标", Default = true, Callback = function(Value) Library.ShowCustomCursor = Value end})
 MenuGroup:AddDivider()
-MenuGroup:AddLabel("Menu bind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = false, Text = "Menu keybind" })
-MenuGroup:AddButton("Join Discord Server", Script.Functions.JoinDiscordServer)
-MenuGroup:AddButton("Unload", function() Library:Unload() end)
+MenuGroup:AddLabel("菜单快捷键"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = false, Text = "菜单快捷键" })
+MenuGroup:AddButton("加入 Discord 服务器", Script.Functions.JoinDiscordServer)
+MenuGroup:AddButton("卸载", function() Library:Unload() end)
 
-CreditsGroup:AddLabel("RTaOHUB'S TEAM - Python / Dex")
-CreditsGroup:AddLabel("RTaOHUB SCRIPTER - Feature All")
-CreditsGroup:AddLabel("RTaOHUB UI - Linoria Library")
-CreditsGroup:AddLabel("RTaOHUB BYPASS - Disable Anti-Cheat All")
-CreditsGroup:AddLabel("RTaOHUB LOOPHOLES - Infinite Yield / Dex / Remote Spy")
-CreditsGroup:AddLabel("Please notify me if you want to buy \n Premium (@dyumraisgoodguy#6969 on discord)")
+CreditsGroup:AddLabel("RTaOHUB 团队 - Python / Dex")
+CreditsGroup:AddLabel("RTaOHUB 脚本编写 - 全部功能")
+CreditsGroup:AddLabel("RTaOHUB 界面 - Linoria Library")
+CreditsGroup:AddLabel("RTaOHUB 绕过 - 禁用所有反作弊")
+CreditsGroup:AddLabel("RTaOHUB 漏洞利用 - Infinite Yield / Dex / Remote Spy")
+CreditsGroup:AddLabel("如需购买高级版请联系 \n (@dyumraisgoodguy#6969 on discord)")
 
 Library.ToggleKeybind = Options.MenuKeybind
 
 Toggles.KeybindMenuOpen:OnChanged(function(call)
     if call then
         if Services.UserInputService.TouchEnabled and not Services.UserInputService.KeyboardEnabled and not Services.UserInputService.MouseEnabled then
-            Script.Functions.Alert("Keybind Menu Disabled on mobile", 1.5)
+            Script.Functions.Alert("移动端禁用按键绑定菜单", 1.5)
             Toggles.KeybindMenuOpen:SetValue(false)
         end
     end
