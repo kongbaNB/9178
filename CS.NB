@@ -451,79 +451,6 @@ local function teleportToPlayer(p)
     end
 end
 
-local function flingTarget(p)
-    if not p or not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") then return end
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    local root = char.HumanoidRootPart
-    local targetRoot = p.Character.HumanoidRootPart
-    root.CFrame = targetRoot.CFrame + Vector3.new(0, 3, 0)
-    task.wait(0.05)
-    local oldVel = root.Velocity
-    root.Velocity = oldVel * 10000 + Vector3.new(0, 10000, 0)
-    RunService.RenderStepped:Wait()
-    root.Velocity = oldVel
-end
-
-local function showPlayerSelectForFling()
-    local selectGui = Instance.new("ScreenGui")
-    selectGui.Name = "FlingPlayerSelect"
-    selectGui.Parent = LocalPlayer.PlayerGui
-    selectGui.IgnoreGuiInset = true
-    selectGui.ResetOnSpawn = false
-    local bg = Instance.new("Frame")
-    bg.Parent = selectGui
-    bg.Size = UDim2.new(0, 200, 0, 250)
-    bg.Position = UDim2.new(0.5, -100, 0.5, -125)
-    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
-    local title = Instance.new("TextLabel")
-    title.Parent = bg
-    title.Size = UDim2.new(1, 0, 0, 30)
-    title.BackgroundTransparency = 1
-    title.Text = "选择甩飞目标"
-    title.TextColor3 = Color3.new(1,1,1)
-    title.Font = Enum.Font.SourceSansBold
-    title.TextSize = 16
-    local scrollFrame = Instance.new("ScrollingFrame")
-    scrollFrame.Parent = bg
-    scrollFrame.Size = UDim2.new(1, -10, 1, -40)
-    scrollFrame.Position = UDim2.new(0, 5, 0, 35)
-    scrollFrame.BackgroundTransparency = 1
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    scrollFrame.ScrollBarThickness = 4
-    local playersList = Players:GetPlayers()
-    local y = 0
-    for _, p in ipairs(playersList) do
-        if p ~= LocalPlayer then
-            local btn = Instance.new("TextButton")
-            btn.Parent = scrollFrame
-            btn.Size = UDim2.new(1, -10, 0, 30)
-            btn.Position = UDim2.new(0, 5, 0, y)
-            btn.Text = p.Name
-            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            btn.TextColor3 = Color3.new(1,1,1)
-            btn.Font = Enum.Font.SourceSans
-            btn.TextSize = 14
-            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = btn
-            btn.MouseButton1Click:Connect(function() flingTarget(p); selectGui:Destroy() end)
-            y = y + 35
-        end
-    end
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, y)
-    local closeBtn = Instance.new("TextButton")
-    closeBtn.Parent = bg
-    closeBtn.Size = UDim2.new(0, 30, 0, 20)
-    closeBtn.Position = UDim2.new(1, -35, 0, 5)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    closeBtn.Text = "X"
-    closeBtn.TextColor3 = Color3.new(1,1,1)
-    closeBtn.Font = Enum.Font.SourceSansBold
-    closeBtn.TextSize = 14
-    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-    closeBtn.MouseButton1Click:Connect(function() selectGui:Destroy() end)
-end
-
 local function showPlayerSelect()
     local selectGui = Instance.new("ScreenGui")
     selectGui.Name = "PlayerSelect"
@@ -593,6 +520,91 @@ end
 
 local function stopSpeedAntiPull()
     if speedAntiPull then speedAntiPull:Disconnect(); speedAntiPull = nil end
+end
+
+local function flingTarget(targetPlayer)
+    if not targetPlayer or targetPlayer == LocalPlayer then return end
+    local char = targetPlayer.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local myChar = LocalPlayer.Character
+    if not myChar then return end
+    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return end
+    local networkOwner = root:GetNetworkOwner()
+    if networkOwner == LocalPlayer then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part:SetNetworkOwner(nil)
+            end
+        end
+    end
+    myRoot.CFrame = root.CFrame + Vector3.new(0, 3, 0)
+    task.wait(0.05)
+    local oldVel = myRoot.Velocity
+    myRoot.Velocity = oldVel * 10000 + Vector3.new(0, 10000, 0)
+    RunService.RenderStepped:Wait()
+    myRoot.Velocity = oldVel
+end
+
+local function showPlayerSelectForFling()
+    local selectGui = Instance.new("ScreenGui")
+    selectGui.Name = "FlingPlayerSelect"
+    selectGui.Parent = LocalPlayer.PlayerGui
+    selectGui.IgnoreGuiInset = true
+    selectGui.ResetOnSpawn = false
+    local bg = Instance.new("Frame")
+    bg.Parent = selectGui
+    bg.Size = UDim2.new(0, 200, 0, 250)
+    bg.Position = UDim2.new(0.5, -100, 0.5, -125)
+    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
+    local title = Instance.new("TextLabel")
+    title.Parent = bg
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.BackgroundTransparency = 1
+    title.Text = "选择甩飞目标"
+    title.TextColor3 = Color3.new(1,1,1)
+    title.Font = Enum.Font.SourceSansBold
+    title.TextSize = 16
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Parent = bg
+    scrollFrame.Size = UDim2.new(1, -10, 1, -40)
+    scrollFrame.Position = UDim2.new(0, 5, 0, 35)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scrollFrame.ScrollBarThickness = 4
+    local playersList = Players:GetPlayers()
+    local y = 0
+    for _, p in ipairs(playersList) do
+        if p ~= LocalPlayer then
+            local btn = Instance.new("TextButton")
+            btn.Parent = scrollFrame
+            btn.Size = UDim2.new(1, -10, 0, 30)
+            btn.Position = UDim2.new(0, 5, 0, y)
+            btn.Text = p.Name
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            btn.TextColor3 = Color3.new(1,1,1)
+            btn.Font = Enum.Font.SourceSans
+            btn.TextSize = 14
+            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = btn
+            btn.MouseButton1Click:Connect(function() flingTarget(p); selectGui:Destroy() end)
+            y = y + 35
+        end
+    end
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, y)
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Parent = bg
+    closeBtn.Size = UDim2.new(0, 30, 0, 20)
+    closeBtn.Position = UDim2.new(1, -35, 0, 5)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeBtn.Text = "X"
+    closeBtn.TextColor3 = Color3.new(1,1,1)
+    closeBtn.Font = Enum.Font.SourceSansBold
+    closeBtn.TextSize = 14
+    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+    closeBtn.MouseButton1Click:Connect(function() selectGui:Destroy() end)
 end
 
 local UILibrary = {}
@@ -1176,14 +1188,13 @@ do
             createCopyButton(page, "QQ", "3999698324", 10, startY + 45)
 
         elseif i == 2 then
-            local function addSemiTransparentButton(page, txt, posX, posY, callback)
+            local function addButton(page, text, callback)
                 local btn = Instance.new("TextButton")
                 btn.Parent = page
                 btn.BackgroundColor3 = Color3.new(0, 0, 0)
                 btn.BackgroundTransparency = 0.5
                 btn.Size = UDim2.new(0.48, 0, 0, 40)
-                btn.Position = UDim2.new(0, posX, 0, posY)
-                btn.Text = txt
+                btn.Text = text
                 btn.TextColor3 = Color3.new(1, 1, 1)
                 btn.TextSize = 14
                 btn.AutoButtonColor = false
@@ -1193,89 +1204,85 @@ do
                 return btn
             end
 
-            local posX1, posX2 = 4, page.AbsoluteSize.X * 0.52
-            local rowHeight = 45
-
-            local espBtn = addSemiTransparentButton(page, "透视：关", posX1, 4)
-            local infiniteJumpBtn = addSemiTransparentButton(page, "无限跳：关", posX1, 4 + rowHeight)
-            local noclipBtn = addSemiTransparentButton(page, "穿墙：关", posX1, 4 + 2*rowHeight)
-            local nightVisionBtn = addSemiTransparentButton(page, "夜视：关", posX1, 4 + 3*rowHeight)
-
-            addSemiTransparentButton(page, "全部甩飞一次", posX1, 4 + 4*rowHeight, function()
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer then flingTarget(p) end
-                end
-            end)
-            addSemiTransparentButton(page, "甩飞选定玩家", posX1, 4 + 5*rowHeight, function()
-                showPlayerSelectForFling()
-            end)
-            addSemiTransparentButton(page, "甩飞最近的人", posX1, 4 + 6*rowHeight, function()
-                local nearest = nil
-                local minDist = math.huge
-                local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if not myRoot then return end
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                        local dist = (p.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude
-                        if dist < minDist then minDist = dist; nearest = p end
+            local buttons = {
+                {"透视：关", function(self)
+                    espEnabled = not espEnabled
+                    self.Text = espEnabled and "透视：开" or "透视：关"
+                    if espEnabled then for _, p in ipairs(Players:GetPlayers()) do enableESP(p) end else for _, p in ipairs(Players:GetPlayers()) do disableESP(p) end end
+                end},
+                {"无限跳：关", function(self)
+                    InfiniteJumpEnabled = not InfiniteJumpEnabled
+                    self.Text = InfiniteJumpEnabled and "无限跳：开" or "无限跳：关"
+                end},
+                {"穿墙：关", function(self)
+                    NoclipEnabled = not NoclipEnabled
+                    self.Text = NoclipEnabled and "穿墙：开" or "穿墙：关"
+                    if NoclipEnabled then startNoclip() else stopNoclip() end
+                end},
+                {"夜视：关", function(self)
+                    NightVisionEnabled = not NightVisionEnabled
+                    self.Text = NightVisionEnabled and "夜视：开" or "夜视：关"
+                    local Lighting = game:GetService("Lighting")
+                    if NightVisionEnabled then
+                        Lighting.Ambient = Color3.new(1, 1, 1); Lighting.ColorShift_Bottom = Color3.new(1, 1, 1); Lighting.ColorShift_Top = Color3.new(1, 1, 1)
+                        Lighting.FogEnd = 100000; Lighting.FogStart = 100000; Lighting.Brightness = 1; Lighting.GlobalShadows = false; Lighting.OutdoorAmbient = Color3.new(1, 1, 1); Lighting.ClockTime = 12
+                    else
+                        Lighting.Ambient = Color3.new(0, 0, 0); Lighting.ColorShift_Bottom = Color3.new(0, 0, 0); Lighting.ColorShift_Top = Color3.new(0, 0, 0)
+                        Lighting.FogEnd = 1000; Lighting.FogStart = 0; Lighting.Brightness = 1; Lighting.GlobalShadows = true; Lighting.OutdoorAmbient = Color3.new(0.7, 0.7, 0.7)
                     end
-                end
-                if nearest then flingTarget(nearest) end
-            end)
-
-            addSemiTransparentButton(page, "飞行", posX2, 4, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "飞行脚本", Text = "正在加载中...", Duration = 5 })
-                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/fly.lua"))() end)
-            end)
-            addSemiTransparentButton(page, "建造方块", posX2, 4 + rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "建造方块", Text = "正在加载中...", Duration = 5 })
-                task.spawn(function() loadstring(game:HttpGet("https://pastebin.com/raw/Zt4kkQG9"))() end)
-            end)
-            addSemiTransparentButton(page, "修改移速", posX2, 4 + 2*rowHeight, function()
-                local panel = createSpeedPanel()
-                panel.Visible = not panel.Visible
-            end)
-            addSemiTransparentButton(page, "偷取道具", posX2, 4 + 3*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "偷取道具", Text = "正在偷取道具中...", Duration = 5 })
-                task.spawn(function()
+                end},
+                {"全部甩飞一次", function()
+                    for _, p in ipairs(Players:GetPlayers()) do
+                        if p ~= LocalPlayer then flingTarget(p) end
+                    end
+                end},
+                {"甩飞选定玩家", function()
+                    showPlayerSelectForFling()
+                end},
+                {"甩飞最近的人", function()
+                    local nearest = nil
+                    local minDist = math.huge
+                    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if not myRoot then return end
+                    for _, p in ipairs(Players:GetPlayers()) do
+                        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                            local dist = (p.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude
+                            if dist < minDist then minDist = dist; nearest = p end
+                        end
+                    end
+                    if nearest then flingTarget(nearest) end
+                end},
+                {"飞行", function()
+                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/fly.lua"))()
+                end},
+                {"建造方块", function()
+                    loadstring(game:HttpGet("https://pastebin.com/raw/Zt4kkQG9"))()
+                end},
+                {"修改移速", function()
+                    local panel = createSpeedPanel()
+                    panel.Visible = not panel.Visible
+                end},
+                {"偷取道具", function()
                     local cnt = stealAllItems()
                     game:GetService("StarterGui"):SetCore("SendNotification", { Title = "偷取完成", Text = "共偷取 " .. tostring(cnt) .. " 个道具", Duration = 3 })
-                end)
-            end)
+                end},
+            }
 
-            espBtn.MouseButton1Click:Connect(function()
-                espEnabled = not espEnabled
-                espBtn.Text = espEnabled and "透视：开" or "透视：关"
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "透视", Text = espEnabled and "已打开" or "已关闭", Duration = 3 })
-                if espEnabled then for _, p in ipairs(Players:GetPlayers()) do enableESP(p) end else for _, p in ipairs(Players:GetPlayers()) do disableESP(p) end end
-            end)
+            local colCount = 2
+            local rowHeight = 45
+            local startY = 4
+            local posX = {4, page.AbsoluteSize.X * 0.52}
 
-            infiniteJumpBtn.MouseButton1Click:Connect(function()
-                InfiniteJumpEnabled = not InfiniteJumpEnabled
-                infiniteJumpBtn.Text = InfiniteJumpEnabled and "无限跳：开" or "无限跳：关"
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "无限跳", Text = InfiniteJumpEnabled and "已开启" or "已关闭", Duration = 3 })
-            end)
+            for index, data in ipairs(buttons) do
+                local row = math.floor((index - 1) / colCount)
+                local col = (index - 1) % colCount
+                local btn = addButton(page, data[1], nil)
+                btn.Position = UDim2.new(0, posX[col+1], 0, startY + row * rowHeight)
+                local cb = data[2]
+                btn.MouseButton1Click:Connect(function() cb(btn) end)
+            end
 
-            noclipBtn.MouseButton1Click:Connect(function()
-                NoclipEnabled = not NoclipEnabled
-                noclipBtn.Text = NoclipEnabled and "穿墙：开" or "穿墙：关"
-                if NoclipEnabled then startNoclip() else stopNoclip() end
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "穿墙", Text = NoclipEnabled and "已开启" or "已关闭", Duration = 3 })
-            end)
-
-            nightVisionBtn.MouseButton1Click:Connect(function()
-                NightVisionEnabled = not NightVisionEnabled
-                nightVisionBtn.Text = NightVisionEnabled and "夜视：开" or "夜视：关"
-                local Lighting = game:GetService("Lighting")
-                if NightVisionEnabled then
-                    Lighting.Ambient = Color3.new(1, 1, 1); Lighting.ColorShift_Bottom = Color3.new(1, 1, 1); Lighting.ColorShift_Top = Color3.new(1, 1, 1)
-                    Lighting.FogEnd = 100000; Lighting.FogStart = 100000; Lighting.Brightness = 1; Lighting.GlobalShadows = false; Lighting.OutdoorAmbient = Color3.new(1, 1, 1); Lighting.ClockTime = 12
-                else
-                    Lighting.Ambient = Color3.new(0, 0, 0); Lighting.ColorShift_Bottom = Color3.new(0, 0, 0); Lighting.ColorShift_Top = Color3.new(0, 0, 0)
-                    Lighting.FogEnd = 1000; Lighting.FogStart = 0; Lighting.Brightness = 1; Lighting.GlobalShadows = true; Lighting.OutdoorAmbient = Color3.new(0.7, 0.7, 0.7)
-                end
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "夜视", Text = NightVisionEnabled and "已开启" or "已关闭", Duration = 3 })
-            end)
+            page.Size = UDim2.new(1,0,0, startY + math.ceil(#buttons / colCount) * rowHeight + 10)
 
         elseif i == 3 then
             local function addSemiTransparentButton(page, txt, posX, posY, callback)
@@ -1313,18 +1320,12 @@ do
                     AimbotCircle.Visible = false
                     if aimbotPanel then aimbotPanel.Visible = false end
                 end
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "自瞄",
-                    Text = AimbotEnabled and "已开启，请在面板中调整半径" or "已关闭",
-                    Duration = 3,
-                })
             end)
 
             local lockViewBtn = addSemiTransparentButton(page, "锁定视角：关", posX1, 4 + 4*rowHeight)
             lockViewBtn.MouseButton1Click:Connect(function()
                 LockViewEnabled = not LockViewEnabled
                 lockViewBtn.Text = LockViewEnabled and "锁定视角：开" or "锁定视角：关"
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "锁定视角", Text = LockViewEnabled and "已开启" or "已关闭", Duration = 3 })
             end)
 
             local teleportNearestBtn = addSemiTransparentButton(page, "传送最近玩家", posX2, 4)
@@ -1335,19 +1336,16 @@ do
             followNearestBtn.MouseButton1Click:Connect(function()
                 FollowNearestEnabled = not FollowNearestEnabled
                 followNearestBtn.Text = FollowNearestEnabled and "跟随最近玩家：开" or "跟随最近玩家：关"
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "跟随最近玩家", Text = FollowNearestEnabled and "已开启" or "已关闭", Duration = 3 })
             end)
             smoothFollowBtn.MouseButton1Click:Connect(function()
                 SmoothFollowEnabled = not SmoothFollowEnabled
                 smoothFollowBtn.Text = SmoothFollowEnabled and "平滑跟随：开" or "平滑跟随：关"
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "平滑跟随", Text = SmoothFollowEnabled and "已开启" or "已关闭", Duration = 3 })
             end)
 
             autoTranslateBtn.MouseButton1Click:Connect(function()
                 AutoTranslateEnabled = not AutoTranslateEnabled
                 autoTranslateBtn.Text = AutoTranslateEnabled and "自动翻译：开" or "自动翻译：关"
                 if AutoTranslateEnabled then startAutoTranslate() else stopAutoTranslate() end
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "自动翻译", Text = AutoTranslateEnabled and "已开启" or "已关闭", Duration = 3 })
             end)
 
             antiPushBtn.MouseButton1Click:Connect(function()
@@ -1357,7 +1355,6 @@ do
                     local char = LocalPlayer.Character
                     if char then local root = char:FindFirstChild("HumanoidRootPart"); if root then root.CanCollide = true end end
                 end
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "防甩飞", Text = AntiPushEnabled and "已开启" or "已关闭", Duration = 3 })
             end)
 
             coordBtn.MouseButton1Click:Connect(function()
@@ -1402,12 +1399,10 @@ do
             end
 
             addSemiTransparentButton(page, "显示时间", 4, 4, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "显示时间", Text = "正在加载中...", Duration = 5 })
-                task.spawn(function() loadstring(game:HttpGet("https://pastebin.com/raw/0zKLyd4W"))() end)
+                loadstring(game:HttpGet("https://pastebin.com/raw/0zKLyd4W"))()
             end)
             addSemiTransparentButton(page, "美化包排行榜第一", page.AbsoluteSize.X * 0.52, 4, function()
                 beautifyStats()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "美化包", Text = "数值已修改为999（若游戏支持）", Duration = 3 })
             end)
 
             local crosshairBtn = addSemiTransparentButton(page, "准星：关", 4, 4 + 45)
@@ -1415,13 +1410,11 @@ do
                 CrosshairEnabled = not CrosshairEnabled
                 crosshairBtn.Text = CrosshairEnabled and "准星：开" or "准星：关"
                 CrosshairFrame.Visible = CrosshairEnabled
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "准星", Text = CrosshairEnabled and "已显示" or "已隐藏", Duration = 3 })
             end)
             local crosshairSpinBtn = addSemiTransparentButton(page, "准星旋转：关", page.AbsoluteSize.X * 0.52, 4 + 45)
             crosshairSpinBtn.MouseButton1Click:Connect(function()
                 CrosshairSpinEnabled = not CrosshairSpinEnabled
                 crosshairSpinBtn.Text = CrosshairSpinEnabled and "准星旋转：开" or "准星旋转：关"
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "准星旋转", Text = CrosshairSpinEnabled and "已开启" or "已关闭", Duration = 3 })
             end)
 
         elseif i == 5 then
@@ -1445,42 +1438,15 @@ do
             local posX1, posX2 = 4, page.AbsoluteSize.X * 0.52
             local rowHeight = 45
 
-            addSemiTransparentButton(page, "破坏者谜团2", posX1, 4, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "破坏者谜团2", Text = "正在加载中...", Duration = 5 })
-                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/PHZMT.NB"))() end)
-            end)
-            addSemiTransparentButton(page, "吃吃世界", posX2, 4, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "吃吃世界", Text = "正在加载中...", Duration = 5 })
-                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/CCSJ.NB"))() end)
-            end)
-            addSemiTransparentButton(page, "在超市生活一周", posX1, 4 + rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "在超市生活一周", Text = "正在加载中...", Duration = 5 })
-                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCSSHYZ.NB"))() end)
-            end)
-            addSemiTransparentButton(page, "亡命速递", posX2, 4 + rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "亡命速递", Text = "正在加载中...", Duration = 5 })
-                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/WMSD.NB"))() end)
-            end)
-            addSemiTransparentButton(page, "巨剑骑士", posX1, 4 + 2*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "巨剑骑士", Text = "正在加载中...", Duration = 5 })
-                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/JJQS.NB"))() end)
-            end)
-            addSemiTransparentButton(page, "doors", posX2, 4 + 2*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "doors", Text = "正在加载中...", Duration = 5 })
-                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/DOORS.NB"))() end)
-            end)
-            addSemiTransparentButton(page, "盲射", posX1, 4 + 3*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "盲射", Text = "正在加载中...", Duration = 5 })
-                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MS.NB"))() end)
-            end)
-            addSemiTransparentButton(page, "找到按钮", posX2, 4 + 3*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "找到按钮", Text = "正在加载中...", Duration = 5 })
-                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZDNN.NB"))() end)
-            end)
-            addSemiTransparentButton(page, "墨水游戏", posX1, 4 + 4*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "墨水游戏", Text = "正在加载中...", Duration = 5 })
-                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MSYS.NB"))() end)
-            end)
+            addSemiTransparentButton(page, "破坏者谜团2", posX1, 4, function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/PHZMT.NB"))() end)
+            addSemiTransparentButton(page, "吃吃世界", posX2, 4, function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/CCSJ.NB"))() end)
+            addSemiTransparentButton(page, "在超市生活一周", posX1, 4 + rowHeight, function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCSSHYZ.NB"))() end)
+            addSemiTransparentButton(page, "亡命速递", posX2, 4 + rowHeight, function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/WMSD.NB"))() end)
+            addSemiTransparentButton(page, "巨剑骑士", posX1, 4 + 2*rowHeight, function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/JJQS.NB"))() end)
+            addSemiTransparentButton(page, "doors", posX2, 4 + 2*rowHeight, function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/DOORS.NB"))() end)
+            addSemiTransparentButton(page, "盲射", posX1, 4 + 3*rowHeight, function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MS.NB"))() end)
+            addSemiTransparentButton(page, "找到按钮", posX2, 4 + 3*rowHeight, function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZDNN.NB"))() end)
+            addSemiTransparentButton(page, "墨水游戏", posX1, 4 + 4*rowHeight, function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MSYS.NB"))() end)
         end
 
         cat.MouseButton1Click:Connect(function()
