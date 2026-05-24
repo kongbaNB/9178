@@ -451,6 +451,79 @@ local function teleportToPlayer(p)
     end
 end
 
+local function flingTarget(p)
+    if not p or not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") then return end
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local root = char.HumanoidRootPart
+    local targetRoot = p.Character.HumanoidRootPart
+    root.CFrame = targetRoot.CFrame + Vector3.new(0, 3, 0)
+    task.wait(0.05)
+    local oldVel = root.Velocity
+    root.Velocity = oldVel * 10000 + Vector3.new(0, 10000, 0)
+    RunService.RenderStepped:Wait()
+    root.Velocity = oldVel
+end
+
+local function showPlayerSelectForFling()
+    local selectGui = Instance.new("ScreenGui")
+    selectGui.Name = "FlingPlayerSelect"
+    selectGui.Parent = LocalPlayer.PlayerGui
+    selectGui.IgnoreGuiInset = true
+    selectGui.ResetOnSpawn = false
+    local bg = Instance.new("Frame")
+    bg.Parent = selectGui
+    bg.Size = UDim2.new(0, 200, 0, 250)
+    bg.Position = UDim2.new(0.5, -100, 0.5, -125)
+    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
+    local title = Instance.new("TextLabel")
+    title.Parent = bg
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.BackgroundTransparency = 1
+    title.Text = "选择甩飞目标"
+    title.TextColor3 = Color3.new(1,1,1)
+    title.Font = Enum.Font.SourceSansBold
+    title.TextSize = 16
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Parent = bg
+    scrollFrame.Size = UDim2.new(1, -10, 1, -40)
+    scrollFrame.Position = UDim2.new(0, 5, 0, 35)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scrollFrame.ScrollBarThickness = 4
+    local playersList = Players:GetPlayers()
+    local y = 0
+    for _, p in ipairs(playersList) do
+        if p ~= LocalPlayer then
+            local btn = Instance.new("TextButton")
+            btn.Parent = scrollFrame
+            btn.Size = UDim2.new(1, -10, 0, 30)
+            btn.Position = UDim2.new(0, 5, 0, y)
+            btn.Text = p.Name
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            btn.TextColor3 = Color3.new(1,1,1)
+            btn.Font = Enum.Font.SourceSans
+            btn.TextSize = 14
+            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = btn
+            btn.MouseButton1Click:Connect(function() flingTarget(p); selectGui:Destroy() end)
+            y = y + 35
+        end
+    end
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, y)
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Parent = bg
+    closeBtn.Size = UDim2.new(0, 30, 0, 20)
+    closeBtn.Position = UDim2.new(1, -35, 0, 5)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeBtn.Text = "X"
+    closeBtn.TextColor3 = Color3.new(1,1,1)
+    closeBtn.Font = Enum.Font.SourceSansBold
+    closeBtn.TextSize = 14
+    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+    closeBtn.MouseButton1Click:Connect(function() selectGui:Destroy() end)
+end
+
 local function showPlayerSelect()
     local selectGui = Instance.new("ScreenGui")
     selectGui.Name = "PlayerSelect"
@@ -593,7 +666,6 @@ do
     local speedPanel = nil
     local coordPanel = nil
     local aimbotPanel = nil
-    local flingPanel = nil
 
     local function copyToClipboard(text, label)
         local success = pcall(function()
@@ -618,7 +690,7 @@ do
         speedPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         speedPanel.BackgroundTransparency = 0.2
         speedPanel.Visible = false
-        speedPanel.ZIndex = 200
+        speedPanel.ZIndex = 200  
         local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = speedPanel
         local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = speedPanel
 
@@ -1021,255 +1093,6 @@ do
         return aimbotPanel
     end
 
-    local function flingSingleTarget(target)
-        if not target or not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") then return false end
-        local char = LocalPlayer.Character
-        if not char or not char:FindFirstChild("HumanoidRootPart") then return false end
-        local root = char.HumanoidRootPart
-        local targetRoot = target.Character.HumanoidRootPart
-        root.CFrame = targetRoot.CFrame + Vector3.new(0, 3, 0)
-        task.wait(0.05)
-        local oldVel = root.Velocity
-        root.Velocity = oldVel * 10000 + Vector3.new(0, 10000, 0)
-        RunService.RenderStepped:Wait()
-        root.Velocity = oldVel
-        return true
-    end
-
-    local function createFlingPanel()
-        if flingPanel then return flingPanel end
-        flingPanel = Instance.new("Frame")
-        flingPanel.Name = "FlingPanel"
-        flingPanel.Parent = Main
-        flingPanel.Size = UDim2.new(0, 300, 0, 280)
-        flingPanel.Position = UDim2.new(0.5, -150, 0.5, -140)
-        flingPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        flingPanel.BackgroundTransparency = 0.2
-        flingPanel.Visible = false
-        flingPanel.ZIndex = 200
-        local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = flingPanel
-        local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = flingPanel
-
-        local title = Instance.new("TextLabel")
-        title.Parent = flingPanel
-        title.Size = UDim2.new(1, 0, 0, 25)
-        title.Position = UDim2.new(0, 10, 0, 8)
-        title.BackgroundTransparency = 1
-        title.Text = "甩飞控制"
-        title.TextColor3 = Color3.new(1, 1, 1)
-        title.Font = Enum.Font.SourceSansBold
-        title.TextSize = 16
-
-        local closeBtn = Instance.new("TextButton")
-        closeBtn.Parent = flingPanel
-        closeBtn.Size = UDim2.new(0, 22, 0, 22)
-        closeBtn.Position = UDim2.new(1, -26, 0, 6)
-        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        closeBtn.Text = "X"
-        closeBtn.TextSize = 12
-        closeBtn.Font = Enum.Font.SourceSansBold
-        local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-        closeBtn.MouseButton1Click:Connect(function() flingPanel.Visible = false end)
-
-        local refreshBtn = Instance.new("TextButton")
-        refreshBtn.Parent = flingPanel
-        refreshBtn.Size = UDim2.new(0, 100, 0, 28)
-        refreshBtn.Position = UDim2.new(0, 20, 0, 45)
-        refreshBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-        refreshBtn.Text = "刷新玩家列表"
-        refreshBtn.TextColor3 = Color3.new(1, 1, 1)
-        refreshBtn.Font = Enum.Font.SourceSansBold
-        refreshBtn.TextSize = 14
-        local refreshCorner = Instance.new("UICorner"); refreshCorner.CornerRadius = UDim.new(0, 6); refreshCorner.Parent = refreshBtn
-
-        local dropdownLabel = Instance.new("TextLabel")
-        dropdownLabel.Parent = flingPanel
-        dropdownLabel.Size = UDim2.new(1, -20, 0, 20)
-        dropdownLabel.Position = UDim2.new(0, 10, 0, 80)
-        dropdownLabel.BackgroundTransparency = 1
-        dropdownLabel.Text = "选择甩飞目标"
-        dropdownLabel.TextColor3 = Color3.new(1, 1, 1)
-        dropdownLabel.Font = Enum.Font.SourceSans
-        dropdownLabel.TextSize = 14
-
-        local dropdownContainer = Instance.new("Frame")
-        dropdownContainer.Parent = flingPanel
-        dropdownContainer.Size = UDim2.new(1, -20, 0, 30)
-        dropdownContainer.Position = UDim2.new(0, 10, 0, 105)
-        dropdownContainer.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        dropdownContainer.BorderSizePixel = 0
-        local dropdownCorner = Instance.new("UICorner"); dropdownCorner.CornerRadius = UDim.new(0, 6); dropdownCorner.Parent = dropdownContainer
-
-        local dropdownText = Instance.new("TextLabel")
-        dropdownText.Parent = dropdownContainer
-        dropdownText.Size = UDim2.new(1, -10, 1, 0)
-        dropdownText.Position = UDim2.new(0, 5, 0, 0)
-        dropdownText.BackgroundTransparency = 1
-        dropdownText.Text = "点击刷新列表"
-        dropdownText.TextColor3 = Color3.new(1, 1, 1)
-        dropdownText.Font = Enum.Font.SourceSans
-        dropdownText.TextSize = 14
-        dropdownText.TextXAlignment = Enum.TextXAlignment.Left
-
-        local selectedPlayers = {}
-        local playerNamesList = {}
-        local dropdownOpen = false
-        local dropdownScroll = nil
-
-        local function buildDropdown()
-            if dropdownScroll then dropdownScroll:Destroy() end
-            dropdownScroll = Instance.new("ScrollingFrame")
-            dropdownScroll.Parent = flingPanel
-            dropdownScroll.Size = UDim2.new(1, -20, 0, 100)
-            dropdownScroll.Position = UDim2.new(0, 10, 0, 140)
-            dropdownScroll.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            dropdownScroll.Visible = false
-            dropdownScroll.ZIndex = 250
-            dropdownScroll.ScrollBarThickness = 4
-            dropdownScroll.CanvasSize = UDim2.new(0, 0, 0, #playerNamesList * 25)
-            local scrollCorner = Instance.new("UICorner"); scrollCorner.CornerRadius = UDim.new(0, 4); scrollCorner.Parent = dropdownScroll
-
-            local yPos = 0
-            for _, name in ipairs(playerNamesList) do
-                local item = Instance.new("TextButton")
-                item.Parent = dropdownScroll
-                item.Size = UDim2.new(1, 0, 0, 25)
-                item.Position = UDim2.new(0, 0, 0, yPos)
-                item.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-                item.Text = name
-                item.TextColor3 = Color3.new(1, 1, 1)
-                item.Font = Enum.Font.SourceSans
-                item.TextSize = 14
-                item.AutoButtonColor = false
-                item.BorderSizePixel = 0
-                item.ZIndex = 251
-                item.MouseButton1Click:Connect(function()
-                    if selectedPlayers[name] then
-                        selectedPlayers[name] = nil
-                    else
-                        selectedPlayers[name] = true
-                    end
-                    local names = {}
-                    for n, _ in pairs(selectedPlayers) do table.insert(names, n) end
-                    dropdownText.Text = #names > 0 and table.concat(names, ", ") or "点击刷新列表"
-                end)
-                yPos += 25
-            end
-        end
-
-        local function refreshPlayers()
-            playerNamesList = {}
-            selectedPlayers = {}
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer then
-                    table.insert(playerNamesList, p.Name)
-                end
-            end
-            if #playerNamesList == 0 then
-                playerNamesList = {"无玩家"}
-            end
-            dropdownText.Text = "点击刷新列表"
-            buildDropdown()
-        end
-
-        refreshBtn.MouseButton1Click:Connect(refreshPlayers)
-        dropdownContainer.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dropdownOpen = not dropdownOpen
-                if dropdownScroll then dropdownScroll.Visible = dropdownOpen end
-            end
-        end)
-
-        local flingSelectedBtn = Instance.new("TextButton")
-        flingSelectedBtn.Parent = flingPanel
-        flingSelectedBtn.Size = UDim2.new(0, 120, 0, 28)
-        flingSelectedBtn.Position = UDim2.new(0, 20, 0, 250)
-        flingSelectedBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-        flingSelectedBtn.Text = "甩飞选中玩家"
-        flingSelectedBtn.TextColor3 = Color3.new(1, 1, 1)
-        flingSelectedBtn.Font = Enum.Font.SourceSansBold
-        flingSelectedBtn.TextSize = 14
-        local flingCorner = Instance.new("UICorner"); flingCorner.CornerRadius = UDim.new(0, 6); flingCorner.Parent = flingSelectedBtn
-        flingSelectedBtn.MouseButton1Click:Connect(function()
-            for name, _ in pairs(selectedPlayers) do
-                local target = Players:FindFirstChild(name)
-                flingSingleTarget(target)
-            end
-        end)
-
-        local flingAllBtn = Instance.new("TextButton")
-        flingAllBtn.Parent = flingPanel
-        flingAllBtn.Size = UDim2.new(0, 120, 0, 28)
-        flingAllBtn.Position = UDim2.new(0, 150, 0, 250)
-        flingAllBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-        flingAllBtn.Text = "全部甩飞一次"
-        flingAllBtn.TextColor3 = Color3.new(1, 1, 1)
-        flingAllBtn.Font = Enum.Font.SourceSansBold
-        flingAllBtn.TextSize = 14
-        local flingAllCorner = Instance.new("UICorner"); flingAllCorner.CornerRadius = UDim.new(0, 6); flingAllCorner.Parent = flingAllBtn
-        flingAllBtn.MouseButton1Click:Connect(function()
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer then
-                    flingSingleTarget(p)
-                end
-            end
-        end)
-
-        local flingNearestBtn = Instance.new("TextButton")
-        flingNearestBtn.Parent = flingPanel
-        flingNearestBtn.Size = UDim2.new(0, 120, 0, 28)
-        flingNearestBtn.Position = UDim2.new(0, 20, 0, 285)
-        flingNearestBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-        flingNearestBtn.Text = "甩飞最近的人"
-        flingNearestBtn.TextColor3 = Color3.new(1, 1, 1)
-        flingNearestBtn.Font = Enum.Font.SourceSansBold
-        flingNearestBtn.TextSize = 14
-        local flingNearestCorner = Instance.new("UICorner"); flingNearestCorner.CornerRadius = UDim.new(0, 6); flingNearestCorner.Parent = flingNearestBtn
-        flingNearestBtn.MouseButton1Click:Connect(function()
-            local nearest = nil
-            local minDist = math.huge
-            local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if not myRoot then return end
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                    local dist = (p.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude
-                    if dist < minDist then minDist = dist; nearest = p end
-                end
-            end
-            if nearest then flingSingleTarget(nearest) end
-        end)
-
-        local loopFlingEnabled = false
-        local loopFlingBtn = Instance.new("TextButton")
-        loopFlingBtn.Parent = flingPanel
-        loopFlingBtn.Size = UDim2.new(0, 120, 0, 28)
-        loopFlingBtn.Position = UDim2.new(0, 150, 0, 285)
-        loopFlingBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
-        loopFlingBtn.Text = "锁定甩飞：关"
-        loopFlingBtn.TextColor3 = Color3.new(1, 1, 1)
-        loopFlingBtn.Font = Enum.Font.SourceSansBold
-        loopFlingBtn.TextSize = 14
-        local loopCorner = Instance.new("UICorner"); loopCorner.CornerRadius = UDim.new(0, 6); loopCorner.Parent = loopFlingBtn
-        loopFlingBtn.MouseButton1Click:Connect(function()
-            loopFlingEnabled = not loopFlingEnabled
-            loopFlingBtn.Text = loopFlingEnabled and "锁定甩飞：开" or "锁定甩飞：关"
-            if loopFlingEnabled then
-                task.spawn(function()
-                    while loopFlingEnabled do
-                        for name, _ in pairs(selectedPlayers) do
-                            local target = Players:FindFirstChild(name)
-                            flingSingleTarget(target)
-                        end
-                        task.wait(0.3)
-                    end
-                end)
-            end
-        end)
-
-        refreshPlayers()
-        return flingPanel
-    end
-
     local function AddCat(i)
         local cat = Instance.new("TextButton")
         cat.Name = "Cat"..i
@@ -1378,9 +1201,26 @@ do
             local noclipBtn = addSemiTransparentButton(page, "穿墙：关", posX1, 4 + 2*rowHeight)
             local nightVisionBtn = addSemiTransparentButton(page, "夜视：关", posX1, 4 + 3*rowHeight)
 
-            addSemiTransparentButton(page, "甩飞", posX1, 4 + 4*rowHeight, function()
-                local panel = createFlingPanel()
-                panel.Visible = not panel.Visible
+            addSemiTransparentButton(page, "全部甩飞一次", posX1, 4 + 4*rowHeight, function()
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer then flingTarget(p) end
+                end
+            end)
+            addSemiTransparentButton(page, "甩飞选定玩家", posX1, 4 + 5*rowHeight, function()
+                showPlayerSelectForFling()
+            end)
+            addSemiTransparentButton(page, "甩飞最近的人", posX1, 4 + 6*rowHeight, function()
+                local nearest = nil
+                local minDist = math.huge
+                local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if not myRoot then return end
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local dist = (p.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude
+                        if dist < minDist then minDist = dist; nearest = p end
+                    end
+                end
+                if nearest then flingTarget(nearest) end
             end)
 
             addSemiTransparentButton(page, "飞行", posX2, 4, function()
@@ -1653,7 +1493,6 @@ do
             if speedPanel then speedPanel.Visible = false end
             if coordPanel then coordPanel.Visible = false end
             if aimbotPanel then aimbotPanel.Visible = false end
-            if flingPanel then flingPanel.Visible = false end
             page.Visible = true
         end)
         categories[i] = cat; pages[i] = page
