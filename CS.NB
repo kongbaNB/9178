@@ -5,77 +5,79 @@ end
 if not getgenv().RTaOHUB_loaded then
     getgenv().RTaOHUB_loaded = true
 else
-    local suc = pcall(function()
-        shared.RTaOHUB_InkGame_Library:Unload()
-    end)
-    if not suc then
-        return 
+    local oldLib = shared.Voidware_InkGame_Library or shared.RTaOHUB_InkGame_Library
+    if oldLib then
+        pcall(function()
+            oldLib:Unload()
+        end)
     end
+    shared.Voidware_InkGame_Library = nil
+    shared.RTaOHUB_InkGame_Library = nil
 end
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local function applyEffects(character)
-	local torso = character:WaitForChild("Torso", 5)
-	if not torso then return end
+    local torso = character:WaitForChild("Torso", 5)
+    if not torso then return end
 
-	local nametag = torso:WaitForChild("Player_Nametag", 5)
-	if not nametag then return end
+    local nametag = torso:WaitForChild("Player_Nametag", 5)
+    if not nametag then return end
 
-	local levelText = nametag:WaitForChild("LevelText", 5)
-	local displayName = nametag:WaitForChild("DisplayName", 5)
-	if not levelText or not displayName then return end
+    local levelText = nametag:WaitForChild("LevelText", 5)
+    local displayName = nametag:WaitForChild("DisplayName", 5)
+    if not levelText or not displayName then return end
 
-	local player = Players.LocalPlayer
-	local isOwner = (player.Name == "Yolmar_43")
+    local player = Players.LocalPlayer
+    local isOwner = (player.Name == "Yolmar_43")
 
-	levelText.Text = isOwner and "[ RTaOHUB - OWNER ]" or "[ RTaOHUB - MEMBER ]"
+    levelText.Text = isOwner and "[ RTaOHUB - OWNER ]" or "[ RTaOHUB - MEMBER ]"
 
-	local wave = 0
-	local rainbowHue = 0
+    local wave = 0
+    local rainbowHue = 0
 
-	local messages = {
-		"RTaO THE BEST (dsc.gg/rtao_rs)",
-		"@" .. player.Name .. " (dsc.gg/rtao_rs)"
-	}
-	local msgIndex = 1
-	displayName.Text = messages[msgIndex]
+    local messages = {
+        "RTaO THE BEST (dsc.gg/rtao_rs)",
+        "@" .. player.Name .. " (dsc.gg/rtao_rs)"
+    }
+    local msgIndex = 1
+    displayName.Text = messages[msgIndex]
 
-	task.spawn(function()
-		while character.Parent do
-			msgIndex = (msgIndex % #messages) + 1
-			displayName.Text = messages[msgIndex]
-			task.wait(2)
-		end
-	end)
+    task.spawn(function()
+        while character.Parent do
+            msgIndex = (msgIndex % #messages) + 1
+            displayName.Text = messages[msgIndex]
+            task.wait(2)
+        end
+    end)
 
-	RunService.RenderStepped:Connect(function(deltaTime)
-		wave = (wave + deltaTime * 2) % (2 * math.pi)
-		rainbowHue = (rainbowHue + deltaTime * 0.2) % 1
+    RunService.RenderStepped:Connect(function(deltaTime)
+        wave = (wave + deltaTime * 2) % (2 * math.pi)
+        rainbowHue = (rainbowHue + deltaTime * 0.2) % 1
 
-		if isOwner then
-			local brightness = (math.sin(wave) + 1) / 2
-			levelText.TextColor3 = Color3.new(1, brightness, brightness)
-		else
-			local brightness = (math.sin(wave) + 1) / 2
-			levelText.TextColor3 = Color3.new(brightness, 1, brightness)
-		end
+        if isOwner then
+            local brightness = (math.sin(wave) + 1) / 2
+            levelText.TextColor3 = Color3.new(1, brightness, brightness)
+        else
+            local brightness = (math.sin(wave) + 1) / 2
+            levelText.TextColor3 = Color3.new(brightness, 1, brightness)
+        end
 
-		displayName.TextColor3 = Color3.fromHSV(rainbowHue, 1, 1)
-	end)
+        displayName.TextColor3 = Color3.fromHSV(rainbowHue, 1, 1)
+    end)
 
-	levelText:GetPropertyChangedSignal("Text"):Connect(function()
-		local correctText = isOwner and "[ RTaO - OWNER ]" or "[ RTaO - MEMBER ]"
-		if levelText.Text ~= correctText then
-			levelText.Text = correctText
-		end
-	end)
+    levelText:GetPropertyChangedSignal("Text"):Connect(function()
+        local correctText = isOwner and "[ RTaOHUB - OWNER ]" or "[ RTaOHUB - MEMBER ]"
+        if levelText.Text ~= correctText then
+            levelText.Text = correctText
+        end
+    end)
 end
 
 local player = Players.LocalPlayer
 if player.Character then
-	applyEffects(player.Character)
+    applyEffects(player.Character)
 end
 player.CharacterAdded:Connect(applyEffects)
 
@@ -105,12 +107,11 @@ task.spawn(function()
         if not isfile("Local_VW_Update_Log.json") then
             shared.UpdateLogBypass = true
         end
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/VapeVoidware/VWExtra/main/VWUpdateLog.lua", true))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/VapeVoidware/VWExtra/main/VWUpdateLog.lua", true))()
         shared.UpdateLogBypass = nil
     end)
 end)
 
---// Library \\--
 local repo = "https://raw.githubusercontent.com/mstudio45/LinoriaLib/main/"
 
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
@@ -121,19 +122,19 @@ local Options = getgenv().Linoria.Options
 local Toggles = getgenv().Linoria.Toggles
 
 local Window = Library:CreateWindow({
-	Title = "RTaO HUB - Ink Game | Version: 2.0 ",
-	Center = true,
-	AutoShow = true,
-	Resizable = true,
-	ShowCustomCursor = true,
-	TabPadding = 2,
-	MenuFadeTime = 0
+    Title = "RTaO HUB - Ink Game | Version: 2.0 ",
+    Center = true,
+    AutoShow = true,
+    Resizable = true,
+    ShowCustomCursor = true,
+    TabPadding = 2,
+    MenuFadeTime = 0
 })
 
 local Tabs = {
-	Main = Window:AddTab("Main"),
-        Visuals = Window:AddTab("Visuals"),
-	["UI Settings"] = Window:AddTab("UI Settings"),
+    Main = Window:AddTab("Main"),
+    Visuals = Window:AddTab("Visuals"),
+    ["UI Settings"] = Window:AddTab("UI Settings"),
 }
 
 local Maid = {}
@@ -152,31 +153,31 @@ end
 
 function Maid:Clean()
     for _, task in ipairs(self.Tasks) do
-		pcall(function()
-			if typeof(task) == "RBXScriptConnection" then
-				task:Disconnect()
-			elseif typeof(task) == "Instance" then
-				task:Destroy()
-			elseif typeof(task) == "function" then
-				task()
-			end
-		end)
+        pcall(function()
+            if typeof(task) == "RBXScriptConnection" then
+                task:Disconnect()
+            elseif typeof(task) == "Instance" then
+                task:Destroy()
+            elseif typeof(task) == "function" then
+                task()
+            end
+        end)
     end
-	table.clear(self.Tasks)
+    table.clear(self.Tasks)
     self.Tasks = {}
 end
 
 local Services = setmetatable({}, {
-	__index = function(self, key)
-		local suc, service = pcall(game.GetService, game, key)
-		if suc and service then
-			self[key] = service
-			return service
-		else
-			warn(`[Services] Warning: "{key}" is not a valid Roblox service.`)
-			return nil
-		end
-	end
+    __index = function(self, key)
+        local suc, service = pcall(game.GetService, game, key)
+        if suc and service then
+            self[key] = service
+            return service
+        else
+            warn(`[Services] Warning: "{key}" is not a valid Roblox service.`)
+            return nil
+        end
+    end
 })
 
 local Players = Services.Players
@@ -190,16 +191,6 @@ local lplr = Players.LocalPlayer
 local localPlayer = lplr
 
 local camera = workspace.CurrentCamera
-
-type ESP = {
-    Color: Color3,
-    IsEntity: boolean,
-    Object: Instance,
-    Offset: Vector3,
-    Text: string,
-    TextParent: Instance,
-    Type: string,
-}
 
 local Script = {
     GameStateChanged = Instance.new("BindableEvent"),
@@ -222,24 +213,22 @@ local Script = {
 
 local States = {}
 
-function Script.Functions.Alert(message: string, time_obj: number)
+function Script.Functions.Alert(message, time_obj)
     Library:Notify(message, time_obj or 5)
 
-    --if TogglesNotifySound..Value then
-        local sound = Instance.new("Sound", workspace) do
-            sound.SoundId = "rbxassetid://4590662766"
-            sound.Volume = 2
-            sound.PlayOnRemove = true
-            sound:Destroy()
-        end
-    --end
+    local sound = Instance.new("Sound", workspace) do
+        sound.SoundId = "rbxassetid://4590662766"
+        sound.Volume = 2
+        sound.PlayOnRemove = true
+        sound:Destroy()
+    end
 end
 
-function Script.Functions.Warn(message: string)
+function Script.Functions.Warn(message)
     warn("WARN - RTaOHUB:", message)
 end
 
-function Script.Functions.ESP(args: ESP)
+function Script.Functions.ESP(args)
     if not args.Object then return Script.Functions.Warn("ESP Object is nil") end
 
     local ESPManager = {
@@ -278,30 +267,29 @@ function Script.Functions.ESP(args: ESP)
     end
 
     table.insert(ESPManager.Highlights, highlight)
-    
 
     local billboardGui = Instance.new("BillboardGui") do
         billboardGui.Adornee = ESPManager.TextParent or ESPManager.Object
-		billboardGui.AlwaysOnTop = true
-		billboardGui.ClipsDescendants = false
-		billboardGui.Size = UDim2.new(0, 1, 0, 1)
-		billboardGui.StudsOffset = ESPManager.Offset
+        billboardGui.AlwaysOnTop = true
+        billboardGui.ClipsDescendants = false
+        billboardGui.Size = UDim2.new(0, 1, 0, 1)
+        billboardGui.StudsOffset = ESPManager.Offset
         billboardGui.Parent = ESPManager.TextParent or ESPManager.Object
-	end
+    end
 
     local textLabel = Instance.new("TextLabel") do
-		textLabel.BackgroundTransparency = 1
-		textLabel.Font = Enum.Font.Oswald
-		textLabel.Size = UDim2.new(1, 0, 1, 0)
-		textLabel.Text = ESPManager.Text
-		textLabel.TextColor3 = ESPManager.Color
-		textLabel.TextSize = Options.ESPTextSize.Value
+        textLabel.BackgroundTransparency = 1
+        textLabel.Font = Enum.Font.Oswald
+        textLabel.Size = UDim2.new(1, 0, 1, 0)
+        textLabel.Text = ESPManager.Text
+        textLabel.TextColor3 = ESPManager.Color
+        textLabel.TextSize = Options.ESPTextSize.Value
         textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
         textLabel.TextStrokeTransparency = 0.75
         textLabel.Parent = billboardGui
-	end
+    end
 
-    function ESPManager.SetColor(newColor: Color3)
+    function ESPManager.SetColor(newColor)
         ESPManager.Color = newColor
 
         for _, highlight in pairs(ESPManager.Highlights) do
@@ -371,7 +359,7 @@ function Script.Functions.ESP(args: ESP)
     return ESPManager
 end
 
-function Script.Functions.SeekerESP(player : Player)
+function Script.Functions.SeekerESP(player)
     if player:GetAttribute("IsHunter") and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         local esp = Script.Functions.ESP({
             Object = player.Character,
@@ -383,7 +371,7 @@ function Script.Functions.SeekerESP(player : Player)
     end
 end
 
-function Script.Functions.HiderESP(player : Player)
+function Script.Functions.HiderESP(player)
     if player:GetAttribute("IsHider") and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         local esp = Script.Functions.ESP({
             Object = player.Character,
@@ -439,7 +427,7 @@ function Script.Functions.GuardESP(character)
     end
 end
 
-function Script.Functions.PlayerESP(player: Player)
+function Script.Functions.PlayerESP(player)
     if not (player.Character and player.Character.PrimaryPart and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0) then return end
 
     local playerEsp = Script.Functions.ESP({
@@ -476,7 +464,7 @@ Script.Functions.ExecuteClick = function()
     local args = {
         "Clicked"
     }
-    game:GetService("ReplicatedStorage"):WaitForChild("Replication"):WaitForChild("Event"):FireServer(unpack(args))    
+    game:GetService("ReplicatedStorage"):WaitForChild("Replication"):WaitForChild("Event"):FireServer(unpack(args))
 end
 
 Script.Functions.CompleteDalgonaGame = function()
@@ -647,23 +635,6 @@ Script.Functions.BypassRagdoll = function()
 
     restoreHumanoidStates()
     cleanupRagdoll()
-
-    --[[local connection
-    connection = Character.ChildAdded:Connect(function(child)
-        if child.Name == "Ragdoll" or child.Name == "Stun" or child.Name == "RotateDisabled" or child.Name == "Waiting" then
-            task.defer(function()
-                child:Destroy()
-                restoreHumanoidStates()
-                cleanupRagdoll()
-            end)
-        end
-    end)
-
-    return function()
-        if connection then
-            connection:Disconnect()
-        end
-    end--]]
 end
 
 Script.Functions.BypassDalgonaGame = function()
@@ -708,7 +679,7 @@ Script.Functions.BypassDalgonaGame = function()
 
     local Remotes = ReplicatedStorage:WaitForChild("Remotes")
     local DalgonaRemote = Remotes:WaitForChild("DALGONATEMPREMPTE")
-    
+
     task.spawn(function()
         SharedFunctions.CreateFolder(LocalPlayer, "RecentGameStartedMessage", 0.01)
 
@@ -781,7 +752,6 @@ Script.Functions.BypassDalgonaGame = function()
             }):Play()
         end
 
-        -- Forcefully reset camera
         CurrentCamera.CameraType = Enum.CameraType.Custom
         if Humanoid then
             CurrentCamera.CameraSubject = Humanoid
@@ -871,12 +841,11 @@ Script.Functions.FireForkRemote = function()
         }
     }
     game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("UsedTool"):FireServer(unpack(args))
-    
 end
 
 Script.Functions.JoinDiscordServer = function()
     local sInvite = "https://dsc.gg/dyhub"
-    
+
     local function getInviteCode(sInvite)
         for i = #sInvite, 1, -1 do
             local char = sInvite:sub(i, i)
@@ -886,7 +855,7 @@ Script.Functions.JoinDiscordServer = function()
         end
         return sInvite
     end
-    
+
     local function getInviteData(sInvite)
         local success, result = pcall(function()
             return HttpService:JSONDecode(request({
@@ -902,7 +871,7 @@ Script.Functions.JoinDiscordServer = function()
     end
 
     local success, result = getInviteData(sInvite)
-	if success and result then
+    if success and result then
         request({
             Url = "http://127.0.0.1:6463/rpc?v=1",
             Method = "POST",
@@ -918,7 +887,7 @@ Script.Functions.JoinDiscordServer = function()
                 nonce = HttpService:GenerateGUID(false)
             })
         })
-	end
+    end
     pcall(function()
         setclipboard("dsc.gg/dyhub")
     end)
@@ -933,15 +902,16 @@ function Script.Functions.GetDalgonaRemote()
     return game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):FindFirstChild("DALGONATEMPREMPTE")
 end
 
-function Script.Functions.DistanceFromCharacter(position: Instance | Vector3)
+function Script.Functions.DistanceFromCharacter(position)
     if typeof(position) == "Instance" then
         position = position:GetPivot().Position
     end
 
-    if not alive then
+    if not lplr.Character or not lplr.Character:FindFirstChild("HumanoidRootPart") then
         return (camera.CFrame.Position - position).Magnitude
     end
 
+    local rootPart = lplr.Character:FindFirstChild("HumanoidRootPart")
     return (rootPart.Position - position).Magnitude
 end
 
@@ -964,7 +934,6 @@ Script.Functions.RestoreVisibility = function(character)
     for _, part in pairs(character:GetDescendants()) do
         if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
             if part.Transparency >= 0.99 or part.LocalTransparencyModifier >= 0.99 then
-                wasInvisible = true
                 part.Transparency = 0
                 part.LocalTransparencyModifier = 0
             end
@@ -995,7 +964,7 @@ Script.Functions.CheckPlayersVisibility = function()
     end
 end
 
-function Script.Functions.SetupOtherPlayerConnection(player: Player)
+function Script.Functions.SetupOtherPlayerConnection(player)
     if player.Character then
         if Toggles.PlayerESP.Value then
             Script.Functions.PlayerESP(player)
@@ -1292,7 +1261,7 @@ local SelfGroupBox = Tabs.Visuals:AddRightGroupbox("Self") do
     })
     SelfGroupBox:AddSlider("FOVSlider", {
         Text = "FOV",
-        Default = 60, 
+        Default = 60,
         Min = 10,
         Max = 120,
         Rounding = 1
@@ -1321,12 +1290,12 @@ local FunGroupBox = Tabs.Main:AddLeftGroupbox("DYHUB / Feature") do
         Text = "Fling Aura",
         Default = false
     })
-    
+
     FunGroupBox:AddToggle("AntiFlingToggle", {
         Text = "Anti Fling",
         Default = false
     })
-    
+
     Toggles.AntiFlingToggle:OnChanged(function(call)
         if call then
             Script.Temp.PauseAntiFling = nil
@@ -1403,7 +1372,7 @@ local GreenLightRedLightGroup = Tabs.Main:AddLeftGroupbox("Red Light / Green Lig
         Text = "Godmode",
         Default = false
     })
-    
+
     local RLGL_OriginalNamecall
     Toggles.RedLightGodmode:OnChanged(function(enabled)
         if enabled then
@@ -1470,7 +1439,6 @@ local GreenLightRedLightGroup = Tabs.Main:AddLeftGroupbox("Red Light / Green Lig
             lplr.Character.InjuredWalking:Destroy()
         end
         Script.Functions.BypassRagdoll()
-        --Script.Functions.Alert("Soon...Use the Remove Ragdoll Effect button in the meantime", 3)
     end)
 end
 
@@ -1486,7 +1454,7 @@ local DangolaGameGroup = Tabs.Main:AddLeftGroupbox("Dalgona Game") do
         Script.Functions.Alert("Completed Dalgona Game!", 2)
         Script.Functions.Alert("If the camera doesn't fix itself use the Fix Camera button.", 3)
         task.spawn(function()
-            repeat 
+            repeat
                 task.wait(1)
                 Script.Functions.CheckPlayersVisibility()
             until not Script.Functions.GetDalgonaRemote()
@@ -1516,7 +1484,7 @@ Toggles.ImmuneDalgonaGame:OnChanged(function(call)
                     return nil
                 end
             end
-            
+
             return DalgonaRemoteHook(self, unpack(args))
         end)
         Script.Temp.DalgonaRemoteHook = DalgonaRemoteHook
@@ -1605,17 +1573,17 @@ function Script.Functions.GetHider()
     end
 end
 
-local HideAndSeekGroup = Tabs.Main:AddLeftGroupbox("Hide And Seeek") do
+local HideAndSeekGroup = Tabs.Main:AddLeftGroupbox("Hide And Seek") do
     HideAndSeekGroup:AddButton("Teleport To Hider", function()
         if not lplr.Character then return end
-        if Script.GameState ~= "HideAndSeek" then 
+        if Script.GameState ~= "HideAndSeek" then
             Script.Functions.Alert("Game not running!")
             return
         end
         local hider = Script.Functions.GetHider()
         if not hider then
             Script.Functions.Alert("No hider found :(")
-            return 
+            return
         end
         lplr.Character:PivotTo(hider:GetPrimaryPartCFrame())
     end)
@@ -1709,11 +1677,11 @@ local InformationGroup = Tabs.Main:AddRightGroupbox("Information") do
 end
 
 function Script.Functions.CleanTable(tab)
-	local res = {}
-	for i,v in pairs(tab) do 
+    local res = {}
+    for i, v in pairs(tab) do
         table.insert(res, tostring(i))
     end
-	return res
+    return res
 end
 
 function Script.Functions.GetEmotesMeta()
@@ -1755,12 +1723,11 @@ function Script.Functions.HookEmotesFolder()
     Library:GiveSignal(Emotes.ChildRemoved:Connect(Script.Functions.RefreshEmoteList))
 end
 
-function Script.Functions.ValidateEmote(emote : string)
+function Script.Functions.ValidateEmote(emote)
     return Script.Temp.EmoteList ~= nil and Script.Temp.EmoteList[emote]
 end
 
 function Script.Functions.PlayEmote(emoteId, emoteObject)
-    -- emoteId is AnimationId (string), emoteObject is an Animation instance
     local character = lplr and lplr.Character
     if not character then
         Script.Functions.Alert("[Emote] No character found!", 3)
@@ -1801,10 +1768,10 @@ function Script.Functions.PlayEmote(emoteId, emoteObject)
 end
 
 local MiscGroup = Tabs.Main:AddRightGroupbox("Misc / Dupe") do
-    MiscGroup:AddDropdown("EmotesList", { 
-        Text = 'Emotes List', 
-        Values = {}, 
-        AllowNull = true 
+    MiscGroup:AddDropdown("EmotesList", {
+        Text = 'Emotes List',
+        Values = {},
+        AllowNull = true
     })
     task.spawn(Script.Functions.HookEmotesFolder)
     MiscGroup:AddButton("Play Emote", function()
@@ -1827,7 +1794,7 @@ local MiscGroup = Tabs.Main:AddRightGroupbox("Misc / Dupe") do
             Script.Temp.EmoteTrack = nil
         end
     end)
-    
+
     MiscGroup:AddDivider()
 
     MiscGroup:AddToggle("AntiRagdoll", {
@@ -1848,7 +1815,6 @@ local MiscGroup = Tabs.Main:AddRightGroupbox("Misc / Dupe") do
     MiscGroup:AddDivider()
     MiscGroup:AddButton("Fix Camera", Script.Functions.FixCamera)
     MiscGroup:AddButton("Skip Cutscene", Script.Functions.FixCamera)
-    --MiscGroup:AddDivider()
     MiscGroup:AddButton("Teleport To Safe Place", function()
         if not lplr.Character then
             Script.Functions.Alert("No character found")
@@ -1860,7 +1826,7 @@ local MiscGroup = Tabs.Main:AddRightGroupbox("Misc / Dupe") do
     MiscGroup:AddButton("Fix Players Visibility", Script.Functions.CheckPlayersVisibility)
 end
 
-Toggles.AntiRagdoll:OnChanged(function()
+Toggles.AntiRagdoll:OnChanged(function(call)
     if call then
         Script.Functions.Alert("Anti Ragdoll + No Stun Enabled", 3)
         Script.Functions.BypassRagdoll()
@@ -1885,7 +1851,7 @@ Toggles.FOVToggle:OnChanged(function(call)
     if call then
         Script.Temp.OldFOV = camera and camera.FieldOfView or 60
         task.spawn(function()
-            repeat 
+            repeat
                 if camera then
                     camera.FieldOfView = Options.FOVSlider.Value
                 end
@@ -1903,7 +1869,7 @@ local PlayerGroupBox = Tabs.Main:AddLeftGroupbox("Player") do
         Max = 300,
         Rounding = 1
     })
-    
+
     PlayerGroupBox:AddToggle("SpeedToggle", {
         Text = "Speed",
         Default = false
@@ -1932,13 +1898,8 @@ local PlayerGroupBox = Tabs.Main:AddLeftGroupbox("Player") do
     PlayerGroupBox:AddToggle("Fly", {
         Text = "Fly",
         Default = false
-    })--[[:AddKeyPicker("FlyKey", {
-        Mode = "Toggle",
-        Default = "F",
-        Text = "Fly",
-        SyncToggleState = true
-    })--]]
-    
+    })
+
     PlayerGroupBox:AddSlider("FlySpeed", {
         Text = "Fly Speed",
         Default = 20,
@@ -2059,7 +2020,7 @@ Toggles.Noclip:OnChanged(function(call)
             end
         end
         task.spawn(function()
-            repeat 
+            repeat
                 RunService.Heartbeat:Wait()
                 NoclipLoop()
             until not Toggles.Noclip.Value or Library.Unloaded
@@ -2103,7 +2064,7 @@ Toggles.SpeedToggle:OnChanged(function(call)
         Script.Functions.Alert("Speed Disabled", 3)
         lplr.Character.Humanoid.WalkSpeed = Script.Temp.OldSpeed or 23
     end
-end)  
+end)
 
 local controlModule
 
@@ -2287,9 +2248,7 @@ States = {
         task.spawn(function()
             repeat
                 Script.Functions.WinRLGL()
-                --Script.Functions.Alert("Teleporting to safe place in 5 seconds to prevent getting pushed out")
                 task.wait(5)
-                --Script.Functions.TeleportSafe()
             until not call or not Toggles.InkGameAutowin.Value or Script.GameState ~= "RedLightGreenLight"
         end)
         if not Toggles.AntiFlingToggle.Value then
@@ -2301,14 +2260,6 @@ States = {
                 Toggles.AntiFlingToggle:SetValue(false)
             end
         end
-        --[[if not Toggles.RedLightGodmode.Value then
-            Toggles.RedLightGodmode:SetValue(true)
-        end
-        return function()
-            if Toggles.RedLightGodmode.Value then
-                Toggles.RedLightGodmode:SetValue(false)
-            end
-        end--]]
     end,
     Mingle = function()
         if not Toggles.AutoMingleQTE.Value then
@@ -2466,7 +2417,6 @@ SaveManager:SetLibrary(Library)
 SaveManager:IgnoreThemeSettings()
 
 SaveManager:SetIgnoreIndexes({  })
--- "MenuKeybind"
 
 ThemeManager:SetFolder("RTaOHUB_linoria")
 SaveManager:SetFolder("RTaOHUB_linoria/ink_game")
