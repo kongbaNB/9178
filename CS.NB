@@ -1,1153 +1,1388 @@
-if not getgenv().shared then
-    getgenv().shared = {}
-end
-
-if not getgenv().RTaOHUB_loaded then
-    getgenv().RTaOHUB_loaded = true
-else
-    local oldLib = shared.Voidware_InkGame_Library or shared.RTaOHUB_InkGame_Library
-    if oldLib then
-        pcall(function() oldLib:Unload() end)
-    end
-    shared.Voidware_InkGame_Library = nil
-    shared.RTaOHUB_InkGame_Library = nil
-end
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
+local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
+local CollectionService = game:GetService("CollectionService")
+
+local keywords = {
+    "chest", "crate", "barrel", "cabinet", "locker",
+    "box", "case", "wardrobe", "cupboard", "drawer",
+    "shelf", "rack", "bin", "basket", "trunk",
+    "container", "storage", "vault", "safe", "coffer",
+    "oilbarrel", "oil_barrel", "oil barrel", "woodencrate",
+    "wooden_crate", "wooden crate", "metalbox", "metal_box",
+    "metal box", "supplycrate", "supply_crate", "supply crate",
+    "ammobox", "ammo_box", "ammo box", "toolbox", "tool_box",
+    "tool box", "medkit", "firstaid", "first_aid", "first aid",
+    "backpack", "bag", "sack", "barrel_wood", "barrelwood",
+    "油桶", "邮箱", "箱子", "桶", "柜子", "储物柜", "衣柜", "橱柜",
+    "冰柜", "冰箱", "集装箱", "木箱", "铁箱", "置物柜", "床头柜",
+    "电视柜", "收纳箱", "行李箱", "工具箱", "弹药箱", "补给箱",
+    "保险箱", "盒子", "篮子", "背包", "手提箱", "公文包"
+}
+
+local taggedNames = {
+    "Container", "Chest", "Crate", "Barrel", "Cabinet",
+    "Locker", "Box", "Case", "Wardrobe", "Cupboard",
+    "Drawer", "Shelf", "Rack", "Bin", "Basket",
+    "Trunk", "Storage", "Vault", "Safe", "Coffer",
+    "SupplyCrate", "AmmoBox", "ToolBox", "MedKit",
+    "FirstAid", "Backpack", "Bag", "Sack"
+}
+
+local function matchesKeywords(name)
+    local lower = name:lower()
+    for _, kw in ipairs(keywords) do
+        if lower == kw:lower() or lower:find(kw:lower(), 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+local function hasTag(instance)
+    for _, tag in ipairs(taggedNames) do
+        if CollectionService:HasTag(instance, tag) then
+            return true
+        end
+    end
+    return false
+end
+
+local function isContainer(instance)
+    if not instance:IsA("BasePart") and not instance:IsA("Model") then
+        return false
+    end
+    if hasTag(instance) then
+        return true
+    end
+    if instance:IsA("Model") then
+        local humanoid = instance:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            return false
+        end
+    end
+    local name = instance.Name
+    if matchesKeywords(name) then
+        return true
+    end
+    if instance:IsA("Model") then
+        local primary = instance.PrimaryPart
+        if primary and matchesKeywords(primary.Name) then
+            return true
+        end
+        for _, child in ipairs(instance:GetChildren()) do
+            if child:IsA("BasePart") and matchesKeywords(child.Name) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function getTargetPart(obj)
+    if obj:IsA("BasePart") then return obj end
+    if obj:IsA("Model") then
+        local primary = obj.PrimaryPart
+        if primary then return primary end
+        for _, child in ipairs(obj:GetChildren()) do
+            if child:IsA("BasePart") then return child end
+        end
+    end
+    return obj
+end
+
+local function isPlayerCharacter(obj)
+    for _, p in pairs(Players:GetPlayers()) do
+        if obj == p.Character then return true end
+        if obj:FindFirstAncestor(p.Name) then return true end
+    end
+    return false
+end
+
+local function loadFlightScript()
+    local success, err = pcall(function()
+        local main = Instance.new("ScreenGui")
+        local Frame = Instance.new("Frame")
+        local up = Instance.new("TextButton")
+        local down = Instance.new("TextButton")
+        local onof = Instance.new("TextButton")
+        local TextLabel = Instance.new("TextLabel")
+        local plus = Instance.new("TextButton")
+        local speed = Instance.new("TextLabel")
+        local mine = Instance.new("TextButton")
+        local closebutton = Instance.new("TextButton")
+        local mini = Instance.new("TextButton")
+        local mini2 = Instance.new("TextButton")
+        main.Name = "main"
+        main.Parent = LocalPlayer:WaitForChild("PlayerGui")
+        main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        main.ResetOnSpawn = false
+        Frame.Parent = main
+        Frame.BackgroundColor3 = Color3.fromRGB(163, 255, 137)
+        Frame.BorderColor3 = Color3.fromRGB(103, 221, 213)
+        Frame.Position = UDim2.new(0.100320168, 0, 0.379746825, 0)
+        Frame.Size = UDim2.new(0, 190, 0, 57)
+        up.Name = "up"
+        up.Parent = Frame
+        up.BackgroundColor3 = Color3.fromRGB(79, 255, 152)
+        up.Size = UDim2.new(0, 44, 0, 28)
+        up.Font = Enum.Font.SourceSans
+        up.Text = "上升"
+        up.TextColor3 = Color3.fromRGB(0, 0, 0)
+        up.TextSize = 14
+        down.Name = "down"
+        down.Parent = Frame
+        down.BackgroundColor3 = Color3.fromRGB(215, 255, 121)
+        down.Position = UDim2.new(0, 0, 0.491228074, 0)
+        down.Size = UDim2.new(0, 44, 0, 28)
+        down.Font = Enum.Font.SourceSans
+        down.Text = "下落"
+        down.TextColor3 = Color3.fromRGB(0, 0, 0)
+        down.TextSize = 14
+        onof.Name = "onof"
+        onof.Parent = Frame
+        onof.BackgroundColor3 = Color3.fromRGB(255, 249, 74)
+        onof.Position = UDim2.new(0.702823281, 0, 0.491228074, 0)
+        onof.Size = UDim2.new(0, 56, 0, 28)
+        onof.Font = Enum.Font.SourceSans
+        onof.Text = "飞"
+        onof.TextColor3 = Color3.fromRGB(0, 0, 0)
+        onof.TextSize = 14
+        TextLabel.Parent = Frame
+        TextLabel.BackgroundColor3 = Color3.fromRGB(242, 60, 255)
+        TextLabel.Position = UDim2.new(0.469327301, 0, 0, 0)
+        TextLabel.Size = UDim2.new(0, 100, 0, 28)
+        TextLabel.Font = Enum.Font.SourceSans
+        TextLabel.Text = "恐拜大帝"
+        TextLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
+        TextLabel.TextScaled = true
+        TextLabel.TextSize = 14
+        TextLabel.TextWrapped = true
+        plus.Name = "plus"
+        plus.Parent = Frame
+        plus.BackgroundColor3 = Color3.fromRGB(133, 145, 255)
+        plus.Position = UDim2.new(0.231578946, 0, 0, 0)
+        plus.Size = UDim2.new(0, 45, 0, 28)
+        plus.Font = Enum.Font.SourceSans
+        plus.Text = "+"
+        plus.TextColor3 = Color3.fromRGB(0, 0, 0)
+        plus.TextScaled = true
+        plus.TextSize = 14
+        plus.TextWrapped = true
+        speed.Name = "speed"
+        speed.Parent = Frame
+        speed.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
+        speed.Position = UDim2.new(0.468421042, 0, 0.491228074, 0)
+        speed.Size = UDim2.new(0, 44, 0, 28)
+        speed.Font = Enum.Font.SourceSans
+        speed.Text = "1"
+        speed.TextColor3 = Color3.fromRGB(0, 0, 0)
+        speed.TextScaled = true
+        speed.TextSize = 14
+        speed.TextWrapped = true
+        mine.Name = "mine"
+        mine.Parent = Frame
+        mine.BackgroundColor3 = Color3.fromRGB(123, 255, 247)
+        mine.Position = UDim2.new(0.231578946, 0, 0.491228074, 0)
+        mine.Size = UDim2.new(0, 45, 0, 29)
+        mine.Font = Enum.Font.SourceSans
+        mine.Text = "-"
+        mine.TextColor3 = Color3.fromRGB(0, 0, 0)
+        mine.TextScaled = true
+        mine.TextSize = 14
+        mine.TextWrapped = true
+        closebutton.Name = "Close"
+        closebutton.Parent = Frame
+        closebutton.BackgroundColor3 = Color3.fromRGB(225, 25, 0)
+        closebutton.Font = Enum.Font.SourceSans
+        closebutton.Size = UDim2.new(0, 45, 0, 28)
+        closebutton.Text = "X"
+        closebutton.TextSize = 30
+        closebutton.Position = UDim2.new(0, 0, -1, 27)
+        mini.Name = "minimize"
+        mini.Parent = Frame
+        mini.BackgroundColor3 = Color3.fromRGB(192, 150, 230)
+        mini.Font = Enum.Font.SourceSans
+        mini.Size = UDim2.new(0, 45, 0, 28)
+        mini.Text = "-"
+        mini.TextSize = 40
+        mini.Position = UDim2.new(0, 44, -1, 27)
+        mini2.Name = "minimize2"
+        mini2.Parent = Frame
+        mini2.BackgroundColor3 = Color3.fromRGB(192, 150, 230)
+        mini2.Font = Enum.Font.SourceSans
+        mini2.Size = UDim2.new(0, 45, 0, 28)
+        mini2.Text = "+"
+        mini2.TextSize = 40
+        mini2.Position = UDim2.new(0, 44, 0, 30)
+        mini2.Visible = false
+        local speeds = 1
+        local speaker = LocalPlayer
+        local chr = speaker.Character
+        local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+        local nowe = false
+        local Notify = function() end
+        Frame.Active = true
+        Frame.Draggable = true
+        closebutton.MouseButton1Click:Connect(function()
+            main:Destroy()
+        end)
+        up.MouseButton1Click:Connect(function()
+            if chr and chr:FindFirstChild("HumanoidRootPart") then
+                chr.HumanoidRootPart.CFrame = chr.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+            end
+        end)
+        down.MouseButton1Click:Connect(function()
+            if chr and chr:FindFirstChild("HumanoidRootPart") then
+                chr.HumanoidRootPart.CFrame = chr.HumanoidRootPart.CFrame + Vector3.new(0, -3, 0)
+            end
+        end)
+        mini.MouseButton1Click:Connect(function()
+            up.Visible = false
+            down.Visible = false
+            onof.Visible = false
+            plus.Visible = false
+            speed.Visible = false
+            mine.Visible = false
+            closebutton.Visible = false
+            mini.Visible = false
+            mini2.Visible = true
+            Frame.Size = UDim2.new(0, 100, 0, 28)
+            TextLabel.Position = UDim2.new(0, 0, 0, 0)
+        end)
+        mini2.MouseButton1Click:Connect(function()
+            up.Visible = true
+            down.Visible = true
+            onof.Visible = true
+            plus.Visible = true
+            speed.Visible = true
+            mine.Visible = true
+            closebutton.Visible = true
+            mini.Visible = true
+            mini2.Visible = false
+            Frame.Size = UDim2.new(0, 190, 0, 57)
+            TextLabel.Position = UDim2.new(0.469327301, 0, 0, 0)
+        end)
+        plus.MouseButton1Click:Connect(function()
+            speeds = speeds + 1
+            speed.Text = tostring(speeds)
+        end)
+        mine.MouseButton1Click:Connect(function()
+            if speeds > 1 then
+                speeds = speeds - 1
+                speed.Text = tostring(speeds)
+            else
+                speed.Text = "错误"
+                task.wait(0.2)
+                speed.Text = "1"
+                speeds = 1
+            end
+        end)
+        speaker.CharacterAdded:Connect(function(newChar)
+            chr = newChar
+            hum = chr:FindFirstChildOfClass("Humanoid")
+        end)
+        local function startFlight()
+            nowe = true
+            onof.Text = "飞"
+            if hum then
+                for _, state in pairs(Enum.HumanoidStateType:GetEnumItems()) do
+                    hum:SetStateEnabled(state, false)
+                end
+                hum:ChangeState(Enum.HumanoidStateType.Swimming)
+            end
+            if chr.Animate then
+                chr.Animate.Disabled = true
+            end
+            if hum then
+                for _, v in next, hum:GetPlayingAnimationTracks() do
+                    v:AdjustSpeed(0)
+                end
+            end
+            task.spawn(function()
+                while nowe and chr and hum do
+                    RunService.Heartbeat:Wait()
+                    if hum.MoveDirection.Magnitude > 0 then
+                        chr:TranslateBy(hum.MoveDirection * speeds)
+                    end
+                end
+            end)
+            local rootPart
+            if hum.RigType == Enum.HumanoidRigType.R6 then
+                rootPart = chr.Torso
+            else
+                rootPart = chr.UpperTorso
+            end
+            if rootPart then
+                local bg = Instance.new("BodyGyro", rootPart)
+                bg.P = 9e4
+                bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+                bg.CFrame = rootPart.CFrame
+                local bv = Instance.new("BodyVelocity", rootPart)
+                bv.Velocity = Vector3.new(0, 0, 0)
+                bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+                if nowe then
+                    LocalPlayer.Character.Humanoid.PlatformStand = true
+                end
+                while nowe and LocalPlayer.Character.Humanoid.Health > 0 do
+                    RunService.RenderStepped:Wait()
+                    bg.CFrame = workspace.CurrentCamera.CoordinateFrame
+                end
+                bg:Destroy()
+                bv:Destroy()
+                LocalPlayer.Character.Humanoid.PlatformStand = false
+                LocalPlayer.Character.Animate.Disabled = false
+            end
+        end
+        local function stopFlight()
+            nowe = false
+            onof.Text = "飞"
+            if hum then
+                for _, state in pairs(Enum.HumanoidStateType:GetEnumItems()) do
+                    hum:SetStateEnabled(state, true)
+                end
+                hum:ChangeState(Enum.HumanoidStateType.Running)
+            end
+            if chr.Animate then
+                chr.Animate.Disabled = false
+            end
+        end
+        onof.MouseButton1Click:Connect(function()
+            if not nowe then
+                startFlight()
+            else
+                stopFlight()
+            end
+        end)
+    end)
+    if not success then
+        warn("飞行脚本加载失败：" .. tostring(err))
+    end
+end
+
+local AutoTranslateEnabled = false
+local translateLoop = false
+local translatedTexts = {}
+
+local function isEnglish(text)
+    if not text or text == "" then return false end
+    local englishCount, totalCount = 0, 0
+    for char in text:gmatch(".") do
+        local byte = string.byte(char)
+        if byte then
+            totalCount = totalCount + 1
+            if (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122) then
+                englishCount = englishCount + 1
+            end
+        end
+    end
+    if totalCount == 0 then return false end
+    return (englishCount / totalCount) > 0.5
+end
+
+local function translateText(text)
+    if not text or text == "" or #text < 2 then return nil end
+    if translatedTexts[text] then return translatedTexts[text] end
+    local success, result = pcall(function()
+        local url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=" .. HttpService:UrlEncode(text)
+        local response = game:HttpGet(url)
+        local decoded = HttpService:JSONDecode(response)
+        if decoded and decoded[1] and decoded[1][1] and decoded[1][1][1] then
+            return decoded[1][1][1]
+        end
+        return nil
+    end)
+    if success and result then
+        translatedTexts[text] = result
+        return result
+    end
+    return nil
+end
+
+local function processTextObject(obj)
+    if not AutoTranslateEnabled then return end
+    if not obj:IsA("TextLabel") and not obj:IsA("TextButton") and not obj:IsA("TextBox") then return end
+    local originalText = obj.Text
+    if not originalText or originalText == "" then return end
+    if not isEnglish(originalText) then return end
+    local translated = translateText(originalText)
+    if translated and translated ~= originalText then
+        obj.Text = translated
+    end
+end
+
+local function scanAndTranslate(container, maxCount)
+    local count = 0
+    for _, obj in ipairs(container:GetDescendants()) do
+        if count >= maxCount then break end
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+            if isEnglish(obj.Text) then
+                processTextObject(obj)
+                count = count + 1
+            end
+        end
+    end
+end
+
+local function startAutoTranslate()
+    AutoTranslateEnabled = true
+    if translateLoop then return end
+    translateLoop = true
+    task.spawn(function()
+        while translateLoop and AutoTranslateEnabled do
+            local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui")
+            if PlayerGui then
+                scanAndTranslate(PlayerGui, 5)
+            end
+            pcall(function()
+                for _, gui in ipairs(CoreGui:GetChildren()) do
+                    if gui:IsA("ScreenGui") then
+                        scanAndTranslate(gui, 5)
+                    end
+                end
+            end)
+            task.wait(0.1)
+        end
+    end)
+end
+
+local function stopAutoTranslate()
+    AutoTranslateEnabled = false
+    translateLoop = false
+end
+
+local espEnabled = false
+local espLabels = {}
+local minPrice = 0
+local containerESPEnabled = false
+local containerLabels = {}
+local monsterESPEnabled = false
+local monsterLabels = {}
+local teammateESPEnabled = false
+local teammateLabels = {}
+local elevatorESPEnabled = false
+local elevatorLabels = {}
+
+local elevatorKeywords = {"elevator", "lift", "电梯", "升降梯", "エレベーター", "엘리베이터", "ascenseur", "aufzug", "elevador", "лифт"}
+
+local function isElevator(obj)
+    if not obj:IsA("Model") and not obj:IsA("BasePart") then return false end
+    local nameLower = obj.Name:lower()
+    for _, kw in ipairs(elevatorKeywords) do
+        if nameLower:find(kw:lower()) then return true end
+    end
+    return false
+end
+
+local function isMonster(obj)
+    if not obj:IsA("Model") then return false end
+    local hum = obj:FindFirstChildOfClass("Humanoid")
+    if not hum or hum.Health <= 0 then return false end
+    return Players:GetPlayerFromCharacter(obj) == nil
+end
+
+local function isTeammate(obj)
+    if not obj:IsA("Model") then return false end
+    if obj == LocalPlayer.Character then return false end
+    local player = Players:GetPlayerFromCharacter(obj)
+    return player ~= nil and player ~= LocalPlayer
+end
+
+local function getColorByPrice(price)
+    if price <= 15 then return Color3.new(1, 1, 1)
+    elseif price <= 120 then return Color3.new(0, 1, 0)
+    elseif price <= 338 then return Color3.new(0, 0, 1)
+    elseif price <= 1000 then return Color3.new(0.5, 0, 0.5)
+    elseif price <= 10000 then return Color3.new(1, 0.84, 0)
+    else return Color3.new(1, 0, 0) end
+end
+
+local function parsePriceFromTexts(obj)
+    local function scanTexts(parent)
+        for _, child in ipairs(parent:GetDescendants()) do
+            if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then
+                local text = child.Text
+                if text then
+                    local price = text:match("%$(%d+)") or text:match("(%d+)%s*%$")
+                    if price then return tonumber(price) end
+                end
+            end
+        end
+        return nil
+    end
+    local price = scanTexts(obj)
+    if price then return price end
+    if obj:IsA("Model") then price = scanTexts(obj) end
+    return price
+end
+
+local priceKeywords = {
+    "price", "cost", "value", "価格", "가격", "价格", "prix", "preis", "precio",
+    "costo", "ราคา", "giá", "harga", "cena", "Цена",
+}
+
+local function getItemPrice(obj)
+    local textPrice = parsePriceFromTexts(obj)
+    if textPrice then return textPrice end
+    local found = 0
+    for _, child in ipairs(obj:GetChildren()) do
+        local nameLower = child.Name:lower()
+        for _, kw in ipairs(priceKeywords) do
+            if nameLower:find(kw) then
+                if child:IsA("IntValue") or child:IsA("NumberValue") then
+                    found = math.max(found, child.Value)
+                elseif child:IsA("StringValue") then
+                    local num = tonumber(child.Value)
+                    if num then found = math.max(found, num) end
+                end
+            end
+        end
+    end
+    return found
+end
+
+local function isItemOrContainer(obj)
+    if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") then return false end
+    for _, p in pairs(Players:GetPlayers()) do
+        if obj == p.Character or obj:FindFirstAncestor(p.Name) then return false end
+    end
+    if obj:FindFirstAncestorOfClass("Model") and obj:FindFirstAncestorOfClass("Model"):FindFirstChildOfClass("Humanoid") then
+        return false
+    end
+    return obj:FindFirstChild("Item", true) or obj:FindFirstChild("Pickup", true) or
+        obj:FindFirstChild("Handle", true) or obj:FindFirstChild("Package", true) or
+        obj:FindFirstChild("Collectable", true) or obj:FindFirstChild("Container", true) or
+        obj:FindFirstChild("Box", true)
+end
+
+local function isNearElevator(pos)
+    for _, part in ipairs(Workspace:GetDescendants()) do
+        if part:IsA("BasePart") then
+            local nameLower = part.Name:lower()
+            for _, kw in ipairs(elevatorKeywords) do
+                if nameLower:find(kw) and (part.Position - pos).Magnitude < 10 then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+local function clearESP()
+    for _, v in pairs(espLabels) do pcall(function() v:Destroy() end) end
+    espLabels = {}
+end
+
+local function clearContainerESP()
+    for _, v in pairs(containerLabels) do pcall(function() v:Destroy() end) end
+    containerLabels = {}
+end
+
+local function clearMonsterESP()
+    for _, v in pairs(monsterLabels) do pcall(function() v:Destroy() end) end
+    monsterLabels = {}
+end
+
+local function clearTeammateESP()
+    for _, v in pairs(teammateLabels) do pcall(function() v:Destroy() end) end
+    teammateLabels = {}
+end
+
+local function clearElevatorESP()
+    for _, v in pairs(elevatorLabels) do pcall(function() v:Destroy() end) end
+    elevatorLabels = {}
+end
+
+local function drawESP()
+    clearESP()
+    if not espEnabled then return end
+    for _, v in pairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if not isItemOrContainer(v) then return end
+            local price = getItemPrice(v)
+            if price < minPrice then return end
+            local target = getTargetPart(v)
+            if isNearElevator(target.Position) then return end
+            local displayText = "$" .. price
+            local color = getColorByPrice(price)
+            local bill = Instance.new("BillboardGui")
+            bill.Adornee = target
+            bill.AlwaysOnTop = true
+            bill.Size = UDim2.new(0, 120, 0, 30)
+            bill.Parent = target
+            local txt = Instance.new("TextLabel")
+            txt.Parent = bill
+            txt.Size = UDim2.new(1, 0, 1, 0)
+            txt.BackgroundTransparency = 1
+            txt.TextColor3 = color
+            txt.TextScaled = true
+            txt.Text = displayText
+            txt.Font = Enum.Font.SourceSansBold
+            local hr = Instance.new("Highlight")
+            hr.Adornee = target
+            hr.Parent = target
+            hr.FillColor = color
+            hr.OutlineColor = color
+            hr.FillTransparency = 0.4
+            hr.OutlineTransparency = 0
+            hr.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            table.insert(espLabels, bill)
+            table.insert(espLabels, hr)
+        end)
+    end
+end
+
+local function drawContainerESP()
+    clearContainerESP()
+    if not containerESPEnabled then return end
+    local handledModels = {}
+    for _, v in pairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if not isContainer(v) then return end
+            local target = getTargetPart(v)
+            local model = v:IsA("Model") and v or v:FindFirstAncestorOfClass("Model")
+            if model and handledModels[model] then return end
+            if model then handledModels[model] = true end
+            local containerName = v.Name
+            local translatedName = translateText(containerName)
+            local displayName = translatedName or containerName
+            local bill = Instance.new("BillboardGui")
+            bill.Adornee = target
+            bill.AlwaysOnTop = true
+            bill.Size = UDim2.new(0, 200, 0, 30)
+            bill.StudsOffset = Vector3.new(0, target.Size.Y/2 + 1, 0)
+            bill.Parent = target
+            local txt = Instance.new("TextLabel")
+            txt.Parent = bill
+            txt.Size = UDim2.new(1, 0, 1, 0)
+            txt.BackgroundTransparency = 1
+            txt.TextColor3 = Color3.new(1, 1, 0)
+            txt.Text = displayName
+            txt.Font = Enum.Font.SourceSansBold
+            txt.TextSize = 14
+            local hr = Instance.new("Highlight")
+            hr.Adornee = target
+            hr.Parent = target
+            hr.FillColor = Color3.new(0.5, 0, 0.5)
+            hr.OutlineColor = Color3.new(0.5, 0, 0.5)
+            hr.FillTransparency = 0.7
+            hr.OutlineTransparency = 0
+            hr.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            table.insert(containerLabels, bill)
+            table.insert(containerLabels, hr)
+        end)
+    end
+end
+
+local function drawMonsterESP()
+    clearMonsterESP()
+    if not monsterESPEnabled then return end
+    local handledModels = {}
+    for _, v in pairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if not isMonster(v) then return end
+            local target = getTargetPart(v)
+            local model = v:IsA("Model") and v or v:FindFirstAncestorOfClass("Model")
+            if model and handledModels[model] then return end
+            if model then handledModels[model] = true end
+            local hr = Instance.new("Highlight")
+            hr.Adornee = target
+            hr.Parent = target
+            hr.FillColor = Color3.new(1, 0, 0)
+            hr.OutlineColor = Color3.new(1, 0, 0)
+            hr.FillTransparency = 0.7
+            hr.OutlineTransparency = 0
+            hr.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            table.insert(monsterLabels, hr)
+        end)
+    end
+end
+
+local function drawTeammateESP()
+    clearTeammateESP()
+    if not teammateESPEnabled then return end
+    local handledModels = {}
+    for _, v in pairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if not isTeammate(v) then return end
+            local target = getTargetPart(v)
+            local model = v:IsA("Model") and v or v:FindFirstAncestorOfClass("Model")
+            if model and handledModels[model] then return end
+            if model then handledModels[model] = true end
+            local hr = Instance.new("Highlight")
+            hr.Adornee = target
+            hr.Parent = target
+            hr.FillColor = Color3.new(1, 1, 1)
+            hr.OutlineColor = Color3.new(1, 1, 1)
+            hr.FillTransparency = 0.7
+            hr.OutlineTransparency = 0
+            hr.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            table.insert(teammateLabels, hr)
+        end)
+    end
+end
+
+local function drawElevatorESP()
+    clearElevatorESP()
+    if not elevatorESPEnabled then return end
+    local handledModels = {}
+    for _, v in pairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if not isElevator(v) then return end
+            local target = getTargetPart(v)
+            local model = v:IsA("Model") and v or v:FindFirstAncestorOfClass("Model")
+            if model and handledModels[model] then return end
+            if model then handledModels[model] = true end
+            local hr = Instance.new("Highlight")
+            hr.Adornee = target
+            hr.Parent = target
+            hr.FillColor = Color3.new(0, 1, 0)
+            hr.OutlineColor = Color3.new(0, 1, 0)
+            hr.FillTransparency = 0.3
+            hr.OutlineTransparency = 0
+            hr.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            table.insert(elevatorLabels, hr)
+        end)
+    end
+end
+
+local function startESPWatcher()
+    Workspace.DescendantAdded:Connect(function(obj)
+        if espEnabled and isItemOrContainer(obj) then drawESP() end
+        if containerESPEnabled and isContainer(obj) then drawContainerESP() end
+        if monsterESPEnabled and isMonster(obj) then drawMonsterESP() end
+        if teammateESPEnabled and isTeammate(obj) then drawTeammateESP() end
+        if elevatorESPEnabled and isElevator(obj) then drawElevatorESP() end
+    end)
+end
+
+local function refreshAllESP()
+    if espEnabled then drawESP() end
+    if containerESPEnabled then drawContainerESP() end
+    if monsterESPEnabled then drawMonsterESP() end
+    if teammateESPEnabled then drawTeammateESP() end
+    if elevatorESPEnabled then drawElevatorESP() end
+end
+
+local killMovingActive = false
+local killMovingConnection
+
+local function isNonPlayerCharacter(model)
+    if not model:IsA("Model") then return false end
+    local hum = model:FindFirstChildOfClass("Humanoid")
+    if not hum then return false end
+    return Players:GetPlayerFromCharacter(model) == nil
+end
+
+local function killMovingMonsters()
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if obj:IsA("BasePart") then
+                local model = obj:FindFirstAncestorOfClass("Model")
+                if model and isNonPlayerCharacter(model) then
+                    local hum = model:FindFirstChildOfClass("Humanoid")
+                    if hum and hum.Health > 0 then
+                        local root = model:FindFirstChild("HumanoidRootPart") or model.PrimaryPart
+                        if root and (root.Velocity.Magnitude > 0.5 or hum.MoveDirection.Magnitude > 0.1) then
+                            model:Destroy()
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end
+
+local function toggleKillMoving(state)
+    killMovingActive = state
+    if state then
+        if killMovingConnection then killMovingConnection:Disconnect() end
+        killMovingConnection = RunService.Heartbeat:Connect(killMovingMonsters)
+    else
+        if killMovingConnection then killMovingConnection:Disconnect() killMovingConnection = nil end
+    end
+end
+
+local freezeActive = false
+local freezeConnection
+local originalSpeeds = {}
+
+local function freezeMonsters()
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if obj:IsA("BasePart") then
+                local model = obj:FindFirstAncestorOfClass("Model")
+                if model and isNonPlayerCharacter(model) then
+                    local hum = model:FindFirstChildOfClass("Humanoid")
+                    if hum and hum.Health > 0 then
+                        if not originalSpeeds[model] then
+                            originalSpeeds[model] = hum.WalkSpeed
+                            hum.WalkSpeed = 0
+                            hum.JumpPower = 0
+                            hum.PlatformStand = true
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end
+
+local function unfreezeMonsters()
+    for model, origSpeed in pairs(originalSpeeds) do
+        pcall(function()
+            local hum = model:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum.WalkSpeed = origSpeed
+                hum.JumpPower = 50
+                hum.PlatformStand = false
+            end
+        end)
+    end
+    originalSpeeds = {}
+end
+
+local function toggleFreeze(state)
+    freezeActive = state
+    if state then
+        freezeMonsters()
+        if freezeConnection then freezeConnection:Disconnect() end
+        freezeConnection = RunService.Heartbeat:Connect(freezeMonsters)
+    else
+        if freezeConnection then freezeConnection:Disconnect() freezeConnection = nil end
+        unfreezeMonsters()
+    end
+end
+
+local function findNearestElevator(pos)
+    local nearest, minDist = nil, math.huge
+    for _, part in pairs(Workspace:GetDescendants()) do
+        if part:IsA("BasePart") then
+            local nameLower = part.Name:lower()
+            for _, kw in ipairs(elevatorKeywords) do
+                if nameLower:find(kw) then
+                    local dist = (part.Position - pos).Magnitude
+                    if dist < minDist then minDist = dist; nearest = part end
+                    break
+                end
+            end
+        end
+    end
+    return nearest
+end
+
+local function teleportToElevator()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local hrp = char.HumanoidRootPart
+    local elevator = findNearestElevator(hrp.Position)
+    if elevator then hrp.CFrame = elevator.CFrame + Vector3.new(0, 2, 0) end
+end
+
+local function gatherLootToElevator()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local elevator = findNearestElevator(char.HumanoidRootPart.Position)
+    if not elevator then return end
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if isItemOrContainer(obj) then
+                local primary = obj:IsA("Model") and obj.PrimaryPart or (obj:IsA("BasePart") and obj)
+                if primary then
+                    primary.CFrame = CFrame.new(elevator.Position + Vector3.new(math.random(-2,2),2,math.random(-2,2)))
+                end
+            end
+        end)
+    end
+end
+
+local teleportedLoot = {}
+
+local function cleanupInvalidMarks()
+    for obj, _ in pairs(teleportedLoot) do
+        if not obj.Parent or not isItemOrContainer(obj) then teleportedLoot[obj] = nil end
+    end
+end
+
+local function teleportToNearestLoot()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local hrp = char.HumanoidRootPart
+    cleanupInvalidMarks()
+    local candidates = {}
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if isItemOrContainer(obj) and not teleportedLoot[obj] then
+                local primary = obj:IsA("Model") and obj.PrimaryPart or (obj:IsA("BasePart") and obj)
+                if primary then
+                    table.insert(candidates, {obj=obj, primary=primary, dist=(primary.Position - hrp.Position).Magnitude})
+                end
+            end
+        end)
+    end
+    if #candidates == 0 then teleportedLoot = {} return end
+    table.sort(candidates, function(a,b) return a.dist < b.dist end)
+    local target = candidates[1]
+    hrp.CFrame = target.primary.CFrame + Vector3.new(0,2,0)
+    teleportedLoot[target.obj] = true
+end
+
+local function teleportToNearestPlayer()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local hrp = char.HumanoidRootPart
+    local nearest, minDist = nil, math.huge
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local dist = (p.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
+            if dist < minDist then minDist = dist; nearest = p.Character.HumanoidRootPart end
+        end
+    end
+    if nearest then hrp.CFrame = nearest.CFrame + Vector3.new(0,2,0) end
+end
+
+local remoteOpenActive = false
+local remoteOpenLoop
+
+local function forceOpenContainers()
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if isContainer(obj) then
+                if obj:IsA("Model") then
+                    for _, part in ipairs(obj:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                            part.Transparency = math.max(part.Transparency, 0.5)
+                        end
+                        if part:IsA("ClickDetector") then part:FireClick(LocalPlayer) end
+                        if part:IsA("ProximityPrompt") then
+                            part.MaxActivationDistance = 500
+                            part.RequiresLineOfSight = false
+                            part:Prompt(LocalPlayer)
+                            part:InputHoldBegin()
+                            task.wait(0.1)
+                            part:InputHoldEnd()
+                        end
+                    end
+                    local openValue = obj:FindFirstChild("Open")
+                    if openValue and openValue:IsA("BoolValue") then openValue.Value = true end
+                    local lockedValue = obj:FindFirstChild("Locked")
+                    if lockedValue and lockedValue:IsA("BoolValue") then lockedValue.Value = false end
+                elseif obj:IsA("BasePart") then
+                    obj.CanCollide = false
+                    obj.Transparency = 0.5
+                    for _, child in ipairs(obj:GetDescendants()) do
+                        if child:IsA("ClickDetector") then child:FireClick(LocalPlayer) end
+                        if child:IsA("ProximityPrompt") then
+                            child.MaxActivationDistance = 500
+                            child.RequiresLineOfSight = false
+                            child:Prompt(LocalPlayer)
+                            child:InputHoldBegin()
+                            task.wait(0.1)
+                            child:InputHoldEnd()
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end
+
+local function fireAllClickDetectors()
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if isContainer(obj) then
+                if obj:IsA("Model") then
+                    for _, child in ipairs(obj:GetDescendants()) do
+                        if child:IsA("ClickDetector") then child:FireClick(LocalPlayer) end
+                        if child:IsA("ProximityPrompt") then
+                            child:Prompt(LocalPlayer)
+                            if child.RequiresLineOfSight == false then child:InputHoldBegin() end
+                        end
+                    end
+                    if obj:FindFirstChild("Open") and obj.Open:IsA("BoolValue") then obj.Open.Value = true end
+                elseif obj:IsA("BasePart") then
+                    for _, child in ipairs(obj:GetDescendants()) do
+                        if child:IsA("ClickDetector") then child:FireClick(LocalPlayer) end
+                        if child:IsA("ProximityPrompt") then
+                            child:Prompt(LocalPlayer)
+                            if child.RequiresLineOfSight == false then child:InputHoldBegin() end
+                        end
+                    end
+                    if obj:FindFirstChild("Open") and obj.Open:IsA("BoolValue") then obj.Open.Value = true end
+                end
+            end
+        end)
+    end
+end
+
+local function toggleRemoteOpen(state)
+    remoteOpenActive = state
+    if state then
+        if remoteOpenLoop then task.cancel(remoteOpenLoop) end
+        remoteOpenLoop = task.spawn(function()
+            while remoteOpenActive do
+                fireAllClickDetectors()
+                forceOpenContainers()
+                task.wait(0.5)
+            end
+        end)
+    else
+        if remoteOpenLoop then task.cancel(remoteOpenLoop) remoteOpenLoop = nil end
+    end
+end
+
+local desiredWalkSpeed = 16
+RunService.Heartbeat:Connect(function()
+    local char = LocalPlayer.Character
+    if char then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid and humanoid.WalkSpeed ~= desiredWalkSpeed then
+            humanoid.WalkSpeed = desiredWalkSpeed
+        end
+    end
+end)
+LocalPlayer.CharacterAdded:Connect(function(char)
+    local humanoid = char:WaitForChild("Humanoid")
+    humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+        if humanoid.WalkSpeed ~= desiredWalkSpeed then
+            humanoid.WalkSpeed = desiredWalkSpeed
+        end
+    end)
+end)
+
+local noClipActive = false
+local function setNoClip(state)
+    noClipActive = state
+    local char = LocalPlayer.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local minY = math.huge
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            local pos = part.Position
+            if pos.Y < minY then minY = pos.Y end
+        end
+    end
+    local threshold = minY + 1
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            if state then
+                part.CanCollide = part.Position.Y <= threshold
+            else
+                part.CanCollide = true
+            end
+        end
+    end
+end
+
+local nightVisionEnabled = false
+local originalLighting = {}
+local function enableNightVision()
+    nightVisionEnabled = true
+    originalLighting = {
+        Brightness = Lighting.Brightness,
+        Ambient = Lighting.Ambient,
+        OutdoorAmbient = Lighting.OutdoorAmbient,
+        ClockTime = Lighting.ClockTime,
+        FogEnd = Lighting.FogEnd,
+        FogStart = Lighting.FogStart,
+        FogColor = Lighting.FogColor,
+    }
+    Lighting.Brightness = 3
+    Lighting.Ambient = Color3.new(1,1,1)
+    Lighting.OutdoorAmbient = Color3.new(1,1,1)
+    Lighting.ClockTime = 12
+    Lighting.FogEnd = 10000
+    Lighting.FogStart = 5000
+    Lighting.FogColor = Color3.new(1,1,1)
+end
+local function disableNightVision()
+    nightVisionEnabled = false
+    if originalLighting.Brightness then
+        Lighting.Brightness = originalLighting.Brightness
+        Lighting.Ambient = originalLighting.Ambient
+        Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+        Lighting.ClockTime = originalLighting.ClockTime
+        Lighting.FogEnd = originalLighting.FogEnd
+        Lighting.FogStart = originalLighting.FogStart
+        Lighting.FogColor = originalLighting.FogColor
+    end
+end
+
+local jumpFloatGui, jumpFloatBtn, jumpPanel, jumpHeight = nil, nil, nil, 24
+local jumpEnabled = false
+local function createJumpFloat()
+    if jumpFloatGui then jumpFloatGui:Destroy() end
+    jumpFloatGui = Instance.new("ScreenGui", CoreGui)
+    jumpFloatGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    jumpFloatBtn = Instance.new("TextButton", jumpFloatGui)
+    jumpFloatBtn.Size = UDim2.new(0,60,0,60)
+    jumpFloatBtn.Position = UDim2.new(1,-80,1,-80)
+    jumpFloatBtn.BackgroundColor3 = Color3.new(0,0.5,1)
+    jumpFloatBtn.Text = "↑"
+    jumpFloatBtn.TextColor3 = Color3.new(1,1,1)
+    jumpFloatBtn.TextSize = 40
+    jumpFloatBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", jumpFloatBtn).CornerRadius = UDim.new(1,0)
+    local gearBtn = Instance.new("TextButton", jumpFloatGui)
+    gearBtn.Size = UDim2.new(0,24,0,24)
+    gearBtn.Position = UDim2.new(1,-86,1,-86)
+    gearBtn.BackgroundColor3 = Color3.new(0.2,0.2,0.2)
+    gearBtn.Text = "⚙"
+    gearBtn.TextColor3 = Color3.new(1,1,1)
+    gearBtn.TextSize = 18
+    gearBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", gearBtn).CornerRadius = UDim.new(1,0)
+    jumpPanel = Instance.new("Frame", jumpFloatGui)
+    jumpPanel.Size = UDim2.new(0,220,0,140)
+    jumpPanel.Position = UDim2.new(1,-240,1,-160)
+    jumpPanel.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    jumpPanel.Visible = false
+    Instance.new("UICorner", jumpPanel).CornerRadius = UDim.new(0,8)
+    local closeBtn = Instance.new("TextButton", jumpPanel)
+    closeBtn.Size = UDim2.new(0,20,0,20)
+    closeBtn.Position = UDim2.new(1,-25,0,5)
+    closeBtn.BackgroundColor3 = Color3.new(0.8,0.2,0.2)
+    closeBtn.Text = "X"
+    closeBtn.TextColor3 = Color3.new(1,1,1)
+    closeBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(1,0)
+    closeBtn.MouseButton1Click:Connect(function() jumpPanel.Visible = false end)
+    local heightLabel = Instance.new("TextLabel", jumpPanel)
+    heightLabel.Size = UDim2.new(1,-30,0,30)
+    heightLabel.Position = UDim2.new(0,10,0,5)
+    heightLabel.BackgroundTransparency = 1
+    heightLabel.Text = "跳跃高度：" .. jumpHeight
+    heightLabel.TextColor3 = Color3.new(1,1,1)
+    heightLabel.Font = Enum.Font.SourceSansBold
+    local inputBox = Instance.new("TextBox", jumpPanel)
+    inputBox.Size = UDim2.new(0.6,0,0,30)
+    inputBox.Position = UDim2.new(0.2,0,0,50)
+    inputBox.BackgroundColor3 = Color3.new(0.2,0.2,0.2)
+    inputBox.Text = tostring(jumpHeight)
+    inputBox.TextColor3 = Color3.new(1,1,1)
+    inputBox.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0,6)
+    local confirmBtn = Instance.new("TextButton", jumpPanel)
+    confirmBtn.Size = UDim2.new(0.4,0,0,30)
+    confirmBtn.Position = UDim2.new(0.1,0,0,90)
+    confirmBtn.BackgroundColor3 = Color3.new(0,0.6,0)
+    confirmBtn.Text = "确认"
+    confirmBtn.TextColor3 = Color3.new(1,1,1)
+    confirmBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", confirmBtn).CornerRadius = UDim.new(0,6)
+    confirmBtn.MouseButton1Click:Connect(function()
+        local num = tonumber(inputBox.Text)
+        if num and num >= 16 and num <= 100 then
+            jumpHeight = num
+            heightLabel.Text = "跳跃高度：" .. jumpHeight
+        end
+    end)
+    local resetBtn = Instance.new("TextButton", jumpPanel)
+    resetBtn.Size = UDim2.new(0.4,0,0,30)
+    resetBtn.Position = UDim2.new(0.5,0,0,90)
+    resetBtn.BackgroundColor3 = Color3.new(0.8,0.4,0)
+    resetBtn.Text = "默认"
+    resetBtn.TextColor3 = Color3.new(1,1,1)
+    resetBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0,6)
+    resetBtn.MouseButton1Click:Connect(function()
+        jumpHeight = 24
+        inputBox.Text = "24"
+        heightLabel.Text = "跳跃高度：" .. jumpHeight
+    end)
+    gearBtn.MouseButton1Click:Connect(function() jumpPanel.Visible = not jumpPanel.Visible end)
+    local function performJump()
+        if not jumpEnabled then return end
+        local char = LocalPlayer.Character
+        if not char then return end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hrp and hum and hum.Health > 0 and hum.FloorMaterial ~= Enum.Material.Air then
+            hrp.Velocity = Vector3.new(hrp.Velocity.X, jumpHeight, hrp.Velocity.Z)
+        end
+    end
+    jumpFloatBtn.MouseButton1Click:Connect(performJump)
+end
+local function destroyJumpFloat()
+    if jumpFloatGui then jumpFloatGui:Destroy() jumpFloatGui = nil jumpPanel = nil jumpFloatBtn = nil end
+end
+
+local function showTimeWindow(mode)
+    local g = Instance.new("ScreenGui", CoreGui)
+    local f = Instance.new("Frame", g)
+    f.Size = UDim2.new(0,200,0, mode=="both" and 55 or 30)
+    f.Position = UDim2.new(0.5,-100,0,80)
+    f.BackgroundColor3 = Color3.new(0,0,0)
+    f.BackgroundTransparency = 0.3
+    f.Active = true
+    f.Draggable = true
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0,8)
+    local t1 = Instance.new("TextLabel", f)
+    t1.Size = UDim2.new(1,0,0,30)
+    t1.BackgroundTransparency = 1
+    t1.TextColor3 = Color3.new(1,1,1)
+    t1.Font = Enum.Font.SourceSansBold
+    t1.TextSize = 16
+    local t2
+    if mode == "both" then
+        t2 = Instance.new("TextLabel", f)
+        t2.Size = UDim2.new(1,0,0,25)
+        t2.Position = UDim2.new(0,0,0,30)
+        t2.BackgroundTransparency = 1
+        t2.TextColor3 = Color3.new(1,0,0)
+        t2.Font = Enum.Font.SourceSansBold
+        t2.TextSize = 14
+    end
+    local startTime = tick()
+    local conn; conn = g.AncestryChanged:Connect(function() if not g.Parent then conn:Disconnect() end end)
+    task.spawn(function()
+        while f.Parent do
+            local now = os.date("*t")
+            local nowStr = string.format("%02d:%02d:%02d", now.hour, now.min, now.sec)
+            local elapsed = tick() - startTime
+            local h = math.floor(elapsed/3600) local m = math.floor((elapsed%3600)/60) local s = math.floor(elapsed%60)
+            local usedStr = string.format("已用 %02d:%02d:%02d", h,m,s)
+            if mode == "now" then t1.Text = "现在时间："..nowStr
+            elseif mode == "used" then t1.Text = usedStr
+            elseif mode == "both" then t1.Text = nowStr if t2 then t2.Text = usedStr end end
+            task.wait(1)
+        end
+    end)
+end
 
 local repo = 'https://raw.githubusercontent.com/KingScriptAE/No-sirve-nada./refs/heads/main/'
 local function safeLoad(url)
     local success, result = pcall(function() return loadstring(game:HttpGet(url))() end)
-    if not success then warn("加载失败: " .. url) return nil end
+    if not success then warn("加载失败: "..url) return nil end
     return result
 end
-
-local Library = safeLoad(repo .. 'Library.lua')
-local ThemeManager = safeLoad(repo .. 'addons/ThemeManager.lua')
-local SaveManager = safeLoad(repo .. 'addons/SaveManager.lua')
-
+local Library = safeLoad(repo..'Library.lua')
+local ThemeManager = safeLoad(repo..'addons/ThemeManager.lua')
+local SaveManager = safeLoad(repo..'addons/SaveManager.lua')
 if not Library then
-    StarterGui:SetCore("SendNotification", {
-        Title = "错误", Text = "UI 库加载失败，请检查网络或脚本资源", Duration = 5
-    })
+    StarterGui:SetCore("SendNotification",{ Title="错误", Text="UI库加载失败", Duration=5 })
     return
 end
-
-shared.Voidware_InkGame_Library = Library
-local Options = Library.Options
-local Toggles = Library.Toggles
-
+local Notify = function(msg) Library:Notify(msg,3) end
+StarterGui:SetCore("SendNotification",{
+    Title = "亡命速递脚本",
+    Text = "恐拜大帝 持续更新\nQQ：3999698324",
+    Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"
+})
 local Window = Library:CreateWindow({
-    Title = "RTaO HUB - 墨水游戏 | 版本: 2.0",
-    Footer = "RTaOHUB",
+    Title = "亡命速递脚本",
+    Footer = "By 恐拜大帝 | QQ:3999698324",
     Icon = 131153193945220,
     NotifySide = "Right",
     ShowCustomCursor = true,
 })
-
-local TabsUI = {
-    Main = Window:AddTab("主页", "home"),
-    Visuals = Window:AddTab("视觉", "eye"),
-    Settings = Window:AddTab("界面设置", "settings"),
+local Tabs = {
+    Notification = Window:AddTab("通知","info"),
+    Main = Window:AddTab("主要功能","star"),
+    ESP = Window:AddTab("透视","eye"),
+    Settings = Window:AddTab("设置","settings"),
 }
-
-local lplr = Players.LocalPlayer
-local localPlayer = lplr
-local camera = workspace.CurrentCamera
-
-local Script = {
-    GameState = "unknown",
-    Connections = {},
-    Functions = {},
-    ESPTable = { Player = {}, Seeker = {}, Hider = {}, Guard = {}, Door = {}, None = {}, Key = {} },
-    Temp = {},
-    GameStateChanged = Instance.new("BindableEvent")
-}
-local States = {}
-
-function Script.Functions.Alert(msg, t)
-    Library:Notify(msg, t or 5)
-    local s = Instance.new("Sound", workspace)
-    s.SoundId = "rbxassetid://4590662766"
-    s.Volume = 2
-    s.PlayOnRemove = true
-    s:Destroy()
-end
-
-function Script.Functions.Warn(msg) warn("RTaOHUB 警告: "..msg) end
-
-function Script.Functions.ESP(args)
-    if not args.Object then return end
-    local esp = {
-        Object = args.Object, Text = args.Text or "", TextParent = args.TextParent,
-        Color = args.Color or Color3.new(1,1,1), Offset = args.Offset or Vector3.new(),
-        IsEntity = args.IsEntity or false, Type = args.Type or "None",
-        Highlights = {}, Humanoid = nil, RSConnection = nil, Connections = {}
-    }
-    local idx = #Script.ESPTable[esp.Type] + 1
-
-    if esp.IsEntity and esp.Object.PrimaryPart and esp.Object.PrimaryPart.Transparency == 1 then
-        esp.Object:SetAttribute("Transparency", esp.Object.PrimaryPart.Transparency)
-        esp.Humanoid = Instance.new("Humanoid", esp.Object)
-        esp.Object.PrimaryPart.Transparency = 0.99
-    end
-
-    local hi = Instance.new("Highlight")
-    hi.Adornee = esp.Object
-    hi.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    hi.FillColor = esp.Color
-    hi.FillTransparency = Options.ESPFillTransparency and Options.ESPFillTransparency.Value or 0.75
-    hi.OutlineColor = esp.Color
-    hi.OutlineTransparency = Options.ESPOutlineTransparency and Options.ESPOutlineTransparency.Value or 0
-    hi.Enabled = Toggles.ESPHighlight and Toggles.ESPHighlight.Value or true
-    hi.Parent = esp.Object
-    table.insert(esp.Highlights, hi)
-
-    local bg = Instance.new("BillboardGui")
-    bg.Adornee = esp.TextParent or esp.Object
-    bg.AlwaysOnTop = true
-    bg.Size = UDim2.new(0,1,0,1)
-    bg.StudsOffset = esp.Offset
-    bg.Parent = esp.TextParent or esp.Object
-
-    local tl = Instance.new("TextLabel")
-    tl.BackgroundTransparency = 1
-    tl.Font = Enum.Font.Oswald
-    tl.Size = UDim2.new(1,0,1,0)
-    tl.Text = esp.Text
-    tl.TextColor3 = esp.Color
-    tl.TextSize = Options.ESPTextSize and Options.ESPTextSize.Value or 22
-    tl.TextStrokeColor3 = Color3.new()
-    tl.TextStrokeTransparency = 0.75
-    tl.Parent = bg
-
-    function esp.SetColor(c)
-        esp.Color = c
-        for _,h in pairs(esp.Highlights) do h.FillColor = c; h.OutlineColor = c end
-        tl.TextColor3 = c
-    end
-
-    function esp.Destroy()
-        if esp.RSConnection then esp.RSConnection:Disconnect() end
-        if esp.IsEntity and esp.Object then
-            if esp.Object.PrimaryPart then esp.Object.PrimaryPart.Transparency = esp.Object.PrimaryPart:GetAttribute("Transparency") end
-            if esp.Humanoid then esp.Humanoid:Destroy() end
-        end
-        for _,h in pairs(esp.Highlights) do h:Destroy() end
-        bg:Destroy()
-        Script.ESPTable[esp.Type][idx] = nil
-        for _,c in pairs(esp.Connections) do pcall(function() c:Disconnect() end) end
-    end
-
-    esp.RSConnection = RunService.RenderStepped:Connect(function()
-        if not esp.Object or not esp.Object:IsDescendantOf(workspace) then esp.Destroy() return end
-        for _,h in pairs(esp.Highlights) do
-            h.Enabled = Toggles.ESPHighlight and Toggles.ESPHighlight.Value or true
-            h.FillTransparency = Options.ESPFillTransparency and Options.ESPFillTransparency.Value or 0.75
-            h.OutlineTransparency = Options.ESPOutlineTransparency and Options.ESPOutlineTransparency.Value or 0
-        end
-        tl.TextSize = Options.ESPTextSize and Options.ESPTextSize.Value or 22
-        if Toggles.ESPDistance and Toggles.ESPDistance.Value then
-            tl.Text = string.format("%s\n[%.0f]", esp.Text, Script.Functions.DistanceFromCharacter(esp.Object))
-        else
-            tl.Text = esp.Text
-        end
-    end)
-
-    Script.ESPTable[esp.Type][idx] = esp
-    return esp
-end
-
-function Script.Functions.DistanceFromCharacter(pos)
-    if typeof(pos) == "Instance" then pos = pos:GetPivot().Position end
-    if lplr.Character and lplr.Character:FindFirstChild("HumanoidRootPart") then
-        return (lplr.Character.HumanoidRootPart.Position - pos).Magnitude
-    end
-    return (camera.CFrame.Position - pos).Magnitude
-end
-
-function Script.Functions.PlayerESP(pl)
-    if not (pl.Character and pl.Character.PrimaryPart and pl.Character:FindFirstChild("Humanoid") and pl.Character.Humanoid.Health > 0) then return end
-    local e = Script.Functions.ESP({
-        Type = "Player", Object = pl.Character,
-        Text = string.format("%s [%s]", pl.DisplayName, pl.Character.Humanoid.Health),
-        TextParent = pl.Character.PrimaryPart,
-        Color = Options.PlayerEspColor and Options.PlayerEspColor.Value or Color3.new(1,1,1)
-    })
-    local conn = pl.Character.Humanoid.HealthChanged:Connect(function(h)
-        if h > 0 then e.Text = string.format("%s [%s]", pl.DisplayName, h)
-        else e.Destroy() end
-    end)
-    table.insert(e.Connections, conn)
-end
-
-function Script.Functions.GuardESP(model)
-    if model and model:FindFirstChild("HumanoidRootPart") then
-        Script.Functions.ESP({
-            Object = model, Text = "守卫",
-            Color = Options.GuardEspColor and Options.GuardEspColor.Value or Color3.fromRGB(200,100,200),
-            Offset = Vector3.new(0,3,0), Type = "Guard"
-        })
-    end
-end
-
-function Script.Functions.SeekerESP(pl)
-    if pl:GetAttribute("IsHunter") and pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") then
-        Script.Functions.ESP({
-            Object = pl.Character, Text = pl.Name .. " (抓捕者)",
-            Color = Options.SeekerEspColor and Options.SeekerEspColor.Value or Color3.fromRGB(255,0,0),
-            Offset = Vector3.new(0,3,0), Type = "Seeker"
-        })
-    end
-end
-
-function Script.Functions.HiderESP(pl)
-    if pl:GetAttribute("IsHider") and pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") then
-        local e = Script.Functions.ESP({
-            Object = pl.Character, Text = pl.Name .. " (躲藏者)",
-            Color = Options.HiderEspColor and Options.HiderEspColor.Value or Color3.fromRGB(0,255,0),
-            Offset = Vector3.new(0,3,0), Type = "Hider"
-        })
-        pl:GetAttributeChangedSignal("IsHider"):Once(function()
-            if not pl:GetAttribute("IsHider") then e.Destroy() end
-        end)
-    end
-end
-
-function Script.Functions.KeyESP(key)
-    if key:IsA("Model") and key.PrimaryPart then
-        Script.Functions.ESP({
-            Object = key, Text = key.Name .. " (钥匙)",
-            Color = Options.KeyEspColor and Options.KeyEspColor.Value or Color3.fromRGB(255,255,0),
-            Offset = Vector3.new(0,1,0), Type = "Key", IsEntity = true
-        })
-    end
-end
-
-function Script.Functions.DoorESP(door)
-    if door:IsA("Model") and door.Name == "FullDoorAnimated" and door.PrimaryPart then
-        local keyNeeded = door:GetAttribute("KeyNeeded") or "无"
-        Script.Functions.ESP({
-            Object = door, Text = "门 (需要钥匙: "..keyNeeded..")",
-            Color = Options.DoorEspColor and Options.DoorEspColor.Value or Color3.fromRGB(0,128,255),
-            Offset = Vector3.new(0,2,0), Type = "Door", IsEntity = true
-        })
-    end
-end
-
-Script.Functions.SafeRequire = function(module)
-    if Script.Temp[tostring(module)] then return Script.Temp[tostring(module)] end
-    local s,r = pcall(require, module)
-    if not s then warn("[SafeRequire] "..tostring(module).." 失败: "..tostring(r)) return nil end
-    Script.Temp[tostring(module)] = r
-    return r
-end
-
-Script.Functions.FixCamera = function()
-    if workspace.CurrentCamera then pcall(function() workspace.CurrentCamera:Destroy() end) end
-    local cam = Instance.new("Camera", workspace)
-    workspace.CurrentCamera = cam
-    cam.CameraType = Enum.CameraType.Custom
-    if lplr.Character then cam.CameraSubject = lplr.Character:FindFirstChildWhichIsA("Humanoid") end
-end
-
-Script.Functions.TeleportSafe = function()
-    if not lplr.Character then return end
-    local fling = Toggles.AntiFlingToggle and Toggles.AntiFlingToggle.Value
-    if fling then Toggles.AntiFlingToggle:SetValue(false) end
-    lplr.Character:PivotTo(CFrame.new(Vector3.new(-108, 329.1, 462.1)))
-    if fling then task.delay(0.5, function() Toggles.AntiFlingToggle:SetValue(true) end) end
-end
-
-Script.Functions.WinRLGL = function()
-    if not lplr.Character then return end
-    local fling = Toggles.AntiFlingToggle and Toggles.AntiFlingToggle.Value
-    if fling then Toggles.AntiFlingToggle:SetValue(false) end
-    lplr.Character:PivotTo(CFrame.new(Vector3.new(-100.8, 1030, 115)))
-    if fling then task.delay(0.5, function() Toggles.AntiFlingToggle:SetValue(true) end) end
-end
-
-Script.Functions.WinGlassBridge = function()
-    if not lplr.Character then return end
-    local fling = Toggles.AntiFlingToggle and Toggles.AntiFlingToggle.Value
-    if fling then Toggles.AntiFlingToggle:SetValue(false) end
-    lplr.Character:PivotTo(CFrame.new(Vector3.new(-203.9, 520.7, -1534.3485)))
-    if fling then task.delay(0.5, function() Toggles.AntiFlingToggle:SetValue(true) end) end
-end
-
-Script.Functions.CompleteDalgonaGame = function()
-    ReplicatedStorage.Replication.Event:FireServer("Clicked")
-    ReplicatedStorage.Remotes.DALGONATEMPREMPTE:FireServer({ Completed = true })
-end
-
-Script.Functions.PullRope = function()
-    ReplicatedStorage.Remotes.TemporaryReachedBindable:FireServer({ PerfectQTE = true })
-end
-
-Script.Functions.RevealGlassBridge = function()
-    local Effects = Script.Functions.SafeRequire(ReplicatedStorage.Modules.Effects) or { AnnouncementTween = function(a) Script.Functions.Alert(a.AnnouncementDisplayText, a.DisplayTime) end }
-    local holder = workspace:FindFirstChild("GlassBridge") and workspace.GlassBridge:FindFirstChild("GlassHolder")
-    if not holder then return end
-    for _, pair in pairs(holder:GetChildren()) do
-        for _, tile in pairs(pair:GetChildren()) do
-            if tile:IsA("Model") and tile.PrimaryPart then
-                local breakable = tile.PrimaryPart:GetAttribute("exploitingisevil") == true
-                local col = breakable and Color3.fromRGB(255,0,0) or Color3.fromRGB(0,255,0)
-                for _, p in pairs(tile:GetDescendants()) do
-                    if p:IsA("BasePart") then
-                        TweenService:Create(p, TweenInfo.new(0.5), {Transparency=0.5, Color=col}):Play()
-                    end
-                end
-                local hi = Instance.new("Highlight")
-                hi.FillColor = col; hi.FillTransparency = 0.7; hi.OutlineTransparency = 0.5
-                hi.Parent = tile
-            end
-        end
-    end
-    Effects.AnnouncementTween({AnnouncementOneLine=true, FasterTween=true, DisplayTime=10, AnnouncementDisplayText="[RTaOHUB]: 绿色安全，红色碎裂"})
-end
-
-Script.Functions.BypassRagdoll = function()
-    local char = lplr.Character
-    if not char then return end
-    local hum = char:FindFirstChild("Humanoid")
-    local root = char:FindFirstChild("HumanoidRootPart")
-    local torso = char:FindFirstChild("Torso")
-    if not hum or not root or not torso then return end
-    hum.PlatformStand = false
-    hum:ChangeState(Enum.HumanoidStateType.GettingUp)
-    hum:SetStateEnabled(Enum.HumanoidStateType.Freefall, true)
-    hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-    hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
-    for _,s in pairs({Enum.HumanoidStateType.FallingDown,Enum.HumanoidStateType.Seated,Enum.HumanoidStateType.Swimming,Enum.HumanoidStateType.Flying,Enum.HumanoidStateType.StrafingNoPhysics,Enum.HumanoidStateType.Ragdoll}) do
-        hum:SetStateEnabled(s, false)
-    end
-    for _,obj in pairs(root:GetChildren()) do
-        if obj:IsA("BallSocketConstraint") or obj.Name:match("^CacheAttachment") then obj:Destroy() end
-    end
-    local joints = {"Left Hip","Left Shoulder","Neck","Right Hip","Right Shoulder"}
-    for _,j in pairs(joints) do
-        local m = torso:FindFirstChild(j)
-        if m and m:IsA("Motor6D") and not m.Part0 then m.Part0 = torso end
-    end
-    for _,p in pairs(char:GetChildren()) do
-        if p:IsA("BasePart") and p:FindFirstChild("BoneCustom") then p.BoneCustom:Destroy() end
-    end
-    for _,f in pairs({"Ragdoll","Stun","RotateDisabled","RagdollWakeupImmunity","InjuredWalking"}) do
-        local folder = char:FindFirstChild(f)
-        if folder then folder:Destroy() end
-    end
-    local localRagdolls = workspace.Effects and workspace.Effects:FindFirstChild("LocalRagdolls")
-    if localRagdolls then
-        local rm = localRagdolls:FindFirstChild(lplr.Name)
-        if rm then rm:Destroy() end
-    end
-end
-
-Script.Functions.BypassDalgonaGame = function()
-    local Shared = Script.Functions.SafeRequire(ReplicatedStorage.Modules.SharedFunctions)
-    local char = lplr.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    local hum = char:FindFirstChild("Humanoid")
-    local pg = lplr.PlayerGui
-    local Debris = lplr:WaitForChild("DebrisBD")
-    local cam = workspace.CurrentCamera
-    local effects = workspace:FindFirstChild("Effects")
-    local impact = pg:FindFirstChild("ImpactFrames")
-    local shape, outline, pick, reddot
-    if effects then
-        for _,o in pairs(effects:GetChildren()) do
-            if o:IsA("Model") and o.Name:match("Outline$") then outline = o
-            elseif o:IsA("Model") and not o.Name:match("Outline$") and o.Name~="Pick" and o.Name~="RedDot" then shape = o
-            elseif o.Name=="Pick" then pick = o
-            elseif o.Name=="RedDot" then reddot = o end
-        end
-    end
-    local progressBar = impact and impact:FindFirstChild("ProgressBar")
-    local pickModel
-    if impact then
-        for _,o in pairs(impact:GetChildren()) do
-            if o:IsA("ViewportFrame") and o:FindFirstChild("PickModel") then pickModel = o.PickModel; break end
-        end
-    end
-    local DalgonaRemote = ReplicatedStorage.Remotes:WaitForChild("DALGONATEMPREMPTE")
-    task.spawn(function()
-        Shared.CreateFolder(lplr, "RecentGameStartedMessage", 0.01)
-        if shape and shape:FindFirstChild("shape") then
-            TweenService:Create(shape.shape, TweenInfo.new(2), {Position = shape.shape.Position + Vector3.new(0,0.5,0)}):Play()
-        end
-        if shape then
-            for _,p in pairs(shape:GetChildren()) do
-                if p.Name=="DalgonaClickPart" then TweenService:Create(p, TweenInfo.new(2), {Transparency=1}):Play() end
-            end
-        end
-        if pick and pick.Parent then TweenService:Create(pick, TweenInfo.new(2), {Transparency=1}):Play() end
-        if reddot and reddot.Parent then TweenService:Create(reddot, TweenInfo.new(2), {Transparency=1}):Play() end
-        if pickModel then
-            for _,p in pairs(pickModel:GetDescendants()) do
-                if p:IsA("BasePart") then TweenService:Create(p, TweenInfo.new(2), {Transparency=1}):Play() end
-            end
-        end
-        if hrp then
-            TweenService:Create(cam, TweenInfo.new(2), {CFrame=hrp.CFrame*CFrame.new(0.084,8.454,6.697,0.9999,-0.00898,0.00908,0,0.7109,0.7033,-0.0128,-0.7032,0.7109)}):Play()
-        end
-        Shared.Invisible(char, 0, true)
-        DalgonaRemote:FireServer({Success=true})
-        task.wait(2)
-        for _,o in pairs({shape,outline,pick,reddot,progressBar}) do if o and o.Parent then o:Destroy() end end
-        UserInputService.MouseIconEnabled = true
-        if pg:FindFirstChild("Hotbar") and pg.Hotbar:FindFirstChild("Backpack") then
-            TweenService:Create(pg.Hotbar.Backpack, TweenInfo.new(1.5), {Position=UDim2.new(0,0,0,0)}):Play()
-        end
-        if progressBar then
-            Debris:Fire(progressBar,2)
-            TweenService:Create(progressBar, TweenInfo.new(1.5), {Position=UDim2.new(progressBar.Position.X.Scale,0,progressBar.Position.Y.Scale+1,0)}):Play()
-        end
-        cam.CameraType = Enum.CameraType.Custom
-        if hum then cam.CameraSubject = hum end
-        local st = tick()
-        local cc = RunService.RenderStepped:Connect(function()
-            if tick()-st>=5 then cc:Disconnect() return end
-            if cam.CameraType~=Enum.CameraType.Custom or cam.CameraSubject~=hum then
-                cam.CameraType=Enum.CameraType.Custom
-                if hum then cam.CameraSubject=hum end
-            end
-        end)
-    end)
-end
-
-Script.Functions.GetFork = function()
-    for _,n in pairs({"Fork","Bottle","Knife"}) do
-        local t = lplr.Character and lplr.Character:FindFirstChild(n) or lplr.Backpack and lplr.Backpack:FindFirstChild(n)
-        if t then return t end
-    end
-end
-
-Script.Functions.FireForkRemote = function()
-    local fork = Script.Functions.GetFork()
-    if not fork then return end
-    if fork.Parent.Name == "Backpack" then lplr.Character.Humanoid:EquipTool(fork) end
-    fork = Script.Functions.GetFork()
-    if not fork then return end
-    ReplicatedStorage.Remotes.UsedTool:FireServer("UsingMoveCustom", fork, nil, nil, {Clicked=true})
-    ReplicatedStorage.Remotes.UsedTool:FireServer("UsingMoveCustom", fork, true, {Clicked=true})
-end
-
-Script.Functions.JoinDiscord = function()
-    local inv = "https://dsc.gg/dyhub"
-    local function getCode(s)
-        for i=#s,1,-1 do if s:sub(i,i)=="/" then return s:sub(i+1) end end
-        return s
-    end
-    local function getData(s)
-        local ok,res = pcall(function() return HttpService:JSONDecode(request({Url="https://ptb.discord.com/api/invites/"..getCode(s), Method="GET"}).Body) end)
-        if ok then return res end
-    end
-    local data = getData(inv)
-    if data then
-        request({Url="http://127.0.0.1:6463/rpc?v=1", Method="POST", Headers={["Content-Type"]="application/json",["Origin"]="https://discord.com"}, Body=HttpService:JSONEncode({cmd="INVITE_BROWSER",args={code=data.code},nonce=HttpService:GenerateGUID(false)})})
-    end
-    pcall(function() setclipboard("dsc.gg/dyhub") end)
-    StarterGui:SetCore("SendNotification",{Title="DYHUB Discord",Text="已复制邀请链接: dsc.gg/dyhub",Duration=10})
-end
-
-Script.Functions.EffectsNotification = function(text, dur)
-    local Effects = Script.Functions.SafeRequire(ReplicatedStorage.Modules.Effects) or { AnnouncementTween = function(a) Script.Functions.Alert(a.AnnouncementDisplayText, a.DisplayTime) end }
-    Effects.AnnouncementTween({AnnouncementOneLine=true, FasterTween=true, DisplayTime=dur or 5, AnnouncementDisplayText=tostring(text)})
-end
-
-Script.Functions.OnLoad = function()
-    Script.Functions.EffectsNotification("DYHUB - 墨水游戏已加载！", 5)
-    Script.Functions.EffectsNotification("请先点击修复摄像机！", 5)
-    Script.Functions.EffectsNotification("加入 Discord: dsc.gg/dyhub", 5)
-end
-
-function Script.Functions.HandleAutowin()
-    pcall(function() Script.GameState = tostring(workspace.Values.CurrentGame.Value) end)
-    if States[Script.GameState] then
-        Script.Functions.Alert("[自动获胜] 当前游戏: "..Script.GameState, 3)
-        task.spawn(function() Script.Functions.EffectsNotification("[自动获胜] 运行 "..Script.GameState, 10) end)
-        Script.Temp.AutowinCleanup = States[Script.GameState]()
-    else
-        Script.Functions.Alert("[自动获胜] 等待游戏开始...", 3)
-    end
-end
-
-States = {
-    RedLightGreenLight = function()
-        if not Toggles.AntiFlingToggle.Value then Toggles.AntiFlingToggle:SetValue(true) end
-        local active = true
-        task.spawn(function()
-            while active and Toggles.InkGameAutowin.Value and Script.GameState=="RedLightGreenLight" do
-                Script.Functions.WinRLGL()
-                task.wait(5)
-            end
-        end)
-        return function()
-            active = false
-            if Toggles.AntiFlingToggle.Value then Toggles.AntiFlingToggle:SetValue(false) end
-        end
-    end,
-    Mingle = function()
-        if not Toggles.AutoMingleQTE.Value then Toggles.AutoMingleQTE:SetValue(true) end
-        return function()
-            if Toggles.AutoMingleQTE.Value then Toggles.AutoMingleQTE:SetValue(false) end
-        end
-    end,
-    TugOfWar = function()
-        if not Toggles.AutoPull.Value then Toggles.AutoPull:SetValue(true) end
-        if not Toggles.PerfectPull.Value then Toggles.PerfectPull:SetValue(true) end
-        return function()
-            if Toggles.AutoPull.Value then Toggles.AutoPull:SetValue(false) end
-        end
-    end,
-    GlassBridge = function()
-        Script.Functions.RevealGlassBridge()
-        Script.Functions.WinGlassBridge()
-    end,
-    HideAndSeek = function()
-        if lplr:GetAttribute("IsHider") then
-            Script.Functions.TeleportSafe()
-        else
-            Script.Functions.Alert("[自动获胜] 抓捕者模式暂不支持自动")
-        end
-    end,
-    LightsOut = Script.Functions.TeleportSafe,
-    Dalgona = function()
-        task.spawn(function()
-            repeat task.wait() until Script.Functions.GetDalgonaRemote() or not Toggles.InkGameAutowin.Value
-            if not Toggles.InkGameAutowin.Value then return end
-            task.wait(3)
-            Script.Functions.CompleteDalgonaGame()
-            Script.Functions.BypassDalgonaGame()
-            Script.Functions.FixCamera()
-        end)
-        return function() Script.Functions.FixCamera() end
-    end,
-}
-
-function Script.Functions.GetDalgonaRemote()
-    return ReplicatedStorage.Remotes:FindFirstChild("DALGONATEMPREMPTE")
-end
-
-function Script.Functions.GetHider()
-    for _,p in pairs(Players:GetPlayers()) do
-        if p~=lplr and p.Character and p:GetAttribute("IsHider") and p.Character:FindFirstChild("HumanoidRootPart") then
-            return p.Character
-        end
-    end
-end
-
-local function applyNameTag(character)
-    local torso = character:WaitForChild("Torso",5)
-    if not torso then return end
-    local nametag = torso:WaitForChild("Player_Nametag",5)
-    if not nametag then return end
-    local level = nametag:WaitForChild("LevelText",5)
-    local display = nametag:WaitForChild("DisplayName",5)
-    if not level or not display then return end
-    local isOwner = lplr.Name == "Yolmar_43"
-    level.Text = isOwner and "[ RTaOHUB - OWNER ]" or "[ RTaOHUB - MEMBER ]"
-    local wave, hue = 0,0
-    local msgs = {"RTaO THE BEST (dsc.gg/rtao_rs)", "@"..lplr.Name.." (dsc.gg/rtao_rs)"}
-    local idx = 1
-    display.Text = msgs[idx]
-    task.spawn(function()
-        while character and character.Parent do
-            idx = idx%#msgs + 1
-            display.Text = msgs[idx]
-            task.wait(2)
-        end
-    end)
-    RunService.RenderStepped:Connect(function(dt)
-        wave = (wave + dt*2)%(2*math.pi)
-        hue = (hue + dt*0.2)%1
-        local b = (math.sin(wave)+1)/2
-        level.TextColor3 = isOwner and Color3.new(1,b,b) or Color3.new(b,1,b)
-        display.TextColor3 = Color3.fromHSV(hue,1,1)
-    end)
-    level:GetPropertyChangedSignal("Text"):Connect(function()
-        local correct = isOwner and "[ RTaOHUB - OWNER ]" or "[ RTaOHUB - MEMBER ]"
-        if level.Text ~= correct then level.Text = correct end
-    end)
-end
-
-if lplr.Character then applyNameTag(lplr.Character) end
-table.insert(Script.Connections, lplr.CharacterAdded:Connect(applyNameTag))
-
-pcall(function()
-    if not isfolder("RTaOHUB_linoria") then makefolder("RTaOHUB_linoria") end
-    for _,v in pairs({"RTaOHUB_linoria/ink_game","RTaOHUB_linoria/themes","RTaOHUB_linoria/ink_game/settings","RTaOHUB_linoria/ink_game/themes"}) do
-        if not isfolder(v) then makefolder(v) end
-    end
-    if not isfile("RTaOHUB_linoria/themes/default.txt") then writefile("RTaOHUB_linoria/themes/default.txt","Jester") end
-    if not isfile("RTaOHUB_linoria/ink_game/settings/default.json") then
-        pcall(function() writefile("RTaOHUB_linoria/ink_game/settings/default.json", game:HttpGet("https://raw.githubusercontent.com/Erchobg/VoidwareProfiles/refs/heads/main/InkGame/ink_game/settings/default.json")) end)
-    end
-    if not isfile("RTaOHUB_linoria/ink_game/settings/autoload.txt") then writefile("RTaOHUB_linoria/ink_game/settings/autoload.txt","default") end
-end)
-
-task.spawn(function() pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/VapeVoidware/VWExtra/main/VWUpdateLog.lua"))() end) end)
-
-local VisualsTab = TabsUI.Visuals
-local MainESPBox = VisualsTab:AddLeftGroupbox("主要 ESP")
-MainESPBox:AddToggle('PlayerESP', {Text='玩家',Default=false})
-MainESPBox:AddColorPicker('PlayerEspColor', {Default=Color3.new(1,1,1),Title='玩家颜色'})
-MainESPBox:AddToggle('GuardESP', {Text='守卫',Default=false})
-MainESPBox:AddColorPicker('GuardEspColor', {Default=Color3.fromRGB(200,100,200),Title='守卫颜色'})
-
-Toggles.PlayerESP:OnChanged(function(b)
-    if b then for _,p in pairs(Players:GetPlayers()) do if p~=lplr then Script.Functions.PlayerESP(p) end end
-    else for _,e in pairs(Script.ESPTable.Player) do e.Destroy() end end
-end)
-Toggles.GuardESP:OnChanged(function(b)
-    if b then
-        local live = workspace:FindFirstChild("Live")
-        if live then for _,m in pairs(live:GetChildren()) do if m:IsA("Model") and m:FindFirstChild("TypeOfGuard") then Script.Functions.GuardESP(m) end end end
-    else for _,e in pairs(Script.ESPTable.Guard) do e.Destroy() end end
-end)
-table.insert(Script.Connections, workspace.DescendantAdded:Connect(function(d)
-    if Toggles.GuardESP and Toggles.GuardESP.Value and d:IsA("Model") and d.Parent and d.Parent.Name=="Live" and d:FindFirstChild("TypeOfGuard") then
-        Script.Functions.GuardESP(d)
-    end
-end))
-
-local HSBox = VisualsTab:AddLeftGroupbox("捉迷藏 ESP")
-HSBox:AddToggle('HiderESP', {Text='躲藏者',Default=false})
-HSBox:AddColorPicker('HiderEspColor', {Default=Color3.fromRGB(0,255,0),Title='躲藏者颜色'})
-HSBox:AddToggle('SeekerESP', {Text='抓捕者',Default=false})
-HSBox:AddColorPicker('SeekerEspColor', {Default=Color3.fromRGB(255,0,0),Title='抓捕者颜色'})
-HSBox:AddToggle('KeyESP', {Text='钥匙',Default=false})
-HSBox:AddColorPicker('KeyEspColor', {Default=Color3.fromRGB(255,255,0),Title='钥匙颜色'})
-HSBox:AddToggle('DoorESP', {Text='门',Default=false})
-HSBox:AddColorPicker('DoorEspColor', {Default=Color3.fromRGB(0,128,255),Title='门颜色'})
-
-local HSMeta = {
-    {name="HiderESP", type="player", func=Script.Functions.HiderESP},
-    {name="SeekerESP", type="player", func=Script.Functions.SeekerESP},
-    {name="KeyESP", type="key", func=Script.Functions.KeyESP},
-    {name="DoorESP", type="door", func=Script.Functions.DoorESP},
-}
-for _,m in ipairs(HSMeta) do
-    Toggles[m.name]:OnChanged(function(b)
-        if not b then for _,e in pairs(Script.ESPTable[m.name=="DoorESP" and "Door" or m.name=="KeyESP" and "Key" or m.name=="HiderESP" and "Hider" or "Seeker"]) do e.Destroy() end return end
-        if not Script.GameState:find("HideAndSeek") then return end
-        if m.type=="player" then for _,p in pairs(Players:GetPlayers()) do m.func(p) end
-        elseif m.type=="key" then
-            local map = workspace:FindFirstChild("HideAndSeekMap")
-            if map and map:FindFirstChild("KEYS") then for _,k in pairs(map.KEYS:GetChildren()) do Script.Functions.KeyESP(k) end end
-        elseif m.type=="door" then
-            local map = workspace:FindFirstChild("HideAndSeekMap")
-            if map and map:FindFirstChild("NEWFIXEDDOORS") then
-                for _,floor in pairs(map.NEWFIXEDDOORS:GetChildren()) do
-                    if floor.Name:match("^Floor") then for _,door in pairs(floor:GetChildren()) do Script.Functions.DoorESP(door) end end
-                end
-            end
-        end
-    end)
-end
-
-table.insert(Script.Connections, workspace.DescendantAdded:Connect(function(d)
-    if not Script.GameState:find("HideAndSeek") then return end
-    if Toggles.KeyESP and Toggles.KeyESP.Value then
-        local map = workspace:FindFirstChild("HideAndSeekMap")
-        if map and d:IsA("Model") and d.Parent and d.Parent.Name=="KEYS" and d.Parent.Parent==map then Script.Functions.KeyESP(d) end
-    end
-    if Toggles.DoorESP and Toggles.DoorESP.Value then
-        local map = workspace:FindFirstChild("HideAndSeekMap")
-        if map and d:IsA("Model") and d.Name=="FullDoorAnimated" and d.Parent and d.Parent.Parent and d.Parent.Parent.Name=="NEWFIXEDDOORS" then
-            Script.Functions.DoorESP(d)
-        end
-    end
-end))
-
-local ESPSet = VisualsTab:AddRightGroupbox("ESP 设置")
-ESPSet:AddToggle('ESPHighlight',{Text='启用高亮',Default=true})
-ESPSet:AddToggle('ESPDistance',{Text='显示距离',Default=true})
-ESPSet:AddSlider('ESPFillTransparency',{Text='填充透明度',Default=0.75,Min=0,Max=1,Rounding=2})
-ESPSet:AddSlider('ESPOutlineTransparency',{Text='轮廓透明度',Default=0,Min=0,Max=1,Rounding=2})
-ESPSet:AddSlider('ESPTextSize',{Text='文本大小',Default=22,Min=16,Max=26,Rounding=0})
-
-local SelfBox = VisualsTab:AddRightGroupbox("自身")
-SelfBox:AddToggle('FOVToggle',{Text='视野',Default=false})
-SelfBox:AddSlider('FOVSlider',{Text='视野角度',Default=60,Min=10,Max=120,Rounding=1})
-Toggles.FOVToggle:OnChanged(function(b)
-    if b then
-        Script.Temp.OldFOV = camera.FieldOfView
-        task.spawn(function() while Toggles.FOVToggle.Value and camera do camera.FieldOfView = Options.FOVSlider.Value; RunService.RenderStepped:Wait() end end)
-    else
-        if camera then camera.FieldOfView = Script.Temp.OldFOV or 60 end
-    end
-end)
-
-local MainTab = TabsUI.Main
-local GameGroup = MainTab:AddLeftGroupbox("游戏功能")
-GameGroup:AddToggle('InkGameAutowin',{Text='自动获胜 (全部)',Default=false})
-Toggles.InkGameAutowin:OnChanged(function(b) if b then Script.Functions.HandleAutowin() end end)
-
-local RLGLGroup = MainTab:AddLeftGroupbox("红灯/绿灯")
-RLGLGroup:AddToggle('RedLightGodmode',{Text='无敌模式',Default=false})
-local RLGL_Original
-Toggles.RedLightGodmode:OnChanged(function(b)
-    if b then
-        if not hookmetamethod then Script.Functions.Alert("你的执行器不支持元方法钩子"); Toggles.RedLightGodmode:SetValue(false); return end
-        local traffic = lplr.PlayerGui:FindFirstChild("ImpactFrames") and lplr.PlayerGui.ImpactFrames:FindFirstChild("TrafficLightEmpty")
-        local isGreen = true
-        local lastCF
-        if traffic and ReplicatedStorage:FindFirstChild("Effects") and ReplicatedStorage.Effects:FindFirstChild("Images") and ReplicatedStorage.Effects.Images:FindFirstChild("TrafficLights") and ReplicatedStorage.Effects.Images.TrafficLights:FindFirstChild("GreenLight") then
-            isGreen = traffic.Image == ReplicatedStorage.Effects.Images.TrafficLights.GreenLight.Image
-        end
-        local function update() if lplr.Character and lplr.Character:FindFirstChild("HumanoidRootPart") then lastCF = lplr.Character.HumanoidRootPart.CFrame end end
-        update()
-        local conn = ReplicatedStorage.Remotes.Effects.OnClientEvent:Connect(function(d)
-            if d.EffectName~="TrafficLight" then return end
-            isGreen = d.GreenLight == true
-            update()
-        end)
-        Script.Temp.RLGL_Conn = conn
-        RLGL_Original = RLGL_Original or hookmetamethod(game, "__namecall", function(self, ...)
-            local args = {...}
-            local method = getnamecallmethod()
-            if tostring(self)=="rootCFrame" and method=="FireServer" and Toggles.RedLightGodmode.Value and not isGreen and lastCF then
-                args[1] = lastCF
-                return RLGL_Original(self, unpack(args))
-            end
-            return RLGL_Original(self, ...)
-        end)
-        Script.Functions.Alert("红灯绿灯无敌已开启",3)
-    else
-        if Script.Temp.RLGL_Conn then Script.Temp.RLGL_Conn:Disconnect() end
-        if RLGL_Original then hookmetamethod(game, "__namecall", RLGL_Original) end
-    end
-end)
-RLGLGroup:AddButton({Text='完成红灯/绿灯',Func=function()
-    if not workspace:FindFirstChild("RedLightGreenLight") then Script.Functions.Alert("游戏未开始") return end
-    Script.Functions.WinRLGL()
+local NotifyGroup = Tabs.Notification:AddLeftGroupbox("作者信息")
+NotifyGroup:AddLabel("恐拜大帝 持续更新此脚本")
+NotifyGroup:AddLabel("QQ：3999698324", true)
+local MainLeft = Tabs.Main:AddLeftGroupbox("核心功能")
+MainLeft:AddButton({ Text="召唤飞行脚本", Func=function()
+    local success, err = pcall(loadFlightScript)
+    if success then Notify("飞行脚本已加载") else Notify("飞行脚本加载失败: "..tostring(err)) end
+end, DoubleClick=false })
+MainLeft:AddToggle("AutoTranslate",{ Text="自动翻译界面", Default=false, Callback=function(v)
+    if v then startAutoTranslate() Notify("自动翻译已开启") else stopAutoTranslate() Notify("自动翻译已关闭") end
 end})
-RLGLGroup:AddButton({Text='移除受伤行走',Func=function()
-    if lplr.Character and lplr.Character:FindFirstChild("InjuredWalking") then lplr.Character.InjuredWalking:Destroy() end
-    Script.Functions.BypassRagdoll()
+MainLeft:AddToggle("KillMoving",{ Text="杀死移动怪物", Default=false, Callback=function(v)
+    toggleKillMoving(v) Notify("杀死移动怪物: "..(v and "开启" or "关闭"))
 end})
-
-local DalgonaGroup = MainTab:AddLeftGroupbox("椪糖游戏")
-DalgonaGroup:AddToggle('ImmuneDalgonaGame',{Text='免疫碎裂',Default=false})
-local DalgonaHook
-Toggles.ImmuneDalgonaGame:OnChanged(function(b)
-    if b then
-        if not hookmetamethod then Script.Functions.Alert("不支持"); Toggles.ImmuneDalgonaGame:SetValue(false); return end
-        DalgonaHook = hookmetamethod(game, "__namecall", function(self,...)
-            local args = {...}
-            if tostring(self)=="DALGONATEMPREMPTE" and getnamecallmethod()=="FireServer" and type(args[1])=="table" and args[1].CrackAmount~=nil then
-                Script.Functions.Alert("已阻止饼干碎裂",3)
-                return nil
-            end
-            return DalgonaHook(self,...)
-        end)
-    else
-        if DalgonaHook then hookmetamethod(game, "__namecall", DalgonaHook) end
-    end
-end)
-DalgonaGroup:AddButton({Text='完成椪糖',Func=function()
-    if not Script.Functions.GetDalgonaRemote() then Script.Functions.Alert("游戏未开始") return end
-    Script.Functions.CompleteDalgonaGame()
-    Script.Functions.BypassDalgonaGame()
-    Script.Functions.FixCamera()
-    Script.Functions.Alert("椪糖完成")
+MainLeft:AddToggle("Freeze",{ Text="冻结怪物", Default=false, Callback=function(v)
+    toggleFreeze(v) Notify("冻结怪物: "..(v and "开启" or "关闭"))
 end})
-
-local TugGroup = MainTab:AddLeftGroupbox("拔河")
-TugGroup:AddToggle('AutoPull',{Text='自动拉绳',Default=false})
-TugGroup:AddToggle('PerfectPull',{Text='完美拉绳',Default=true})
-Toggles.AutoPull:OnChanged(function(b)
-    if b then
-        task.spawn(function() while Toggles.AutoPull.Value do Script.Functions.PullRope(); task.wait() end end)
-    end
-end)
-
-local MingleGroup = MainTab:AddLeftGroupbox("抱团")
-MingleGroup:AddToggle('AutoMingleQTE',{Text='自动抱团',Default=false})
-local RemoteForQTE
-Toggles.AutoMingleQTE:OnChanged(function(b)
-    if b then
-        task.spawn(function()
-            while Toggles.AutoMingleQTE.Value do
-                local char = lplr.Character
-                if char then
-                    if not RemoteForQTE then
-                        for _,o in pairs(char:GetChildren()) do if o:IsA("RemoteEvent") and o.Name=="RemoteForQTE" then RemoteForQTE=o; break end end
-                    end
-                    pcall(function() RemoteForQTE:FireServer() end)
-                end
-                task.wait(0.5)
-            end
-        end)
-    end
-end)
-
-local GlassGroup = MainTab:AddLeftGroupbox("玻璃桥")
-GlassGroup:AddButton({Text='完成玻璃桥',Func=function()
-    if not workspace:FindFirstChild("GlassBridge") then Script.Functions.Alert("游戏未开始") return end
-    Script.Functions.WinGlassBridge()
+MainLeft:AddButton({ Text="一键开启所有容器", Func=function()
+    fireAllClickDetectors() forceOpenContainers() Notify("已尝试开启所有容器")
+end, DoubleClick=false })
+MainLeft:AddButton({ Text="物资聚集到电梯", Func=function()
+    gatherLootToElevator() Notify("物资已聚集到电梯")
+end, DoubleClick=false })
+MainLeft:AddButton({ Text="一键传送回电梯", Func=function()
+    teleportToElevator() Notify("已传送回电梯")
+end, DoubleClick=false })
+MainLeft:AddButton({ Text="传送到最近物资", Func=function()
+    teleportToNearestLoot() Notify("已传送至最近物资")
+end, DoubleClick=false })
+local MainRight = Tabs.Main:AddRightGroupbox("辅助与传送")
+MainRight:AddButton({ Text="传送到最近玩家", Func=function()
+    teleportToNearestPlayer() Notify("已传送至最近玩家")
+end, DoubleClick=false })
+MainRight:AddToggle("RemoteOpen",{ Text="远程打开所有容器 (持续)", Default=false, Callback=function(v)
+    toggleRemoteOpen(v) Notify("远程打开容器: "..(v and "开启" or "关闭"))
 end})
-GlassGroup:AddButton({Text='揭示玻璃桥',Func=function()
-    if not workspace:FindFirstChild("GlassBridge") then Script.Functions.Alert("游戏未开始") return end
-    Script.Functions.RevealGlassBridge()
+MainRight:AddSlider("WalkSpeed",{ Text="移动速度 (防回拉)", Default=16, Min=16, Max=100, Rounding=0, Suffix=" studs", Callback=function(v)
+    desiredWalkSpeed = v
+    local char = LocalPlayer.Character
+    if char then local hum = char:FindFirstChild("Humanoid") if hum then hum.WalkSpeed = v end end
+    Notify("移动速度已设为 "..v)
 end})
-
-local HSPlayGroup = MainTab:AddLeftGroupbox("捉迷藏")
-HSPlayGroup:AddButton({Text='传送到躲藏者',Func=function()
-    if not lplr.Character then return end
-    if Script.GameState~="HideAndSeek" then Script.Functions.Alert("游戏未开始") return end
-    local h = Script.Functions.GetHider()
-    if not h then Script.Functions.Alert("未找到躲藏者") return end
-    lplr.Character:PivotTo(h:GetPrimaryPartCFrame())
+MainRight:AddButton({ Text="显示现在时间", Func=function() showTimeWindow("now") end, DoubleClick=false })
+MainRight:AddButton({ Text="显示已用时长", Func=function() showTimeWindow("used") end, DoubleClick=false })
+MainRight:AddButton({ Text="我全都要", Func=function() showTimeWindow("both") end, DoubleClick=false })
+MainRight:AddToggle("JumpToggle",{ Text="显示跳跃按钮", Default=false, Callback=function(v)
+    jumpEnabled = v
+    if v then if not jumpFloatGui then createJumpFloat() end Notify("跳跃按钮已显示") else destroyJumpFloat() Notify("跳跃按钮已隐藏") end
 end})
-
-local RebelGroup = MainTab:AddLeftGroupbox("叛军")
-RebelGroup:AddToggle('ExpandGuardHitbox',{Text='扩大守卫碰撞箱',Default=false})
-local processedModels = {}
-local targetSize = Vector3.new(4,4,4)
-local defaultSize = Vector3.new(1,1,1)
-local function isPC(m) return Players:FindFirstChild(m.Name)~=nil end
-local function process(m)
-    if not m or not m:IsA("Model") or isPC(m) or processedModels[m] then return end
-    local head = m:FindFirstChild("Head")
-    if not head or not head:IsA("BasePart") then return end
-    if not m:FindFirstChild("_HeadHL") then
-        local hl = Instance.new("Highlight")
-        hl.Name = "_HeadHL"; hl.Adornee=m; hl.FillColor=Color3.fromRGB(255,80,80); hl.OutlineColor=Color3.new(1,1,1); hl.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
-        hl.Parent=m
-    end
-    processedModels[m]=head
-end
-local function cleanup()
-    for m,head in pairs(processedModels) do
-        if head and head.Parent then pcall(function() head.Size=defaultSize; head.CanCollide=true end) end
-        local hl = m:FindFirstChild("_HeadHL")
-        if hl then hl:Destroy() end
-    end
-    processedModels={}
-end
-Toggles.ExpandGuardHitbox:OnChanged(function(b)
-    if b then
-        task.spawn(function()
-            while Toggles.ExpandGuardHitbox.Value do
-                local live = workspace:FindFirstChild("Live")
-                if not live then break end
-                for _,m in ipairs(live:GetChildren()) do process(m) end
-                for m,head in pairs(processedModels) do
-                    if m and m.Parent and head and head.Parent then
-                        if head.Size~=targetSize then head.Size=targetSize; head.CanCollide=false end
-                    else processedModels[m]=nil end
-                end
-                task.wait(3)
-            end
-        end)
-    else cleanup() end
-end)
-
-local InfoGroup = MainTab:AddRightGroupbox("信息")
-InfoGroup:AddLabel("欢迎使用 RTaOHUB！")
-InfoGroup:AddLabel("加入 Discord 获取更新")
-InfoGroup:AddButton({Text='加入 Discord',Func=Script.Functions.JoinDiscord})
-InfoGroup:AddButton({Text='卸载',Func=function() Library:Unload() end})
-
-local MiscGroup = MainTab:AddRightGroupbox("杂项")
-MiscGroup:AddDropdown('EmotesList',{Text='表情列表',Values={},AllowNull=true})
-task.spawn(function()
-    local function refresh()
-        local res = {}
-        local anims = ReplicatedStorage:WaitForChild("Animations",10)
-        if not anims then return end
-        local emotes = anims:WaitForChild("Emotes",10)
-        if not emotes then return end
-        for _,v in pairs(emotes:GetChildren()) do
-            if v.ClassName=="Animation" and v.AnimationId then res[v.Name]={anim=v.AnimationId,obj=v} end
-        end
-        Script.Temp.EmoteList = res
-        local names = {}
-        for k in pairs(res) do table.insert(names,k) end
-        Options.EmotesList:SetValues(names)
-    end
-    refresh()
-    local emotes = ReplicatedStorage:WaitForChild("Animations"):WaitForChild("Emotes")
-    table.insert(Script.Connections, emotes.ChildAdded:Connect(refresh))
-    table.insert(Script.Connections, emotes.ChildRemoved:Connect(refresh))
-end)
-MiscGroup:AddButton({Text='播放表情',Func=function()
-    if Options.EmotesList.Value then
-        local d = Script.Temp.EmoteList and Script.Temp.EmoteList[Options.EmotesList.Value]
-        if d and d.anim then
-            local char = lplr.Character
-            if not char then return end
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if not hum then return end
-            if Script.Temp.EmoteTrack then Script.Temp.EmoteTrack:Stop() end
-            local a = Instance.new("Animation"); a.AnimationId=d.anim
-            local t = hum:LoadAnimation(a); t.Priority=Enum.AnimationPriority.Action; t:Play()
-            Script.Temp.EmoteTrack = t
-        end
-    else Script.Functions.Alert("未选择表情") end
+MainRight:AddToggle("NightVision",{ Text="夜视", Default=false, Callback=function(v)
+    if v then enableNightVision() Notify("夜视已开启") else disableNightVision() Notify("夜视已关闭") end
 end})
-MiscGroup:AddButton({Text='停止表情',Func=function() if Script.Temp.EmoteTrack then Script.Temp.EmoteTrack:Stop() end end})
-MiscGroup:AddDivider()
-MiscGroup:AddToggle('AntiRagdoll',{Text='防布娃娃+无眩晕',Default=false})
-Toggles.AntiRagdoll:OnChanged(function(b)
-    if b then
-        Script.Functions.BypassRagdoll()
-        Script.Temp.AntiRagdollLoop = task.spawn(function() while Toggles.AntiRagdoll.Value do Script.Functions.BypassRagdoll(); task.wait() end end)
-    else
-        if Script.Temp.AntiRagdollLoop then task.cancel(Script.Temp.AntiRagdollLoop) end
-    end
-end)
-MiscGroup:AddButton({Text='移除布娃娃',Func=Script.Functions.BypassRagdoll})
-MiscGroup:AddDivider()
-MiscGroup:AddToggle('SpectateModeToggler',{Text='观战模式',Default=false})
-Toggles.SpectateModeToggler:OnChanged(function(b) workspace.Values.CanSpectateIfWonGame.Value = b end)
-MiscGroup:AddButton({Text='修复镜头',Func=Script.Functions.FixCamera})
-MiscGroup:AddButton({Text='跳过过场',Func=Script.Functions.FixCamera})
-MiscGroup:AddButton({Text='传送到安全点',Func=Script.Functions.TeleportSafe})
-MiscGroup:AddButton({Text='修复玩家可见性',Func=function()
-    for _,p in pairs(Players:GetPlayers()) do if p.Character then
-        for _,part in pairs(p.Character:GetDescendants()) do
-            if part:IsA("BasePart") and part.Transparency>0.99 then part.Transparency=0 end
-        end
-    end end
+MainRight:AddToggle("NoClip",{ Text="穿墙", Default=false, Callback=function(v) setNoClip(v) end})
+local ESPGroup = Tabs.ESP:AddLeftGroupbox("透视设置")
+ESPGroup:AddToggle("ESP",{ Text="透视物资 (显示价格)", Default=false, Callback=function(v)
+    espEnabled = v
+    if v then drawESP() Notify("物资透视已开启") else clearESP() Notify("物资透视已关闭") end
 end})
-
-local PlayerGroup = MainTab:AddLeftGroupbox("玩家")
-PlayerGroup:AddSlider('SpeedSlider',{Text='行走速度',Default=16,Min=0,Max=300,Rounding=1})
-PlayerGroup:AddToggle('SpeedToggle',{Text='速度',Default=false})
-PlayerGroup:AddKeyPicker('SpeedKey',{Mode='Toggle',Default='C',Text='速度热键',SyncToggleState=true})
-PlayerGroup:AddToggle('Noclip',{Text='穿墙',Default=false})
-PlayerGroup:AddKeyPicker('NoclipKey',{Mode='Toggle',Default='N',Text='穿墙热键',SyncToggleState=true})
-PlayerGroup:AddToggle('InfiniteJump',{Text='无限跳跃',Default=false})
-PlayerGroup:AddToggle('Fly',{Text='飞行',Default=false})
-PlayerGroup:AddSlider('FlySpeed',{Text='飞行速度',Default=20,Min=10,Max=300,Rounding=1})
-
-Toggles.Noclip:OnChanged(function(b)
-    if b then
-        task.spawn(function() while Toggles.Noclip.Value do
-            if lplr.Character then for _,p in pairs(lplr.Character:GetDescendants()) do if p:IsA("BasePart") and p.CanCollide then p.CanCollide=false end end end
-            RunService.Heartbeat:Wait()
-        end end)
-    else
-        if lplr.Character then for _,p in pairs(lplr.Character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide=true end end end
-    end
-end)
-Options.SpeedSlider:OnChanged(function(v) if Toggles.SpeedToggle.Value and lplr.Character and lplr.Character:FindFirstChild("Humanoid") then lplr.Character.Humanoid.WalkSpeed=v end end)
-Toggles.SpeedToggle:OnChanged(function(b)
-    if b then
-        Script.Temp.OldSpeed = lplr.Character and lplr.Character:FindFirstChild("Humanoid") and lplr.Character.Humanoid.WalkSpeed or 16
-        task.spawn(function() while Toggles.SpeedToggle.Value do
-            if lplr.Character and lplr.Character:FindFirstChild("Humanoid") then lplr.Character.Humanoid.WalkSpeed = Options.SpeedSlider.Value end
-            task.wait(0.5)
-        end end)
-    else
-        if lplr.Character and lplr.Character:FindFirstChild("Humanoid") then lplr.Character.Humanoid.WalkSpeed = Script.Temp.OldSpeed or 16 end
-    end
-end)
-
-local controlModule
-Toggles.Fly:OnChanged(function(b)
-    local root = lplr.Character and lplr.Character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    local hum = lplr.Character:FindFirstChildOfClass("Humanoid")
-    if hum then hum.PlatformStand = b end
-    local body = Script.Temp.FlyBody or Instance.new("BodyVelocity")
-    body.Velocity = Vector3.zero; body.MaxForce = Vector3.one*9e9
-    Script.Temp.FlyBody = body
-    body.Parent = b and root or nil
-    if b then
-        controlModule = controlModule or Script.Functions.SafeRequire(lplr.PlayerScripts.PlayerModule.ControlModule)
-        Script.Connections.Fly = RunService.RenderStepped:Connect(function()
-            local mv = controlModule:GetMoveVector()
-            body.Velocity = -((camera.CFrame.LookVector*mv.Z)-(camera.CFrame.RightVector*mv.X))*Options.FlySpeed.Value
-        end)
-    else
-        if Script.Connections.Fly then Script.Connections.Fly:Disconnect() end
-    end
-end)
-
-local function hookAntiFling()
-    if not lplr.Character or not Toggles.FlingAuraToggle.Value then return end
-    local main = lplr.Character:WaitForChild("Main")
-    main.Enabled = false; main.Disabled = true
-    Script.Temp.AntiFlingHook = main:GetPropertyChangedSignal("Enabled"):Connect(function() main.Enabled=false; main.Disabled=true end)
-end
-table.insert(Script.Connections, lplr.CharacterAdded:Connect(hookAntiFling))
-pcall(hookAntiFling)
-
-Toggles.FlingAuraToggle:OnChanged(function(b)
-    if b then
-        local function setNoclip(state) if Toggles.Noclip.Value~=state then Toggles.Noclip:SetValue(state) end end
-        setNoclip(true)
-        Script.Temp.FlingActive = true
-        task.spawn(function()
-            local movel = 0.1
-            while Script.Temp.FlingActive do
-                local char = lplr.Character
-                local root = char and (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso"))
-                if root then
-                    local vel = root.Velocity
-                    root.Velocity = vel*10000 + Vector3.new(0,10000,0)
-                    RunService.RenderStepped:Wait()
-                    root.Velocity = vel
-                    RunService.Stepped:Wait()
-                    root.Velocity = vel + Vector3.new(0,movel,0)
-                    movel = -movel
-                end
-                RunService.Heartbeat:Wait()
-            end
-        end)
-    else
-        Script.Temp.FlingActive = false
-        if Script.Temp.AntiFlingHook then Script.Temp.AntiFlingHook:Disconnect() end
-        if lplr.Character then
-            local main = lplr.Character:WaitForChild("Main")
-            main.Enabled = true; main.Disabled = false
-        end
-    end
-end)
-
-FunGroup:AddToggle('FlingAuraToggle',{Text='投掷光环',Default=false})
-FunGroup:AddToggle('AntiFlingToggle',{Text='防投掷',Default=false})
-Toggles.AntiFlingToggle:OnChanged(function(b)
-    if b then
-        Script.Temp.AntiFlingActive = true
-        task.spawn(function()
-            local last
-            while Script.Temp.AntiFlingActive do
-                local char = lplr.Character
-                local root = char and (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso"))
-                if root then
-                    if root.Velocity.Magnitude > 100 then
-                        root.Velocity = Vector3.new(math.clamp(root.Velocity.X,-100,100), math.clamp(root.Velocity.Y,-100,100), math.clamp(root.Velocity.Z,-100,100))
-                    end
-                    if not last or (root.Position-last.Position).Magnitude<20 then last = root.CFrame
-                    elseif (root.Position-last.Position).Magnitude>50 then root.CFrame = last; root.Velocity = Vector3.zero end
-                end
-                task.wait(0.05)
-            end
-        end)
-    else Script.Temp.AntiFlingActive = false end
-end)
-
-local SecGroup = MainTab:AddRightGroupbox("安全")
-SecGroup:AddToggle('AntiAfk',{Text='防挂机',Default=true})
-Toggles.AntiAfk:OnChanged(function(b)
-    if b then
-        local vu = game:GetService("VirtualUser")
-        Script.Temp.AfkConn = lplr.Idled:Connect(function() vu:Button2Down(Vector2.new(),camera.CFrame); wait(1); vu:Button2Up(Vector2.new(),camera.CFrame) end)
-    else
-        if Script.Temp.AfkConn then Script.Temp.AfkConn:Disconnect() end
-    end
-end)
-SecGroup:AddToggle('StaffDetector',{Text='管理员检测',Default=true})
-Toggles.StaffDetector:OnChanged(function(b)
-    if b then
-        local gid = 12398672; local minRank = 120
-        local roles = {[120]="版主",[254]="开发者",[255]="所有者"}
-        local detected = {}
-        local function check(p)
-            local ok,rank = pcall(function() return p:GetRankInGroup(gid) end)
-            if ok and rank and rank>=minRank then
-                local role = roles[rank] or "等级"..rank
-                Script.Functions.Alert("[管理员] "..p.Name.." ("..role..")",10)
-                detected[p.UserId] = {Name=p.Name,Role=role}
-            end
-        end
-        for _,p in pairs(Players:GetPlayers()) do if p~=lplr then check(p) end end
-        table.insert(Script.Connections, Players.PlayerAdded:Connect(function(p) if p~=lplr then task.wait(1); check(p) end end))
-        table.insert(Script.Connections, Players.PlayerRemoving:Connect(function(p)
-            if detected[p.UserId] then Script.Functions.Alert("[管理员离开] "..detected[p.UserId].Name,10) end
-        end))
-    end
-end)
-
-local PerfGroup = MainTab:AddRightGroupbox("性能")
-PerfGroup:AddToggle('LowGFX',{Text='低画质',Default=false})
-PerfGroup:AddToggle('DisableEffects',{Text='禁用特效',Default=false})
-Toggles.DisableEffects:OnChanged(function(b)
-    if b then
-        local ef = workspace:WaitForChild("Effects",15)
-        if not ef then return end
-        ef:ClearAllChildren()
-        Script.Temp.DisableEffectsConn = ef.ChildAdded:Connect(function(c) c:Destroy() end)
-    else
-        if Script.Temp.DisableEffectsConn then Script.Temp.DisableEffectsConn:Disconnect() end
-    end
-end)
-PerfGroup:AddButton({Text='清除特效缓存',Func=function() if workspace:FindFirstChild("Effects") then workspace.Effects:ClearAllChildren() end end})
-
-table.insert(Script.Connections, lplr.CharacterAdded:Connect(function(c)
-    if Toggles.SpeedToggle.Value and c:WaitForChild("Humanoid",10) then
-        c.Humanoid.WalkSpeed = Options.SpeedSlider.Value
-    end
-end))
-
-table.insert(Script.Connections, workspace:WaitForChild("Values"):WaitForChild("CurrentGame"):GetPropertyChangedSignal("Value"):Connect(function()
-    Script.GameState = tostring(workspace.Values.CurrentGame.Value)
-    Script.GameStateChanged:Fire(Script.GameState)
-    if Toggles.InkGameAutowin.Value then Script.Functions.HandleAutowin() end
-    if Script.GameState:find("HideAndSeek") then
-        for _,m in ipairs(HSMeta) do
-            if Toggles[m.name] and Toggles[m.name].Value then
-                Toggles[m.name]:SetValue(false)
-                Toggles[m.name]:SetValue(true)
-            end
-        end
-    end
-end))
-
-table.insert(Script.Connections, UserInputService.JumpRequest:Connect(function()
-    if Toggles.InfiniteJump.Value and lplr.Character and lplr.Character:FindFirstChild("Humanoid") then
-        lplr.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end))
-
-for _,p in pairs(Players:GetPlayers()) do if p~=lplr then Script.Functions.SetupOtherPlayerConnection(p) end end
-table.insert(Script.Connections, Players.PlayerAdded:Connect(function(p) if p~=lplr then Script.Functions.SetupOtherPlayerConnection(p) end end))
-
-task.spawn(function() pcall(Script.Functions.OnLoad) end)
-
-Library:OnUnload(function()
-    for _,c in pairs(Script.Connections) do pcall(function() c:Disconnect() end) end
-    if SaveManager then SaveManager:Save() end
-    Library.Unloaded = true
-    shared.Voidware_InkGame_Library = nil
-end)
-
-local MenuGroup = TabsUI.Settings:AddLeftGroupbox('菜单')
-MenuGroup:AddToggle('KeybindMenuOpen',{Text='打开快捷键菜单',Default=false,Callback=function(v) Library.KeybindFrame.Visible=v end})
-MenuGroup:AddToggle('ShowCustomCursor',{Text='自定义光标',Default=true,Callback=function(v) Library.ShowCustomCursor=v end})
-MenuGroup:AddDivider()
-MenuGroup:AddLabel('菜单快捷键'):AddKeyPicker('MenuKeybind',{Default='RightShift',NoUI=false,Text='菜单快捷键'})
-MenuGroup:AddButton({Text='加入 Discord',Func=Script.Functions.JoinDiscord})
-MenuGroup:AddButton({Text='卸载',Func=function() Library:Unload() end})
-
-local CreditsGroup = TabsUI.Settings:AddRightGroupbox('鸣谢')
-CreditsGroup:AddLabel("RTaOHUB 团队 - Python / Dex")
-CreditsGroup:AddLabel("所有功能移植完成")
-
-Library.ToggleKeybind = Options.MenuKeybind
-
+ESPGroup:AddToggle("ContainerESP",{ Text="透视容器 (紫色描边+中文名)", Default=false, Callback=function(v)
+    containerESPEnabled = v
+    if v then drawContainerESP() Notify("容器透视已开启") else clearContainerESP() Notify("容器透视已关闭") end
+end})
+ESPGroup:AddToggle("MonsterESP",{ Text="透视怪物 (红色)", Default=false, Callback=function(v)
+    monsterESPEnabled = v
+    if v then drawMonsterESP() Notify("怪物透视已开启") else clearMonsterESP() Notify("怪物透视已关闭") end
+end})
+ESPGroup:AddToggle("TeammateESP",{ Text="透视队友 (白色)", Default=false, Callback=function(v)
+    teammateESPEnabled = v
+    if v then drawTeammateESP() Notify("队友透视已开启") else clearTeammateESP() Notify("队友透视已关闭") end
+end})
+ESPGroup:AddToggle("ElevatorESP",{ Text="透视电梯 (绿色)", Default=false, Callback=function(v)
+    elevatorESPEnabled = v
+    if v then drawElevatorESP() Notify("电梯透视已开启") else clearElevatorESP() Notify("电梯透视已关闭") end
+end})
+ESPGroup:AddSlider("MinPrice",{ Text="最低价格过滤", Default=0, Min=0, Max=1000, Rounding=0, Suffix="$", Callback=function(v)
+    minPrice = v
+    if espEnabled then drawESP() end
+end})
+local SettingsGroup = Tabs.Settings:AddLeftGroupbox("全局设置")
+SettingsGroup:AddButton({ Text="卸载脚本", Func=function() Library:Unload() end, DoubleClick=false })
 if ThemeManager then
     ThemeManager:SetLibrary(Library)
-    ThemeManager:SetFolder("RTaOHUB_linoria")
-    ThemeManager:ApplyToTab(TabsUI.Settings)
+    ThemeManager:SetFolder("DeadlyDelivery")
+    ThemeManager:ApplyToTab(Tabs.Settings)
 end
 if SaveManager then
     SaveManager:SetLibrary(Library)
     SaveManager:IgnoreThemeSettings()
-    SaveManager:SetFolder("RTaOHUB_linoria/ink_game")
-    SaveManager:BuildConfigSection(TabsUI.Settings)
-    SaveManager:LoadAutoloadConfig()
+    SaveManager:SetFolder("DeadlyDelivery")
+    SaveManager:BuildConfigSection(Tabs.Settings)
 end
+startESPWatcher()
+Notify("亡命速递脚本已加载")
