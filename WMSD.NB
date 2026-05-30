@@ -1488,23 +1488,23 @@ end})
 MainRight:AddToggle("NoClip",{ Text="穿墙", Default=false, Callback=function(v) setNoClip(v) end})
 
 local ESPGroup = Tabs.ESP:AddLeftGroupbox("透视设置")
-ESPGroup:AddToggle("ESP",{ Text="透视物资 (显示价格)", Default=false, Callback=function(v)
+ESPGroup:AddToggle("ESP",{ Text="透视物资 ", Default=false, Callback=function(v)
 	espEnabled = v
 	if v then drawESP() Notify("物资透视已开启") else clearESP() Notify("物资透视已关闭") end
 end})
-ESPGroup:AddToggle("ContainerESP",{ Text="透视容器 (紫色)", Default=false, Callback=function(v)
+ESPGroup:AddToggle("ContainerESP",{ Text="透视容器", Default=false, Callback=function(v)
 	containerESPEnabled = v
 	if v then drawContainerESP() Notify("容器透视已开启") else clearContainerESP() Notify("容器透视已关闭") end
 end})
-ESPGroup:AddToggle("MonsterESP",{ Text="透视怪物 (红色)", Default=false, Callback=function(v)
+ESPGroup:AddToggle("MonsterESP",{ Text="透视怪物 ", Default=false, Callback=function(v)
 	monsterESPEnabled = v
 	if v then drawMonsterESP() Notify("怪物透视已开启") else clearMonsterESP() Notify("怪物透视已关闭") end
 end})
-ESPGroup:AddToggle("TeammateESP",{ Text="透视队友 (白色)", Default=false, Callback=function(v)
+ESPGroup:AddToggle("TeammateESP",{ Text="透视队友", Default=false, Callback=function(v)
 	teammateESPEnabled = v
 	if v then drawTeammateESP() Notify("队友透视已开启") else clearTeammateESP() Notify("队友透视已关闭") end
 end})
-ESPGroup:AddToggle("ElevatorESP",{ Text="透视电梯 (绿色)", Default=false, Callback=function(v)
+ESPGroup:AddToggle("ElevatorESP",{ Text="透视电梯 ", Default=false, Callback=function(v)
 	elevatorESPEnabled = v
 	if v then drawElevatorESP() Notify("电梯透视已开启") else clearElevatorESP() Notify("电梯透视已关闭") end
 end})
