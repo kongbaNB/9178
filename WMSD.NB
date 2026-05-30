@@ -8,6 +8,7 @@ local UserInputService = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
+local collectionService = game:GetService("CollectionService")
 
 local function loadFlightScript()
 	local success, err = pcall(function()
@@ -23,18 +24,15 @@ local function loadFlightScript()
 		local closebutton = Instance.new("TextButton")
 		local mini = Instance.new("TextButton")
 		local mini2 = Instance.new("TextButton")
-
 		main.Name = "main"
 		main.Parent = LocalPlayer:WaitForChild("PlayerGui")
 		main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 		main.ResetOnSpawn = false
-
 		Frame.Parent = main
 		Frame.BackgroundColor3 = Color3.fromRGB(163, 255, 137)
 		Frame.BorderColor3 = Color3.fromRGB(103, 221, 213)
 		Frame.Position = UDim2.new(0.100320168, 0, 0.379746825, 0)
 		Frame.Size = UDim2.new(0, 190, 0, 57)
-
 		up.Name = "up"
 		up.Parent = Frame
 		up.BackgroundColor3 = Color3.fromRGB(79, 255, 152)
@@ -43,7 +41,6 @@ local function loadFlightScript()
 		up.Text = "上升"
 		up.TextColor3 = Color3.fromRGB(0, 0, 0)
 		up.TextSize = 14
-
 		down.Name = "down"
 		down.Parent = Frame
 		down.BackgroundColor3 = Color3.fromRGB(215, 255, 121)
@@ -53,7 +50,6 @@ local function loadFlightScript()
 		down.Text = "下落"
 		down.TextColor3 = Color3.fromRGB(0, 0, 0)
 		down.TextSize = 14
-
 		onof.Name = "onof"
 		onof.Parent = Frame
 		onof.BackgroundColor3 = Color3.fromRGB(255, 249, 74)
@@ -63,7 +59,6 @@ local function loadFlightScript()
 		onof.Text = "飞"
 		onof.TextColor3 = Color3.fromRGB(0, 0, 0)
 		onof.TextSize = 14
-
 		TextLabel.Parent = Frame
 		TextLabel.BackgroundColor3 = Color3.fromRGB(242, 60, 255)
 		TextLabel.Position = UDim2.new(0.469327301, 0, 0, 0)
@@ -74,7 +69,6 @@ local function loadFlightScript()
 		TextLabel.TextScaled = true
 		TextLabel.TextSize = 14
 		TextLabel.TextWrapped = true
-
 		plus.Name = "plus"
 		plus.Parent = Frame
 		plus.BackgroundColor3 = Color3.fromRGB(133, 145, 255)
@@ -86,7 +80,6 @@ local function loadFlightScript()
 		plus.TextScaled = true
 		plus.TextSize = 14
 		plus.TextWrapped = true
-
 		speed.Name = "speed"
 		speed.Parent = Frame
 		speed.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
@@ -98,7 +91,6 @@ local function loadFlightScript()
 		speed.TextScaled = true
 		speed.TextSize = 14
 		speed.TextWrapped = true
-
 		mine.Name = "mine"
 		mine.Parent = Frame
 		mine.BackgroundColor3 = Color3.fromRGB(123, 255, 247)
@@ -110,7 +102,6 @@ local function loadFlightScript()
 		mine.TextScaled = true
 		mine.TextSize = 14
 		mine.TextWrapped = true
-
 		closebutton.Name = "Close"
 		closebutton.Parent = Frame
 		closebutton.BackgroundColor3 = Color3.fromRGB(225, 25, 0)
@@ -119,7 +110,6 @@ local function loadFlightScript()
 		closebutton.Text = "X"
 		closebutton.TextSize = 30
 		closebutton.Position = UDim2.new(0, 0, -1, 27)
-
 		mini.Name = "minimize"
 		mini.Parent = Frame
 		mini.BackgroundColor3 = Color3.fromRGB(192, 150, 230)
@@ -128,7 +118,6 @@ local function loadFlightScript()
 		mini.Text = "-"
 		mini.TextSize = 40
 		mini.Position = UDim2.new(0, 44, -1, 27)
-
 		mini2.Name = "minimize2"
 		mini2.Parent = Frame
 		mini2.BackgroundColor3 = Color3.fromRGB(192, 150, 230)
@@ -138,34 +127,27 @@ local function loadFlightScript()
 		mini2.TextSize = 40
 		mini2.Position = UDim2.new(0, 44, 0, 30)
 		mini2.Visible = false
-
 		local speeds = 1
 		local speaker = LocalPlayer
 		local chr = speaker.Character
 		local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
 		local nowe = false
-
 		local Notify = function() end
-
 		Frame.Active = true
 		Frame.Draggable = true
-
 		closebutton.MouseButton1Click:Connect(function()
 			main:Destroy()
 		end)
-
 		up.MouseButton1Click:Connect(function()
 			if chr and chr:FindFirstChild("HumanoidRootPart") then
 				chr.HumanoidRootPart.CFrame = chr.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
 			end
 		end)
-
 		down.MouseButton1Click:Connect(function()
 			if chr and chr:FindFirstChild("HumanoidRootPart") then
 				chr.HumanoidRootPart.CFrame = chr.HumanoidRootPart.CFrame + Vector3.new(0, -3, 0)
 			end
 		end)
-
 		mini.MouseButton1Click:Connect(function()
 			up.Visible = false
 			down.Visible = false
@@ -179,7 +161,6 @@ local function loadFlightScript()
 			Frame.Size = UDim2.new(0, 100, 0, 28)
 			TextLabel.Position = UDim2.new(0, 0, 0, 0)
 		end)
-
 		mini2.MouseButton1Click:Connect(function()
 			up.Visible = true
 			down.Visible = true
@@ -193,12 +174,10 @@ local function loadFlightScript()
 			Frame.Size = UDim2.new(0, 190, 0, 57)
 			TextLabel.Position = UDim2.new(0.469327301, 0, 0, 0)
 		end)
-
 		plus.MouseButton1Click:Connect(function()
 			speeds = speeds + 1
 			speed.Text = tostring(speeds)
 		end)
-
 		mine.MouseButton1Click:Connect(function()
 			if speeds > 1 then
 				speeds = speeds - 1
@@ -210,12 +189,10 @@ local function loadFlightScript()
 				speeds = 1
 			end
 		end)
-
 		speaker.CharacterAdded:Connect(function(newChar)
 			chr = newChar
 			hum = chr:FindFirstChildOfClass("Humanoid")
 		end)
-
 		local function startFlight()
 			nowe = true
 			onof.Text = "飞"
@@ -233,7 +210,6 @@ local function loadFlightScript()
 					v:AdjustSpeed(0)
 				end
 			end
-
 			task.spawn(function()
 				while nowe and chr and hum do
 					RunService.Heartbeat:Wait()
@@ -242,7 +218,6 @@ local function loadFlightScript()
 					end
 				end
 			end)
-
 			local rootPart
 			if hum.RigType == Enum.HumanoidRigType.R6 then
 				rootPart = chr.Torso
@@ -257,11 +232,9 @@ local function loadFlightScript()
 				local bv = Instance.new("BodyVelocity", rootPart)
 				bv.Velocity = Vector3.new(0, 0, 0)
 				bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-
 				if nowe then
 					LocalPlayer.Character.Humanoid.PlatformStand = true
 				end
-
 				while nowe and LocalPlayer.Character.Humanoid.Health > 0 do
 					RunService.RenderStepped:Wait()
 					bg.CFrame = workspace.CurrentCamera.CoordinateFrame
@@ -272,7 +245,6 @@ local function loadFlightScript()
 				LocalPlayer.Character.Animate.Disabled = false
 			end
 		end
-
 		local function stopFlight()
 			nowe = false
 			onof.Text = "飞"
@@ -286,7 +258,6 @@ local function loadFlightScript()
 				chr.Animate.Disabled = false
 			end
 		end
-
 		onof.MouseButton1Click:Connect(function()
 			if not nowe then
 				startFlight()
@@ -295,7 +266,6 @@ local function loadFlightScript()
 			end
 		end)
 	end)
-
 	if not success then
 		warn("飞行脚本加载失败：" .. tostring(err))
 	end
@@ -395,69 +365,248 @@ end
 local espEnabled = false
 local espLabels = {}
 local minPrice = 0
+local espOutlineEnabled = true
+local espOutlineThickness = 0.3
+local espOutlineColor = Color3.new(0, 1, 0)
 
 local containerESPEnabled = false
 local containerLabels = {}
-
 local monsterESPEnabled = false
 local monsterLabels = {}
-
 local teammateESPEnabled = false
 local teammateLabels = {}
-
 local elevatorESPEnabled = false
 local elevatorLabels = {}
 
-local containerKeywords = {
-	"柜","柜子","储物柜","置物柜","电视柜","床头柜","橱柜","衣柜",
-	"箱","箱子","木箱","集装箱","容器",
-	"桶","油桶","铁桶","冰箱","冰柜",
-	"cabinet","locker","cupboard","wardrobe","drawer","closet","shelf",
-	"box","crate","chest","container","case",
-	"barrel","drum","canister","fridge","refrigerator","freezer",
-	"шкаф","тумба","комод","ящик","сундук",
-	"armario","estante","cajon","cofre","vitrina",
-	"placard","étagère","coffre","armoire",
-	"schrank","regal","kiste","truhe","fass",
-	"armadio","scaffale","cassaforte",
-	"ロッカー","キャビネット","棚","箱","コンテナ",
-	"사물함","캐비닛","상자","통",
-	"ตู้","ชั้นวาง","กล่อง","ถัง",
+local keywords = {
+	"chest", "crate", "barrel", "cabinet", "locker",
+	"box", "case", "wardrobe", "cupboard", "drawer",
+	"shelf", "rack", "bin", "basket", "trunk",
+	"container", "storage", "vault", "safe", "coffer",
+	"oilbarrel", "oil_barrel", "oil barrel", "woodencrate",
+	"wooden_crate", "wooden crate", "metalbox", "metal_box",
+	"metal box", "supplycrate", "supply_crate", "supply crate",
+	"ammobox", "ammo_box", "ammo box", "toolbox", "tool_box",
+	"tool box", "medkit", "firstaid", "first_aid", "first aid",
+	"backpack", "bag", "sack", "barrel_wood", "barrelwood",
+	"pollutedbarrel", "polluted_barrel", "polluted barrel",
+	"toxicbarrel", "toxic_barrel", "toxic barrel",
+	"wastebarrel", "waste_barrel", "waste barrel",
+	"oildrum", "oil_drum", "oil drum",
+	"waterbarrel", "water_barrel", "water barrel",
+	"explosivebarrel", "explosive_barrel", "explosive barrel",
+	"chemicalbarrel", "chemical_barrel", "chemical barrel",
+	"fuelbarrel", "fuel_barrel", "fuel barrel",
+	"drum", "bucket", "pail"
 }
 
-local elevatorKeywords = {"elevator", "lift", "电梯", "升降梯", "エレベーター", "엘리베이터", "ascenseur", "aufzug", "elevador", "лифт"}
+local taggedNames = {
+	"Container", "Chest", "Crate", "Barrel", "Cabinet",
+	"Locker", "Box", "Case", "Wardrobe", "Cupboard",
+	"Drawer", "Shelf", "Rack", "Bin", "Basket",
+	"Trunk", "Storage", "Vault", "Safe", "Coffer",
+	"SupplyCrate", "AmmoBox", "ToolBox", "MedKit",
+	"FirstAid", "Backpack", "Bag", "Sack"
+}
 
-local function isContainer(obj)
-	if not obj:IsA("Model") and not obj:IsA("BasePart") then return false end
-	if getItemPrice(obj) > 0 then return false end
-	if isPlayerCharacter(obj) then return false end
-	if isMonster(obj) then return false end
+local chineseMap = {
+	chest = "箱子", crate = "板条箱", barrel = "桶", cabinet = "柜子", locker = "储物柜",
+	box = "盒子", case = "箱子", wardrobe = "衣柜", cupboard = "碗柜", drawer = "抽屉",
+	shelf = "架子", rack = "架子", bin = "垃圾桶", basket = "篮子", trunk = "箱子",
+	container = "容器", storage = "储物箱", vault = "保险库", safe = "保险箱", coffer = "保险箱",
+	oilbarrel = "油桶", oil_barrel = "油桶", woodencrate = "木箱", wooden_crate = "木箱",
+	metalbox = "金属盒", metal_box = "金属盒", supplycrate = "补给箱", supply_crate = "补给箱",
+	ammobox = "弹药箱", ammo_box = "弹药箱", toolbox = "工具箱", tool_box = "工具箱",
+	medkit = "医疗包", firstaid = "急救包", first_aid = "急救包", backpack = "背包", bag = "袋子",
+	sack = "麻袋", barrel_wood = "木桶", barrelwood = "木桶",
+	pollutedbarrel = "污染桶", polluted_barrel = "污染桶",
+	toxicbarrel = "毒桶", toxic_barrel = "毒桶",
+	wastebarrel = "废料桶", waste_barrel = "废料桶",
+	oildrum = "油桶", oil_drum = "油桶",
+	waterbarrel = "水桶", water_barrel = "水桶",
+	explosivebarrel = "爆炸桶", explosive_barrel = "爆炸桶",
+	chemicalbarrel = "化学桶", chemical_barrel = "化学桶",
+	fuelbarrel = "燃料桶", fuel_barrel = "燃料桶",
+	drum = "圆桶", bucket = "水桶", pail = "桶"
+}
 
-	-- 无价格的物品/拾取物一律视为容器
-	if isItemOrContainer(obj) then return true end
+local highlightData = {}
+local containerScanConnection = nil
 
-	-- 带交互提示的物体
-	if obj:FindFirstChildWhichIsA("ProximityPrompt") or obj:FindFirstChildWhichIsA("ClickDetector") then
-		return true
-	end
-
-	-- 名称匹配关键词
-	local nameLower = obj.Name:lower()
-	for _, kw in ipairs(containerKeywords) do
-		if nameLower:find(kw:lower()) then return true end
-	end
-
-	-- 任何有动画（非锚定）的物体也视为容器（排除怪物）
-	if obj:IsA("Model") then
-		for _, p in ipairs(obj:GetDescendants()) do
-			if p:IsA("BasePart") and not p.Anchored then return true end
+local function matchesKeywords(name)
+	local lower = name:lower()
+	for _, kw in ipairs(keywords) do
+		if lower == kw or lower:find(kw, 1, true) then
+			return true
 		end
-	elseif obj:IsA("BasePart") and not obj.Anchored then
-		return true
 	end
-
 	return false
 end
+
+local function hasTag(instance)
+	for _, tag in ipairs(taggedNames) do
+		if collectionService:HasTag(instance, tag) then
+			return true
+		end
+	end
+	return false
+end
+
+local function isContainer(instance)
+	if not instance:IsA("BasePart") and not instance:IsA("Model") then
+		return false
+	end
+	if hasTag(instance) then
+		return true
+	end
+	if instance:IsA("Model") then
+		local humanoid = instance:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			return false
+		end
+	end
+	local name = instance.Name
+	if matchesKeywords(name) then
+		return true
+	end
+	if instance:IsA("Model") then
+		local primary = instance.PrimaryPart
+		if primary and matchesKeywords(primary.Name) then
+			return true
+		end
+		for _, child in ipairs(instance:GetChildren()) do
+			if child:IsA("BasePart") and matchesKeywords(child.Name) then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+local function getChineseName(instance)
+	local clean = instance.Name:lower():gsub("[ _%-]", "")
+	if chineseMap[clean] then
+		return chineseMap[clean]
+	end
+	for kw, cn in pairs(chineseMap) do
+		if clean:find(kw:gsub("[ _%-]", ""), 1, true) then
+			return cn
+		end
+	end
+	for _, tag in ipairs(taggedNames) do
+		if collectionService:HasTag(instance, tag) then
+			local cleanTag = tag:lower()
+			if chineseMap[cleanTag] then
+				return chineseMap[cleanTag]
+			end
+		end
+	end
+	return "容器"
+end
+
+local function createHighlightAndLabel(container)
+	if highlightData[container] then
+		return
+	end
+	local adornee
+	if container:IsA("BasePart") then
+		adornee = container
+	elseif container:IsA("Model") then
+		adornee = container.PrimaryPart or container:FindFirstChildOfClass("BasePart")
+	end
+	if not adornee then
+		return
+	end
+
+	local chineseName = getChineseName(container)
+
+	local billboard = Instance.new("BillboardGui")
+	billboard.Name = "ContainerLabel"
+	billboard.Adornee = adornee
+	billboard.Size = UDim2.new(0, 120, 0, 30)
+	billboard.StudsOffset = Vector3.new(0, adornee.Size.Y / 2 + 1, 0)
+	billboard.AlwaysOnTop = true
+	billboard.MaxDistance = 400
+	billboard.Enabled = containerESPEnabled
+
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(1, 0, 1, 0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.TextColor3 = Color3.new(1, 1, 0)
+	nameLabel.Text = chineseName
+	nameLabel.Font = Enum.Font.SourceSansBold
+	nameLabel.TextSize = 16
+	nameLabel.TextStrokeTransparency = 0.5
+	nameLabel.Parent = billboard
+	billboard.Parent = adornee
+
+	local highlight = Instance.new("Highlight")
+	highlight.Name = "ContainerHighlight"
+	highlight.Adornee = container
+	highlight.FillTransparency = 1
+	highlight.OutlineColor = Color3.fromRGB(138, 43, 226)
+	highlight.OutlineTransparency = 0
+	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	highlight.Enabled = containerESPEnabled
+	highlight.Parent = container
+
+	highlightData[container] = {
+		billboard = billboard,
+		highlight = highlight
+	}
+end
+
+local function removeHighlightAndLabel(container)
+	local data = highlightData[container]
+	if data then
+		data.billboard:Destroy()
+		data.highlight:Destroy()
+		highlightData[container] = nil
+	end
+end
+
+local function scanAndUpdateContainers()
+	local seen = {}
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		if isContainer(obj) then
+			createHighlightAndLabel(obj)
+			seen[obj] = true
+		end
+	end
+	for obj, _ in pairs(highlightData) do
+		if not seen[obj] then
+			removeHighlightAndLabel(obj)
+		end
+	end
+end
+
+local function startContainerHighlights()
+	containerESPEnabled = true
+	scanAndUpdateContainers()
+	if not containerScanConnection then
+		containerScanConnection = RunService.Heartbeat:Connect(function()
+			if containerESPEnabled then
+				scanAndUpdateContainers()
+			end
+		end)
+	end
+end
+
+local function stopContainerHighlights()
+	containerESPEnabled = false
+	if containerScanConnection then
+		containerScanConnection:Disconnect()
+		containerScanConnection = nil
+	end
+	for obj, _ in pairs(highlightData) do
+		removeHighlightAndLabel(obj)
+	end
+end
+
+local function drawContainerESP() end
+local function clearContainerESP() end
+
+local elevatorKeywords = {"elevator", "lift", "电梯", "升降梯", "エレベーター", "엘리베이터", "ascenseur", "aufzug", "elevador", "лифт"}
 
 local function isElevator(obj)
 	if not obj:IsA("Model") and not obj:IsA("BasePart") then return false end
@@ -583,14 +732,20 @@ local function isNearElevator(pos)
 	return false
 end
 
-local function clearESP()
-	for _, v in pairs(espLabels) do pcall(function() v:Destroy() end) end
-	espLabels = {}
+local function destroyAllLootHighlights()
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		if obj:IsA("Highlight") and obj.Name == "LootHighlight" then
+			pcall(function() obj:Destroy() end)
+		end
+	end
 end
 
-local function clearContainerESP()
-	for _, v in pairs(containerLabels) do pcall(function() v:Destroy() end) end
-	containerLabels = {}
+local function clearESP()
+	for _, v in pairs(espLabels) do
+		pcall(function() v:Destroy() end)
+	end
+	espLabels = {}
+	destroyAllLootHighlights()
 end
 
 local function clearMonsterESP()
@@ -620,7 +775,6 @@ local function drawESP()
 			if isNearElevator(target.Position) then return end
 			local displayText = "$" .. price
 			local color = getColorByPrice(price)
-
 			local bill = Instance.new("BillboardGui")
 			bill.Adornee = target
 			bill.AlwaysOnTop = true
@@ -634,41 +788,20 @@ local function drawESP()
 			txt.TextScaled = true
 			txt.Text = displayText
 			txt.Font = Enum.Font.SourceSansBold
-
-			local hr = Instance.new("Highlight")
-			hr.Adornee = target
-			hr.Parent = target
-			hr.FillColor = color
-			hr.OutlineColor = color
-			hr.FillTransparency = 0.4
-			hr.OutlineTransparency = 0
-			hr.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 			table.insert(espLabels, bill)
-			table.insert(espLabels, hr)
-		end)
-	end
-end
 
-local function drawContainerESP()
-	clearContainerESP()
-	if not containerESPEnabled then return end
-	local handledModels = {}
-	for _, v in pairs(Workspace:GetDescendants()) do
-		pcall(function()
-			if not isContainer(v) then return end
-			local target = getTargetPart(v)
-			local model = v:IsA("Model") and v or v:FindFirstAncestorOfClass("Model")
-			if model and handledModels[model] then return end
-			if model then handledModels[model] = true end
-			local hr = Instance.new("Highlight")
-			hr.Adornee = target
-			hr.Parent = target
-			hr.FillColor = Color3.new(1, 1, 0)
-			hr.OutlineColor = Color3.new(1, 1, 0)
-			hr.FillTransparency = 0.7
-			hr.OutlineTransparency = 0
-			hr.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-			table.insert(containerLabels, hr)
+			if espOutlineEnabled then
+				local hr = Instance.new("Highlight")
+				hr.Name = "LootHighlight"
+				hr.Adornee = target
+				hr.Parent = target
+				hr.FillTransparency = 1
+				hr.OutlineColor = espOutlineColor
+				hr.OutlineTransparency = 0
+				hr.OutlineThickness = espOutlineThickness
+				hr.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+				table.insert(espLabels, hr)
+			end
 		end)
 	end
 end
@@ -748,7 +881,6 @@ end
 local function startESPWatcher()
 	Workspace.DescendantAdded:Connect(function(obj)
 		if espEnabled and isItemOrContainer(obj) then drawESP() end
-		if containerESPEnabled and isContainer(obj) then drawContainerESP() end
 		if monsterESPEnabled and isMonster(obj) then drawMonsterESP() end
 		if teammateESPEnabled and isTeammate(obj) then drawTeammateESP() end
 		if elevatorESPEnabled and isElevator(obj) then drawElevatorESP() end
@@ -757,7 +889,7 @@ end
 
 local function refreshAllESP()
 	if espEnabled then drawESP() end
-	if containerESPEnabled then drawContainerESP() end
+	if containerESPEnabled then startContainerHighlights() end
 	if monsterESPEnabled then drawMonsterESP() end
 	if teammateESPEnabled then drawTeammateESP() end
 	if elevatorESPEnabled then drawElevatorESP() end
@@ -855,7 +987,7 @@ end
 
 local function findNearestElevator(pos)
 	local nearest, minDist = nil, math.huge
-	for _, part in pairs(Workspace:GetDescendants()) do
+	for _, part in ipairs(Workspace:GetDescendants()) do
 		if part:IsA("BasePart") then
 			local nameLower = part.Name:lower()
 			for _, kw in ipairs(elevatorKeywords) do
@@ -1039,6 +1171,7 @@ RunService.Heartbeat:Connect(function()
 		end
 	end
 end)
+
 LocalPlayer.CharacterAdded:Connect(function(char)
 	local humanoid = char:WaitForChild("Humanoid")
 	humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
@@ -1204,6 +1337,7 @@ local function createJumpFloat()
 	end
 	jumpFloatBtn.MouseButton1Click:Connect(performJump)
 end
+
 local function destroyJumpFloat()
 	if jumpFloatGui then jumpFloatGui:Destroy() jumpFloatGui = nil jumpPanel = nil jumpFloatBtn = nil end
 end
@@ -1261,7 +1395,6 @@ end
 local Library = safeLoad(repo..'Library.lua')
 local ThemeManager = safeLoad(repo..'addons/ThemeManager.lua')
 local SaveManager = safeLoad(repo..'addons/SaveManager.lua')
-
 if not Library then
 	StarterGui:SetCore("SendNotification",{ Title="错误", Text="UI库加载失败", Duration=5 })
 	return
@@ -1299,24 +1432,31 @@ MainLeft:AddButton({ Text="召唤飞行脚本", Func=function()
 	local success, err = pcall(loadFlightScript)
 	if success then Notify("飞行脚本已加载") else Notify("飞行脚本加载失败: "..tostring(err)) end
 end, DoubleClick=false })
+
 MainLeft:AddToggle("AutoTranslate",{ Text="自动翻译界面", Default=false, Callback=function(v)
 	if v then startAutoTranslate() Notify("自动翻译已开启") else stopAutoTranslate() Notify("自动翻译已关闭") end
 end})
+
 MainLeft:AddToggle("KillMoving",{ Text="杀死移动怪物", Default=false, Callback=function(v)
 	toggleKillMoving(v) Notify("杀死移动怪物: "..(v and "开启" or "关闭"))
 end})
+
 MainLeft:AddToggle("Freeze",{ Text="冻结怪物", Default=false, Callback=function(v)
 	toggleFreeze(v) Notify("冻结怪物: "..(v and "开启" or "关闭"))
 end})
+
 MainLeft:AddButton({ Text="一键开启所有容器", Func=function()
 	fireAllClickDetectors() forceOpenContainers() Notify("已尝试开启所有容器")
 end, DoubleClick=false })
+
 MainLeft:AddButton({ Text="物资聚集到电梯", Func=function()
 	gatherLootToElevator() Notify("物资已聚集到电梯")
 end, DoubleClick=false })
+
 MainLeft:AddButton({ Text="一键传送回电梯", Func=function()
 	teleportToElevator() Notify("已传送回电梯")
 end, DoubleClick=false })
+
 MainLeft:AddButton({ Text="传送到最近物资", Func=function()
 	teleportToNearestLoot() Notify("已传送至最近物资")
 end, DoubleClick=false })
@@ -1325,52 +1465,99 @@ local MainRight = Tabs.Main:AddRightGroupbox("辅助与传送")
 MainRight:AddButton({ Text="传送到最近玩家", Func=function()
 	teleportToNearestPlayer() Notify("已传送至最近玩家")
 end, DoubleClick=false })
-MainRight:AddToggle("RemoteOpen",{ Text="远程打开所有容器 (持续)", Default=false, Callback=function(v)
+
+MainRight:AddToggle("RemoteOpen",{ Text="远程打开所有容器 持续", Default=false, Callback=function(v)
 	toggleRemoteOpen(v) Notify("远程打开容器: "..(v and "开启" or "关闭"))
 end})
-MainRight:AddSlider("WalkSpeed",{ Text="移动速度 (防回拉)", Default=16, Min=16, Max=100, Rounding=0, Suffix=" studs", Callback=function(v)
+
+MainRight:AddSlider("WalkSpeed",{ Text="移动速度 防回拉", Default=16, Min=16, Max=100, Rounding=0, Suffix=" studs", Callback=function(v)
 	desiredWalkSpeed = v
 	local char = LocalPlayer.Character
 	if char then local hum = char:FindFirstChild("Humanoid") if hum then hum.WalkSpeed = v end end
 	Notify("移动速度已设为 "..v)
 end})
+
 MainRight:AddButton({ Text="显示现在时间", Func=function() showTimeWindow("now") end, DoubleClick=false })
 MainRight:AddButton({ Text="显示已用时长", Func=function() showTimeWindow("used") end, DoubleClick=false })
 MainRight:AddButton({ Text="我全都要", Func=function() showTimeWindow("both") end, DoubleClick=false })
+
 MainRight:AddToggle("JumpToggle",{ Text="显示跳跃按钮", Default=false, Callback=function(v)
 	jumpEnabled = v
 	if v then if not jumpFloatGui then createJumpFloat() end Notify("跳跃按钮已显示") else destroyJumpFloat() Notify("跳跃按钮已隐藏") end
 end})
+
 MainRight:AddToggle("NightVision",{ Text="夜视", Default=false, Callback=function(v)
 	if v then enableNightVision() Notify("夜视已开启") else disableNightVision() Notify("夜视已关闭") end
 end})
+
 MainRight:AddToggle("NoClip",{ Text="穿墙", Default=false, Callback=function(v) setNoClip(v) end})
 
 local ESPGroup = Tabs.ESP:AddLeftGroupbox("透视设置")
-ESPGroup:AddToggle("ESP",{ Text="透视物资 (显示价格)", Default=false, Callback=function(v)
+
+ESPGroup:AddToggle("ESP",{ Text="透视物资 显示价格", Default=false, Callback=function(v)
 	espEnabled = v
-	if v then drawESP() Notify("物资透视已开启") else clearESP() Notify("物资透视已关闭") end
+	if v then
+		drawESP()
+		Notify("物资透视已开启")
+	else
+		clearESP()
+		Notify("物资透视已关闭")
+	end
 end})
-ESPGroup:AddToggle("ContainerESP",{ Text="透视容器 (黄色)", Default=false, Callback=function(v)
-	containerESPEnabled = v
-	if v then drawContainerESP() Notify("容器透视已开启") else clearContainerESP() Notify("容器透视已关闭") end
+
+ESPGroup:AddToggle("ContainerESP",{ Text="透视容器 紫色轮廓", Default=false, Callback=function(v)
+	if v then
+		startContainerHighlights()
+		Notify("容器透视已开启")
+	else
+		stopContainerHighlights()
+		Notify("容器透视已关闭")
+	end
 end})
-ESPGroup:AddToggle("MonsterESP",{ Text="透视怪物 (红色)", Default=false, Callback=function(v)
+
+ESPGroup:AddToggle("MonsterESP",{ Text="透视怪物 红色", Default=false, Callback=function(v)
 	monsterESPEnabled = v
 	if v then drawMonsterESP() Notify("怪物透视已开启") else clearMonsterESP() Notify("怪物透视已关闭") end
 end})
-ESPGroup:AddToggle("TeammateESP",{ Text="透视队友 (白色)", Default=false, Callback=function(v)
+
+ESPGroup:AddToggle("TeammateESP",{ Text="透视队友 白色", Default=false, Callback=function(v)
 	teammateESPEnabled = v
 	if v then drawTeammateESP() Notify("队友透视已开启") else clearTeammateESP() Notify("队友透视已关闭") end
 end})
-ESPGroup:AddToggle("ElevatorESP",{ Text="透视电梯 (绿色)", Default=false, Callback=function(v)
+
+ESPGroup:AddToggle("ElevatorESP",{ Text="透视电梯 绿色", Default=false, Callback=function(v)
 	elevatorESPEnabled = v
 	if v then drawElevatorESP() Notify("电梯透视已开启") else clearElevatorESP() Notify("电梯透视已关闭") end
 end})
+
+ESPGroup:AddToggle("ESPOutline",{ Text="显示轮廓", Default=true, Callback=function(v)
+	espOutlineEnabled = v
+	if espEnabled then
+		clearESP()
+		drawESP()
+	end
+	Notify("轮廓显示：" .. (v and "开" or "关"))
+end})
+
+ESPGroup:AddSlider("OutlineThickness",{ Text="轮廓厚度", Default=0.3, Min=0.1, Max=1.5, Rounding=1, Suffix="", Callback=function(v)
+	espOutlineThickness = v
+	if espEnabled and espOutlineEnabled then
+		drawESP()
+	end
+	Notify("轮廓厚度已设为 " .. string.format("%.1f", v))
+end})
+
+ESPGroup:AddColorPicker("OutlineColor",{ Text="轮廓颜色", Default=Color3.new(0,1,0), Callback=function(color)
+	espOutlineColor = color
+	if espEnabled and espOutlineEnabled then
+		drawESP()
+	end
+	Notify("轮廓颜色已更新")
+end})
+
 ESPGroup:AddSlider("MinPrice",{ Text="最低价格过滤", Default=0, Min=0, Max=1000, Rounding=0, Suffix="$", Callback=function(v)
 	minPrice = v
 	if espEnabled then drawESP() end
-	-- 取消价格过滤通知
 end})
 
 local SettingsGroup = Tabs.Settings:AddLeftGroupbox("全局设置")
