@@ -34,21 +34,24 @@ local function Notify(msg)
     Library:Notify(msg, 3)
 end
 
--- 原有变量
 local actionSpeedActive = false
 local eatMultiplyActive = false
 local eatMultiplier = 2
 local desiredWalkSpeed = 16
 
--- 新功能开关变量
 local SmoothFollowEnabled = false
 local AimbotEnabled = false
 local LockViewEnabled = false
 local CrosshairEnabled = false
 local CrosshairSpinEnabled = false
 local AimbotRadius = math.floor(workspace.CurrentCamera.ViewportSize.Y / 3)
+local predictionTime = 0
+local aimSmoothness = 0.5
 
--- 自瞄圆圈（直接放CoreGui，保证显示）
+local lockTargetEnabled = false
+local lockedPlayer = nil
+local currentTarget = nil
+
 local AimbotCircle = Instance.new("Frame")
 AimbotCircle.Name = "AimbotCircle"
 AimbotCircle.Parent = game:GetService("CoreGui")
@@ -65,7 +68,6 @@ local circleCorner = Instance.new("UICorner")
 circleCorner.CornerRadius = UDim.new(1,0)
 circleCorner.Parent = AimbotCircle
 
--- 准星UI
 local CrosshairGui = Instance.new("ScreenGui")
 CrosshairGui.Name = "CrosshairGui"
 CrosshairGui.Parent = game.Players.LocalPlayer.PlayerGui
@@ -104,14 +106,12 @@ local dotCorner = Instance.new("UICorner")
 dotCorner.CornerRadius = UDim.new(1,0)
 dotCorner.Parent = dot
 
--- 功能逻辑
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
--- 平滑跟随
 RunService.Heartbeat:Connect(function()
     if not SmoothFollowEnabled then return end
     local myChar = LocalPlayer.Character
@@ -136,7 +136,6 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- 视角锁定
 RunService:BindToRenderStep("LockView", Enum.RenderPriority.Camera.Value + 1, function()
     if not LockViewEnabled then return end
     local char = LocalPlayer.Character
@@ -150,10 +149,10 @@ RunService:BindToRenderStep("LockView", Enum.RenderPriority.Camera.Value + 1, fu
     end
 end)
 
--- 自瞄逻辑
 RunService.RenderStepped:Connect(function()
     if not AimbotEnabled then
         AimbotCircle.Visible = false
+        currentTarget = nil
         return
     end
     AimbotCircle.Visible = true
@@ -161,8 +160,25 @@ RunService.RenderStepped:Connect(function()
     AimbotCircle.Position = UDim2.new(0.5, -AimbotRadius, 0.5, -AimbotRadius)
 
     local camPos = Camera.CFrame.Position
+
+    if lockTargetEnabled then
+        if lockedPlayer and lockedPlayer.Character and lockedPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local targetPos = lockedPlayer.Character.HumanoidRootPart.Position
+            local predictedPos = targetPos + lockedPlayer.Character.HumanoidRootPart.Velocity * predictionTime
+            local dir = (predictedPos - camPos).Unit
+            local lerpAlpha = 1 / (1 + aimSmoothness * 9)
+            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(camPos, camPos + dir), lerpAlpha)
+            return
+        else
+            lockedPlayer = nil
+            lockTargetEnabled = false
+            Notify("锁定目标已失效，锁定已解除")
+        end
+    end
+
     local closestDist = math.huge
     local closestPlayer = nil
+    local closestVelocity = Vector3.zero
     for _, p in ipairs(Players:GetPlayers()) do
         if p == LocalPlayer then continue end
         local char = p.Character
@@ -176,19 +192,22 @@ RunService.RenderStepped:Connect(function()
                     if realDist < closestDist then
                         closestDist = realDist
                         closestPlayer = p
+                        closestVelocity = char.HumanoidRootPart.Velocity
                     end
                 end
             end
         end
     end
+    currentTarget = closestPlayer
     if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local targetPos = closestPlayer.Character.HumanoidRootPart.Position
-        local dir = (targetPos - camPos).Unit
-        Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(camPos, camPos + dir), 0.2)
+        local predictedPos = targetPos + closestVelocity * predictionTime
+        local dir = (predictedPos - camPos).Unit
+        local lerpAlpha = 1 / (1 + aimSmoothness * 9)
+        Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(camPos, camPos + dir), lerpAlpha)
     end
 end)
 
--- 准星旋转
 RunService.Heartbeat:Connect(function()
     if CrosshairEnabled and CrosshairSpinEnabled then
         CrosshairFrame.Rotation = (CrosshairFrame.Rotation + 1) % 360
@@ -198,7 +217,6 @@ RunService.Heartbeat:Connect(function()
     CrosshairFrame.Visible = CrosshairEnabled
 end)
 
--- 原脚本动作加速循环
 task.spawn(function()
     while true do
         if actionSpeedActive then
@@ -216,7 +234,6 @@ task.spawn(function()
     end
 end)
 
--- 吃倍数 Hook
 local function hookEatEvents()
     local replicatedStorage = game:GetService("ReplicatedStorage")
     local function scanAndHook(container)
@@ -247,7 +264,6 @@ local function hookEatEvents()
 end
 hookEatEvents()
 
--- 飞行脚本
 local function loadFlightScript()
     local success, err = pcall(function()
         local main = Instance.new("ScreenGui")
@@ -542,7 +558,6 @@ local function loadFlightScript()
     end
 end
 
--- 持续更新移动速度
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -556,7 +571,62 @@ task.spawn(function()
     end
 end)
 
--- 创建主窗口
+local autoFarmEnabled = false
+local autoSellEnabled = false
+local turnEatEnabled = false
+local grabDelay = 0.1
+local eatDelay = 0.2
+local loopDelay = 0.2
+local stepDistance = 3
+local stepDelay = 0.3
+local sellAfterLoops = 5
+
+local function autoFarmLoop()
+    local player = game:GetService("Players").LocalPlayer
+    local grabArgs = {false, false, false}
+    local currentLoops = 0
+    while autoFarmEnabled do
+        local character = player.Character
+        if character and character:FindFirstChild("Events") then
+            local events = character.Events
+            if events:FindFirstChild("Grab") then
+                events.Grab:FireServer(unpack(grabArgs))
+            end
+            task.wait(grabDelay)
+            if not autoFarmEnabled then break end
+            if events:FindFirstChild("Eat") then
+                for i = 1, 4 do
+                    if not autoFarmEnabled then break end
+                    events.Eat:FireServer()
+                    task.wait(eatDelay)
+                end
+            end
+            if not autoFarmEnabled then break end
+            currentLoops = currentLoops + 1
+            if autoSellEnabled and currentLoops >= sellAfterLoops then
+                if events:FindFirstChild("Sell") then
+                    events.Sell:FireServer()
+                end
+                currentLoops = 0
+            end
+            if not autoFarmEnabled then break end
+            local humanoid = character:FindFirstChild("Humanoid")
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            if humanoid and humanoid.Health > 0 and rootPart then
+                if turnEatEnabled then
+                    local randomAngle = math.rad(math.random(-90, 90))
+                    rootPart.CFrame = rootPart.CFrame * CFrame.Angles(0, randomAngle, 0)
+                end
+                local forwardDirection = rootPart.CFrame.LookVector
+                local targetPosition = rootPart.Position + (forwardDirection * stepDistance)
+                humanoid:MoveTo(targetPosition)
+                task.wait(stepDelay)
+            end
+        end
+        task.wait(loopDelay)
+    end
+end
+
 local Window = Library:CreateWindow({
     Title = "吃吃世界脚本",
     Footer = "By 恐拜大帝 | QQ:3999698324",
@@ -571,9 +641,9 @@ local Tabs = {
     Other = Window:AddTab("其他", "settings"),
 }
 
--- 主要标签页
 local LeftGroup = Tabs.Main:AddLeftGroupbox("功能控制")
 local RightGroup = Tabs.Main:AddRightGroupbox("特殊功能")
+local AutoGroup = Tabs.Main:AddLeftGroupbox("自动化挂机")
 
 LeftGroup:AddToggle('ActionSpeed', {
     Text = '动作加速（吃东西/搬起）',
@@ -626,13 +696,92 @@ LeftGroup:AddSlider('WalkSpeed', {
     end
 })
 
+AutoGroup:AddToggle('AutoFarm', {
+    Text = '自动挂机',
+    Default = false,
+    Callback = function(Value)
+        autoFarmEnabled = Value
+        if Value then
+            task.spawn(autoFarmLoop)
+            Notify("自动挂机已开启")
+        else
+            Notify("自动挂机已关闭")
+        end
+    end
+})
+
+AutoGroup:AddToggle('AutoSell', {
+    Text = '自动出售',
+    Default = false,
+    Callback = function(Value)
+        autoSellEnabled = Value
+        Notify("自动出售" .. (Value and "已开启" or "已关闭"))
+    end
+})
+
+AutoGroup:AddToggle('TurnEat', {
+    Text = '转弯吃',
+    Default = false,
+    Callback = function(Value)
+        turnEatEnabled = Value
+        Notify("转弯吃" .. (Value and "已开启" or "已关闭"))
+    end
+})
+
+AutoGroup:AddSlider('GrabDelay', {
+    Text = '抓取后等待',
+    Default = 0.1,
+    Min = 0.05,
+    Max = 1,
+    Rounding = 2,
+    Suffix = " 秒",
+    Callback = function(Value)
+        grabDelay = Value
+    end
+})
+
+AutoGroup:AddSlider('EatDelay', {
+    Text = '吃饭间隔',
+    Default = 0.2,
+    Min = 0.05,
+    Max = 1,
+    Rounding = 2,
+    Suffix = " 秒",
+    Callback = function(Value)
+        eatDelay = Value
+    end
+})
+
+AutoGroup:AddSlider('StepDistance', {
+    Text = '移动距离',
+    Default = 3,
+    Min = 1,
+    Max = 10,
+    Rounding = 0,
+    Suffix = " studs",
+    Callback = function(Value)
+        stepDistance = Value
+    end
+})
+
+AutoGroup:AddSlider('SellInterval', {
+    Text = '出售间隔(轮)',
+    Default = 5,
+    Min = 1,
+    Max = 20,
+    Rounding = 0,
+    Suffix = " 轮",
+    Callback = function(Value)
+        sellAfterLoops = Value
+    end
+})
+
 RightGroup:AddButton({
     Text = '召唤飞行脚本',
     Func = loadFlightScript,
     DoubleClick = false
 })
 
--- 视觉标签页
 local VisualLeft = Tabs.Visual:AddLeftGroupbox("自瞄设置")
 local VisualRight = Tabs.Visual:AddRightGroupbox("其他视觉")
 
@@ -643,6 +792,7 @@ VisualLeft:AddToggle('Aimbot', {
         AimbotEnabled = Value
         if not Value then
             AimbotCircle.Visible = false
+            currentTarget = nil
         end
         Notify("自瞄" .. (Value and "已开启" or "已关闭"))
     end
@@ -657,6 +807,49 @@ VisualLeft:AddSlider('AimbotRadius', {
     Suffix = " px",
     Callback = function(Value)
         AimbotRadius = Value
+    end
+})
+
+VisualLeft:AddSlider('Prediction', {
+    Text = '预判强度',
+    Default = 0,
+    Min = 0,
+    Max = 5,
+    Rounding = 1,
+    Suffix = " 秒",
+    Callback = function(Value)
+        predictionTime = Value
+    end
+})
+
+VisualLeft:AddSlider('Smoothness', {
+    Text = '平滑参数',
+    Default = 0.5,
+    Min = 0,
+    Max = 1,
+    Rounding = 2,
+    Callback = function(Value)
+        aimSmoothness = Value
+    end
+})
+
+VisualLeft:AddToggle('LockTarget', {
+    Text = '锁定模式',
+    Default = false,
+    Callback = function(Value)
+        lockTargetEnabled = Value
+        if Value then
+            if AimbotEnabled and currentTarget then
+                lockedPlayer = currentTarget
+                Notify("已锁定目标")
+            else
+                lockedPlayer = nil
+                Notify("没有可锁定的目标")
+            end
+        else
+            lockedPlayer = nil
+            Notify("锁定已取消")
+        end
     end
 })
 
@@ -699,7 +892,6 @@ VisualRight:AddToggle('CrosshairSpin', {
     end
 })
 
--- 其他标签页
 local OtherLeft = Tabs.Other:AddLeftGroupbox("杂项")
 OtherLeft:AddLabel("作者：恐拜大帝")
 OtherLeft:AddLabel("QQ：3999698324", true)
@@ -708,7 +900,6 @@ OtherLeft:AddButton({
     Func = function() Library:Unload() end
 })
 
--- 主题/保存管理器
 if ThemeManager then
     ThemeManager:SetLibrary(Library)
     ThemeManager:SetFolder("ChiChiWorld")
