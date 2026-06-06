@@ -8,7 +8,14 @@ local UserInputService = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
-local collectionService = game:GetService("CollectionService")
+local Camera = workspace.CurrentCamera
+
+local TEvent = require(ReplicatedStorage.Shared.Core.TEvent)
+local InteractiveItems = workspace.GameSystem.InteractiveItem
+local Value = require(ReplicatedStorage.Shared.Core.Value)
+local MonstersFolder = workspace.GameSystem.Monsters
+local NpcFolder = workspace.GameSystem.NPCModels
+local WorldLoots = workspace.GameSystem.Loots.World
 
 local function loadFlightScript()
 	local success, err = pcall(function()
@@ -24,15 +31,18 @@ local function loadFlightScript()
 		local closebutton = Instance.new("TextButton")
 		local mini = Instance.new("TextButton")
 		local mini2 = Instance.new("TextButton")
+
 		main.Name = "main"
 		main.Parent = LocalPlayer:WaitForChild("PlayerGui")
 		main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 		main.ResetOnSpawn = false
+
 		Frame.Parent = main
 		Frame.BackgroundColor3 = Color3.fromRGB(163, 255, 137)
 		Frame.BorderColor3 = Color3.fromRGB(103, 221, 213)
 		Frame.Position = UDim2.new(0.100320168, 0, 0.379746825, 0)
 		Frame.Size = UDim2.new(0, 190, 0, 57)
+
 		up.Name = "up"
 		up.Parent = Frame
 		up.BackgroundColor3 = Color3.fromRGB(79, 255, 152)
@@ -41,6 +51,7 @@ local function loadFlightScript()
 		up.Text = "上升"
 		up.TextColor3 = Color3.fromRGB(0, 0, 0)
 		up.TextSize = 14
+
 		down.Name = "down"
 		down.Parent = Frame
 		down.BackgroundColor3 = Color3.fromRGB(215, 255, 121)
@@ -50,6 +61,7 @@ local function loadFlightScript()
 		down.Text = "下落"
 		down.TextColor3 = Color3.fromRGB(0, 0, 0)
 		down.TextSize = 14
+
 		onof.Name = "onof"
 		onof.Parent = Frame
 		onof.BackgroundColor3 = Color3.fromRGB(255, 249, 74)
@@ -59,6 +71,7 @@ local function loadFlightScript()
 		onof.Text = "飞"
 		onof.TextColor3 = Color3.fromRGB(0, 0, 0)
 		onof.TextSize = 14
+
 		TextLabel.Parent = Frame
 		TextLabel.BackgroundColor3 = Color3.fromRGB(242, 60, 255)
 		TextLabel.Position = UDim2.new(0.469327301, 0, 0, 0)
@@ -69,6 +82,7 @@ local function loadFlightScript()
 		TextLabel.TextScaled = true
 		TextLabel.TextSize = 14
 		TextLabel.TextWrapped = true
+
 		plus.Name = "plus"
 		plus.Parent = Frame
 		plus.BackgroundColor3 = Color3.fromRGB(133, 145, 255)
@@ -80,6 +94,7 @@ local function loadFlightScript()
 		plus.TextScaled = true
 		plus.TextSize = 14
 		plus.TextWrapped = true
+
 		speed.Name = "speed"
 		speed.Parent = Frame
 		speed.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
@@ -91,6 +106,7 @@ local function loadFlightScript()
 		speed.TextScaled = true
 		speed.TextSize = 14
 		speed.TextWrapped = true
+
 		mine.Name = "mine"
 		mine.Parent = Frame
 		mine.BackgroundColor3 = Color3.fromRGB(123, 255, 247)
@@ -102,6 +118,7 @@ local function loadFlightScript()
 		mine.TextScaled = true
 		mine.TextSize = 14
 		mine.TextWrapped = true
+
 		closebutton.Name = "Close"
 		closebutton.Parent = Frame
 		closebutton.BackgroundColor3 = Color3.fromRGB(225, 25, 0)
@@ -110,6 +127,7 @@ local function loadFlightScript()
 		closebutton.Text = "X"
 		closebutton.TextSize = 30
 		closebutton.Position = UDim2.new(0, 0, -1, 27)
+
 		mini.Name = "minimize"
 		mini.Parent = Frame
 		mini.BackgroundColor3 = Color3.fromRGB(192, 150, 230)
@@ -118,6 +136,7 @@ local function loadFlightScript()
 		mini.Text = "-"
 		mini.TextSize = 40
 		mini.Position = UDim2.new(0, 44, -1, 27)
+
 		mini2.Name = "minimize2"
 		mini2.Parent = Frame
 		mini2.BackgroundColor3 = Color3.fromRGB(192, 150, 230)
@@ -127,26 +146,34 @@ local function loadFlightScript()
 		mini2.TextSize = 40
 		mini2.Position = UDim2.new(0, 44, 0, 30)
 		mini2.Visible = false
+
 		local speeds = 1
 		local speaker = LocalPlayer
 		local chr = speaker.Character
 		local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
 		local nowe = false
+
+		local Notify = function() end
+
 		Frame.Active = true
 		Frame.Draggable = true
+
 		closebutton.MouseButton1Click:Connect(function()
 			main:Destroy()
 		end)
+
 		up.MouseButton1Click:Connect(function()
 			if chr and chr:FindFirstChild("HumanoidRootPart") then
 				chr.HumanoidRootPart.CFrame = chr.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
 			end
 		end)
+
 		down.MouseButton1Click:Connect(function()
 			if chr and chr:FindFirstChild("HumanoidRootPart") then
 				chr.HumanoidRootPart.CFrame = chr.HumanoidRootPart.CFrame + Vector3.new(0, -3, 0)
 			end
 		end)
+
 		mini.MouseButton1Click:Connect(function()
 			up.Visible = false
 			down.Visible = false
@@ -160,6 +187,7 @@ local function loadFlightScript()
 			Frame.Size = UDim2.new(0, 100, 0, 28)
 			TextLabel.Position = UDim2.new(0, 0, 0, 0)
 		end)
+
 		mini2.MouseButton1Click:Connect(function()
 			up.Visible = true
 			down.Visible = true
@@ -173,10 +201,12 @@ local function loadFlightScript()
 			Frame.Size = UDim2.new(0, 190, 0, 57)
 			TextLabel.Position = UDim2.new(0.469327301, 0, 0, 0)
 		end)
+
 		plus.MouseButton1Click:Connect(function()
 			speeds = speeds + 1
 			speed.Text = tostring(speeds)
 		end)
+
 		mine.MouseButton1Click:Connect(function()
 			if speeds > 1 then
 				speeds = speeds - 1
@@ -188,10 +218,12 @@ local function loadFlightScript()
 				speeds = 1
 			end
 		end)
+
 		speaker.CharacterAdded:Connect(function(newChar)
 			chr = newChar
 			hum = chr:FindFirstChildOfClass("Humanoid")
 		end)
+
 		local function startFlight()
 			nowe = true
 			onof.Text = "飞"
@@ -209,6 +241,7 @@ local function loadFlightScript()
 					v:AdjustSpeed(0)
 				end
 			end
+
 			task.spawn(function()
 				while nowe and chr and hum do
 					RunService.Heartbeat:Wait()
@@ -217,6 +250,7 @@ local function loadFlightScript()
 					end
 				end
 			end)
+
 			local rootPart
 			if hum.RigType == Enum.HumanoidRigType.R6 then
 				rootPart = chr.Torso
@@ -231,9 +265,11 @@ local function loadFlightScript()
 				local bv = Instance.new("BodyVelocity", rootPart)
 				bv.Velocity = Vector3.new(0, 0, 0)
 				bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+
 				if nowe then
 					LocalPlayer.Character.Humanoid.PlatformStand = true
 				end
+
 				while nowe and LocalPlayer.Character.Humanoid.Health > 0 do
 					RunService.RenderStepped:Wait()
 					bg.CFrame = workspace.CurrentCamera.CoordinateFrame
@@ -244,6 +280,7 @@ local function loadFlightScript()
 				LocalPlayer.Character.Animate.Disabled = false
 			end
 		end
+
 		local function stopFlight()
 			nowe = false
 			onof.Text = "飞"
@@ -257,6 +294,7 @@ local function loadFlightScript()
 				chr.Animate.Disabled = false
 			end
 		end
+
 		onof.MouseButton1Click:Connect(function()
 			if not nowe then
 				startFlight()
@@ -265,6 +303,7 @@ local function loadFlightScript()
 			end
 		end)
 	end)
+
 	if not success then
 		warn("飞行脚本加载失败：" .. tostring(err))
 	end
@@ -361,278 +400,317 @@ local function stopAutoTranslate()
 	translateLoop = false
 end
 
-local espEnabled = false
-local espLabels = {}
-local minPrice = 0
-local espOutlineEnabled = true
-local espOutlineThickness = 0.3
+local function InteractWithItem(item)
+	if (item:IsA("Model") or item:IsA("Tool")) and item:HasTag("Interactable") and item:GetAttribute("en") then
+		TEvent.FireRemote("Interactable", item)
+	end
+end
 
-local containerESPEnabled = false
+local autoOpenEnabled = false
+local autoOpenConn = nil
 
-local monsterESPEnabled = false
-local monsterLabels = {}
+local function SetAutoOpen(state)
+	autoOpenEnabled = state
+	if state then
+		for _, item in pairs(InteractiveItems:GetChildren()) do
+			InteractWithItem(item)
+		end
+		autoOpenConn = InteractiveItems.ChildAdded:Connect(InteractWithItem)
+	else
+		if autoOpenConn then
+			autoOpenConn:Disconnect()
+			autoOpenConn = nil
+		end
+	end
+end
+
+local function ForceOpenAllContainersOnce()
+	for _, item in pairs(InteractiveItems:GetChildren()) do
+		InteractWithItem(item)
+	end
+end
+
+local infiniteStamina = false
+local staminaConnection = nil
+
+local function setInfiniteStamina(state)
+	infiniteStamina = state
+	if state then
+		for _, conn in pairs(getconnections(RunService.PreRender)) do
+			local src = debug.info(conn.Function, "s")
+			if src == "ReplicatedStorage.Client.System.Property.StaminaHandle" then
+				conn:Disconnect()
+			end
+		end
+		staminaConnection = RunService.PreRender:Connect(function()
+			if infiniteStamina then
+				Value.Stamina = 100
+			end
+		end)
+	else
+		if staminaConnection then
+			staminaConnection:Disconnect()
+			staminaConnection = nil
+		end
+	end
+end
+
+local function getColorByPrice(price)
+	if price <= 15 then return Color3.new(1, 1, 1)
+	elseif price <= 120 then return Color3.new(0, 1, 0)
+	elseif price <= 338 then return Color3.new(0, 0, 1)
+	elseif price <= 1000 then return Color3.new(0.5, 0, 0.5)
+	elseif price <= 10000 then return Color3.new(1, 0.84, 0)
+	else return Color3.new(1, 0, 0) end
+end
+
+local itemConfig = {
+	Enabled = false,
+	Tracer = false,
+	Name = true,
+	Distance = true,
+	Price = true,
+	MinPrice = 0
+}
+
+local ItemEspCache = {}
+local Tracers = {}
+local ItemChildrenCache = {}
+local ItemRenderConn = nil
+local ItemChildAddedConn = nil
+
+local function createTracer()
+	local line = Drawing.new("Line")
+	line.Thickness = 3
+	line.Transparency = 0.15
+	line.Visible = false
+	return line
+end
+
+local function getPriceColor(price)
+	if price >= 10000 then
+		return Color3.fromRGB(255, 215, 0)
+	elseif price >= 5000 then
+		return Color3.fromRGB(255, 165, 0)
+	elseif price >= 2000 then
+		return Color3.fromRGB(50, 205, 50)
+	elseif price >= 1000 then
+		return Color3.fromRGB(135, 206, 250)
+	else
+		return Color3.fromRGB(255, 255, 255)
+	end
+end
+
+local function createItemEsp(item)
+	local lootUI = item:FindFirstChild("LootUI", true)
+	if not lootUI then return end
+	local frame = lootUI:FindFirstChild("Frame")
+	if not frame then return end
+	local nameLbl = frame:FindFirstChild("ItemName")
+	local priceLbl = frame:FindFirstChild("Price")
+	if not nameLbl or not priceLbl then return end
+	local price = tonumber(priceLbl.Text:match("%d+")) or 0
+	if price < itemConfig.MinPrice then return end
+
+	local adornPart = item:FindFirstChildWhichIsA("BasePart", true)
+	if not adornPart then return end
+
+	local itemColor = getColorByPrice(price)
+
+	local highlight = Instance.new("Highlight")
+	highlight.FillColor = itemColor
+	highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+	highlight.FillTransparency = 0.5
+	highlight.OutlineTransparency = 0
+	highlight.Parent = item
+
+	local billboard = Instance.new("BillboardGui")
+	billboard.Adornee = adornPart
+	billboard.Size = UDim2.new(0, 150, 0, 50)
+	billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+	billboard.AlwaysOnTop = true
+	billboard.Parent = adornPart
+
+	local yPos = 0
+	local lineH = 0.33
+
+	local txtName = Instance.new("TextLabel")
+	txtName.Size = UDim2.new(1, 0, lineH, 0)
+	txtName.Position = UDim2.new(0, 0, yPos, 0)
+	txtName.BackgroundTransparency = 1
+	txtName.Text = nameLbl.Text
+	txtName.TextColor3 = itemColor
+	txtName.TextStrokeTransparency = 0
+	txtName.TextSize = 10
+	txtName.Font = Enum.Font.GothamBold
+	txtName.Visible = itemConfig.Name
+	txtName.Parent = billboard
+	if itemConfig.Name then yPos = yPos + lineH end
+
+	local txtPrice = Instance.new("TextLabel")
+	txtPrice.Size = UDim2.new(1, 0, lineH, 0)
+	txtPrice.Position = UDim2.new(0, 0, yPos, 0)
+	txtPrice.BackgroundTransparency = 1
+	txtPrice.Text = price .. "美元"
+	txtPrice.TextColor3 = itemColor
+	txtPrice.TextStrokeTransparency = 0
+	txtPrice.TextSize = 10
+	txtPrice.Font = Enum.Font.GothamBold
+	txtPrice.Visible = itemConfig.Price
+	txtPrice.Parent = billboard
+	if itemConfig.Price then yPos = yPos + lineH end
+
+	local txtDist = Instance.new("TextLabel")
+	txtDist.Size = UDim2.new(1, 0, lineH, 0)
+	txtDist.Position = UDim2.new(0, 0, yPos, 0)
+	txtDist.BackgroundTransparency = 1
+	txtDist.Text = "0m"
+	txtDist.TextColor3 = itemColor
+	txtDist.TextSize = 10
+	txtDist.Font = Enum.Font.Gotham
+	txtDist.Visible = itemConfig.Distance
+	txtDist.Parent = billboard
+
+	ItemEspCache[item] = {
+		highlight = highlight,
+		billboard = billboard,
+		txtName = txtName,
+		txtPrice = txtPrice,
+		txtDist = txtDist,
+		price = price
+	}
+end
+
+local function updateItemEsp()
+	local player = Players.LocalPlayer
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	local rootPos = root and root.Position
+	local cameraCFrame = Camera.CFrame
+	local cameraPos = cameraCFrame.Position
+	local viewportSize = Camera.ViewportSize
+
+	if #ItemChildrenCache == 0 then
+		for _, item in pairs(WorldLoots:GetChildren()) do
+			if item:IsA("Tool") or item:IsA("Model") then
+				table.insert(ItemChildrenCache, item)
+			end
+		end
+	end
+
+	for item, data in pairs(ItemEspCache) do
+		if not item.Parent or (data.price and data.price < itemConfig.MinPrice) then
+			if data.highlight then data.highlight:Destroy() end
+			if data.billboard then data.billboard:Destroy() end
+			ItemEspCache[item] = nil
+		else
+			if data.txtName then data.txtName.Visible = itemConfig.Name end
+			if data.txtPrice then data.txtPrice.Visible = itemConfig.Price end
+			if data.txtDist then
+				data.txtDist.Visible = itemConfig.Distance
+				if itemConfig.Distance and rootPos then
+					local part = item:FindFirstChildWhichIsA("BasePart", true)
+					if part then
+						local dist = (rootPos - part.Position).Magnitude
+						data.txtDist.Text = string.format("%.0fm", dist)
+					end
+				end
+			end
+		end
+	end
+
+	for i = #ItemChildrenCache, 1, -1 do
+		local item = ItemChildrenCache[i]
+		if not item.Parent then
+			table.remove(ItemChildrenCache, i)
+		elseif not ItemEspCache[item] then
+			createItemEsp(item)
+		end
+	end
+
+	for item, tracer in pairs(Tracers) do
+		if not item.Parent or not item:IsDescendantOf(workspace) then
+			tracer:Remove()
+			Tracers[item] = nil
+		else
+			local part = item:FindFirstChildWhichIsA("BasePart", true)
+			if part and itemConfig.Tracer then
+				local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+				if onScreen then
+					local diff = part.Position - cameraPos
+					local price = ItemEspCache[item] and ItemEspCache[item].price or 0
+					if price >= itemConfig.MinPrice then
+						local color = getPriceColor(price)
+						tracer.Color = color
+						tracer.From = Vector2.new(viewportSize.X / 2, viewportSize.Y)
+						tracer.To = Vector2.new(screenPos.X, screenPos.Y)
+						tracer.Visible = true
+					else
+						tracer.Visible = false
+					end
+				else
+					tracer.Visible = false
+				end
+			else
+				tracer.Visible = false
+			end
+		end
+	end
+end
+
+local function setItemEsp(state)
+	itemConfig.Enabled = state
+	if state then
+		table.clear(ItemChildrenCache)
+		for _, item in pairs(WorldLoots:GetChildren()) do
+			if (item:IsA("Tool") or item:IsA("Model")) and not Tracers[item] then
+				Tracers[item] = createTracer()
+			end
+		end
+		ItemChildAddedConn = WorldLoots.ChildAdded:Connect(function(item)
+			if item:IsA("Tool") or item:IsA("Model") then
+				table.insert(ItemChildrenCache, item)
+				if not Tracers[item] then
+					Tracers[item] = createTracer()
+				end
+			end
+		end)
+		WorldLoots.ChildRemoved:Connect(function(item)
+			for i = #ItemChildrenCache, 1, -1 do
+				if ItemChildrenCache[i] == item then
+					table.remove(ItemChildrenCache, i)
+					break
+				end
+			end
+		end)
+		ItemRenderConn = RunService.Heartbeat:Connect(updateItemEsp)
+	else
+		if ItemRenderConn then
+			ItemRenderConn:Disconnect()
+			ItemRenderConn = nil
+		end
+		if ItemChildAddedConn then
+			ItemChildAddedConn:Disconnect()
+			ItemChildAddedConn = nil
+		end
+		for _, data in pairs(ItemEspCache) do
+			if data.highlight then data.highlight:Destroy() end
+			if data.billboard then data.billboard:Destroy() end
+		end
+		for item, tracer in pairs(Tracers) do
+			tracer:Remove()
+		end
+		table.clear(ItemEspCache)
+		table.clear(Tracers)
+		table.clear(ItemChildrenCache)
+	end
+end
 
 local teammateESPEnabled = false
 local teammateLabels = {}
 
 local elevatorESPEnabled = false
 local elevatorLabels = {}
-
-local keywords = {
-	"chest", "crate", "barrel", "cabinet", "locker",
-	"box", "case", "wardrobe", "cupboard", "drawer",
-	"shelf", "rack", "bin", "basket", "trunk",
-	"container", "storage", "vault", "safe", "coffer",
-	"oilbarrel", "oil_barrel", "oil barrel", "woodencrate",
-	"wooden_crate", "wooden crate", "metalbox", "metal_box",
-	"metal box", "supplycrate", "supply_crate", "supply crate",
-	"ammobox", "ammo_box", "ammo box", "toolbox", "tool_box",
-	"tool box", "medkit", "firstaid", "first_aid", "first aid",
-	"backpack", "bag", "sack", "barrel_wood", "barrelwood",
-	"pollutedbarrel", "polluted_barrel", "polluted barrel",
-	"toxicbarrel", "toxic_barrel", "toxic barrel",
-	"wastebarrel", "waste_barrel", "waste barrel",
-	"oildrum", "oil_drum", "oil drum",
-	"waterbarrel", "water_barrel", "water barrel",
-	"explosivebarrel", "explosive_barrel", "explosive barrel",
-	"chemicalbarrel", "chemical_barrel", "chemical barrel",
-	"fuelbarrel", "fuel_barrel", "fuel barrel",
-	"drum", "bucket", "pail",
-	"refrigerator", "fridge", "icebox", "freezer", "cooler",
-	"冰箱", "冰柜", "冷藏柜", "冷冻柜", "冷藏箱", "冷冻箱",
-	"ice", "cool", "chill", "cold", "freeze",
-	"icecream", "ice_cream", "ice cream",
-}
-
-local taggedNames = {
-	"Container", "Chest", "Crate", "Barrel", "Cabinet",
-	"Locker", "Box", "Case", "Wardrobe", "Cupboard",
-	"Drawer", "Shelf", "Rack", "Bin", "Basket",
-	"Trunk", "Storage", "Vault", "Safe", "Coffer",
-	"SupplyCrate", "AmmoBox", "ToolBox", "MedKit",
-	"FirstAid", "Backpack", "Bag", "Sack",
-	"Refrigerator", "Fridge", "Icebox", "Freezer", "Cooler",
-	"冰箱", "冰柜", "冷藏柜", "冷冻柜",
-}
-
-local chineseMap = {
-	chest = "箱子", crate = "板条箱", barrel = "桶", cabinet = "柜子", locker = "储物柜",
-	box = "盒子", case = "箱子", wardrobe = "衣柜", cupboard = "碗柜", drawer = "抽屉",
-	shelf = "架子", rack = "架子", bin = "垃圾桶", basket = "篮子", trunk = "箱子",
-	container = "容器", storage = "储物箱", vault = "保险库", safe = "保险箱", coffer = "保险箱",
-	oilbarrel = "油桶", oil_barrel = "油桶", woodencrate = "木箱", wooden_crate = "木箱",
-	metalbox = "金属盒", metal_box = "金属盒", supplycrate = "补给箱", supply_crate = "补给箱",
-	ammobox = "弹药箱", ammo_box = "弹药箱", toolbox = "工具箱", tool_box = "工具箱",
-	medkit = "医疗包", firstaid = "急救包", first_aid = "急救包", backpack = "背包", bag = "袋子",
-	sack = "麻袋", barrel_wood = "木桶", barrelwood = "木桶",
-	pollutedbarrel = "污染桶", polluted_barrel = "污染桶",
-	toxicbarrel = "毒桶", toxic_barrel = "毒桶",
-	wastebarrel = "废料桶", waste_barrel = "废料桶",
-	oildrum = "油桶", oil_drum = "油桶",
-	waterbarrel = "水桶", water_barrel = "水桶",
-	explosivebarrel = "爆炸桶", explosive_barrel = "爆炸桶",
-	chemicalbarrel = "化学桶", chemical_barrel = "化学桶",
-	fuelbarrel = "燃料桶", fuel_barrel = "燃料桶",
-	drum = "圆桶", bucket = "水桶", pail = "桶",
-	refrigerator = "冰箱", fridge = "冰箱", icebox = "冰箱", freezer = "冰柜", cooler = "冷藏箱",
-	ice = "冰柜", cool = "冷藏", chill = "冷藏", cold = "冷冻", freeze = "冷冻",
-	icecream = "冰柜", ice_cream = "冰柜",
-	["冰箱"] = "冰箱", ["冰柜"] = "冰柜", ["冷藏柜"] = "冷藏柜", ["冷冻柜"] = "冷冻柜",
-	["冷藏箱"] = "冷藏箱", ["冷冻箱"] = "冷冻箱",
-}
-
-local highlightData = {}
-local containerScanConnection = nil
-
-local function matchesKeywords(name)
-	local lower = name:lower()
-	for _, kw in ipairs(keywords) do
-		if lower == kw or lower:find(kw, 1, true) then
-			return true
-		end
-	end
-	return false
-end
-
-local function hasTag(instance)
-	for _, tag in ipairs(taggedNames) do
-		if collectionService:HasTag(instance, tag) then
-			return true
-		end
-	end
-	return false
-end
-
-local function isContainer(instance)
-	if not instance:IsA("BasePart") and not instance:IsA("Model") then
-		return false
-	end
-	if hasTag(instance) then
-		return true
-	end
-	if instance:IsA("Model") then
-		local humanoid = instance:FindFirstChildOfClass("Humanoid")
-		if humanoid then
-			return false
-		end
-	end
-	local name = instance.Name
-	if matchesKeywords(name) then
-		return true
-	end
-	if instance:IsA("Model") then
-		local primary = instance.PrimaryPart
-		if primary and matchesKeywords(primary.Name) then
-			return true
-		end
-		for _, child in ipairs(instance:GetChildren()) do
-			if child:IsA("BasePart") and matchesKeywords(child.Name) then
-				return true
-			end
-		end
-	end
-	return false
-end
-
-local function getChineseName(instance)
-	local clean = instance.Name:lower():gsub("[ _%-]", "")
-	if chineseMap[clean] then
-		return chineseMap[clean]
-	end
-	if chineseMap[instance.Name] then
-		return chineseMap[instance.Name]
-	end
-	for kw, cn in pairs(chineseMap) do
-		if clean:find(kw:gsub("[ _%-]", ""), 1, true) then
-			return cn
-		end
-	end
-	for _, tag in ipairs(taggedNames) do
-		if collectionService:HasTag(instance, tag) then
-			local cleanTag = tag:lower()
-			if chineseMap[cleanTag] then
-				return chineseMap[cleanTag]
-			end
-		end
-	end
-	return "容器"
-end
-
-local function createHighlightAndLabel(container)
-	if highlightData[container] then
-		return
-	end
-	local adornee
-	if container:IsA("BasePart") then
-		adornee = container
-	elseif container:IsA("Model") then
-		adornee = container.PrimaryPart or container:FindFirstChildOfClass("BasePart")
-	end
-	if not adornee then
-		return
-	end
-
-	local chineseName = getChineseName(container)
-
-	local billboard = Instance.new("BillboardGui")
-	billboard.Name = "ContainerLabel"
-	billboard.Adornee = adornee
-	billboard.Size = UDim2.new(0, 120, 0, 30)
-	billboard.StudsOffset = Vector3.new(0, adornee.Size.Y / 2 + 1, 0)
-	billboard.AlwaysOnTop = true
-	billboard.MaxDistance = 400
-	billboard.Enabled = containerESPEnabled
-
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(1, 0, 1, 0)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.TextColor3 = Color3.new(1, 1, 0)
-	nameLabel.Text = chineseName
-	nameLabel.Font = Enum.Font.SourceSansBold
-	nameLabel.TextSize = 16
-	nameLabel.TextStrokeTransparency = 0.5
-	nameLabel.Parent = billboard
-	billboard.Parent = adornee
-
-	local highlight = nil
-	if espOutlineEnabled then
-		highlight = Instance.new("Highlight")
-		highlight.Name = "ContainerHighlight"
-		highlight.Adornee = container
-		highlight.FillTransparency = 1
-		highlight.OutlineColor = Color3.fromRGB(138, 43, 226)
-		highlight.OutlineTransparency = 0
-		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		highlight.Enabled = containerESPEnabled
-		highlight.Parent = container
-	end
-
-	highlightData[container] = {
-		billboard = billboard,
-		highlight = highlight
-	}
-end
-
-local function removeHighlightAndLabel(container)
-	local data = highlightData[container]
-	if data then
-		data.billboard:Destroy()
-		if data.highlight then
-			data.highlight:Destroy()
-		end
-		highlightData[container] = nil
-	end
-end
-
-local function scanAndUpdateContainers()
-	local seen = {}
-	for _, obj in ipairs(Workspace:GetDescendants()) do
-		if isContainer(obj) then
-			createHighlightAndLabel(obj)
-			seen[obj] = true
-		end
-	end
-	for obj, _ in pairs(highlightData) do
-		if not seen[obj] then
-			removeHighlightAndLabel(obj)
-		end
-	end
-end
-
-local function startContainerHighlights()
-	containerESPEnabled = true
-	scanAndUpdateContainers()
-	if not containerScanConnection then
-		containerScanConnection = RunService.Heartbeat:Connect(function()
-			if containerESPEnabled then
-				scanAndUpdateContainers()
-			end
-		end)
-	end
-end
-
-local function stopContainerHighlights()
-	containerESPEnabled = false
-	if containerScanConnection then
-		containerScanConnection:Disconnect()
-		containerScanConnection = nil
-	end
-	for obj, _ in pairs(highlightData) do
-		removeHighlightAndLabel(obj)
-	end
-end
-
-local function drawContainerESP()
-	if containerESPEnabled then
-		startContainerHighlights()
-	else
-		stopContainerHighlights()
-	end
-end
-
-local function clearContainerESP()
-	stopContainerHighlights()
-end
 
 local elevatorKeywords = {"elevator", "lift", "电梯", "升降梯", "エレベーター", "엘리베이터", "ascenseur", "aufzug", "elevador", "лифт"}
 
@@ -645,85 +723,11 @@ local function isElevator(obj)
 	return false
 end
 
-local function isMonster(obj)
-	if not obj:IsA("Model") then return false end
-	local hum = obj:FindFirstChildOfClass("Humanoid")
-	if not hum or hum.Health <= 0 then return false end
-	return Players:GetPlayerFromCharacter(obj) == nil
-end
-
 local function isTeammate(obj)
 	if not obj:IsA("Model") then return false end
 	if obj == LocalPlayer.Character then return false end
 	local player = Players:GetPlayerFromCharacter(obj)
 	return player ~= nil and player ~= LocalPlayer
-end
-
-local function getColorByPrice(price)
-	if price <= 15 then return Color3.new(1, 1, 1)
-	elseif price <= 120 then return Color3.new(0, 1, 0)
-	elseif price <= 338 then return Color3.new(0, 0, 1)
-	elseif price <= 1000 then return Color3.new(0.5, 0, 0.5)
-	elseif price <= 10000 then return Color3.new(1, 0.84, 0)
-	else return Color3.new(1, 0, 0) end
-end
-
-local function parsePriceFromTexts(obj)
-	local function scanTexts(parent)
-		for _, child in ipairs(parent:GetDescendants()) do
-			if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then
-				local text = child.Text
-				if text then
-					local price = text:match("%$(%d+)") or text:match("(%d+)%s*%$")
-					if price then return tonumber(price) end
-				end
-			end
-		end
-		return nil
-	end
-	local price = scanTexts(obj)
-	if price then return price end
-	if obj:IsA("Model") then price = scanTexts(obj) end
-	return price
-end
-
-local priceKeywords = {
-	"price", "cost", "value", "価格", "가격", "价格", "prix", "preis", "precio",
-	"costo", "ราคา", "giá", "harga", "cena", "Цена",
-}
-
-local function getItemPrice(obj)
-	local textPrice = parsePriceFromTexts(obj)
-	if textPrice then return textPrice end
-	local found = 0
-	for _, child in ipairs(obj:GetChildren()) do
-		local nameLower = child.Name:lower()
-		for _, kw in ipairs(priceKeywords) do
-			if nameLower:find(kw) then
-				if child:IsA("IntValue") or child:IsA("NumberValue") then
-					found = math.max(found, child.Value)
-				elseif child:IsA("StringValue") then
-					local num = tonumber(child.Value)
-					if num then found = math.max(found, num) end
-				end
-			end
-		end
-	end
-	return found
-end
-
-local function isItemOrContainer(obj)
-	if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") then return false end
-	for _, p in pairs(Players:GetPlayers()) do
-		if obj == p.Character or obj:FindFirstAncestor(p.Name) then return false end
-	end
-	if obj:FindFirstAncestorOfClass("Model") and obj:FindFirstAncestorOfClass("Model"):FindFirstChildOfClass("Humanoid") then
-		return false
-	end
-	return obj:FindFirstChild("Item", true) or obj:FindFirstChild("Pickup", true) or
-		obj:FindFirstChild("Handle", true) or obj:FindFirstChild("Package", true) or
-		obj:FindFirstChild("Collectable", true) or obj:FindFirstChild("Container", true) or
-		obj:FindFirstChild("Box", true)
 end
 
 local function getTargetPart(obj)
@@ -738,101 +742,511 @@ local function getTargetPart(obj)
 	return obj
 end
 
-local function isNearElevator(pos)
-	for _, part in ipairs(Workspace:GetDescendants()) do
-		if part:IsA("BasePart") then
-			local nameLower = part.Name:lower()
-			for _, kw in ipairs(elevatorKeywords) do
-				if nameLower:find(kw) and (part.Position - pos).Magnitude < 10 then
-					return true
+local function clearTeammateESP()
+	for _, v in pairs(teammateLabels) do pcall(function() v:Destroy() end) end
+	teammateLabels = {}
+end
+
+local function clearElevatorESP()
+	for _, v in pairs(elevatorLabels) do pcall(function() v:Destroy() end) end
+	elevatorLabels = {}
+end
+
+local containerEspCache = {}
+local containerChildrenCache = {}
+local containerConfig = { Enabled = false, Box = true, Name = true, Distance = true }
+
+local function getContainerName(model)
+	local name = model.Name
+	local nameLower = name:lower()
+	if nameLower:find("fridge") or nameLower:find("freezer") or nameLower:find("冰箱") or nameLower:find("冰柜") or nameLower:find("冷藏") or nameLower:find("холодильник") or nameLower:find("frigor") or nameLower:find("kühlschrank") or nameLower:find("frigo") then
+		return "冰箱/冰柜"
+	elseif nameLower:find("cabinet") or nameLower:find("drawer") or nameLower:find("cupboard") or nameLower:find("wardrobe") or nameLower:find("closet") or nameLower:find("柜") or nameLower:find("橱") or nameLower:find("衣柜") or nameLower:find("schrank") or nameLower:find("armadio") or nameLower:find("placard") or nameLower:find("armario") then
+		return "柜子"
+	elseif nameLower:find("box") or nameLower:find("crate") or nameLower:find("chest") or nameLower:find("箱") or nameLower:find("盒子") or nameLower:find("木箱") or nameLower:find("铁箱") or nameLower:find("caja") or nameLower:find("boîte") or nameLower:find("kiste") or nameLower:find("scatola") then
+		return "箱子"
+	elseif nameLower:find("barrel") or nameLower:find("drum") or nameLower:find("canister") or nameLower:find("桶") or nameLower:find("油桶") or nameLower:find("水桶") or nameLower:find("fass") or nameLower:find("barril") or nameLower:find("tonneau") then
+		return "桶"
+	elseif nameLower:find("shelf") or nameLower:find("rack") or nameLower:find("架") or nameLower:find("estante") or nameLower:find("étagère") or nameLower:find("regal") then
+		return "架子"
+	elseif nameLower:find("container") or nameLower:find("容器") or nameLower:find("コンテナ") or nameLower:find("контейнер") then
+		return "容器"
+	elseif nameLower:find("safe") or nameLower:find("金库") or nameLower:find("保险") or nameLower:find("cassaforte") or nameLower:find("cofre") then
+		return "保险箱"
+	end
+
+	if string.match(name, "[\228-\233]") then
+		return name
+	end
+
+	local translated = translateText(name)
+	return translated or name
+end
+
+local function createContainerEsp(model)
+	for _, existing in ipairs(model:GetChildren()) do
+		if existing:IsA("BillboardGui") then
+			existing:Destroy()
+		end
+	end
+	for _, existing in ipairs(model:GetChildren()) do
+		if existing:IsA("Highlight") then
+			existing:Destroy()
+		end
+	end
+
+	local root = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)
+	if not root then return end
+
+	local highlight = Instance.new("Highlight")
+	highlight.FillColor = Color3.fromRGB(255, 255, 0)
+	highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+	highlight.FillTransparency = 0.6
+	highlight.OutlineTransparency = 0
+	highlight.Enabled = containerConfig.Box
+	highlight.Parent = model
+
+	local billboard = Instance.new("BillboardGui")
+	billboard.Adornee = root
+	billboard.Size = UDim2.new(0, 150, 0, 50)
+	billboard.StudsOffset = Vector3.new(0, 3, 0)
+	billboard.AlwaysOnTop = true
+	billboard.Parent = root
+
+	local txtName = Instance.new("TextLabel")
+	txtName.Size = UDim2.new(1, 0, 0.5, 0)
+	txtName.BackgroundTransparency = 1
+	txtName.Text = getContainerName(model)
+	txtName.TextColor3 = Color3.fromRGB(255, 255, 0)
+	txtName.TextStrokeTransparency = 0
+	txtName.TextSize = 12
+	txtName.Font = Enum.Font.GothamBold
+	txtName.Visible = containerConfig.Name
+	txtName.Parent = billboard
+
+	local txtDist = Instance.new("TextLabel")
+	txtDist.Size = UDim2.new(1, 0, 0.5, 0)
+	txtDist.Position = UDim2.new(0, 0, 0.5, 0)
+	txtDist.BackgroundTransparency = 1
+	txtDist.Text = "0m"
+	txtDist.TextColor3 = Color3.fromRGB(255, 255, 0)
+	txtDist.TextSize = 10
+	txtDist.Font = Enum.Font.Gotham
+	txtDist.Visible = containerConfig.Distance
+	txtDist.Parent = billboard
+
+	containerEspCache[model] = {
+		highlight = highlight,
+		billboard = billboard,
+		txtName = txtName,
+		txtDist = txtDist
+	}
+end
+
+local function updateContainerEsp()
+	local player = Players.LocalPlayer
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	local rootPos = root and root.Position
+
+	if #containerChildrenCache == 0 then
+		for _, obj in pairs(InteractiveItems:GetChildren()) do
+			if obj:IsA("Model") or obj:IsA("Tool") then
+				table.insert(containerChildrenCache, obj)
+			end
+		end
+	end
+
+	for i = #containerChildrenCache, 1, -1 do
+		local obj = containerChildrenCache[i]
+		if not obj.Parent then
+			table.remove(containerChildrenCache, i)
+		elseif not containerEspCache[obj] then
+			createContainerEsp(obj)
+		end
+	end
+
+	for model, data in pairs(containerEspCache) do
+		if not model.Parent then
+			if data.highlight then data.highlight:Destroy() end
+			if data.billboard then data.billboard:Destroy() end
+			containerEspCache[model] = nil
+		else
+			if data.highlight then
+				data.highlight.Enabled = containerConfig.Box
+			end
+			if data.txtName then
+				data.txtName.Visible = containerConfig.Name
+			end
+			if data.txtDist then
+				data.txtDist.Visible = containerConfig.Distance
+				if containerConfig.Distance and rootPos then
+					local part = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)
+					if part then
+						local dist = (rootPos - part.Position).Magnitude
+						data.txtDist.Text = string.format("%.0fm", dist)
+					end
 				end
 			end
 		end
 	end
-	return false
 end
 
-local function clearESP()
-	for _, v in pairs(espLabels) do
-		pcall(function() v:Destroy() end)
-	end
-	espLabels = {}
-end
+local containerRenderConn = nil
+local containerChildAddedConn = nil
 
-local function drawESP()
-	clearESP()
-	if not espEnabled then return end
-	for _, v in pairs(Workspace:GetDescendants()) do
-		pcall(function()
-			if not isItemOrContainer(v) then return end
-			local price = getItemPrice(v)
-			if price < minPrice then return end
-			local target = getTargetPart(v)
-			if isNearElevator(target.Position) then return end
-			local displayText = "$" .. price
-			local color = getColorByPrice(price)
-			local bill = Instance.new("BillboardGui")
-			bill.Adornee = target
-			bill.AlwaysOnTop = true
-			bill.Size = UDim2.new(0, 120, 0, 30)
-			bill.Parent = target
-			local txt = Instance.new("TextLabel")
-			txt.Parent = bill
-			txt.Size = UDim2.new(1, 0, 1, 0)
-			txt.BackgroundTransparency = 1
-			txt.TextColor3 = color
-			txt.TextScaled = true
-			txt.Text = displayText
-			txt.Font = Enum.Font.SourceSansBold
-			table.insert(espLabels, bill)
-
-			if espOutlineEnabled then
-				local hr = Instance.new("Highlight")
-				hr.Adornee = target
-				hr.Parent = target
-				hr.FillTransparency = 1
-				hr.OutlineColor = color
-				hr.OutlineTransparency = 0
-				hr.OutlineThickness = espOutlineThickness
-				hr.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-				table.insert(espLabels, hr)
+local function setContainerEsp(state)
+	containerConfig.Enabled = state
+	if state then
+		table.clear(containerChildrenCache)
+		containerChildAddedConn = InteractiveItems.ChildAdded:Connect(function(obj)
+			if obj:IsA("Model") or obj:IsA("Tool") then
+				table.insert(containerChildrenCache, obj)
 			end
 		end)
-	end
-end
-
-local function clearMonsterESP()
-	for _, v in pairs(monsterLabels) do pcall(function() v:Destroy() end) end
-	monsterLabels = {}
-end
-
-local function drawMonsterESP()
-	clearMonsterESP()
-	if not monsterESPEnabled then return end
-	local handledModels = {}
-	for _, v in pairs(Workspace:GetDescendants()) do
-		pcall(function()
-			if not isMonster(v) then return end
-			local target = getTargetPart(v)
-			local model = v:IsA("Model") and v or v:FindFirstAncestorOfClass("Model")
-			if model and handledModels[model] then return end
-			if model then handledModels[model] = true end
-			local hr = Instance.new("Highlight")
-			hr.Adornee = target
-			hr.Parent = target
-			hr.FillColor = Color3.new(1, 0, 0)
-			hr.OutlineColor = Color3.new(1, 0, 0)
-			hr.FillTransparency = 0.7
-			hr.OutlineTransparency = 0
-			hr.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-			table.insert(monsterLabels, hr)
+		InteractiveItems.ChildRemoved:Connect(function(obj)
+			for i = #containerChildrenCache, 1, -1 do
+				if containerChildrenCache[i] == obj then
+					table.remove(containerChildrenCache, i)
+					break
+				end
+			end
 		end)
+		containerRenderConn = RunService.Heartbeat:Connect(updateContainerEsp)
+	else
+		if containerRenderConn then
+			containerRenderConn:Disconnect()
+			containerRenderConn = nil
+		end
+		if containerChildAddedConn then
+			containerChildAddedConn:Disconnect()
+			containerChildAddedConn = nil
+		end
+		for _, data in pairs(containerEspCache) do
+			if data.highlight then data.highlight:Destroy() end
+			if data.billboard then data.billboard:Destroy() end
+		end
+		table.clear(containerEspCache)
+		table.clear(containerChildrenCache)
 	end
 end
 
-local function clearTeammateESP()
-	for _, v in pairs(teammateLabels) do pcall(function() v:Destroy() end) end
-	teammateLabels = {}
+local monsterEspCache = {}
+local monsterChildrenCache = {}
+local monsterConfig = { Enabled = false, Box = true, Name = true, Distance = true }
+
+local function getMonsterName(model)
+	if model:FindFirstChild("BZ") and model:FindFirstChild("CBZ") and model:FindFirstChild("CBY") then
+		return "火鸡"
+	elseif model:FindFirstChild("none") and model:FindFirstChild("Y0") then
+		return "坑虫"
+	elseif model:FindFirstChild("Head") and model.Head:FindFirstChild("LayerCount") then
+		return "模仿者"
+	elseif model:FindFirstChild("1C1") and model:FindFirstChild("Door") then
+		return "假冰箱"
+	elseif model:FindFirstChild("LeLower_Leg") and model:FindFirstChild("HumanoidRootPart") then
+		return "行走食物"
+	elseif model:FindFirstChild("Waist1") and model:FindFirstChild("AnimSaves") then
+		return "遗忘者"
+	elseif model:FindFirstChild("Bubble") and model:FindFirstChild("Mouth") then
+		return "鳄鱼"
+	elseif model:FindFirstChild("Tail") and model:FindFirstChild("WB2") then
+		return "猫"
+	elseif model:FindFirstChild("WB1") and model:FindFirstChild("YER") then
+		return "偷袭鼠"
+	elseif model:FindFirstChild("FullFace") and model:FindFirstChild("hat") then
+		return "Guest666"
+	end
+	return model.Name
+end
+
+local function createMonsterEsp(model)
+	local root = model.PrimaryPart or model:FindFirstChild("HumanoidRootPart", true) or model:FindFirstChildWhichIsA("BasePart", true)
+	if not root then return end
+
+	local highlight = Instance.new("Highlight")
+	highlight.FillColor = Color3.fromRGB(255, 0, 0)
+	highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+	highlight.FillTransparency = 0.6
+	highlight.OutlineTransparency = 0
+	highlight.Enabled = monsterConfig.Box
+	highlight.Parent = model
+
+	local billboard = Instance.new("BillboardGui")
+	billboard.Adornee = root
+	billboard.Size = UDim2.new(0, 150, 0, 50)
+	billboard.StudsOffset = Vector3.new(0, 3, 0)
+	billboard.AlwaysOnTop = true
+	billboard.Parent = root
+
+	local txtName = Instance.new("TextLabel")
+	txtName.Size = UDim2.new(1, 0, 0.5, 0)
+	txtName.BackgroundTransparency = 1
+	txtName.Text = getMonsterName(model)
+	txtName.TextColor3 = Color3.fromRGB(255, 0, 0)
+	txtName.TextStrokeTransparency = 0
+	txtName.TextSize = 12
+	txtName.Font = Enum.Font.GothamBold
+	txtName.Visible = monsterConfig.Name
+	txtName.Parent = billboard
+
+	local txtDist = Instance.new("TextLabel")
+	txtDist.Size = UDim2.new(1, 0, 0.5, 0)
+	txtDist.Position = UDim2.new(0, 0, 0.5, 0)
+	txtDist.BackgroundTransparency = 1
+	txtDist.Text = "0m"
+	txtDist.TextColor3 = Color3.fromRGB(255, 0, 0)
+	txtDist.TextSize = 10
+	txtDist.Font = Enum.Font.Gotham
+	txtDist.Visible = monsterConfig.Distance
+	txtDist.Parent = billboard
+
+	monsterEspCache[model] = {
+		highlight = highlight,
+		billboard = billboard,
+		txtName = txtName,
+		txtDist = txtDist
+	}
+end
+
+local function updateMonsterEsp()
+	local player = Players.LocalPlayer
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	local rootPos = root and root.Position
+
+	if #monsterChildrenCache == 0 then
+		for _, m in pairs(MonstersFolder:GetChildren()) do
+			if m:IsA("Model") then
+				table.insert(monsterChildrenCache, m)
+			end
+		end
+	end
+
+	for i = #monsterChildrenCache, 1, -1 do
+		local m = monsterChildrenCache[i]
+		if not m.Parent then
+			table.remove(monsterChildrenCache, i)
+		elseif not monsterEspCache[m] then
+			createMonsterEsp(m)
+		end
+	end
+
+	for model, data in pairs(monsterEspCache) do
+		if not model.Parent then
+			if data.highlight then data.highlight:Destroy() end
+			if data.billboard then data.billboard:Destroy() end
+			monsterEspCache[model] = nil
+		else
+			if data.highlight then
+				data.highlight.Enabled = monsterConfig.Box
+			end
+			if data.txtName then
+				data.txtName.Visible = monsterConfig.Name
+			end
+			if data.txtDist then
+				data.txtDist.Visible = monsterConfig.Distance
+				if monsterConfig.Distance and rootPos then
+					local part = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)
+					if part then
+						local dist = (rootPos - part.Position).Magnitude
+						data.txtDist.Text = string.format("%.0fm", dist)
+					end
+				end
+			end
+		end
+	end
+end
+
+local monsterRenderConn = nil
+local monsterChildAddedConn = nil
+
+local function setMonsterEsp(state)
+	monsterConfig.Enabled = state
+	if state then
+		table.clear(monsterChildrenCache)
+		monsterChildAddedConn = MonstersFolder.ChildAdded:Connect(function(m)
+			if m:IsA("Model") then
+				table.insert(monsterChildrenCache, m)
+			end
+		end)
+		MonstersFolder.ChildRemoved:Connect(function(m)
+			for i = #monsterChildrenCache, 1, -1 do
+				if monsterChildrenCache[i] == m then
+					table.remove(monsterChildrenCache, i)
+					break
+				end
+			end
+		end)
+		monsterRenderConn = RunService.Heartbeat:Connect(updateMonsterEsp)
+	else
+		if monsterRenderConn then
+			monsterRenderConn:Disconnect()
+			monsterRenderConn = nil
+		end
+		if monsterChildAddedConn then
+			monsterChildAddedConn:Disconnect()
+			monsterChildAddedConn = nil
+		end
+		for _, data in pairs(monsterEspCache) do
+			if data.highlight then data.highlight:Destroy() end
+			if data.billboard then data.billboard:Destroy() end
+		end
+		table.clear(monsterEspCache)
+		table.clear(monsterChildrenCache)
+	end
+end
+
+local npcEspCache = {}
+local npcChildrenCache = {}
+local npcConfig = { Enabled = false, Box = true, Name = true, Distance = true }
+
+local function createNpcEsp(model)
+	for _, existing in ipairs(model:GetChildren()) do
+		if existing:IsA("BillboardGui") then
+			existing:Destroy()
+		end
+	end
+	for _, existing in ipairs(model:GetChildren()) do
+		if existing:IsA("Highlight") then
+			existing:Destroy()
+		end
+	end
+
+	local root = model.PrimaryPart or model:FindFirstChild("HumanoidRootPart", true) or model:FindFirstChildWhichIsA("BasePart", true)
+	if not root then return end
+
+	local highlight = Instance.new("Highlight")
+	highlight.FillColor = Color3.fromRGB(0, 255, 0)
+	highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+	highlight.FillTransparency = 0.6
+	highlight.OutlineTransparency = 0
+	highlight.Enabled = npcConfig.Box
+	highlight.Parent = model
+
+	local billboard = Instance.new("BillboardGui")
+	billboard.Adornee = root
+	billboard.Size = UDim2.new(0, 150, 0, 50)
+	billboard.StudsOffset = Vector3.new(0, 3, 0)
+	billboard.AlwaysOnTop = true
+	billboard.Parent = root
+
+	local txtName = Instance.new("TextLabel")
+	txtName.Size = UDim2.new(1, 0, 0.5, 0)
+	txtName.BackgroundTransparency = 1
+	txtName.Text = model.Name
+	txtName.TextColor3 = Color3.fromRGB(0, 255, 0)
+	txtName.TextStrokeTransparency = 0
+	txtName.TextSize = 12
+	txtName.Font = Enum.Font.GothamBold
+	txtName.Visible = npcConfig.Name
+	txtName.Parent = billboard
+
+	local txtDist = Instance.new("TextLabel")
+	txtDist.Size = UDim2.new(1, 0, 0.5, 0)
+	txtDist.Position = UDim2.new(0, 0, 0.5, 0)
+	txtDist.BackgroundTransparency = 1
+	txtDist.Text = "0m"
+	txtDist.TextColor3 = Color3.fromRGB(0, 255, 0)
+	txtDist.TextSize = 10
+	txtDist.Font = Enum.Font.Gotham
+	txtDist.Visible = npcConfig.Distance
+	txtDist.Parent = billboard
+
+	npcEspCache[model] = {
+		highlight = highlight,
+		billboard = billboard,
+		txtName = txtName,
+		txtDist = txtDist
+	}
+end
+
+local function updateNpcEsp()
+	local player = Players.LocalPlayer
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	local rootPos = root and root.Position
+
+	if #npcChildrenCache == 0 then
+		for _, npc in pairs(NpcFolder:GetChildren()) do
+			if npc:IsA("Model") then
+				table.insert(npcChildrenCache, npc)
+			end
+		end
+	end
+
+	for i = #npcChildrenCache, 1, -1 do
+		local npc = npcChildrenCache[i]
+		if not npc.Parent then
+			table.remove(npcChildrenCache, i)
+		elseif not npcEspCache[npc] then
+			createNpcEsp(npc)
+		end
+	end
+
+	for model, data in pairs(npcEspCache) do
+		if not model.Parent then
+			if data.highlight then data.highlight:Destroy() end
+			if data.billboard then data.billboard:Destroy() end
+			npcEspCache[model] = nil
+		else
+			if data.highlight then
+				data.highlight.Enabled = npcConfig.Box
+			end
+			if data.txtName then
+				data.txtName.Visible = npcConfig.Name
+			end
+			if data.txtDist then
+				data.txtDist.Visible = npcConfig.Distance
+				if npcConfig.Distance and rootPos then
+					local part = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)
+					if part then
+						local dist = (rootPos - part.Position).Magnitude
+						data.txtDist.Text = string.format("%.0fm", dist)
+					end
+				end
+			end
+		end
+	end
+end
+
+local npcRenderConn = nil
+local npcChildAddedConn = nil
+
+local function setNpcEsp(state)
+	npcConfig.Enabled = state
+	if state then
+		table.clear(npcChildrenCache)
+		npcChildAddedConn = NpcFolder.ChildAdded:Connect(function(npc)
+			if npc:IsA("Model") then
+				table.insert(npcChildrenCache, npc)
+			end
+		end)
+		NpcFolder.ChildRemoved:Connect(function(npc)
+			for i = #npcChildrenCache, 1, -1 do
+				if npcChildrenCache[i] == npc then
+					table.remove(npcChildrenCache, i)
+					break
+				end
+			end
+		end)
+		npcRenderConn = RunService.Heartbeat:Connect(updateNpcEsp)
+	else
+		if npcRenderConn then
+			npcRenderConn:Disconnect()
+			npcRenderConn = nil
+		end
+		if npcChildAddedConn then
+			npcChildAddedConn:Disconnect()
+			npcChildAddedConn = nil
+		end
+		for _, data in pairs(npcEspCache) do
+			if data.highlight then data.highlight:Destroy() end
+			if data.billboard then data.billboard:Destroy() end
+		end
+		table.clear(npcEspCache)
+		table.clear(npcChildrenCache)
+	end
 end
 
 local function drawTeammateESP()
@@ -857,11 +1271,6 @@ local function drawTeammateESP()
 			table.insert(teammateLabels, hr)
 		end)
 	end
-end
-
-local function clearElevatorESP()
-	for _, v in pairs(elevatorLabels) do pcall(function() v:Destroy() end) end
-	elevatorLabels = {}
 end
 
 local function drawElevatorESP()
@@ -890,19 +1299,9 @@ end
 
 local function startESPWatcher()
 	Workspace.DescendantAdded:Connect(function(obj)
-		if espEnabled and isItemOrContainer(obj) then drawESP() end
-		if monsterESPEnabled and isMonster(obj) then drawMonsterESP() end
 		if teammateESPEnabled and isTeammate(obj) then drawTeammateESP() end
 		if elevatorESPEnabled and isElevator(obj) then drawElevatorESP() end
 	end)
-end
-
-local function refreshAllESP()
-	if espEnabled then drawESP() end
-	if containerESPEnabled then drawContainerESP() end
-	if monsterESPEnabled then drawMonsterESP() end
-	if teammateESPEnabled then drawTeammateESP() end
-	if elevatorESPEnabled then drawElevatorESP() end
 end
 
 local killMovingActive = false
@@ -997,7 +1396,7 @@ end
 
 local function findNearestElevator(pos)
 	local nearest, minDist = nil, math.huge
-	for _, part in ipairs(Workspace:GetDescendants()) do
+	for _, part in pairs(Workspace:GetDescendants()) do
 		if part:IsA("BasePart") then
 			local nameLower = part.Name:lower()
 			for _, kw in ipairs(elevatorKeywords) do
@@ -1027,8 +1426,8 @@ local function gatherLootToElevator()
 	if not elevator then return end
 	for _, obj in pairs(Workspace:GetDescendants()) do
 		pcall(function()
-			if isItemOrContainer(obj) then
-				local primary = obj:IsA("Model") and obj.PrimaryPart or (obj:IsA("BasePart") and obj)
+			if obj:IsA("Model") and obj:FindFirstChild("LootUI") then
+				local primary = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
 				if primary then
 					primary.CFrame = CFrame.new(elevator.Position + Vector3.new(math.random(-2,2),2,math.random(-2,2)))
 				end
@@ -1040,7 +1439,7 @@ end
 local teleportedLoot = {}
 local function cleanupInvalidMarks()
 	for obj, _ in pairs(teleportedLoot) do
-		if not obj.Parent or not isItemOrContainer(obj) then teleportedLoot[obj] = nil end
+		if not obj.Parent or not obj:FindFirstChild("LootUI") then teleportedLoot[obj] = nil end
 	end
 end
 
@@ -1052,8 +1451,8 @@ local function teleportToNearestLoot()
 	local candidates = {}
 	for _, obj in pairs(Workspace:GetDescendants()) do
 		pcall(function()
-			if isItemOrContainer(obj) and not teleportedLoot[obj] then
-				local primary = obj:IsA("Model") and obj.PrimaryPart or (obj:IsA("BasePart") and obj)
+			if obj:IsA("Model") and obj:FindFirstChild("LootUI") and not teleportedLoot[obj] then
+				local primary = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
 				if primary then
 					table.insert(candidates, {obj=obj, primary=primary, dist=(primary.Position - hrp.Position).Magnitude})
 				end
@@ -1079,96 +1478,6 @@ local function teleportToNearestPlayer()
 		end
 	end
 	if nearest then hrp.CFrame = nearest.CFrame + Vector3.new(0,2,0) end
-end
-
-local remoteOpenActive = false
-local remoteOpenLoop
-
-local function forceOpenContainers()
-	for _, obj in pairs(Workspace:GetDescendants()) do
-		pcall(function()
-			if isContainer(obj) then
-				if obj:IsA("Model") then
-					for _, part in ipairs(obj:GetDescendants()) do
-						if part:IsA("BasePart") then
-							part.CanCollide = false
-							part.Transparency = math.max(part.Transparency, 0.5)
-						end
-						if part:IsA("ClickDetector") then part:FireClick(LocalPlayer) end
-						if part:IsA("ProximityPrompt") then
-							part.MaxActivationDistance = 500
-							part.RequiresLineOfSight = false
-							part:Prompt(LocalPlayer)
-							part:InputHoldBegin()
-							task.wait(0.1)
-							part:InputHoldEnd()
-						end
-					end
-					local openValue = obj:FindFirstChild("Open")
-					if openValue and openValue:IsA("BoolValue") then openValue.Value = true end
-					local lockedValue = obj:FindFirstChild("Locked")
-					if lockedValue and lockedValue:IsA("BoolValue") then lockedValue.Value = false end
-				elseif obj:IsA("BasePart") then
-					obj.CanCollide = false
-					obj.Transparency = 0.5
-					for _, child in ipairs(obj:GetDescendants()) do
-						if child:IsA("ClickDetector") then child:FireClick(LocalPlayer) end
-						if child:IsA("ProximityPrompt") then
-							child.MaxActivationDistance = 500
-							child.RequiresLineOfSight = false
-							child:Prompt(LocalPlayer)
-							child:InputHoldBegin()
-							task.wait(0.1)
-							child:InputHoldEnd()
-						end
-					end
-				end
-			end
-		end)
-	end
-end
-
-local function fireAllClickDetectors()
-	for _, obj in pairs(Workspace:GetDescendants()) do
-		pcall(function()
-			if obj:IsA("BasePart") then
-				for _, child in ipairs(obj:GetDescendants()) do
-					if child:IsA("ClickDetector") then child:FireClick(LocalPlayer) end
-					if child:IsA("ProximityPrompt") then
-						child:Prompt(LocalPlayer)
-						if child.RequiresLineOfSight == false then child:InputHoldBegin() end
-					end
-				end
-				if obj:FindFirstChild("Open") and obj.Open:IsA("BoolValue") then obj.Open.Value = true end
-			end
-			if obj:IsA("Model") then
-				for _, child in ipairs(obj:GetDescendants()) do
-					if child:IsA("ClickDetector") then child:FireClick(LocalPlayer) end
-					if child:IsA("ProximityPrompt") then
-						child:Prompt(LocalPlayer)
-						if child.RequiresLineOfSight == false then child:InputHoldBegin() end
-					end
-				end
-				if obj:FindFirstChild("Open") and obj.Open:IsA("BoolValue") then obj.Open.Value = true end
-			end
-		end)
-	end
-end
-
-local function toggleRemoteOpen(state)
-	remoteOpenActive = state
-	if state then
-		if remoteOpenLoop then task.cancel(remoteOpenLoop) end
-		remoteOpenLoop = task.spawn(function()
-			while remoteOpenActive do
-				fireAllClickDetectors()
-				forceOpenContainers()
-				task.wait(0.5)
-			end
-		end)
-	else
-		if remoteOpenLoop then task.cancel(remoteOpenLoop) remoteOpenLoop = nil end
-	end
 end
 
 local desiredWalkSpeed = 16
@@ -1450,7 +1759,7 @@ MainLeft:AddToggle("Freeze",{ Text="冻结怪物", Default=false, Callback=funct
 	toggleFreeze(v) Notify("冻结怪物: "..(v and "开启" or "关闭"))
 end})
 MainLeft:AddButton({ Text="一键开启所有容器", Func=function()
-	fireAllClickDetectors() forceOpenContainers() Notify("已尝试开启所有容器")
+	ForceOpenAllContainersOnce() Notify("已尝试开启所有容器")
 end, DoubleClick=false })
 MainLeft:AddButton({ Text="物资聚集到电梯", Func=function()
 	gatherLootToElevator() Notify("物资已聚集到电梯")
@@ -1467,7 +1776,10 @@ MainRight:AddButton({ Text="传送到最近玩家", Func=function()
 	teleportToNearestPlayer() Notify("已传送至最近玩家")
 end, DoubleClick=false })
 MainRight:AddToggle("RemoteOpen",{ Text="远程打开所有容器 (持续)", Default=false, Callback=function(v)
-	toggleRemoteOpen(v) Notify("远程打开容器: "..(v and "开启" or "关闭"))
+	SetAutoOpen(v) Notify("远程打开容器: "..(v and "开启" or "关闭"))
+end})
+MainRight:AddToggle("InfiniteStamina",{ Text="无限体力", Default=false, Callback=function(v)
+	setInfiniteStamina(v) Notify("无限体力: "..(v and "开启" or "关闭"))
 end})
 MainRight:AddSlider("WalkSpeed",{ Text="移动速度 (防回拉)", Default=16, Min=16, Max=100, Rounding=0, Suffix=" studs", Callback=function(v)
 	desiredWalkSpeed = v
@@ -1488,41 +1800,32 @@ end})
 MainRight:AddToggle("NoClip",{ Text="穿墙", Default=false, Callback=function(v) setNoClip(v) end})
 
 local ESPGroup = Tabs.ESP:AddLeftGroupbox("透视设置")
-ESPGroup:AddToggle("ESP",{ Text="透视物资 ", Default=false, Callback=function(v)
-	espEnabled = v
-	if v then drawESP() Notify("物资透视已开启") else clearESP() Notify("物资透视已关闭") end
+ESPGroup:AddToggle("ItemESP",{ Text="透视物资 (价格变色)", Default=false, Callback=function(v)
+	setItemEsp(v)
+	if v then Notify("物资透视已开启") else Notify("物资透视已关闭") end
 end})
-ESPGroup:AddToggle("ContainerESP",{ Text="透视容器", Default=false, Callback=function(v)
-	containerESPEnabled = v
-	if v then drawContainerESP() Notify("容器透视已开启") else clearContainerESP() Notify("容器透视已关闭") end
+ESPGroup:AddToggle("ContainerESP",{ Text="透视容器 (黄色)", Default=false, Callback=function(v)
+	setContainerEsp(v)
+	if v then Notify("容器透视已开启") else Notify("容器透视已关闭") end
 end})
-ESPGroup:AddToggle("MonsterESP",{ Text="透视怪物 ", Default=false, Callback=function(v)
-	monsterESPEnabled = v
-	if v then drawMonsterESP() Notify("怪物透视已开启") else clearMonsterESP() Notify("怪物透视已关闭") end
+ESPGroup:AddToggle("MonsterESP",{ Text="透视怪物 (红色)", Default=false, Callback=function(v)
+	setMonsterEsp(v)
+	if v then Notify("怪物透视已开启") else Notify("怪物透视已关闭") end
 end})
-ESPGroup:AddToggle("TeammateESP",{ Text="透视队友", Default=false, Callback=function(v)
+ESPGroup:AddToggle("NPCESP",{ Text="透视NPC (绿色)", Default=false, Callback=function(v)
+	setNpcEsp(v)
+	if v then Notify("NPC透视已开启") else Notify("NPC透视已关闭") end
+end})
+ESPGroup:AddToggle("TeammateESP",{ Text="透视队友 (白色)", Default=false, Callback=function(v)
 	teammateESPEnabled = v
 	if v then drawTeammateESP() Notify("队友透视已开启") else clearTeammateESP() Notify("队友透视已关闭") end
 end})
-ESPGroup:AddToggle("ElevatorESP",{ Text="透视电梯 ", Default=false, Callback=function(v)
+ESPGroup:AddToggle("ElevatorESP",{ Text="透视电梯 (绿色)", Default=false, Callback=function(v)
 	elevatorESPEnabled = v
 	if v then drawElevatorESP() Notify("电梯透视已开启") else clearElevatorESP() Notify("电梯透视已关闭") end
 end})
-ESPGroup:AddToggle("ESPOutline",{ Text="显示轮廓", Default=true, Callback=function(v)
-	espOutlineEnabled = v
-	if espEnabled then drawESP() end
-	if containerESPEnabled then
-		stopContainerHighlights()
-		startContainerHighlights()
-	end
-end})
-ESPGroup:AddSlider("OutlineThickness",{ Text="轮廓厚度", Default=0.3, Min=0.1, Max=1.5, Rounding=1, Suffix="", Callback=function(v)
-	espOutlineThickness = v
-	if espEnabled and espOutlineEnabled then drawESP() end
-end})
-ESPGroup:AddSlider("MinPrice",{ Text="最低价格过滤", Default=0, Min=0, Max=1000, Rounding=0, Suffix="$", Callback=function(v)
-	minPrice = v
-	if espEnabled then drawESP() end
+ESPGroup:AddSlider("MinPrice",{ Text="物资最低价格过滤", Default=0, Min=0, Max=5000, Rounding=1, Suffix="$", Callback=function(v)
+	itemConfig.MinPrice = v
 end})
 
 local SettingsGroup = Tabs.Settings:AddLeftGroupbox("全局设置")
