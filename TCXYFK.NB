@@ -123,14 +123,14 @@ end
 local Options = Library.Options
 
 local Window = Library:CreateWindow({
-    Title = "1",
+    Title = "踢出幸运方块脚本",
     Footer = "2",
     Icon = 131153193945220,
     NotifySide = "Right",
     ShowCustomCursor = true,
 })
 
-Library:Notify("找到按钮脚本 - 创作者：恐拜大帝", 5)
+Library:Notify("踢出幸运方块脚本 - 创作者：恐拜大帝", 5)
 
 local Tabs = {
     Notice = Window:AddTab("通知", "info"),
