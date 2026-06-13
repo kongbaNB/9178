@@ -1,34 +1,3 @@
-local Player = game:GetService("Players").LocalPlayer
-local TweenService = game:GetService("TweenService")
-
-local Gui = Instance.new("ScreenGui")
-Gui.Parent = Player.PlayerGui
-Gui.IgnoreGuiInset = true
-Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-local Image = Instance.new("ImageLabel")
-Image.Parent = Gui
-Image.Size = UDim2.new(1, 0, 1, 0)
-Image.Position = UDim2.new(0, 0, 0, 0)
-Image.BackgroundTransparency = 1
-Image.Image = "rbxassetid://113517588654522"
-Image.ScaleType = Enum.ScaleType.Stretch
-Image.ImageTransparency = 1
-Image.ZIndex = 99999
-
-local show = TweenService:Create(Image, TweenInfo.new(0.5), {ImageTransparency = 0})
-show:Play()
-task.wait(0.5)
-
-task.wait(1)
-
-local hide = TweenService:Create(Image, TweenInfo.new(0.5), {ImageTransparency = 1})
-hide:Play()
-task.wait(0.5)
-
-Gui:Destroy()
-
-print("动画全部结束，主脚本开始运行")
 local player = game:GetService("Players").LocalPlayer
 local plrId = player.UserId
 local filename = "script_count_" .. plrId .. ".txt"
