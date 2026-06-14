@@ -1938,4 +1938,4 @@ do
             if ScreenGui and ScreenGui.Parent then SpawnBean() else break end
         end
     end)
-endloadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/CS.NB"))()
+end
