@@ -121,15 +121,13 @@ local function claim()
 end
 
 local Options = Library.Options
-
 local Window = Library:CreateWindow({
     Title = "踢出幸运方块脚本",
-    Footer = "2",
+    Footer = "恐拜大帝制作",
     Icon = 131153193945220,
     NotifySide = "Right",
     ShowCustomCursor = true,
 })
-
 Library:Notify("踢出幸运方块脚本 - 创作者：恐拜大帝", 5)
 
 local Tabs = {
@@ -143,18 +141,23 @@ NoticeGroup:AddLabel('踢出幸运方块脚本')
 NoticeGroup:AddLabel('创作者：恐拜大帝')
 
 local SettingsGroup = Tabs.Settings:AddLeftGroupbox("菜单")
-SettingsGroup:AddButton({ Text = '卸载脚本', Func = function()
-    Library:Unload()
-end })
-SettingsGroup:AddButton({ Text = '重载界面', Func = function()
-    Library:Notify("重载功能未配置脚本地址", 3)
-end })
+SettingsGroup:AddButton({
+    Text = '卸载脚本',
+    Func = function()
+        Library:Unload()
+    end
+})
+SettingsGroup:AddButton({
+    Text = '重载界面',
+    Func = function()
+        Library:Notify("重载功能未配置脚本地址", 3)
+    end
+})
 SettingsGroup:AddLabel('菜单快捷键'):AddKeyPicker('MenuKeybind', {
     Default = 'RightShift',
     NoUI = true,
     Text = 'Menu keybind'
 })
-
 Library.ToggleKeybind = Options.MenuKeybind
 
 if ThemeManager then
@@ -162,7 +165,6 @@ if ThemeManager then
     ThemeManager:SetFolder("MyScriptTheme")
     ThemeManager:ApplyToTab(Tabs.Settings)
 end
-
 if SaveManager then
     SaveManager:SetLibrary(Library)
     SaveManager:IgnoreThemeSettings()
@@ -171,9 +173,12 @@ if SaveManager then
 end
 
 local KickGroup = Tabs.Main:AddLeftGroupbox("踢击")
-KickGroup:AddButton({ Text = '全力踢击', Func = function()
-    _kick()
-end })
+KickGroup:AddButton({
+    Text = '全力踢击',
+    Func = function()
+        _kick()
+    end
+})
 
 local autoKick = false
 KickGroup:AddToggle('AutoKick', {
@@ -182,8 +187,8 @@ KickGroup:AddToggle('AutoKick', {
     Callback = function(v)
         autoKick = v
         if not v then return end
-        task.spawn(function()
-            while task.wait(0.4) and autoKick do
+        spawn(function()
+            while wait(0.4) and autoKick do
                 if Handler.InGame then continue end
                 local hrp = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
                 if not hrp then continue end
@@ -197,9 +202,12 @@ KickGroup:AddToggle('AutoKick', {
 })
 
 local WaveGroup = Tabs.Main:AddRightGroupbox("跑到终点")
-WaveGroup:AddButton({ Text = '手动跑到终点', Func = function()
-    FollowWave()
-end })
+WaveGroup:AddButton({
+    Text = '手动跑到终点',
+    Func = function()
+        FollowWave()
+    end
+})
 
 local collecting = false
 if Handler.StatusChanged then
@@ -209,13 +217,15 @@ if Handler.StatusChanged then
         end
     end)
 end
-
 WaveGroup:AddToggle('AutoCollectWave', {
     Text = '自动跑到终点',
     Default = false,
     Callback = function(v)
         collecting = v
-        if not v and following then following:Disconnect(); following = nil end
+        if not v and following then
+            following:Disconnect()
+            following = nil
+        end
     end
 })
 
@@ -231,7 +241,10 @@ BonusGroup:AddToggle('AutoBonus', {
             end
             find()
         else
-            if WeightBonus then WeightBonus:Disconnect(); WeightBonus = nil end
+            if WeightBonus then
+                WeightBonus:Disconnect()
+                WeightBonus = nil
+            end
         end
     end
 })
@@ -241,8 +254,8 @@ MiscGroup:AddToggle('AutoRebirth', {
     Text = '自动转生',
     Default = false,
     Callback = function(v)
-        task.spawn(function()
-            while task.wait(6) do
+        spawn(function()
+            while wait(6) do
                 if not v then continue end
                 if Network and Network["rev_RebirthRequest"] then
                     Network["rev_RebirthRequest"]:FireServer()
@@ -251,7 +264,6 @@ MiscGroup:AddToggle('AutoRebirth', {
         end)
     end
 })
-
 MiscGroup:AddToggle('SpeedBoost', {
     Text = '移动加速',
     Default = false,
@@ -261,18 +273,42 @@ MiscGroup:AddToggle('SpeedBoost', {
         humanoid.WalkSpeed = v and humanoid.WalkSpeed * 2 or humanoid.WalkSpeed / 2
     end
 })
-
-MiscGroup:AddButton({ Text = '手动领取金币', Func = claim })
-
+MiscGroup:AddButton({
+    Text = '手动领取金币',
+    Func = claim
+})
 MiscGroup:AddToggle('AutoClaimGold', {
     Text = '自动领取金币',
     Default = false,
     Callback = function(v)
-        task.spawn(function()
-            while task.wait(6) do
+        spawn(function()
+            while wait(6) do
                 if not v then continue end
                 claim()
             end
         end)
+    end
+})
+
+local AntiAFKConnection
+MiscGroup:AddToggle('AntiAFK', {
+    Text = '防挂机踢出',
+    Default = false,
+    Callback = function(v)
+        if v then
+            if not AntiAFKConnection then
+                local vu = get(game:GetService("VirtualUser"))
+                AntiAFKConnection = lp.Idled:Connect(function()
+                    vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+                    wait(1)
+                    vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+                end)
+            end
+        else
+            if AntiAFKConnection then
+                AntiAFKConnection:Disconnect()
+                AntiAFKConnection = nil
+            end
+        end
     end
 })
