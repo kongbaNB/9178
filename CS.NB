@@ -825,13 +825,18 @@ local function loadLuGuan()
     end)
 end
 
--- 操人功能
+-- 操人功能（支持速度调节）
 local harassEnabled = false
 local harassTarget = nil
 local harassConnection = nil
+local harassSpeed = 5  -- 默认每秒切换5次
+local lastSwitchTime = 0
+local isBehind = true
 
 local function startHarass()
     if harassConnection then harassConnection:Disconnect() end
+    lastSwitchTime = tick()
+    isBehind = true
     harassConnection = RunService.Heartbeat:Connect(function()
         if not harassEnabled or not harassTarget or not harassTarget.Character then
             return
@@ -840,16 +845,22 @@ local function startHarass()
         if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
         local targetRoot = harassTarget.Character:FindFirstChild("HumanoidRootPart")
         if not targetRoot then return end
-        
+
+        local switchInterval = 1 / math.max(harassSpeed, 0.1)  -- 防止除以0，最快10次/秒
         local myRoot = myChar.HumanoidRootPart
         local targetPos = targetRoot.Position
         local targetLook = targetRoot.CFrame.LookVector
-        
+
         local behindPos = targetPos + targetLook * -2.5
         local onTargetPos = targetPos
-        
-        local t = tick() % 0.2
-        if t < 0.1 then
+
+        local now = tick()
+        if now - lastSwitchTime >= switchInterval then
+            lastSwitchTime = now
+            isBehind = not isBehind
+        end
+
+        if isBehind then
             myRoot.CFrame = CFrame.new(behindPos, behindPos + targetLook)
         else
             myRoot.CFrame = CFrame.new(onTargetPos, onTargetPos + targetLook)
@@ -1032,6 +1043,7 @@ do
     local speedPanel = nil
     local coordPanel = nil
     local aimbotPanel = nil
+    local harassSpeedPanel = nil  -- 操人速度面板
 
     local function copyToClipboard(text, label)
         local success = pcall(function()
@@ -1441,6 +1453,126 @@ do
         return aimbotPanel
     end
 
+    -- 操人速度面板
+    local function createHarassSpeedPanel()
+        if harassSpeedPanel then return harassSpeedPanel end
+        harassSpeedPanel = Instance.new("Frame")
+        harassSpeedPanel.Name = "HarassSpeedPanel"
+        harassSpeedPanel.Parent = Main
+        harassSpeedPanel.Size = UDim2.new(0, 250, 0, 160)
+        harassSpeedPanel.Position = UDim2.new(0.5, -125, 0.5, -80)
+        harassSpeedPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        harassSpeedPanel.BackgroundTransparency = 0.2
+        harassSpeedPanel.Visible = false
+        harassSpeedPanel.ZIndex = 200
+        local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = harassSpeedPanel
+        local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = harassSpeedPanel
+        local title = Instance.new("TextLabel")
+        title.Parent = harassSpeedPanel
+        title.Size = UDim2.new(1, 0, 0, 25)
+        title.Position = UDim2.new(0, 10, 0, 8)
+        title.BackgroundTransparency = 1
+        title.Text = "操人速度 (次/秒)"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.Font = Enum.Font.SourceSansBold
+        title.TextSize = 16
+        local slider = Instance.new("Frame")
+        slider.Parent = harassSpeedPanel
+        slider.Size = UDim2.new(1, -40, 0, 30)
+        slider.Position = UDim2.new(0, 20, 0, 45)
+        slider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        local sliderCorner = Instance.new("UICorner"); sliderCorner.CornerRadius = UDim.new(0, 6); sliderCorner.Parent = slider
+        local fill = Instance.new("Frame")
+        fill.Parent = slider
+        fill.Size = UDim2.new(0, 0, 1, 0)
+        fill.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        fill.BorderSizePixel = 0
+        local fillCorner = Instance.new("UICorner"); fillCorner.CornerRadius = UDim.new(0, 6); fillCorner.Parent = fill
+        local knob = Instance.new("TextButton")
+        knob.Parent = slider
+        knob.Size = UDim2.new(0, 20, 0, 20)
+        knob.Position = UDim2.new(0, -10, 0.5, -10)
+        knob.Text = ""
+        knob.BackgroundColor3 = Color3.new(1, 1, 1)
+        knob.AutoButtonColor = false
+        local knobCorner = Instance.new("UICorner"); knobCorner.CornerRadius = UDim.new(1, 0); knobCorner.Parent = knob
+        local minHarassSpeed, maxHarassSpeed = 1, 20
+        local currentHarassSpeed = harassSpeed
+        local function updateSliderDisplay(val)
+            local percent = (val - minHarassSpeed) / (maxHarassSpeed - minHarassSpeed)
+            fill.Size = UDim2.new(percent, 0, 1, 0)
+            knob.Position = UDim2.new(percent, -10, 0.5, -10)
+        end
+        local function setHarassSpeed(val)
+            val = math.clamp(math.floor(val), minHarassSpeed, maxHarassSpeed)
+            currentHarassSpeed = val
+            harassSpeed = val
+            updateSliderDisplay(val)
+        end
+        local confirmBtn = Instance.new("TextButton")
+        confirmBtn.Parent = harassSpeedPanel
+        confirmBtn.Size = UDim2.new(0, 80, 0, 28)
+        confirmBtn.Position = UDim2.new(0, 110, 0, 85)
+        confirmBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+        confirmBtn.Text = "确定"
+        confirmBtn.TextColor3 = Color3.new(1, 1, 1)
+        confirmBtn.Font = Enum.Font.SourceSansBold
+        confirmBtn.TextSize = 14
+        local confirmCorner = Instance.new("UICorner"); confirmCorner.CornerRadius = UDim.new(0, 6); confirmCorner.Parent = confirmBtn
+        confirmBtn.MouseButton1Click:Connect(function()
+            harassSpeed = currentHarassSpeed
+            harassSpeedPanel.Visible = false
+        end)
+        local resetBtn = Instance.new("TextButton")
+        resetBtn.Parent = harassSpeedPanel
+        resetBtn.Size = UDim2.new(0, 80, 0, 28)
+        resetBtn.Position = UDim2.new(0, 200, 0, 85)
+        resetBtn.BackgroundColor3 = Color3.fromRGB(180, 80, 0)
+        resetBtn.Text = "默认(5)"
+        resetBtn.TextColor3 = Color3.new(1, 1, 1)
+        resetBtn.Font = Enum.Font.SourceSansBold
+        resetBtn.TextSize = 14
+        local resetCorner = Instance.new("UICorner"); resetCorner.CornerRadius = UDim.new(0, 6); resetCorner.Parent = resetBtn
+        resetBtn.MouseButton1Click:Connect(function()
+            setHarassSpeed(5)
+            harassSpeedPanel.Visible = false
+        end)
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Parent = harassSpeedPanel
+        closeBtn.Size = UDim2.new(0, 22, 0, 22)
+        closeBtn.Position = UDim2.new(1, -26, 0, 6)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeBtn.Text = "X"
+        closeBtn.TextSize = 12
+        closeBtn.Font = Enum.Font.SourceSansBold
+        local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+        closeBtn.MouseButton1Click:Connect(function() harassSpeedPanel.Visible = false end)
+        local dragging = false
+        knob.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local mousePos = UserInputService:GetMouseLocation()
+                local sliderAbs = slider.AbsolutePosition
+                local sliderSize = slider.AbsoluteSize
+                local relativeX = math.clamp(mousePos.X - sliderAbs.X, 0, sliderSize.X)
+                local percent = relativeX / sliderSize.X
+                local newVal = math.floor(minHarassSpeed + (maxHarassSpeed - minHarassSpeed) * percent)
+                setHarassSpeed(newVal)
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = false
+            end
+        end)
+        updateSliderDisplay(5)
+        return harassSpeedPanel
+    end
+
     local function AddCat(i)
         local cat = Instance.new("TextButton")
         cat.Name = "Cat"..i
@@ -1626,6 +1758,7 @@ do
                 task.spawn(function() loadLuGuan() end)
             end)
             local harassBtn = addSemiTransparentButton(page, "操人", posX2, 4 + 5*rowHeight)
+            local harassSpeedBtn = addSemiTransparentButton(page, "操人速度", posX2, 4 + 6*rowHeight)
 
             -- 绑定事件
             aimbotBtn.MouseButton1Click:Connect(function()
@@ -1662,6 +1795,10 @@ do
                 else
                     showHarassSelect()
                 end
+            end)
+            harassSpeedBtn.MouseButton1Click:Connect(function()
+                local panel = createHarassSpeedPanel()
+                panel.Visible = not panel.Visible
             end)
             followNearestBtn.MouseButton1Click:Connect(function()
                 FollowNearestEnabled = not FollowNearestEnabled
@@ -1823,6 +1960,7 @@ do
             if speedPanel then speedPanel.Visible = false end
             if coordPanel then coordPanel.Visible = false end
             if aimbotPanel then aimbotPanel.Visible = false end
+            if harassSpeedPanel then harassSpeedPanel.Visible = false end
             page.Visible = true
         end)
         categories[i] = cat; pages[i] = page
