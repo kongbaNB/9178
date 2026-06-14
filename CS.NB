@@ -30,6 +30,7 @@ task.wait(0.5)
 
 Gui:Destroy()
 
+print("动画全部结束，主脚本开始运行")
 local player = game:GetService("Players").LocalPlayer
 local plrId = player.UserId
 local filename = "script_count_" .. plrId .. ".txt"
@@ -1076,6 +1077,7 @@ do
     elseif game:GetService("ClipboardService") then
       game:GetService("ClipboardService"):SetClipboard(text)
     else
+      error("无法访问剪贴板")
     end
   end)
   game:GetService("StarterGui"):SetCore("SendNotification", {
