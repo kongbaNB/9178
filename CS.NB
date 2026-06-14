@@ -1608,10 +1608,28 @@ do
             end
             local posX1, posX2 = 4, page.AbsoluteSize.X * 0.52
             local rowHeight = 45
+            -- 左列按钮
             local autoTranslateBtn = addSemiTransparentButton(page, "自动翻译：关", posX1, 4)
             local antiPushBtn = addSemiTransparentButton(page, "防甩飞：关", posX1, 4 + rowHeight)
             local coordBtn = addSemiTransparentButton(page, "查询坐标传送", posX1, 4 + 2*rowHeight)
             local aimbotBtn = addSemiTransparentButton(page, "自瞄：关", posX1, 4 + 3*rowHeight)
+            local lockViewBtn = addSemiTransparentButton(page, "锁定视角：关", posX1, 4 + 4*rowHeight)
+            -- 飞行控制（修复显示状态）
+            local flyControlBtn = addSemiTransparentButton(page, "飞行控制：关", posX1, 4 + 5*rowHeight)
+
+            -- 右列按钮
+            local teleportNearestBtn = addSemiTransparentButton(page, "传送最近玩家", posX2, 4)
+            local followNearestBtn = addSemiTransparentButton(page, "跟随最近玩家：关", posX2, 4 + rowHeight)
+            local teleportPlayerBtn = addSemiTransparentButton(page, "传送到指定玩家", posX2, 4 + 2*rowHeight)
+            local smoothFollowBtn = addSemiTransparentButton(page, "平滑跟随：关", posX2, 4 + 3*rowHeight)
+            addSemiTransparentButton(page, "撸管", posX2, 4 + 4*rowHeight, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "撸管", Text = "正在生成工具...", Duration = 3 })
+                task.spawn(function() loadLuGuan() end)
+            end)
+            -- 操人（移到右列使布局对称）
+            local harassBtn = addSemiTransparentButton(page, "操人", posX2, 4 + 5*rowHeight)
+
+            -- 绑定按钮事件
             aimbotBtn.MouseButton1Click:Connect(function()
                 AimbotEnabled = not AimbotEnabled
                 aimbotBtn.Text = AimbotEnabled and "自瞄：开" or "自瞄：关"
@@ -1624,15 +1642,11 @@ do
                 end
                 game:GetService("StarterGui"):SetCore("SendNotification", { Title = "自瞄", Text = AimbotEnabled and "已开启，请在面板中调整半径" or "已关闭", Duration = 3, })
             end)
-            local lockViewBtn = addSemiTransparentButton(page, "锁定视角：关", posX1, 4 + 4*rowHeight)
             lockViewBtn.MouseButton1Click:Connect(function()
                 LockViewEnabled = not LockViewEnabled
                 lockViewBtn.Text = LockViewEnabled and "锁定视角：开" or "锁定视角：关"
                 game:GetService("StarterGui"):SetCore("SendNotification", { Title = "锁定视角", Text = LockViewEnabled and "已开启" or "已关闭", Duration = 3 })
             end)
-
-            -- 飞行控制按钮（修复状态显示）
-            local flyControlBtn = addSemiTransparentButton(page, "飞行控制：关", posX1, 4 + 5*rowHeight)
             flyControlBtn.MouseButton1Click:Connect(function()
                 if flyUIVisible then
                     hideFlyUI()
@@ -1642,9 +1656,6 @@ do
                     flyControlBtn.Text = "飞行控制：开"
                 end
             end)
-
-            -- 操人按钮
-            local harassBtn = addSemiTransparentButton(page, "操人", posX1, 4 + 6*rowHeight)
             harassBtn.MouseButton1Click:Connect(function()
                 if harassEnabled then
                     stopHarass()
@@ -1654,11 +1665,6 @@ do
                     showHarassSelect()
                 end
             end)
-
-            local teleportNearestBtn = addSemiTransparentButton(page, "传送最近玩家", posX2, 4)
-            local followNearestBtn = addSemiTransparentButton(page, "跟随最近玩家：关", posX2, 4 + rowHeight)
-            local teleportPlayerBtn = addSemiTransparentButton(page, "传送到指定玩家", posX2, 4 + 2*rowHeight)
-            local smoothFollowBtn = addSemiTransparentButton(page, "平滑跟随：关", posX2, 4 + 3*rowHeight)
             followNearestBtn.MouseButton1Click:Connect(function()
                 FollowNearestEnabled = not FollowNearestEnabled
                 followNearestBtn.Text = FollowNearestEnabled and "跟随最近玩家：开" or "跟随最近玩家：关"
@@ -1668,10 +1674,6 @@ do
                 SmoothFollowEnabled = not SmoothFollowEnabled
                 smoothFollowBtn.Text = SmoothFollowEnabled and "平滑跟随：开" or "平滑跟随：关"
                 game:GetService("StarterGui"):SetCore("SendNotification", { Title = "平滑跟随", Text = SmoothFollowEnabled and "已开启" or "已关闭", Duration = 3 })
-            end)
-            addSemiTransparentButton(page, "撸管", posX2, 4 + 4*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "撸管", Text = "正在生成工具...", Duration = 3 })
-                task.spawn(function() loadLuGuan() end)
             end)
             autoTranslateBtn.MouseButton1Click:Connect(function()
                 AutoTranslateEnabled = not AutoTranslateEnabled
