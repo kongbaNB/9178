@@ -825,6 +825,143 @@ local function loadLuGuan()
     end)
 end
 
+-- 操人功能
+local harassEnabled = false
+local harassTarget = nil
+local harassConnection = nil
+
+local function startHarass()
+    if harassConnection then harassConnection:Disconnect() end
+    harassConnection = RunService.Heartbeat:Connect(function()
+        if not harassEnabled or not harassTarget or not harassTarget.Character then
+            return
+        end
+        local myChar = LocalPlayer.Character
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+        local targetRoot = harassTarget.Character:FindFirstChild("HumanoidRootPart")
+        if not targetRoot then return end
+        
+        local myRoot = myChar.HumanoidRootPart
+        local targetPos = targetRoot.Position
+        local behindPos = targetPos + targetRoot.CFrame.LookVector * -2.5
+        local frontPos = targetPos + targetRoot.CFrame.LookVector * 2.5
+        
+        -- 快速在前后切换
+        local t = tick() % 0.2
+        if t < 0.1 then
+            myRoot.CFrame = CFrame.new(behindPos)
+        else
+            myRoot.CFrame = CFrame.new(frontPos)
+        end
+    end)
+end
+
+local function stopHarass()
+    harassEnabled = false
+    harassTarget = nil
+    if harassConnection then
+        harassConnection:Disconnect()
+        harassConnection = nil
+    end
+end
+
+local function showHarassSelect()
+    if harassEnabled then return end -- 如果已经在运行则不重复打开
+    
+    local selectGui = Instance.new("ScreenGui")
+    selectGui.Name = "HarassSelect"
+    selectGui.Parent = LocalPlayer.PlayerGui
+    selectGui.IgnoreGuiInset = true
+    selectGui.ResetOnSpawn = false
+
+    local bg = Instance.new("Frame")
+    bg.Parent = selectGui
+    bg.Size = UDim2.new(0, 220, 0, 300)
+    bg.Position = UDim2.new(0.5, -110, 0.5, -150)
+    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
+
+    local title = Instance.new("TextLabel")
+    title.Parent = bg
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.BackgroundTransparency = 1
+    title.Text = "选择操人目标"
+    title.TextColor3 = Color3.new(1,1,1)
+    title.Font = Enum.Font.SourceSansBold
+    title.TextSize = 16
+
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Parent = bg
+    scrollFrame.Size = UDim2.new(1, -10, 1, -80)
+    scrollFrame.Position = UDim2.new(0, 5, 0, 35)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scrollFrame.ScrollBarThickness = 4
+
+    local playersList = Players:GetPlayers()
+    local y = 0
+    for _, p in ipairs(playersList) do
+        if p ~= LocalPlayer then
+            local btn = Instance.new("TextButton")
+            btn.Parent = scrollFrame
+            btn.Size = UDim2.new(1, -10, 0, 30)
+            btn.Position = UDim2.new(0, 5, 0, y)
+            btn.Text = p.Name
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            btn.TextColor3 = Color3.new(1,1,1)
+            btn.Font = Enum.Font.SourceSans
+            btn.TextSize = 14
+            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = btn
+            btn.MouseButton1Click:Connect(function()
+                harassTarget = p
+                harassEnabled = true
+                startHarass()
+                selectGui:Destroy()
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "操人",
+                    Text = "开始疯狂操 " .. p.Name .. "！",
+                    Duration = 3
+                })
+            end)
+            y = y + 35
+        end
+    end
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, y)
+
+    -- 取消操人按钮
+    local cancelBtn = Instance.new("TextButton")
+    cancelBtn.Parent = bg
+    cancelBtn.Size = UDim2.new(1, -20, 0, 30)
+    cancelBtn.Position = UDim2.new(0, 10, 1, -40)
+    cancelBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    cancelBtn.Text = "取消操人"
+    cancelBtn.TextColor3 = Color3.new(1,1,1)
+    cancelBtn.Font = Enum.Font.SourceSansBold
+    cancelBtn.TextSize = 14
+    local cancelCorner = Instance.new("UICorner"); cancelCorner.CornerRadius = UDim.new(0, 6); cancelCorner.Parent = cancelBtn
+    cancelBtn.MouseButton1Click:Connect(function()
+        stopHarass()
+        selectGui:Destroy()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "操人",
+            Text = "已取消操人",
+            Duration = 2
+        })
+    end)
+
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Parent = bg
+    closeBtn.Size = UDim2.new(0, 30, 0, 20)
+    closeBtn.Position = UDim2.new(1, -35, 0, 5)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeBtn.Text = "X"
+    closeBtn.TextColor3 = Color3.new(1,1,1)
+    closeBtn.Font = Enum.Font.SourceSansBold
+    closeBtn.TextSize = 14
+    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+    closeBtn.MouseButton1Click:Connect(function() selectGui:Destroy() end)
+end
+
 local UILibrary = {}
 do
     local PlayerGui = LocalPlayer.PlayerGui
@@ -1471,10 +1608,28 @@ do
             end
             local posX1, posX2 = 4, page.AbsoluteSize.X * 0.52
             local rowHeight = 45
+            -- 左列按钮
             local autoTranslateBtn = addSemiTransparentButton(page, "自动翻译：关", posX1, 4)
             local antiPushBtn = addSemiTransparentButton(page, "防甩飞：关", posX1, 4 + rowHeight)
             local coordBtn = addSemiTransparentButton(page, "查询坐标传送", posX1, 4 + 2*rowHeight)
             local aimbotBtn = addSemiTransparentButton(page, "自瞄：关", posX1, 4 + 3*rowHeight)
+            local lockViewBtn = addSemiTransparentButton(page, "锁定视角：关", posX1, 4 + 4*rowHeight)
+            -- 飞行控制（修复显示状态）
+            local flyControlBtn = addSemiTransparentButton(page, "飞行控制：关", posX1, 4 + 5*rowHeight)
+
+            -- 右列按钮
+            local teleportNearestBtn = addSemiTransparentButton(page, "传送最近玩家", posX2, 4)
+            local followNearestBtn = addSemiTransparentButton(page, "跟随最近玩家：关", posX2, 4 + rowHeight)
+            local teleportPlayerBtn = addSemiTransparentButton(page, "传送到指定玩家", posX2, 4 + 2*rowHeight)
+            local smoothFollowBtn = addSemiTransparentButton(page, "平滑跟随：关", posX2, 4 + 3*rowHeight)
+            addSemiTransparentButton(page, "撸管", posX2, 4 + 4*rowHeight, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "撸管", Text = "正在生成工具...", Duration = 3 })
+                task.spawn(function() loadLuGuan() end)
+            end)
+            -- 操人（移到右列使布局对称）
+            local harassBtn = addSemiTransparentButton(page, "操人", posX2, 4 + 5*rowHeight)
+
+            -- 绑定按钮事件
             aimbotBtn.MouseButton1Click:Connect(function()
                 AimbotEnabled = not AimbotEnabled
                 aimbotBtn.Text = AimbotEnabled and "自瞄：开" or "自瞄：关"
@@ -1487,25 +1642,29 @@ do
                 end
                 game:GetService("StarterGui"):SetCore("SendNotification", { Title = "自瞄", Text = AimbotEnabled and "已开启，请在面板中调整半径" or "已关闭", Duration = 3, })
             end)
-            local lockViewBtn = addSemiTransparentButton(page, "锁定视角：关", posX1, 4 + 4*rowHeight)
             lockViewBtn.MouseButton1Click:Connect(function()
                 LockViewEnabled = not LockViewEnabled
                 lockViewBtn.Text = LockViewEnabled and "锁定视角：开" or "锁定视角：关"
                 game:GetService("StarterGui"):SetCore("SendNotification", { Title = "锁定视角", Text = LockViewEnabled and "已开启" or "已关闭", Duration = 3 })
             end)
-            local flyControlBtn = addSemiTransparentButton(page, "飞行控制：关", posX1, 4 + 5*rowHeight, function()
+            flyControlBtn.MouseButton1Click:Connect(function()
                 if flyUIVisible then
                     hideFlyUI()
-                    flyControlBtn.Text = "无敌少侠飞（r15）：关"
+                    flyControlBtn.Text = "飞行控制：关"
                 else
                     showFlyUI()
-                    flyControlBtn.Text = "无敌少侠飞（r15）：开"
+                    flyControlBtn.Text = "飞行控制：开"
                 end
             end)
-            local teleportNearestBtn = addSemiTransparentButton(page, "传送最近玩家", posX2, 4)
-            local followNearestBtn = addSemiTransparentButton(page, "跟随最近玩家：关", posX2, 4 + rowHeight)
-            local teleportPlayerBtn = addSemiTransparentButton(page, "传送到指定玩家", posX2, 4 + 2*rowHeight)
-            local smoothFollowBtn = addSemiTransparentButton(page, "平滑跟随：关", posX2, 4 + 3*rowHeight)
+            harassBtn.MouseButton1Click:Connect(function()
+                if harassEnabled then
+                    stopHarass()
+                    harassBtn.Text = "操人"
+                    game:GetService("StarterGui"):SetCore("SendNotification", { Title = "操人", Text = "已停止", Duration = 2 })
+                else
+                    showHarassSelect()
+                end
+            end)
             followNearestBtn.MouseButton1Click:Connect(function()
                 FollowNearestEnabled = not FollowNearestEnabled
                 followNearestBtn.Text = FollowNearestEnabled and "跟随最近玩家：开" or "跟随最近玩家：关"
@@ -1515,10 +1674,6 @@ do
                 SmoothFollowEnabled = not SmoothFollowEnabled
                 smoothFollowBtn.Text = SmoothFollowEnabled and "平滑跟随：开" or "平滑跟随：关"
                 game:GetService("StarterGui"):SetCore("SendNotification", { Title = "平滑跟随", Text = SmoothFollowEnabled and "已开启" or "已关闭", Duration = 3 })
-            end)
-            addSemiTransparentButton(page, "撸管", posX2, 4 + 4*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "撸管", Text = "正在生成工具...", Duration = 3 })
-                task.spawn(function() loadLuGuan() end)
             end)
             autoTranslateBtn.MouseButton1Click:Connect(function()
                 AutoTranslateEnabled = not AutoTranslateEnabled
