@@ -118,6 +118,32 @@ local translateLoop = nil
 local translatedTexts = {}
 local speedAntiPull = nil
 
+-- 原地旋转变量
+local SpinEnabled = false
+local SpinSpeed = 30  -- 默认30度/秒
+local spinConnection = nil
+
+local function startSpin()
+    if spinConnection then spinConnection:Disconnect() end
+    spinConnection = RunService.Heartbeat:Connect(function(dt)
+        if not SpinEnabled then return end
+        local char = LocalPlayer.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        local root = char.HumanoidRootPart
+        local currentCF = root.CFrame
+        local newCF = currentCF * CFrame.Angles(0, math.rad(SpinSpeed * dt), 0)
+        root.CFrame = newCF
+    end)
+end
+
+local function stopSpin()
+    SpinEnabled = false
+    if spinConnection then
+        spinConnection:Disconnect()
+        spinConnection = nil
+    end
+end
+
 local AimbotCircle = Instance.new("Frame")
 AimbotCircle.Name = "AimbotCircle"
 AimbotCircle.Parent = CoreGui
@@ -846,7 +872,7 @@ local function startHarass()
         local targetRoot = harassTarget.Character:FindFirstChild("HumanoidRootPart")
         if not targetRoot then return end
 
-        local switchInterval = 1 / math.max(harassSpeed, 0.1)  -- 防止除以0，最快10次/秒
+        local switchInterval = 1 / math.max(harassSpeed, 0.1)
         local myRoot = myChar.HumanoidRootPart
         local targetPos = targetRoot.Position
         local targetLook = targetRoot.CFrame.LookVector
@@ -1043,7 +1069,8 @@ do
     local speedPanel = nil
     local coordPanel = nil
     local aimbotPanel = nil
-    local harassSpeedPanel = nil  -- 操人速度面板
+    local harassSpeedPanel = nil
+    local spinSpeedPanel = nil  -- 旋转速度面板
 
     local function copyToClipboard(text, label)
         local success = pcall(function()
@@ -1573,6 +1600,126 @@ do
         return harassSpeedPanel
     end
 
+    -- 旋转速度面板
+    local function createSpinSpeedPanel()
+        if spinSpeedPanel then return spinSpeedPanel end
+        spinSpeedPanel = Instance.new("Frame")
+        spinSpeedPanel.Name = "SpinSpeedPanel"
+        spinSpeedPanel.Parent = Main
+        spinSpeedPanel.Size = UDim2.new(0, 250, 0, 160)
+        spinSpeedPanel.Position = UDim2.new(0.5, -125, 0.5, -80)
+        spinSpeedPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        spinSpeedPanel.BackgroundTransparency = 0.2
+        spinSpeedPanel.Visible = false
+        spinSpeedPanel.ZIndex = 200
+        local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = spinSpeedPanel
+        local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = spinSpeedPanel
+        local title = Instance.new("TextLabel")
+        title.Parent = spinSpeedPanel
+        title.Size = UDim2.new(1, 0, 0, 25)
+        title.Position = UDim2.new(0, 10, 0, 8)
+        title.BackgroundTransparency = 1
+        title.Text = "旋转速度 (度/秒)"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.Font = Enum.Font.SourceSansBold
+        title.TextSize = 16
+        local slider = Instance.new("Frame")
+        slider.Parent = spinSpeedPanel
+        slider.Size = UDim2.new(1, -40, 0, 30)
+        slider.Position = UDim2.new(0, 20, 0, 45)
+        slider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        local sliderCorner = Instance.new("UICorner"); sliderCorner.CornerRadius = UDim.new(0, 6); sliderCorner.Parent = slider
+        local fill = Instance.new("Frame")
+        fill.Parent = slider
+        fill.Size = UDim2.new(0, 0, 1, 0)
+        fill.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        fill.BorderSizePixel = 0
+        local fillCorner = Instance.new("UICorner"); fillCorner.CornerRadius = UDim.new(0, 6); fillCorner.Parent = fill
+        local knob = Instance.new("TextButton")
+        knob.Parent = slider
+        knob.Size = UDim2.new(0, 20, 0, 20)
+        knob.Position = UDim2.new(0, -10, 0.5, -10)
+        knob.Text = ""
+        knob.BackgroundColor3 = Color3.new(1, 1, 1)
+        knob.AutoButtonColor = false
+        local knobCorner = Instance.new("UICorner"); knobCorner.CornerRadius = UDim.new(1, 0); knobCorner.Parent = knob
+        local minSpin, maxSpin = 1, 360
+        local currentSpin = SpinSpeed
+        local function updateSliderDisplay(val)
+            local percent = (val - minSpin) / (maxSpin - minSpin)
+            fill.Size = UDim2.new(percent, 0, 1, 0)
+            knob.Position = UDim2.new(percent, -10, 0.5, -10)
+        end
+        local function setSpinSpeed(val)
+            val = math.clamp(math.floor(val), minSpin, maxSpin)
+            currentSpin = val
+            SpinSpeed = val
+            updateSliderDisplay(val)
+        end
+        local confirmBtn = Instance.new("TextButton")
+        confirmBtn.Parent = spinSpeedPanel
+        confirmBtn.Size = UDim2.new(0, 80, 0, 28)
+        confirmBtn.Position = UDim2.new(0, 110, 0, 85)
+        confirmBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+        confirmBtn.Text = "确定"
+        confirmBtn.TextColor3 = Color3.new(1, 1, 1)
+        confirmBtn.Font = Enum.Font.SourceSansBold
+        confirmBtn.TextSize = 14
+        local confirmCorner = Instance.new("UICorner"); confirmCorner.CornerRadius = UDim.new(0, 6); confirmCorner.Parent = confirmBtn
+        confirmBtn.MouseButton1Click:Connect(function()
+            SpinSpeed = currentSpin
+            spinSpeedPanel.Visible = false
+        end)
+        local resetBtn = Instance.new("TextButton")
+        resetBtn.Parent = spinSpeedPanel
+        resetBtn.Size = UDim2.new(0, 80, 0, 28)
+        resetBtn.Position = UDim2.new(0, 200, 0, 85)
+        resetBtn.BackgroundColor3 = Color3.fromRGB(180, 80, 0)
+        resetBtn.Text = "默认(30)"
+        resetBtn.TextColor3 = Color3.new(1, 1, 1)
+        resetBtn.Font = Enum.Font.SourceSansBold
+        resetBtn.TextSize = 14
+        local resetCorner = Instance.new("UICorner"); resetCorner.CornerRadius = UDim.new(0, 6); resetCorner.Parent = resetBtn
+        resetBtn.MouseButton1Click:Connect(function()
+            setSpinSpeed(30)
+            spinSpeedPanel.Visible = false
+        end)
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Parent = spinSpeedPanel
+        closeBtn.Size = UDim2.new(0, 22, 0, 22)
+        closeBtn.Position = UDim2.new(1, -26, 0, 6)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeBtn.Text = "X"
+        closeBtn.TextSize = 12
+        closeBtn.Font = Enum.Font.SourceSansBold
+        local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+        closeBtn.MouseButton1Click:Connect(function() spinSpeedPanel.Visible = false end)
+        local dragging = false
+        knob.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local mousePos = UserInputService:GetMouseLocation()
+                local sliderAbs = slider.AbsolutePosition
+                local sliderSize = slider.AbsoluteSize
+                local relativeX = math.clamp(mousePos.X - sliderAbs.X, 0, sliderSize.X)
+                local percent = relativeX / sliderSize.X
+                local newVal = math.floor(minSpin + (maxSpin - minSpin) * percent)
+                setSpinSpeed(newVal)
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = false
+            end
+        end)
+        updateSliderDisplay(30)
+        return spinSpeedPanel
+    end
+
     local function AddCat(i)
         local cat = Instance.new("TextButton")
         cat.Name = "Cat"..i
@@ -1740,15 +1887,17 @@ do
             end
             local posX1, posX2 = 4, page.AbsoluteSize.X * 0.52
             local rowHeight = 45
-            -- 左列
+            -- 左列 8 个按钮
             local autoTranslateBtn = addSemiTransparentButton(page, "自动翻译：关", posX1, 4)
             local antiPushBtn = addSemiTransparentButton(page, "防甩飞：关", posX1, 4 + rowHeight)
             local coordBtn = addSemiTransparentButton(page, "查询坐标传送", posX1, 4 + 2*rowHeight)
             local aimbotBtn = addSemiTransparentButton(page, "自瞄：关", posX1, 4 + 3*rowHeight)
             local lockViewBtn = addSemiTransparentButton(page, "锁定视角：关", posX1, 4 + 4*rowHeight)
             local flyControlBtn = addSemiTransparentButton(page, "飞行控制：关", posX1, 4 + 5*rowHeight)
+            local spinBtn = addSemiTransparentButton(page, "原地旋转：关", posX1, 4 + 6*rowHeight)
+            local spinSpeedBtn = addSemiTransparentButton(page, "旋转速度", posX1, 4 + 7*rowHeight)
 
-            -- 右列
+            -- 右列 7 个按钮
             local teleportNearestBtn = addSemiTransparentButton(page, "传送最近玩家", posX2, 4)
             local followNearestBtn = addSemiTransparentButton(page, "跟随最近玩家：关", posX2, 4 + rowHeight)
             local teleportPlayerBtn = addSemiTransparentButton(page, "传送到指定玩家", posX2, 4 + 2*rowHeight)
@@ -1786,6 +1935,21 @@ do
                     showFlyUI()
                     flyControlBtn.Text = "飞行控制：开"
                 end
+            end)
+            -- 原地旋转开关
+            spinBtn.MouseButton1Click:Connect(function()
+                SpinEnabled = not SpinEnabled
+                spinBtn.Text = SpinEnabled and "原地旋转：开" or "原地旋转：关"
+                if SpinEnabled then
+                    startSpin()
+                else
+                    stopSpin()
+                end
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "原地旋转", Text = SpinEnabled and "已开启" or "已关闭", Duration = 3 })
+            end)
+            spinSpeedBtn.MouseButton1Click:Connect(function()
+                local panel = createSpinSpeedPanel()
+                panel.Visible = not panel.Visible
             end)
             harassBtn.MouseButton1Click:Connect(function()
                 if harassEnabled then
@@ -1961,6 +2125,7 @@ do
             if coordPanel then coordPanel.Visible = false end
             if aimbotPanel then aimbotPanel.Visible = false end
             if harassSpeedPanel then harassSpeedPanel.Visible = false end
+            if spinSpeedPanel then spinSpeedPanel.Visible = false end
             page.Visible = true
         end)
         categories[i] = cat; pages[i] = page
