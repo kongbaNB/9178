@@ -118,9 +118,9 @@ local translateLoop = nil
 local translatedTexts = {}
 local speedAntiPull = nil
 
--- 原地旋转变量
+-- 原地旋转变量（已提速）
 local SpinEnabled = false
-local SpinSpeed = 30  -- 默认30度/秒
+local SpinSpeed = 360  -- 默认 360 度/秒（每秒一圈）
 local spinConnection = nil
 
 local function startSpin()
@@ -1070,7 +1070,7 @@ do
     local coordPanel = nil
     local aimbotPanel = nil
     local harassSpeedPanel = nil
-    local spinSpeedPanel = nil  -- 旋转速度面板
+    local spinSpeedPanel = nil
 
     local function copyToClipboard(text, label)
         local success = pcall(function()
@@ -1600,7 +1600,7 @@ do
         return harassSpeedPanel
     end
 
-    -- 旋转速度面板
+    -- 旋转速度面板（高速版）
     local function createSpinSpeedPanel()
         if spinSpeedPanel then return spinSpeedPanel end
         spinSpeedPanel = Instance.new("Frame")
@@ -1643,8 +1643,8 @@ do
         knob.BackgroundColor3 = Color3.new(1, 1, 1)
         knob.AutoButtonColor = false
         local knobCorner = Instance.new("UICorner"); knobCorner.CornerRadius = UDim.new(1, 0); knobCorner.Parent = knob
-        local minSpin, maxSpin = 1, 360
-        local currentSpin = SpinSpeed
+        local minSpin, maxSpin = 1, 10000  -- 最高 10000 度/秒
+        local currentSpin = SpinSpeed  -- 默认 360
         local function updateSliderDisplay(val)
             local percent = (val - minSpin) / (maxSpin - minSpin)
             fill.Size = UDim2.new(percent, 0, 1, 0)
@@ -1675,13 +1675,13 @@ do
         resetBtn.Size = UDim2.new(0, 80, 0, 28)
         resetBtn.Position = UDim2.new(0, 200, 0, 85)
         resetBtn.BackgroundColor3 = Color3.fromRGB(180, 80, 0)
-        resetBtn.Text = "默认(30)"
+        resetBtn.Text = "默认(360)"
         resetBtn.TextColor3 = Color3.new(1, 1, 1)
         resetBtn.Font = Enum.Font.SourceSansBold
         resetBtn.TextSize = 14
         local resetCorner = Instance.new("UICorner"); resetCorner.CornerRadius = UDim.new(0, 6); resetCorner.Parent = resetBtn
         resetBtn.MouseButton1Click:Connect(function()
-            setSpinSpeed(30)
+            setSpinSpeed(360)
             spinSpeedPanel.Visible = false
         end)
         local closeBtn = Instance.new("TextButton")
@@ -1716,7 +1716,7 @@ do
                 dragging = false
             end
         end)
-        updateSliderDisplay(30)
+        updateSliderDisplay(360)  -- 默认显示 360
         return spinSpeedPanel
     end
 
