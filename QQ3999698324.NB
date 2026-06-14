@@ -118,10 +118,14 @@ local translateLoop = nil
 local translatedTexts = {}
 local speedAntiPull = nil
 
--- 原地旋转变量（已提速）
+-- 原地旋转变量
 local SpinEnabled = false
-local SpinSpeed = 360  -- 默认 360 度/秒（每秒一圈）
+local SpinSpeed = 360
 local spinConnection = nil
+
+-- 反挂机踢出变量
+local antiAFKEnabled = false
+local antiAFKConnection = nil
 
 local function startSpin()
     if spinConnection then spinConnection:Disconnect() end
@@ -141,6 +145,24 @@ local function stopSpin()
     if spinConnection then
         spinConnection:Disconnect()
         spinConnection = nil
+    end
+end
+
+-- 反挂机踢出逻辑
+local function startAntiAFK()
+    if antiAFKConnection then antiAFKConnection:Disconnect() end
+    antiAFKConnection = LocalPlayer.Idled:Connect(function()
+        local vu = game:GetService("VirtualUser")
+        vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        wait(1)
+        vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    end)
+end
+
+local function stopAntiAFK()
+    if antiAFKConnection then
+        antiAFKConnection:Disconnect()
+        antiAFKConnection = nil
     end
 end
 
@@ -855,7 +877,7 @@ end
 local harassEnabled = false
 local harassTarget = nil
 local harassConnection = nil
-local harassSpeed = 5  -- 默认每秒切换5次
+local harassSpeed = 5
 local lastSwitchTime = 0
 local isBehind = true
 
@@ -1643,8 +1665,8 @@ do
         knob.BackgroundColor3 = Color3.new(1, 1, 1)
         knob.AutoButtonColor = false
         local knobCorner = Instance.new("UICorner"); knobCorner.CornerRadius = UDim.new(1, 0); knobCorner.Parent = knob
-        local minSpin, maxSpin = 1, 10000  -- 最高 10000 度/秒
-        local currentSpin = SpinSpeed  -- 默认 360
+        local minSpin, maxSpin = 1, 10000
+        local currentSpin = SpinSpeed
         local function updateSliderDisplay(val)
             local percent = (val - minSpin) / (maxSpin - minSpin)
             fill.Size = UDim2.new(percent, 0, 1, 0)
@@ -1716,7 +1738,7 @@ do
                 dragging = false
             end
         end)
-        updateSliderDisplay(360)  -- 默认显示 360
+        updateSliderDisplay(360)
         return spinSpeedPanel
     end
 
@@ -1887,7 +1909,6 @@ do
             end
             local posX1, posX2 = 4, page.AbsoluteSize.X * 0.52
             local rowHeight = 45
-            -- 左列 8 个按钮
             local autoTranslateBtn = addSemiTransparentButton(page, "自动翻译：关", posX1, 4)
             local antiPushBtn = addSemiTransparentButton(page, "防甩飞：关", posX1, 4 + rowHeight)
             local coordBtn = addSemiTransparentButton(page, "查询坐标传送", posX1, 4 + 2*rowHeight)
@@ -1897,7 +1918,6 @@ do
             local spinBtn = addSemiTransparentButton(page, "原地旋转：关", posX1, 4 + 6*rowHeight)
             local spinSpeedBtn = addSemiTransparentButton(page, "旋转速度", posX1, 4 + 7*rowHeight)
 
-            -- 右列 7 个按钮
             local teleportNearestBtn = addSemiTransparentButton(page, "传送最近玩家", posX2, 4)
             local followNearestBtn = addSemiTransparentButton(page, "跟随最近玩家：关", posX2, 4 + rowHeight)
             local teleportPlayerBtn = addSemiTransparentButton(page, "传送到指定玩家", posX2, 4 + 2*rowHeight)
@@ -1909,7 +1929,7 @@ do
             local harassBtn = addSemiTransparentButton(page, "操人", posX2, 4 + 5*rowHeight)
             local harassSpeedBtn = addSemiTransparentButton(page, "操人速度", posX2, 4 + 6*rowHeight)
 
-            -- 绑定事件
+            -- 事件绑定
             aimbotBtn.MouseButton1Click:Connect(function()
                 AimbotEnabled = not AimbotEnabled
                 aimbotBtn.Text = AimbotEnabled and "自瞄：开" or "自瞄：关"
@@ -1936,7 +1956,6 @@ do
                     flyControlBtn.Text = "飞行控制：开"
                 end
             end)
-            -- 原地旋转开关
             spinBtn.MouseButton1Click:Connect(function()
                 SpinEnabled = not SpinEnabled
                 spinBtn.Text = SpinEnabled and "原地旋转：开" or "原地旋转：关"
@@ -2048,6 +2067,19 @@ do
                 CrosshairSpinEnabled = not CrosshairSpinEnabled
                 crosshairSpinBtn.Text = CrosshairSpinEnabled and "准星旋转：开" or "准星旋转：关"
                 game:GetService("StarterGui"):SetCore("SendNotification", { Title = "准星旋转", Text = CrosshairSpinEnabled and "已开启" or "已关闭", Duration = 3 })
+            end)
+
+            -- 新增：反挂机踢出按钮
+            local antiAFKBtn = addSemiTransparentButton(page, "反挂机踢出：关", 4, 4 + 2*45)
+            antiAFKBtn.MouseButton1Click:Connect(function()
+                antiAFKEnabled = not antiAFKEnabled
+                antiAFKBtn.Text = antiAFKEnabled and "反挂机踢出：开" or "反挂机踢出：关"
+                if antiAFKEnabled then
+                    startAntiAFK()
+                else
+                    stopAntiAFK()
+                end
+                game:GetService("StarterGui"):SetCore("SendNotification", { Title = "反挂机踢出", Text = antiAFKEnabled and "已开启" or "已关闭", Duration = 3 })
             end)
         elseif i == 5 then
             local function addSemiTransparentButton(page, txt, posX, posY, callback)
