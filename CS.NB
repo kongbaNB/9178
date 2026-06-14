@@ -1,11 +1,28 @@
-game:GetService("StarterGui"):SetCore("SendNotification", { Title = "破坏者谜团2脚本", Text = "创作者：恐拜大帝\nQQ: 3999698324", Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150" }) local repo = 'https://raw.githubusercontent.com/KingScriptAE/No-sirve-nada./refs/heads/main/' local function safeLoad(url) local success, result = pcall(function() return loadstring(game:HttpGet(url))() end) if not success then warn("加载失败: " .. url) return nil end return result end local Library = safeLoad(repo .. 'Library.lua') local ThemeManager = safeLoad(repo .. 'addons/ThemeManager.lua') local SaveManager = safeLoad(repo .. 'addons/SaveManager.lua') if not Library then game:GetService("StarterGui"):SetCore("SendNotification", { Title = "错误", Text = "UI 库加载失败，请检查网络或脚本资源", Duration = 5, }) return end local Players = game:GetService("Players") local LocalPlayer = Players.LocalPlayer local PlayerGui = LocalPlayer:WaitForChild("PlayerGui") local RunService = game:GetService("RunService") local Workspace = game:GetService("Workspace") local StarterGui = game:GetService("StarterGui") local Camera = Workspace.CurrentCamera local currentFollowLoop = nil local jobEspEnabled = false local jobEspLoop = nil local autoKillLoop = nil local autoPickGunEnabled = false local autoPickGunLoop = nil local autoCollectGoldEnabled = false local autoCollectGoldLoop = nil local trackLoop = nil local crosshairUI = nil local Notify local Window
+game:GetService("StarterGui"):SetCore("SendNotification", { Title = "破坏者谜团2脚本", Text = "创作者：恐拜大帝\nQQ: 3999698324", Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150" }) local repo = 'https://raw.githubusercontent.com/KingScriptAE/No-sirve-nada./refs/heads/main/' local function safeLoad(url) local success, result = pcall(function() return loadstring(game:HttpGet(url))() end) if not success then warn("加载失败: " .. url) return nil end return result end local Library = safeLoad(repo .. 'Library.lua') local ThemeManager = safeLoad(repo .. 'addons/ThemeManager.lua') local SaveManager = safeLoad(repo .. 'addons/SaveManager.lua') if not Library then game:GetService("StarterGui"):SetCore("SendNotification", { Title = "错误", Text = "UI 库加载失败，请检查网络或脚本资源", Duration = 5, }) return end
 
-local Yisan_Players = Players
-local Yisan_LocalPlayer = LocalPlayer
-local Yisan_RunService = RunService
-local Yisan_UserInputService = game:GetService("UserInputService")
-local Yisan_TweenService = game:GetService("TweenService")
-local Yisan_Workspace = Workspace
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local StarterGui = game:GetService("StarterGui")
+local Camera = Workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local currentFollowLoop = nil
+local jobEspEnabled = false
+local jobEspLoop = nil
+local autoKillLoop = nil
+local autoPickGunEnabled = false
+local autoPickGunLoop = nil
+local autoCollectGoldEnabled = false
+local autoCollectGoldLoop = nil
+local trackLoop = nil
+local crosshairUI = nil
+local Notify = function(msg) warn(msg) end
+local Window
+
 local Yisan_playerESP = false
 local Yisan_coinTaffy = false
 local Yisan_TaffyShoot = false
@@ -41,273 +58,6 @@ local Yisan_flingDetectionCon
 local Yisan_detectedPlayers = {}
 local Yisan_TaffyplayerFt
 
-function Yisan_findMurderer()
-    for _, i in ipairs(Yisan_Players:GetPlayers()) do
-        if i.Backpack:FindFirstChild("Knife") then return i end
-    end
-    for _, i in ipairs(Yisan_Players:GetPlayers()) do
-        if i.Character and i.Character:FindFirstChild("Knife") then return i end
-    end
-    if Yisan_playerData then
-        for player, data in pairs(Yisan_playerData) do
-            if data.Role == "Murderer" then
-                if Yisan_Players:FindFirstChild(player) then return Yisan_Players:FindFirstChild(player) end
-            end
-        end
-    end
-    return nil
-end
-
-function Yisan_findSheriff()
-    for _, i in ipairs(Yisan_Players:GetPlayers()) do
-        if i.Backpack:FindFirstChild("Gun") then return i end
-    end
-    for _, i in ipairs(Yisan_Players:GetPlayers()) do
-        if i.Character and i.Character:FindFirstChild("Gun") then return i end
-    end
-    if Yisan_playerData then
-        for player, data in pairs(Yisan_playerData) do
-            if data.Role == "Sheriff" then
-                if Yisan_Players:FindFirstChild(player) then return Yisan_Players:FindFirstChild(player) end
-            end
-        end
-    end
-    return nil
-end
-
-function Yisan_findSheriffThatsNotMe()
-    for _, i in ipairs(Yisan_Players:GetPlayers()) do
-        if i == Yisan_LocalPlayer then continue end
-        if i.Backpack:FindFirstChild("Gun") then return i end
-    end
-    for _, i in ipairs(Yisan_Players:GetPlayers()) do
-        if i == Yisan_LocalPlayer then continue end
-        if i.Character and i.Character:FindFirstChild("Gun") then return i end
-    end
-    if Yisan_playerData then
-        for player, data in pairs(Yisan_playerData) do
-            if data.Role == "Sheriff" then
-                if Yisan_Players:FindFirstChild(player) and Yisan_Players:FindFirstChild(player) ~= Yisan_LocalPlayer then return Yisan_Players:FindFirstChild(player) end
-            end
-        end
-    end
-    return nil
-end
-
-function Yisan_getMap()
-    for _, o in ipairs(Yisan_Workspace:GetChildren()) do
-        if o:FindFirstChild("CoinContainer") and o:FindFirstChild("Spawns") then return o end
-    end
-    return nil
-end
-
-function Yisan_getPredictedPosition(player, TaffyshootTChina)
-    pcall(function()
-        player = player.Character
-        if not player.Character then return Vector3.new(0,0,0) end
-    end)
-    local playerHRP = player:FindFirstChild("UpperTorso")
-    local playerHum = player:FindFirstChild("Humanoid")
-    if not playerHRP or not playerHum then return Vector3.new(0,0,0) end
-    local velocity = playerHRP.AssemblyLinearVelocity
-    local playerMoveDirection = playerHum.MoveDirection
-    local predictedPosition = playerHRP.Position + ((velocity * Vector3.new(0, 0.5, 0))) * (TaffyshootTChina / 15) + playerMoveDirection * TaffyshootTChina
-    predictedPosition = predictedPosition * (((Yisan_LocalPlayer:GetNetworkPing() * 1000) * ((Yisan_TaffyPing - 1) * 0.01)) + 1)
-    return predictedPosition
-end
-
-function Yisan_findNearestPlayer()
-    local nearestPlayer = nil
-    local shortestDistance = math.huge
-    for _, player in ipairs(Yisan_Players:GetPlayers()) do
-        if player ~= Yisan_LocalPlayer and player.Character then
-            local localRootPart = Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            local otherRootPart = player.Character:FindFirstChild("HumanoidRootPart")
-            if localRootPart and otherRootPart then
-                local distance = (localRootPart.Position - otherRootPart.Position).Magnitude
-                if distance < shortestDistance then
-                    shortestDistance = distance
-                    nearestPlayer = player
-                end
-            end
-        end
-    end
-    return nearestPlayer
-end
-
-function Yisan_powerfulFling(targetPlayer)
-    if not targetPlayer or not targetPlayer.Character then
-        Notify("目标玩家无效")
-        return
-    end
-    local Character = Yisan_LocalPlayer.Character
-    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-    local RootPart = Humanoid and Humanoid.RootPart
-    local TCharacter = targetPlayer.Character
-    local THumanoid = TCharacter:FindFirstChildOfClass("Humanoid")
-    local TRootPart = THumanoid and THumanoid.RootPart
-    local THead = TCharacter:FindFirstChild("Head")
-    local Accessory = TCharacter:FindFirstChildOfClass("Accessory")
-    local Handle = Accessory and Accessory:FindFirstChild("Handle")
-    if not Character or not Humanoid or not RootPart then
-        Notify("你的角色无效")
-        return
-    end
-    if RootPart.Velocity.Magnitude < 50 then
-        getgenv().OldPos = RootPart.CFrame
-    end
-    if not getgenv().FPDH then
-        getgenv().FPDH = Yisan_Workspace.FallenPartsDestroyHeight
-    end
-    if THead then
-        Yisan_Workspace.CurrentCamera.CameraSubject = THead
-    elseif not THead and Handle then
-        Yisan_Workspace.CurrentCamera.CameraSubject = Handle
-    elseif THumanoid and TRootPart then
-        Yisan_Workspace.CurrentCamera.CameraSubject = THumanoid
-    end
-    if not TCharacter:FindFirstChildWhichIsA("BasePart") then
-        Notify("目标没有有效部位")
-        return
-    end
-    local FPos = function(BasePart, Pos, Ang)
-        RootPart.CFrame = CFrame.new(BasePart.Position) * Pos * Ang
-        Character:SetPrimaryPartCFrame(CFrame.new(BasePart.Position) * Pos * Ang)
-        RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
-        RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
-    end
-    local SFBasePart = function(BasePart)
-        local TimeToWait = 2
-        local Time = tick()
-        local Angle = 0
-        repeat
-            if RootPart and THumanoid then
-                if BasePart.Velocity.Magnitude < 50 then
-                    Angle = Angle + 100
-                    FPos(BasePart, CFrame.new(0, 1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle),0 ,0))
-                    task.wait()
-                    FPos(BasePart, CFrame.new(0, -1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
-                    task.wait()
-                    FPos(BasePart, CFrame.new(2.25, 1.5, -2.25) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
-                    task.wait()
-                    FPos(BasePart, CFrame.new(-2.25, -1.5, 2.25) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
-                    task.wait()
-                    FPos(BasePart, CFrame.new(0, 1.5, 0) + THumanoid.MoveDirection,CFrame.Angles(math.rad(Angle), 0, 0))
-                    task.wait()
-                    FPos(BasePart, CFrame.new(0, -1.5, 0) + THumanoid.MoveDirection,CFrame.Angles(math.rad(Angle), 0, 0))
-                    task.wait()
-                else
-                    FPos(BasePart, CFrame.new(0, 1.5, THumanoid.WalkSpeed), CFrame.Angles(math.rad(90), 0, 0))
-                    task.wait()
-                    FPos(BasePart, CFrame.new(0, -1.5, -THumanoid.WalkSpeed), CFrame.Angles(0, 0, 0))
-                    task.wait()
-                    FPos(BasePart, CFrame.new(0, 1.5, THumanoid.WalkSpeed), CFrame.Angles(math.rad(90), 0, 0))
-                    task.wait()
-                    FPos(BasePart, CFrame.new(0, 1.5, TRootPart.Velocity.Magnitude / 1.25), CFrame.Angles(math.rad(90), 0, 0))
-                    task.wait()
-                    FPos(BasePart, CFrame.new(0, -1.5, -TRootPart.Velocity.Magnitude / 1.25), CFrame.Angles(0, 0, 0))
-                    task.wait()
-                    FPos(BasePart, CFrame.new(0, 1.5, TRootPart.Velocity.Magnitude / 1.25), CFrame.Angles(math.rad(90), 0, 0))
-                    task.wait()
-                    FPos(BasePart, CFrame.new(0, -1.5, 0), CFrame.Angles(math.rad(90), 0, 0))
-                    task.wait()
-                    FPos(BasePart, CFrame.new(0, -1.5, 0), CFrame.Angles(0, 0, 0))
-                    task.wait()
-                    FPos(BasePart, CFrame.new(0, -1.5 ,0), CFrame.Angles(math.rad(-90), 0, 0))
-                    task.wait()
-                    FPos(BasePart, CFrame.new(0, -1.5, 0), CFrame.Angles(0, 0, 0))
-                    task.wait()
-                end
-            else
-                break
-            end
-        until BasePart.Velocity.Magnitude > 500 or BasePart.Parent ~= targetPlayer.Character or targetPlayer.Parent ~= Yisan_Players or targetPlayer.Character ~= TCharacter or (THumanoid and THumanoid.Sit) or Humanoid.Health <= 0 or tick() > Time + TimeToWait
-    end
-    Yisan_Workspace.FallenPartsDestroyHeight = 0/0
-    local BV = Instance.new("BodyVelocity")
-    BV.Name = "EpixVel"
-    BV.Parent = RootPart
-    BV.Velocity = Vector3.new(9e8, 9e8, 9e8)
-    BV.MaxForce = Vector3.new(1/0, 1/0, 1/0)
-    Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
-    if TRootPart and THead then
-        if (TRootPart.CFrame.p - THead.CFrame.p).Magnitude > 5 then
-            SFBasePart(THead)
-        else
-            SFBasePart(TRootPart)
-        end
-    elseif TRootPart and not THead then
-        SFBasePart(TRootPart)
-    elseif not TRootPart and THead then
-        SFBasePart(THead)
-    elseif not TRootPart and not THead and Accessory and Handle then
-        SFBasePart(Handle)
-    else
-        Notify("找不到合适的甩飞部位")
-        BV:Destroy()
-        return
-    end
-    BV:Destroy()
-    Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
-    Yisan_Workspace.CurrentCamera.CameraSubject = Humanoid
-    repeat
-        RootPart.CFrame = getgenv().OldPos * CFrame.new(0, .5, 0)
-        Character:SetPrimaryPartCFrame(getgenv().OldPos * CFrame.new(0, .5, 0))
-        Humanoid:ChangeState("GettingUp")
-        for _, x in pairs(Character:GetChildren()) do
-            if x:IsA("BasePart") then
-                x.Velocity, x.RotVelocity = Vector3.new(), Vector3.new()
-            end
-        end
-        task.wait()
-    until (RootPart.Position - getgenv().OldPos.p).Magnitude < 25
-    Yisan_Workspace.FallenPartsDestroyHeight = getgenv().FPDH
-end
-
-function Yisan_reloadESP()
-    for _, v in ipairs(Yisan_Workspace:GetChildren()) do if v.Name == "PlayerESP" then v:Destroy() end end
-    for _, player in ipairs(Yisan_Players:GetPlayers()) do
-        if player.Character then
-            local character = player.Character
-            if not character:FindFirstChild("PlayerESP") then
-                local a = Instance.new("Highlight", Yisan_Workspace)
-                a.Name = "PlayerESP"
-                a.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                a.Adornee = character
-                a.FillColor = Color3.fromRGB(255, 255, 255)
-                a.FillTransparency = 0.5
-                task.spawn(function()
-                    if player == Yisan_findMurderer() then
-                        a.FillColor = Color3.fromRGB(255,0,0)
-                        a.OutlineColor = Color3.fromRGB(255,0,0)
-                    elseif player == Yisan_findSheriff() then
-                        a.FillColor = Color3.fromRGB(0, 150, 255)
-                        a.OutlineColor = Color3.fromRGB(0, 150, 255)
-                    else
-                        a.FillColor = Color3.fromRGB(0,255,0)
-                        a.OutlineColor = Color3.fromRGB(0, 255, 0)
-                    end
-                end)
-            end
-        end
-    end
-end
-
-function Yisan_getClosestModelToPlayer(player, models)
-    local closestModel = nil
-    local closestDistance = math.huge
-    local playerPosition = player.Character.HumanoidRootPart.Position
-    for _, model in ipairs(models) do
-        local modelPosition = model:GetPivot().Position
-        local distance = (modelPosition - playerPosition).Magnitude
-        if distance < closestDistance then
-            closestDistance = distance
-            closestModel = model
-        end
-    end
-    return closestModel
-end
-
 local Yisan_ws = 16
 local Yisan_fov = 70
 local Yisan_clip = true
@@ -316,49 +66,209 @@ local Yisan_flySpeed = 50
 local Yisan_flying = false
 local Yisan_bodyVelocity, Yisan_bodyGyro
 local Yisan_renderSteppedConnection
+local Yisan_JumpPower = 50
+
+function Yisan_findMurderer()
+    for _, i in ipairs(Players:GetPlayers()) do if i.Backpack:FindFirstChild("Knife") then return i end end
+    for _, i in ipairs(Players:GetPlayers()) do if i.Character and i.Character:FindFirstChild("Knife") then return i end end
+    if Yisan_playerData then for player, data in pairs(Yisan_playerData) do if data.Role == "Murderer" then if Players:FindFirstChild(player) then return Players:FindFirstChild(player) end end end end
+    return nil
+end
+
+function Yisan_findSheriff()
+    for _, i in ipairs(Players:GetPlayers()) do if i.Backpack:FindFirstChild("Gun") then return i end end
+    for _, i in ipairs(Players:GetPlayers()) do if i.Character and i.Character:FindFirstChild("Gun") then return i end end
+    if Yisan_playerData then for player, data in pairs(Yisan_playerData) do if data.Role == "Sheriff" then if Players:FindFirstChild(player) then return Players:FindFirstChild(player) end end end end
+    return nil
+end
+
+function Yisan_findSheriffThatsNotMe()
+    for _, i in ipairs(Players:GetPlayers()) do if i == LocalPlayer then continue end if i.Backpack:FindFirstChild("Gun") then return i end end
+    for _, i in ipairs(Players:GetPlayers()) do if i == LocalPlayer then continue end if i.Character and i.Character:FindFirstChild("Gun") then return i end end
+    if Yisan_playerData then for player, data in pairs(Yisan_playerData) do if data.Role == "Sheriff" then if Players:FindFirstChild(player) and Players:FindFirstChild(player) ~= LocalPlayer then return Players:FindFirstChild(player) end end end end
+    return nil
+end
+
+function Yisan_getMap()
+    for _, o in ipairs(Workspace:GetChildren()) do if o:FindFirstChild("CoinContainer") and o:FindFirstChild("Spawns") then return o end end
+    return nil
+end
+
+function Yisan_getPredictedPosition(player, offset)
+    local char = player.Character
+    if not char then return Vector3.new(0,0,0) end
+    local upperTorso = char:FindFirstChild("UpperTorso")
+    local hum = char:FindFirstChild("Humanoid")
+    if not upperTorso or not hum then return Vector3.new(0,0,0) end
+    local velocity = upperTorso.AssemblyLinearVelocity
+    local moveDir = hum.MoveDirection
+    local pos = upperTorso.Position + ((velocity * Vector3.new(0, 0.5, 0))) * (offset / 15) + moveDir * offset
+    pos = pos * (((LocalPlayer:GetNetworkPing() * 1000) * ((Yisan_TaffyPing - 1) * 0.01)) + 1)
+    return pos
+end
+
+function Yisan_findNearestPlayer()
+    local nearest = nil
+    local minDist = math.huge
+    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return nil end
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            local otherRoot = p.Character:FindFirstChild("HumanoidRootPart")
+            if otherRoot then
+                local d = (myRoot.Position - otherRoot.Position).Magnitude
+                if d < minDist then minDist = d; nearest = p end
+            end
+        end
+    end
+    return nearest
+end
+
+function Yisan_powerfulFling(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then Notify("目标玩家无效") return end
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local root = hum and hum.RootPart
+    local tChar = targetPlayer.Character
+    local tHum = tChar:FindFirstChildOfClass("Humanoid")
+    local tRoot = tHum and tHum.RootPart
+    local tHead = tChar:FindFirstChild("Head")
+    local acc = tChar:FindFirstChildOfClass("Accessory")
+    local handle = acc and acc:FindFirstChild("Handle")
+    if not char or not hum or not root then Notify("你的角色无效") return end
+    if root.Velocity.Magnitude < 50 then getgenv().OldPos = root.CFrame end
+    if not getgenv().FPDH then getgenv().FPDH = Workspace.FallenPartsDestroyHeight end
+    if tHead then Workspace.CurrentCamera.CameraSubject = tHead
+    elseif not tHead and handle then Workspace.CurrentCamera.CameraSubject = handle
+    elseif tHum and tRoot then Workspace.CurrentCamera.CameraSubject = tHum end
+    if not tChar:FindFirstChildWhichIsA("BasePart") then Notify("目标没有有效部位") return end
+    local FPos = function(bp, pos, ang)
+        root.CFrame = CFrame.new(bp.Position) * pos * ang
+        char:SetPrimaryPartCFrame(CFrame.new(bp.Position) * pos * ang)
+        root.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+        root.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+    end
+    local SFBasePart = function(bp)
+        local timeout = tick() + 2
+        local angle = 0
+        repeat
+            if root and tHum then
+                if bp.Velocity.Magnitude < 50 then
+                    angle = angle + 100
+                    FPos(bp, CFrame.new(0, 1.5, 0) + tHum.MoveDirection * bp.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(angle),0,0))
+                    task.wait()
+                    FPos(bp, CFrame.new(0, -1.5, 0) + tHum.MoveDirection * bp.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(angle),0,0))
+                    task.wait()
+                    FPos(bp, CFrame.new(2.25, 1.5, -2.25) + tHum.MoveDirection * bp.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(angle),0,0))
+                    task.wait()
+                    FPos(bp, CFrame.new(-2.25, -1.5, 2.25) + tHum.MoveDirection * bp.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(angle),0,0))
+                    task.wait()
+                    FPos(bp, CFrame.new(0, 1.5, 0) + tHum.MoveDirection, CFrame.Angles(math.rad(angle),0,0))
+                    task.wait()
+                    FPos(bp, CFrame.new(0, -1.5, 0) + tHum.MoveDirection, CFrame.Angles(math.rad(angle),0,0))
+                    task.wait()
+                else
+                    FPos(bp, CFrame.new(0, 1.5, tHum.WalkSpeed), CFrame.Angles(math.rad(90),0,0))
+                    task.wait()
+                    FPos(bp, CFrame.new(0, -1.5, -tHum.WalkSpeed), CFrame.Angles(0,0,0))
+                    task.wait()
+                    FPos(bp, CFrame.new(0, 1.5, tHum.WalkSpeed), CFrame.Angles(math.rad(90),0,0))
+                    task.wait()
+                    FPos(bp, CFrame.new(0, 1.5, tRoot.Velocity.Magnitude / 1.25), CFrame.Angles(math.rad(90),0,0))
+                    task.wait()
+                    FPos(bp, CFrame.new(0, -1.5, -tRoot.Velocity.Magnitude / 1.25), CFrame.Angles(0,0,0))
+                    task.wait()
+                    FPos(bp, CFrame.new(0, 1.5, tRoot.Velocity.Magnitude / 1.25), CFrame.Angles(math.rad(90),0,0))
+                    task.wait()
+                    FPos(bp, CFrame.new(0, -1.5, 0), CFrame.Angles(math.rad(90),0,0))
+                    task.wait()
+                    FPos(bp, CFrame.new(0, -1.5, 0), CFrame.Angles(0,0,0))
+                    task.wait()
+                    FPos(bp, CFrame.new(0, -1.5 ,0), CFrame.Angles(math.rad(-90),0,0))
+                    task.wait()
+                    FPos(bp, CFrame.new(0, -1.5, 0), CFrame.Angles(0,0,0))
+                    task.wait()
+                end
+            else break end
+        until bp.Velocity.Magnitude > 500 or bp.Parent ~= targetPlayer.Character or targetPlayer.Parent ~= Players or targetPlayer.Character ~= tChar or (tHum and tHum.Sit) or hum.Health <= 0 or tick() > timeout
+    end
+    Workspace.FallenPartsDestroyHeight = 0/0
+    local bv = Instance.new("BodyVelocity") bv.Name = "EpixVel" bv.Parent = root bv.Velocity = Vector3.new(9e8,9e8,9e8) bv.MaxForce = Vector3.new(1/0,1/0,1/0)
+    hum:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+    if tRoot and tHead then
+        if (tRoot.CFrame.p - tHead.CFrame.p).Magnitude > 5 then SFBasePart(tHead) else SFBasePart(tRoot) end
+    elseif tRoot and not tHead then SFBasePart(tRoot)
+    elseif not tRoot and tHead then SFBasePart(tHead)
+    elseif not tRoot and not tHead and acc and handle then SFBasePart(handle)
+    else Notify("找不到合适的甩飞部位") bv:Destroy() return end
+    bv:Destroy()
+    hum:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+    Workspace.CurrentCamera.CameraSubject = hum
+    repeat
+        root.CFrame = getgenv().OldPos * CFrame.new(0, 0.5, 0)
+        char:SetPrimaryPartCFrame(getgenv().OldPos * CFrame.new(0, 0.5, 0))
+        hum:ChangeState("GettingUp")
+        for _, x in pairs(char:GetChildren()) do if x:IsA("BasePart") then x.Velocity, x.RotVelocity = Vector3.new(), Vector3.new() end end
+        task.wait()
+    until (root.Position - getgenv().OldPos.p).Magnitude < 25
+    Workspace.FallenPartsDestroyHeight = getgenv().FPDH
+end
+
+function Yisan_reloadESP()
+    for _, v in ipairs(Workspace:GetChildren()) do if v.Name == "PlayerESP" then v:Destroy() end end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr.Character then
+            local char = plr.Character
+            if not char:FindFirstChild("PlayerESP") then
+                local hl = Instance.new("Highlight", Workspace) hl.Name = "PlayerESP" hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop hl.Adornee = char hl.FillColor = Color3.fromRGB(255,255,255) hl.FillTransparency = 0.5
+                task.spawn(function()
+                    if plr == Yisan_findMurderer() then hl.FillColor = Color3.fromRGB(255,0,0) hl.OutlineColor = Color3.fromRGB(255,0,0)
+                    elseif plr == Yisan_findSheriff() then hl.FillColor = Color3.fromRGB(0,150,255) hl.OutlineColor = Color3.fromRGB(0,150,255)
+                    else hl.FillColor = Color3.fromRGB(0,255,0) hl.OutlineColor = Color3.fromRGB(0,255,0) end
+                end)
+            end
+        end
+    end
+end
+
+function Yisan_getClosestModelToPlayer(player, models)
+    local closest, minDist = nil, math.huge
+    local myRoot = player.Character:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return nil end
+    for _, model in ipairs(models) do
+        local pos = model:GetPivot().Position
+        local dist = (myRoot.Position - pos).Magnitude
+        if dist < minDist then minDist = dist; closest = model end
+    end
+    return closest
+end
 
 function Yisan_startFlying()
     if Yisan_flying then return end
     Yisan_flying = true
-    local character = Yisan_LocalPlayer.Character or Yisan_LocalPlayer.CharacterAdded:Wait()
-    character.Humanoid.PlatformStand = true
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    char.Humanoid.PlatformStand = true
     if Yisan_bodyVelocity then Yisan_bodyVelocity:Destroy() end
     if Yisan_bodyGyro then Yisan_bodyGyro:Destroy() end
-    Yisan_bodyVelocity = Instance.new("BodyVelocity")
-    Yisan_bodyVelocity.MaxForce = Vector3.new(100000, 100000, 100000)
-    Yisan_bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-    Yisan_bodyVelocity.Parent = character.HumanoidRootPart
-    Yisan_bodyGyro = Instance.new("BodyGyro")
-    Yisan_bodyGyro.MaxTorque = Vector3.new(100000, 100000, 100000)
-    Yisan_bodyGyro.CFrame = character.HumanoidRootPart.CFrame
-    Yisan_bodyGyro.Parent = character.HumanoidRootPart
-    local startTime = tick()
-    while tick() - startTime < 1 do
-        Yisan_bodyVelocity.Velocity = Vector3.new(0, 10, 0)
-        Yisan_RunService.RenderStepped:Wait()
-    end
+    Yisan_bodyVelocity = Instance.new("BodyVelocity") Yisan_bodyVelocity.MaxForce = Vector3.new(100000,100000,100000) Yisan_bodyVelocity.Velocity = Vector3.new() Yisan_bodyVelocity.Parent = char.HumanoidRootPart
+    Yisan_bodyGyro = Instance.new("BodyGyro") Yisan_bodyGyro.MaxTorque = Vector3.new(100000,100000,100000) Yisan_bodyGyro.CFrame = char.HumanoidRootPart.CFrame Yisan_bodyGyro.Parent = char.HumanoidRootPart
+    local start = tick()
+    while tick() - start < 1 do Yisan_bodyVelocity.Velocity = Vector3.new(0,10,0) RunService.RenderStepped:Wait() end
     if Yisan_renderSteppedConnection then Yisan_renderSteppedConnection:Disconnect() end
-    Yisan_renderSteppedConnection = Yisan_RunService.RenderStepped:Connect(function()
+    Yisan_renderSteppedConnection = RunService.RenderStepped:Connect(function()
         if Yisan_flying then
-            local moveDirection = character.Humanoid.MoveDirection * Yisan_flySpeed
-            local camLookVector = Yisan_Workspace.CurrentCamera.CFrame.LookVector
-            if moveDirection.Magnitude > 0 then
-                if camLookVector.Y > 0.2 then
-                    moveDirection = moveDirection + Vector3.new(0, camLookVector.Y * Yisan_flySpeed, 0)
-                elseif camLookVector.Y < -0.2 then
-                    moveDirection = moveDirection + Vector3.new(0, camLookVector.Y * Yisan_flySpeed, 0)
-                end
-            else
-                moveDirection = Vector3.new(0, 0, 0)
-            end
-            Yisan_bodyVelocity.Velocity = moveDirection
-            local tiltAngle = 30
-            local tiltFactor = moveDirection.Magnitude / Yisan_flySpeed
-            local tiltDirection = 1
-            if Yisan_Workspace.CurrentCamera.CFrame:VectorToObjectSpace(moveDirection).Z < 0 then tiltDirection = -1 end
-            local tiltCFrame = CFrame.Angles(math.rad(tiltAngle) * tiltFactor * tiltDirection, 0, 0)
-            local targetCFrame = CFrame.new(character.HumanoidRootPart.Position, character.HumanoidRootPart.Position + camLookVector) * tiltCFrame
-            Yisan_bodyGyro.CFrame = Yisan_bodyGyro.CFrame:Lerp(targetCFrame, 0.2)
+            local move = char.Humanoid.MoveDirection * Yisan_flySpeed
+            local look = Workspace.CurrentCamera.CFrame.LookVector
+            if move.Magnitude > 0 then
+                if look.Y > 0.2 then move = move + Vector3.new(0, look.Y * Yisan_flySpeed, 0)
+                elseif look.Y < -0.2 then move = move + Vector3.new(0, look.Y * Yisan_flySpeed, 0) end
+            else move = Vector3.new() end
+            Yisan_bodyVelocity.Velocity = move
+            local tilt = 30 local factor = move.Magnitude / Yisan_flySpeed local dir = 1
+            if Workspace.CurrentCamera.CFrame:VectorToObjectSpace(move).Z < 0 then dir = -1 end
+            local tiltCF = CFrame.Angles(math.rad(tilt) * factor * dir, 0, 0)
+            local targetCF = CFrame.new(char.HumanoidRootPart.Position, char.HumanoidRootPart.Position + look) * tiltCF
+            Yisan_bodyGyro.CFrame = Yisan_bodyGyro.CFrame:Lerp(targetCF, 0.2)
         end
     end)
 end
@@ -366,193 +276,152 @@ end
 function Yisan_stopFlying()
     if not Yisan_flying then return end
     Yisan_flying = false
-    local character = Yisan_LocalPlayer.Character or Yisan_LocalPlayer.CharacterAdded:Wait()
-    character.Humanoid.PlatformStand = false
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    char.Humanoid.PlatformStand = false
     if Yisan_bodyVelocity then Yisan_bodyVelocity:Destroy() end
     if Yisan_bodyGyro then Yisan_bodyGyro:Destroy() end
     if Yisan_renderSteppedConnection then Yisan_renderSteppedConnection:Disconnect() end
 end
 
-function Yisan_splitString(str,delim)
-    local broken = {}
-    if delim == nil then delim = "," end
-    for w in string.gmatch(str,"[^"..delim.."]+") do
-        table.insert(broken,w)
-    end
-    return broken
+function Yisan_splitString(str, delim)
+    local res = {} delim = delim or ","
+    for w in string.gmatch(str, "[^"..delim.."]+") do table.insert(res, w) end
+    return res
 end
 
 function Yisan_toTokens(str)
-    local tokens = {}
-    for op,name in string.gmatch(str,"([+-])([^+-]+)") do
-        table.insert(tokens,{Operator = op,Name = name})
-    end
-    return tokens
+    local res = {}
+    for op, name in string.gmatch(str, "([+-])([^+-]+)") do table.insert(res, {Operator=op, Name=name}) end
+    return res
 end
 
-function Yisan_onlyIncludeInTable(tab,matches)
-    local matchTable = {}
-    local resultTable = {}
-    for i,v in pairs(matches) do matchTable[v.Name] = true end
-    for i,v in pairs(tab) do if matchTable[v.Name] then table.insert(resultTable,v) end end
-    return resultTable
+function Yisan_onlyIncludeInTable(tab, matches)
+    local mt, rt = {}, {}
+    for _, v in ipairs(matches) do mt[v.Name] = true end
+    for _, v in ipairs(tab) do if mt[v.Name] then table.insert(rt, v) end end
+    return rt
 end
 
-function Yisan_removeTableMatches(tab,matches)
-    local matchTable = {}
-    local resultTable = {}
-    for i,v in pairs(matches) do matchTable[v.Name] = true end
-    for i,v in pairs(tab) do if not matchTable[v.Name] then table.insert(resultTable,v) end end
-    return resultTable
+function Yisan_removeTableMatches(tab, matches)
+    local mt, rt = {}, {}
+    for _, v in ipairs(matches) do mt[v.Name] = true end
+    for _, v in ipairs(tab) do if not mt[v.Name] then table.insert(rt, v) end end
+    return rt
 end
 
-function Yisan_getPlayersByName(Name)
-    local Name,Len,Found = string.lower(Name),#Name,{}
-    for _,v in pairs(Yisan_Players:GetPlayers()) do
-        if Name:sub(0,1) == '@' then
-            if string.sub(string.lower(v.Name),1,Len-1) == Name:sub(2) then
-                table.insert(Found,v)
-            end
+function Yisan_getPlayersByName(name)
+    local lower, len, found = string.lower(name), #name, {}
+    for _, v in ipairs(Players:GetPlayers()) do
+        if lower:sub(1,1) == '@' then
+            if string.sub(string.lower(v.Name), 1, len-1) == lower:sub(2) then table.insert(found, v) end
         else
-            if string.sub(string.lower(v.Name),1,Len) == Name or string.sub(string.lower(v.DisplayName),1,Len) == Name then
-                table.insert(Found,v)
-            end
+            if string.sub(string.lower(v.Name), 1, len) == lower or string.sub(string.lower(v.DisplayName), 1, len) == lower then table.insert(found, v) end
         end
     end
-    return Found
+    return found
 end
 
-function Yisan_getPlayer(list,speaker)
-    if list == nil then return {speaker.Name} end
-    local nameList = Yisan_splitString(list,",")
-    local foundList = {}
-    for _,name in pairs(nameList) do
-        if string.sub(name,1,1) ~= "+" and string.sub(name,1,1) ~= "-" then name = "+"..name end
+function Yisan_getPlayer(list, speaker)
+    if not list then return {speaker.Name} end
+    local names = Yisan_splitString(list, ",")
+    local found = {}
+    for _, name in ipairs(names) do
+        if name:sub(1,1) ~= "+" and name:sub(1,1) ~= "-" then name = "+"..name end
         local tokens = Yisan_toTokens(name)
-        local initialPlayers = Yisan_Players:GetPlayers()
-        for i,v in pairs(tokens) do
-            if v.Operator == "+" then
-                initialPlayers = Yisan_onlyIncludeInTable(initialPlayers,Yisan_getPlayersByName(v.Name))
-            else
-                initialPlayers = Yisan_removeTableMatches(initialPlayers,Yisan_getPlayersByName(v.Name))
-            end
+        local initial = Players:GetPlayers()
+        for _, tok in ipairs(tokens) do
+            if tok.Operator == "+" then initial = Yisan_onlyIncludeInTable(initial, Yisan_getPlayersByName(tok.Name))
+            else initial = Yisan_removeTableMatches(initial, Yisan_getPlayersByName(tok.Name)) end
         end
-        for i,v in pairs(initialPlayers) do table.insert(foundList,v) end
+        for _, v in ipairs(initial) do table.insert(found, v) end
     end
     local foundNames = {}
-    for i,v in pairs(foundList) do table.insert(foundNames,v.Name) end
+    for _, v in ipairs(found) do table.insert(foundNames, v.Name) end
     return foundNames[1]
 end
 
-local function Yisan_secondsToMinutes(seconds)
-    if seconds == -1 then return "" end
-    local minutes = math.floor(seconds / 60)
-    local remainingSeconds = seconds % 60
-    return string.format("%dm %ds", minutes, remainingSeconds)
+function Yisan_secondsToMinutes(sec)
+    if sec == -1 then return "" end
+    return string.format("%dm %ds", math.floor(sec/60), sec%60)
 end
 
 function Yisan_EnableTimeDisplay()
     Yisan_LinniTime = true
     Yisan_Linnitask = task.spawn(function()
         while task.wait(0.5) and Yisan_LinniTime do
-            local success, timeLeft = pcall(function()
-                return game.ReplicatedStorage.Remotes.Extras.GetTimer:InvokeServer()
-            end)
-            if success and timeLeft then
-                Notify("回合剩余时间: " .. Yisan_secondsToMinutes(timeLeft))
-            else
-                Notify("无法获取回合时间")
-                break
-            end
+            local ok, left = pcall(function() return game.ReplicatedStorage.Remotes.Extras.GetTimer:InvokeServer() end)
+            if ok and left then Notify("回合剩余时间: "..Yisan_secondsToMinutes(left)) else Notify("无法获取回合时间") break end
         end
     end)
 end
 
 function Yisan_DisableTimeDisplay()
     Yisan_LinniTime = false
-    if Yisan_Linnitask then
-        task.cancel(Yisan_Linnitask)
-        Yisan_Linnitask = nil
-    end
+    if Yisan_Linnitask then task.cancel(Yisan_Linnitask) Yisan_Linnitask = nil end
 end
 
 function Yisan_EnablePlayerHighlightESP()
     Yisan_playerESP = true
-    if not Yisan_findMurderer() or not Yisan_findSheriff() then
-        repeat task.wait(1) until Yisan_findSheriff() or Yisan_findMurderer()
-    end
+    if not Yisan_findMurderer() or not Yisan_findSheriff() then repeat task.wait(1) until Yisan_findSheriff() or Yisan_findMurderer() end
     Yisan_reloadESP()
 end
 
 function Yisan_DisablePlayerHighlightESP()
     Yisan_playerESP = false
-    for _, v in ipairs(Yisan_Workspace:GetChildren()) do if v.Name == "PlayerESP" then v:Destroy() end end
+    for _, v in ipairs(Workspace:GetChildren()) do if v.Name == "PlayerESP" then v:Destroy() end end
 end
 
 function Yisan_EnableGunESP()
     Yisan_TaffygunESP = true
     if Yisan_getMap() and Yisan_getMap():FindFirstChild("GunDrop") then
-        local gunesp = Instance.new("Highlight", Yisan_Workspace)
-        gunesp.OutlineTransparency = 1
-        gunesp.FillColor = Color3.fromRGB(255, 255, 0)
-        gunesp.Name = "GunESP"
-        gunesp.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        gunesp.Adornee = Yisan_getMap():FindFirstChild("GunDrop")
-        gunesp.Enabled = true
+        local hl = Instance.new("Highlight", Workspace) hl.OutlineTransparency = 1 hl.FillColor = Color3.fromRGB(255,255,0) hl.Name = "GunESP" hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop hl.Adornee = Yisan_getMap():FindFirstChild("GunDrop") hl.Enabled = true
     end
 end
 
 function Yisan_DisableGunESP()
     Yisan_TaffygunESP = false
-    if Yisan_Workspace:FindFirstChild("GunESP") then Yisan_Workspace:FindFirstChild("GunESP"):Destroy() end
+    if Workspace:FindFirstChild("GunESP") then Workspace:FindFirstChild("GunESP"):Destroy() end
 end
 
 function Yisan_EnableTrapDetection()
     Yisan_TaffyDete = true
-    for _, v in ipairs(Yisan_Workspace:GetDescendants()) do
-        if v.Name == "Trap" and v.Parent:IsDescendantOf(Yisan_Workspace) then
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v.Name == "Trap" and v.Parent:IsDescendantOf(Workspace) then
             v.Transparency = 0
-            local trapesp = Yisan_trapESP:Clone()
-            trapesp.Parent = Yisan_Workspace
-            trapesp.Adornee = v
+            local esp = Yisan_trapESP:Clone() esp.Parent = Workspace esp.Adornee = v
         end
     end
 end
 
 function Yisan_DisableTrapDetection()
     Yisan_TaffyDete = false
-    for _, v in ipairs(Yisan_Workspace:GetChildren()) do if v.Name == "TrapESP" then v:Destroy() end end
+    for _, v in ipairs(Workspace:GetChildren()) do if v.Name == "TrapESP" then v:Destroy() end end
 end
 
 function Yisan_EnableAutoShoot()
     Yisan_TaffyShoot = true
     task.spawn(function()
         while task.wait(1) do
-            if Yisan_findSheriff() == Yisan_LocalPlayer and Yisan_TaffyShoot then
+            if Yisan_findSheriff() == LocalPlayer and Yisan_TaffyShoot then
                 repeat
                     task.wait(0.1)
                     local murderer = Yisan_findMurderer()
-                    if not murderer then continue end
-                    local murdererPosition = murderer.Character.HumanoidRootPart.Position
-                    local characterRootPart = Yisan_LocalPlayer.Character.HumanoidRootPart
-                    local rayDirection = murdererPosition - characterRootPart.Position
-                    local raycastParams = RaycastParams.new()
-                    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-                    raycastParams.FilterDescendantsInstances = {Yisan_LocalPlayer.Character}
-                    local hit = Yisan_Workspace:Raycast(characterRootPart.Position, rayDirection, raycastParams)
+                    if not murderer then break end
+                    local myRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    local tRoot = murderer.Character:FindFirstChild("HumanoidRootPart")
+                    if not myRoot or not tRoot then break end
+                    local dir = tRoot.Position - myRoot.Position
+                    local rp = RaycastParams.new() rp.FilterType = Enum.RaycastFilterType.Exclude rp.FilterDescendantsInstances = {LocalPlayer.Character}
+                    local hit = Workspace:Raycast(myRoot.Position, dir, rp)
                     if not hit or hit.Instance.Parent == murderer.Character then
-                        if not Yisan_LocalPlayer.Character:FindFirstChild("Gun") then
-                            if Yisan_LocalPlayer.Backpack:FindFirstChild("Gun") then
-                                Yisan_LocalPlayer.Character:FindFirstChild("Humanoid"):EquipTool(Yisan_LocalPlayer.Backpack:FindFirstChild("Gun"))
-                            else
-                                return
-                            end
+                        if not LocalPlayer.Character:FindFirstChild("Gun") then
+                            if LocalPlayer.Backpack:FindFirstChild("Gun") then LocalPlayer.Character:FindFirstChild("Humanoid"):EquipTool(LocalPlayer.Backpack:FindFirstChild("Gun"))
+                            else Notify("你没有枪") return end
                         end
-                        local predictedPosition = Yisan_getPredictedPosition(murderer, Yisan_TaffyshootTChina)
-                        local args = {[1] = 1, [2] = predictedPosition, [3] = "AH2"}
-                        Yisan_LocalPlayer.Character.Gun.KnifeLocal.CreateBeam.RemoteFunction:InvokeServer(unpack(args))
+                        local aimPos = Yisan_getPredictedPosition(murderer, Yisan_TaffyshootTChina)
+                        LocalPlayer.Character.Gun.KnifeLocal.CreateBeam.RemoteFunction:InvokeServer(1, aimPos, "AH2")
                     end
-                until Yisan_findSheriff() ~= Yisan_LocalPlayer or not Yisan_TaffyShoot
+                until Yisan_findSheriff() ~= LocalPlayer or not Yisan_TaffyShoot
             end
         end
     end)
@@ -565,22 +434,22 @@ end
 function Yisan_EnableKillAura()
     Yisan_TaffyAu = true
     if Yisan_TaffyAuChina then Yisan_TaffyAuChina:Disconnect() end
-    Yisan_TaffyAuChina = Yisan_RunService.Heartbeat:Connect(function()
-        if Yisan_findMurderer() ~= Yisan_LocalPlayer then return end
-        for _, player in ipairs(Yisan_Players:GetPlayers()) do
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player ~= Yisan_LocalPlayer then
-                local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-                if (hrp.Position - Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position).Magnitude < 7 then
-                    hrp.Anchored = true
-                    hrp.CFrame = Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart").CFrame + Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart").CFrame.LookVector * 2
+    Yisan_TaffyAuChina = RunService.Heartbeat:Connect(function()
+        if Yisan_findMurderer() ~= LocalPlayer then return end
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local tr = p.Character.HumanoidRootPart
+                local mr = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if mr and (tr.Position - mr.Position).Magnitude < 7 then
+                    tr.Anchored = true
+                    tr.CFrame = mr.CFrame + mr.CFrame.LookVector * 2
                     task.wait(0.1)
-                    local args = {[1] = "Slash"}
-                    if Yisan_LocalPlayer.Character:FindFirstChild("Knife") then
-                        Yisan_LocalPlayer.Character.Knife.Stab:FireServer(unpack(args))
-                    elseif Yisan_LocalPlayer.Backpack:FindFirstChild("Knife") then
-                        Yisan_LocalPlayer.Character.Humanoid:EquipTool(Yisan_LocalPlayer.Backpack:FindFirstChild("Knife"))
+                    local knife = LocalPlayer.Character:FindFirstChild("Knife")
+                    if knife then knife.Stab:FireServer("Slash")
+                    elseif LocalPlayer.Backpack:FindFirstChild("Knife") then
+                        LocalPlayer.Character.Humanoid:EquipTool(LocalPlayer.Backpack:FindFirstChild("Knife"))
                         task.wait(0.2)
-                        Yisan_LocalPlayer.Character.Knife.Stab:FireServer(unpack(args))
+                        LocalPlayer.Character.Knife.Stab:FireServer("Slash")
                     end
                     return
                 end
@@ -599,20 +468,18 @@ function Yisan_EnableCollectCoinsV2()
     task.spawn(function()
         while task.wait(0.01) do
             if not Yisan_coinTaffy then continue end
-            if Yisan_getMap() then
-                if Yisan_getMap():FindFirstChild("CoinContainer") and #Yisan_getMap():FindFirstChild("CoinContainer"):GetChildren() > 1 then
-                    local closestCoin = Yisan_getClosestModelToPlayer(Yisan_LocalPlayer, Yisan_getMap():FindFirstChild("CoinContainer"):GetChildren())
-                    if closestCoin then
-                        if not Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then continue end
-                        local distance = (Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position - closestCoin:GetPivot().Position).Magnitude
-                        local toclosestcoin = Yisan_TweenService:Create(Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart"), TweenInfo.new(distance*0.05, Enum.EasingStyle.Linear), {
-                            CFrame = closestCoin:GetPivot()
-                        })
-                        toclosestcoin:Play()
-                        toclosestcoin.Completed:Wait()
+            local map = Yisan_getMap()
+            if map and map:FindFirstChild("CoinContainer") then
+                local coins = map.CoinContainer:GetChildren()
+                if #coins > 1 then
+                    local closest = Yisan_getClosestModelToPlayer(LocalPlayer, coins)
+                    if closest and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        local dist = (LocalPlayer.Character.HumanoidRootPart.Position - closest:GetPivot().Position).Magnitude
+                        local tween = TweenService:Create(LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(dist*0.05), {CFrame = closest:GetPivot()})
+                        tween:Play() tween.Completed:Wait()
                         task.wait(0.01)
-                        closestCoin:Destroy()
-                        Yisan_claimedCoins[closestCoin] = true
+                        closest:Destroy()
+                        Yisan_claimedCoins[closest] = true
                     end
                 end
             end
@@ -633,64 +500,35 @@ function Yisan_DisableAutoPickGunV2()
 end
 
 function Yisan_GodMode()
-    local Cam = Yisan_Workspace.CurrentCamera
-    local Char = Yisan_LocalPlayer.Character
-    local Human = Char and Char:FindFirstChildOfClass("Humanoid")
-    if not Human then Notify("找不到角色") return end
-    local nHuman = Human:Clone()
-    nHuman.Parent = Char
-    Yisan_LocalPlayer.Character = nil
-    nHuman:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
-    nHuman:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-    nHuman:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-    nHuman.BreakJointsOnDeath = false
-    Human:Destroy()
-    Yisan_LocalPlayer.Character = Char
-    Cam.CameraSubject = nHuman
-    nHuman.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-    local Script = Char:FindFirstChild("Animate")
-    if Script then
-        Script.Disabled = true
-        task.wait(0.1)
-        Script.Disabled = false
-    end
-    nHuman.Health = nHuman.MaxHealth
+    local cam = Workspace.CurrentCamera
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hum then Notify("找不到角色") return end
+    local nHum = hum:Clone() nHum.Parent = char
+    LocalPlayer.Character = nil
+    nHum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+    nHum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+    nHum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+    nHum.BreakJointsOnDeath = false
+    hum:Destroy()
+    LocalPlayer.Character = char
+    cam.CameraSubject = nHum
+    nHum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+    local anim = char:FindFirstChild("Animate") if anim then anim.Disabled = true task.wait(0.1) anim.Disabled = false end
+    nHum.Health = nHum.MaxHealth
     Notify("上帝模式已开启")
 end
 
 local function CreateCrosshair()
     if crosshairUI then return end
-    crosshairUI = Instance.new("ScreenGui")
-    crosshairUI.Name = "CrosshairUI"
-    crosshairUI.Parent = PlayerGui
-    crosshairUI.IgnoreGuiInset = true
-    local dot = Instance.new("Frame")
-    dot.Parent = crosshairUI
-    dot.Size = UDim2.new(0, 4, 0, 4)
-    dot.Position = UDim2.new(0.5, -2, 0.5, -2)
-    dot.BackgroundColor3 = Color3.new(1, 1, 1)
-    dot.BorderSizePixel = 0
-    local dotCorner = Instance.new("UICorner")
-    dotCorner.CornerRadius = UDim.new(1, 0)
-    dotCorner.Parent = dot
-    local outer = Instance.new("Frame")
-    outer.Parent = crosshairUI
-    outer.Size = UDim2.new(0, 20, 0, 20)
-    outer.Position = UDim2.new(0.5, -10, 0.5, -10)
-    outer.BackgroundTransparency = 1
-    outer.BorderSizePixel = 0
-    for i = 1, 4 do
-        local line = Instance.new("Frame")
-        line.Parent = outer
-        line.BackgroundColor3 = Color3.new(1, 1, 1)
-        line.BorderSizePixel = 0
-        if i == 1 or i == 2 then
-            line.Size = UDim2.new(0, 8, 0, 2)
-            line.Position = i == 1 and UDim2.new(0, -8, 0.5, -1) or UDim2.new(1, 0, 0.5, -1)
-        else
-            line.Size = UDim2.new(0, 2, 0, 8)
-            line.Position = i == 3 and UDim2.new(0.5, -1, 0, -8) or UDim2.new(0.5, -1, 1, 0)
-        end
+    crosshairUI = Instance.new("ScreenGui") crosshairUI.Name = "CrosshairUI" crosshairUI.Parent = PlayerGui crosshairUI.IgnoreGuiInset = true
+    local dot = Instance.new("Frame") dot.Parent = crosshairUI dot.Size = UDim2.new(0,4,0,4) dot.Position = UDim2.new(0.5,-2,0.5,-2) dot.BackgroundColor3 = Color3.new(1,1,1) dot.BorderSizePixel = 0
+    Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
+    local outer = Instance.new("Frame") outer.Parent = crosshairUI outer.Size = UDim2.new(0,20,0,20) outer.Position = UDim2.new(0.5,-10,0.5,-10) outer.BackgroundTransparency = 1 outer.BorderSizePixel = 0
+    for i=1,4 do
+        local line = Instance.new("Frame") line.Parent = outer line.BackgroundColor3 = Color3.new(1,1,1) line.BorderSizePixel = 0
+        if i<=2 then line.Size = UDim2.new(0,8,0,2) line.Position = i==1 and UDim2.new(0,-8,0.5,-1) or UDim2.new(1,0,0.5,-1)
+        else line.Size = UDim2.new(0,2,0,8) line.Position = i==3 and UDim2.new(0.5,-1,0,-8) or UDim2.new(0.5,-1,1,0) end
     end
 end
 
@@ -699,106 +537,94 @@ local function RemoveCrosshair()
 end
 
 local function GetJob(p)
-    local k, s = false, false
-    local function c(it) if it:IsA("Tool") then local n = it.Name:lower() if n:find("knife") or n:find("刀") then k = true end if n:find("gun") or n:find("手枪") or n:find("警长") or n:find("revolver") then s = true end end end
-    if p.Backpack then for _, v in pairs(p.Backpack:GetChildren()) do c(v) end end
-    if p.Character then for _, v in pairs(p.Character:GetChildren()) do c(v) end end
+    local k,s = false,false
+    local function c(it) if it:IsA("Tool") then local n=it.Name:lower() if n:find("knife") or n:find("刀") then k=true end if n:find("gun") or n:find("手枪") or n:find("警长") or n:find("revolver") then s=true end end end
+    if p.Backpack then for _,v in ipairs(p.Backpack:GetChildren()) do c(v) end end
+    if p.Character then for _,v in ipairs(p.Character:GetChildren()) do c(v) end end
     return k and "杀手" or s and "警长" or "平民"
 end
 
-local function GetWeapon(p, weaponType)
-    local char = p.Character local backpack = p.Backpack
-    if not char and not backpack then return nil end
-    local targetNames = weaponType == "knife" and {"knife", "刀"} or {"gun", "手枪", "警长", "revolver"}
-    local function checkTool(item) if not item or not item:IsA("Tool") then return false end local nameLower = item.Name:lower() for _, keyword in ipairs(targetNames) do if nameLower:find(keyword) then return true end end return false end
-    if char then for _, item in ipairs(char:GetChildren()) do if checkTool(item) then return item end end end
-    if backpack then for _, item in ipairs(backpack:GetChildren()) do if checkTool(item) then return item end end end
+local function GetWeapon(p, wtype)
+    local char, bp = p.Character, p.Backpack
+    if not char and not bp then return nil end
+    local targets = wtype=="knife" and {"knife","刀"} or {"gun","手枪","警长","revolver"}
+    local function check(item) if not item or not item:IsA("Tool") then return false end local n=item.Name:lower() for _,kw in ipairs(targets) do if n:find(kw) then return true end end return false end
+    if char then for _,item in ipairs(char:GetChildren()) do if check(item) then return item end end end
+    if bp then for _,item in ipairs(bp:GetChildren()) do if check(item) then return item end end end
     return nil
 end
 
-local function FollowTargetByJob(targetJob)
+local function FollowTargetByJob(job)
     if currentFollowLoop then currentFollowLoop:Disconnect() currentFollowLoop = nil end
-    local targetPlayer = nil
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-            if GetJob(player) == targetJob then targetPlayer = player break end
+    local target
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p~=LocalPlayer and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health>0 then
+            if GetJob(p)==job then target=p break end
         end
     end
-    if not targetPlayer then Notify("未找到存活的"..targetJob.."目标") return end
-    Notify("跟随已开启，锁定 "..targetPlayer.Name)
+    if not target then Notify("未找到存活的"..job.."目标") return end
+    Notify("跟随已开启，锁定 "..target.Name)
     currentFollowLoop = RunService.Heartbeat:Connect(function()
-        if not targetPlayer or not targetPlayer:IsDescendantOf(Players) or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") or not targetPlayer.Character:FindFirstChild("Humanoid") or targetPlayer.Character.Humanoid.Health <= 0 or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            currentFollowLoop:Disconnect() currentFollowLoop = nil Notify("跟随已停止") return
+        if not target or not target:IsDescendantOf(Players) or not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") or not target.Character:FindFirstChild("Humanoid") or target.Character.Humanoid.Health<=0 or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            currentFollowLoop:Disconnect() currentFollowLoop=nil Notify("跟随已停止") return
         end
-        local targetRoot = targetPlayer.Character.HumanoidRootPart local myRoot = LocalPlayer.Character.HumanoidRootPart
-        myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 2)
+        LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,2)
     end)
 end
 
 local function ForceStopFollow()
-    if currentFollowLoop then currentFollowLoop:Disconnect() currentFollowLoop = nil Notify("跟随已强制取消") else Notify("当前没有跟随目标") end
+    if currentFollowLoop then currentFollowLoop:Disconnect() currentFollowLoop=nil Notify("跟随已强制取消") else Notify("当前没有跟随目标") end
 end
 
-local function StartTracking(targetJob)
-    if trackLoop then trackLoop:Disconnect() trackLoop = nil end RemoveCrosshair()
-    local targetPlayer = nil
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-            if GetJob(player) == targetJob then targetPlayer = player break end
+local function StartTracking(job)
+    if trackLoop then trackLoop:Disconnect() trackLoop=nil end RemoveCrosshair()
+    local target
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p~=LocalPlayer and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health>0 then
+            if GetJob(p)==job then target=p break end
         end
     end
-    if not targetPlayer then Notify("未找到存活的"..targetJob) return end
-    Notify("自瞄已锁定 "..targetPlayer.Name)
+    if not target then Notify("未找到存活的"..job) return end
+    Notify("自瞄已锁定 "..target.Name)
     CreateCrosshair()
     trackLoop = RunService.RenderStepped:Connect(function()
-        if not targetPlayer or not targetPlayer:IsDescendantOf(Players) or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            trackLoop:Disconnect() trackLoop = nil RemoveCrosshair() Notify("自瞄已停止") return
+        if not target or not target:IsDescendantOf(Players) or not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") then
+            trackLoop:Disconnect() trackLoop=nil RemoveCrosshair() Notify("自瞄已停止") return
         end
         local myChar = LocalPlayer.Character if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
-        local targetRoot = targetPlayer.Character.HumanoidRootPart
-        Camera.CameraSubject = targetRoot Camera.CameraType = Enum.CameraType.Scriptable
-        local cameraPos = Camera.CFrame.Position local targetPos = targetRoot.Position
-        Camera.CFrame = CFrame.lookAt(cameraPos, targetPos)
+        local tRoot = target.Character.HumanoidRootPart
+        Camera.CameraSubject = tRoot Camera.CameraType = Enum.CameraType.Scriptable
+        Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, tRoot.Position)
     end)
 end
 
 local function StopTracking()
-    if trackLoop then trackLoop:Disconnect() trackLoop = nil end RemoveCrosshair()
+    if trackLoop then trackLoop:Disconnect() trackLoop=nil end RemoveCrosshair()
     Camera.CameraSubject = LocalPlayer.Character Camera.CameraType = Enum.CameraType.Custom Notify("自瞄已停止")
 end
 
 local function EnableAutoCollectGold()
-    if autoCollectGoldLoop then task.cancel(autoCollectGoldLoop) autoCollectGoldLoop = nil end
+    if autoCollectGoldLoop then task.cancel(autoCollectGoldLoop) autoCollectGoldLoop=nil end
     autoCollectGoldLoop = task.spawn(function()
         while autoCollectGoldEnabled do
             task.wait(0.3)
             pcall(function()
-                local myChar = LocalPlayer.Character local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart") local myHumanoid = myChar and myChar:FindFirstChild("Humanoid")
-                if not myChar or not myRoot or not myHumanoid or myHumanoid.Health <= 0 then return end
-                local goldList = {}
-                for _, descendant in pairs(Workspace:GetDescendants()) do
-                    local nameLower = descendant.Name:lower()
-                    local isGold = false
-                    for _, keyword in ipairs({"coin", "金币", "gold", "money", "cash", "钱"}) do
-                        if nameLower:find(keyword) then isGold = true break end
-                    end
-                    if isGold and (descendant:IsA("Tool") or descendant:IsA("BasePart") or descendant:IsA("Model")) then
-                        table.insert(goldList, descendant)
-                    end
+                local myChar = LocalPlayer.Character local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart") local myHum = myChar and myChar:FindFirstChild("Humanoid")
+                if not myChar or not myRoot or not myHum or myHum.Health<=0 then return end
+                local golds = {}
+                for _, desc in ipairs(Workspace:GetDescendants()) do
+                    local nl = desc.Name:lower() local isGold = false
+                    for _, kw in ipairs({"coin","金币","gold","money","cash","钱"}) do if nl:find(kw) then isGold=true break end end
+                    if isGold and (desc:IsA("Tool") or desc:IsA("BasePart") or desc:IsA("Model")) then table.insert(golds, desc) end
                 end
-                for _, gold in ipairs(goldList) do
+                for _, gold in ipairs(golds) do
                     if not autoCollectGoldEnabled then break end
                     if not myChar or not myChar.Parent or not myRoot or not myRoot.Parent then break end
                     if gold:IsA("Tool") then
-                        if gold.Parent ~= LocalPlayer.Backpack and gold.Parent ~= myChar then
-                            gold.Parent = LocalPlayer.Backpack task.wait(0.3)
-                        end
+                        if gold.Parent~=LocalPlayer.Backpack and gold.Parent~=myChar then gold.Parent = LocalPlayer.Backpack task.wait(0.3) end
                     elseif gold:IsA("BasePart") or gold:IsA("Model") then
-                        local goldPos = gold:IsA("Model") and gold:FindFirstChild("HumanoidRootPart") and gold.HumanoidRootPart.Position or (gold:IsA("BasePart") and gold.Position or nil)
-                        if goldPos then
-                            local originalPos = myRoot.CFrame myRoot.CFrame = CFrame.new(goldPos + Vector3.new(0, 2, 0))
-                            task.wait(0.05) myRoot.CFrame = originalPos task.wait(0.3)
-                        end
+                        local pos = gold:IsA("Model") and gold:FindFirstChild("HumanoidRootPart") and gold.HumanoidRootPart.Position or (gold:IsA("BasePart") and gold.Position or nil)
+                        if pos then local orig = myRoot.CFrame myRoot.CFrame = CFrame.new(pos+Vector3.new(0,2,0)) task.wait(0.05) myRoot.CFrame = orig task.wait(0.3) end
                     end
                 end
             end)
@@ -807,49 +633,45 @@ local function EnableAutoCollectGold()
 end
 
 local function DisableAutoCollectGold()
-    if autoCollectGoldLoop then task.cancel(autoCollectGoldLoop) autoCollectGoldLoop = nil end
+    if autoCollectGoldLoop then task.cancel(autoCollectGoldLoop) autoCollectGoldLoop=nil end
 end
 
 local function ClearHighlights()
-    for _, v in pairs(Workspace:GetDescendants()) do if v:IsA("Highlight") and v.Name == "JobHighlight" then v:Destroy() end end
+    for _, v in ipairs(Workspace:GetDescendants()) do if v:IsA("Highlight") and v.Name=="JobHighlight" then v:Destroy() end end
 end
 
 local function UpdateHighlights()
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr == LocalPlayer then continue end
-        local character = plr.Character if not character then continue end
-        local humanoid = character:FindFirstChild("Humanoid") if not humanoid or humanoid.Health <= 0 then continue end
-        local highlight = character:FindFirstChild("JobHighlight")
-        if not highlight then
-            highlight = Instance.new("Highlight") highlight.Name = "JobHighlight" highlight.Parent = character
-            highlight.FillTransparency = 0.6 highlight.OutlineTransparency = 0 highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        end
+        if plr==LocalPlayer then continue end
+        local char = plr.Character if not char then continue end
+        local hum = char:FindFirstChild("Humanoid") if not hum or hum.Health<=0 then continue end
+        local hl = char:FindFirstChild("JobHighlight")
+        if not hl then hl = Instance.new("Highlight") hl.Name="JobHighlight" hl.Parent=char hl.FillTransparency=0.6 hl.OutlineTransparency=0 hl.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop end
         local job = GetJob(plr)
-        if job == "杀手" then highlight.FillColor = Color3.new(1, 0, 0) highlight.OutlineColor = Color3.new(1, 0, 0)
-        elseif job == "警长" then highlight.FillColor = Color3.new(0, 0.5, 1) highlight.OutlineColor = Color3.new(0, 0.5, 1)
-        else highlight.FillColor = Color3.new(1, 1, 1) highlight.OutlineColor = Color3.new(1, 1, 1) end
+        if job=="杀手" then hl.FillColor=Color3.new(1,0,0) hl.OutlineColor=Color3.new(1,0,0)
+        elseif job=="警长" then hl.FillColor=Color3.new(0,0.5,1) hl.OutlineColor=Color3.new(0,0.5,1)
+        else hl.FillColor=Color3.new(1,1,1) hl.OutlineColor=Color3.new(1,1,1) end
     end
 end
 
 local function EnableJobESP()
     jobEspEnabled = true
-    if jobEspLoop then task.cancel(jobEspLoop) jobEspLoop = nil end
+    if jobEspLoop then task.cancel(jobEspLoop) jobEspLoop=nil end
     jobEspLoop = task.spawn(function()
         while jobEspEnabled do
             pcall(function()
                 for _, plr in ipairs(Players:GetPlayers()) do
                     if plr.Character and plr.Character:FindFirstChild("Head") then
-                        local head = plr.Character.Head local jobLabel = head:FindFirstChild("JobLabel")
-                        if not jobLabel then
-                            jobLabel = Instance.new("BillboardGui") jobLabel.Name = "JobLabel" jobLabel.Parent = head
-                            jobLabel.Size = UDim2.new(0, 100, 0, 30) jobLabel.StudsOffset = Vector3.new(0, 2.5, 0) jobLabel.AlwaysOnTop = true
-                            local text = Instance.new("TextLabel") text.Parent = jobLabel text.BackgroundTransparency = 1
-                            text.Size = UDim2.new(1, 0, 1, 0) text.TextSize = 15 text.Font = Enum.Font.ArialBold jobLabel.TextLabel = text
+                        local head = plr.Character.Head
+                        local label = head:FindFirstChild("JobLabel")
+                        if not label then
+                            label = Instance.new("BillboardGui") label.Name="JobLabel" label.Parent=head label.Size=UDim2.new(0,100,0,30) label.StudsOffset=Vector3.new(0,2.5,0) label.AlwaysOnTop=true
+                            local txt = Instance.new("TextLabel") txt.Parent=label txt.BackgroundTransparency=1 txt.Size=UDim2.new(1,0,1,0) txt.TextSize=15 txt.Font=Enum.Font.ArialBold label.TextLabel=txt
                         end
-                        local text = jobLabel.TextLabel local job = GetJob(plr) text.Text = job
-                        if job == "杀手" then text.TextColor3 = Color3.new(1, 0, 0)
-                        elseif job == "警长" then text.TextColor3 = Color3.new(0, 0.5, 1)
-                        else text.TextColor3 = Color3.new(1, 1, 1) end
+                        local txt = label.TextLabel local job = GetJob(plr) txt.Text=job
+                        if job=="杀手" then txt.TextColor3=Color3.new(1,0,0)
+                        elseif job=="警长" then txt.TextColor3=Color3.new(0,0.5,1)
+                        else txt.TextColor3=Color3.new(1,1,1) end
                     end
                 end
                 UpdateHighlights()
@@ -861,10 +683,10 @@ end
 
 local function DisableJobESP()
     jobEspEnabled = false
-    if jobEspLoop then task.cancel(jobEspLoop) jobEspLoop = nil end
+    if jobEspLoop then task.cancel(jobEspLoop) jobEspLoop=nil end
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr.Character and plr.Character:FindFirstChild("Head") then
-            local jobLabel = plr.Character.Head:FindFirstChild("JobLabel") if jobLabel then jobLabel:Destroy() end
+            local label = plr.Character.Head:FindFirstChild("JobLabel") if label then label:Destroy() end
         end
     end
     ClearHighlights()
@@ -875,21 +697,21 @@ local function EnableAutoPickGun()
     autoPickGunLoop = task.spawn(function()
         while autoPickGunEnabled do
             task.wait(0.3)
-            local myChar = LocalPlayer.Character local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart") local myHumanoid = myChar and myChar:FindFirstChild("Humanoid")
-            if not myChar or not myRoot or not myHumanoid or myHumanoid.Health <= 0 then continue end
-            if GetWeapon(LocalPlayer, "gun") then continue end
-            local targetGun = nil
-            for _, descendant in pairs(Workspace:GetDescendants()) do
-                if descendant:IsA("Tool") then
-                    local nameLower = descendant.Name:lower() local isGun = false
-                    for _, keyword in ipairs({"gun", "手枪", "警长", "revolver"}) do if nameLower:find(keyword) then isGun = true break end end
+            local myChar = LocalPlayer.Character local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart") local myHum = myChar and myChar:FindFirstChild("Humanoid")
+            if not myChar or not myRoot or not myHum or myHum.Health<=0 then continue end
+            if GetWeapon(LocalPlayer,"gun") then continue end
+            local target
+            for _, desc in ipairs(Workspace:GetDescendants()) do
+                if desc:IsA("Tool") then
+                    local nl = desc.Name:lower() local isGun = false
+                    for _,kw in ipairs({"gun","手枪","警长","revolver"}) do if nl:find(kw) then isGun=true break end end
                     if not isGun then continue end
-                    if descendant:IsDescendantOf(Workspace) and not descendant:IsDescendantOf(LocalPlayer) then targetGun = descendant break end
+                    if desc:IsDescendantOf(Workspace) and not desc:IsDescendantOf(LocalPlayer) then target=desc break end
                 end
             end
-            if targetGun then
-                local originalPos = myRoot.CFrame local gunPos = targetGun:IsA("BasePart") and targetGun.Position or (targetGun:FindFirstChild("Handle") and targetGun.Handle.Position) or nil
-                if gunPos then myRoot.CFrame = CFrame.new(gunPos + Vector3.new(0, 2, 0)) task.wait(0.3) pcall(function() targetGun.Parent = LocalPlayer.Backpack end) myRoot.CFrame = originalPos Notify("已拾取一把警长枪械") end
+            if target then
+                local orig = myRoot.CFrame local pos = target:IsA("BasePart") and target.Position or (target:FindFirstChild("Handle") and target.Handle.Position) or nil
+                if pos then myRoot.CFrame = CFrame.new(pos+Vector3.new(0,2,0)) task.wait(0.3) pcall(function() target.Parent = LocalPlayer.Backpack end) myRoot.CFrame = orig Notify("已拾取一把警长枪械") end
             end
         end
     end)
@@ -897,147 +719,147 @@ end
 
 local function DisableAutoPickGun()
     autoPickGunEnabled = false
-    if autoPickGunLoop then task.cancel(autoPickGunLoop) autoPickGunLoop = nil end
+    if autoPickGunLoop then task.cancel(autoPickGunLoop) autoPickGunLoop=nil end
 end
 
 local function KillerAutoKillAll()
-    if GetJob(LocalPlayer) ~= "杀手" then Notify("仅杀手可使用此功能") return end
-    if autoKillLoop then task.cancel(autoKillLoop) autoKillLoop = nil Notify("自动清场已停止") return end
-    local targetList = {}
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-            if GetJob(p) == "警长" then table.insert(targetList, 1, p) else table.insert(targetList, p) end
+    if GetJob(LocalPlayer)~="杀手" then Notify("仅杀手可使用此功能") return end
+    if autoKillLoop then task.cancel(autoKillLoop) autoKillLoop=nil Notify("自动清场已停止") return end
+    local targets = {}
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p~=LocalPlayer and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health>0 then
+            if GetJob(p)=="警长" then table.insert(targets,1,p) else table.insert(targets,p) end
         end
     end
-    if #targetList == 0 then Notify("未找到存活目标") return end
-    local knife = GetWeapon(LocalPlayer, "knife") if not knife then Notify("未找到你的刀，无法执行") return end
-    Notify("开始清场，共"..#targetList.."个目标")
+    if #targets==0 then Notify("未找到存活目标") return end
+    local knife = GetWeapon(LocalPlayer,"knife") if not knife then Notify("未找到你的刀，无法执行") return end
+    Notify("开始清场，共"..#targets.."个目标")
     autoKillLoop = task.spawn(function()
-        local killCount = 0
-        for index, target in ipairs(targetList) do
-            local myChar = LocalPlayer.Character local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart") local myHumanoid = myChar and myChar:FindFirstChild("Humanoid") local currentKnife = GetWeapon(LocalPlayer, "knife")
-            if not myChar or not myRoot or not myHumanoid or myHumanoid.Health <= 0 or not currentKnife then autoKillLoop = nil Notify("你已死亡或武器丢失，清场停止") return end
-            if not target or not target:IsDescendantOf(Players) or not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") or not target.Character:FindFirstChild("Humanoid") or target.Character.Humanoid.Health <= 0 then Notify("目标"..target.Name.."已死亡") continue end
-            local targetRoot = target.Character.HumanoidRootPart myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 2) task.wait(0.1)
-            currentKnife:Equip() task.wait(0.05) currentKnife:Activate()
-            local waitStart = os.clock() local targetDied = false
-            while os.clock() - waitStart < 5 do
+        local kills = 0
+        for _, target in ipairs(targets) do
+            local myChar = LocalPlayer.Character local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart") local myHum = myChar and myChar:FindFirstChild("Humanoid")
+            local curKnife = GetWeapon(LocalPlayer,"knife")
+            if not myChar or not myRoot or not myHum or myHum.Health<=0 or not curKnife then autoKillLoop=nil Notify("你已死亡或武器丢失，清场停止") return end
+            if not target or not target:IsDescendantOf(Players) or not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") or not target.Character:FindFirstChild("Humanoid") or target.Character.Humanoid.Health<=0 then Notify("目标"..target.Name.."已死亡") continue end
+            local tRoot = target.Character.HumanoidRootPart
+            myRoot.CFrame = tRoot.CFrame * CFrame.new(0,0,2) task.wait(0.1)
+            curKnife:Equip() task.wait(0.05) curKnife:Activate()
+            local start = os.clock()
+            local died = false
+            while os.clock()-start < 5 do
                 task.wait(0.1)
-                local newTargetHumanoid = target.Character and target.Character:FindFirstChild("Humanoid") if not newTargetHumanoid or newTargetHumanoid.Health <= 0 then targetDied = true break end
-                local newMyHumanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") if not newMyHumanoid or newMyHumanoid.Health <= 0 then autoKillLoop = nil Notify("你已死亡，清场停止") return end
-                local newKnife = GetWeapon(LocalPlayer, "knife") if not newKnife then autoKillLoop = nil Notify("武器丢失，清场停止") return end
-                local newTargetRoot = target.Character and target.Character:FindFirstChild("HumanoidRootPart") local newMyRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if newTargetRoot and newMyRoot then newMyRoot.CFrame = newTargetRoot.CFrame * CFrame.new(0, 0, 2) newKnife:Equip() task.wait(0.05) newKnife:Activate() end
+                local tHum = target.Character and target.Character:FindFirstChild("Humanoid") if not tHum or tHum.Health<=0 then died=true break end
+                local mHum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") if not mHum or mHum.Health<=0 then autoKillLoop=nil Notify("你已死亡，清场停止") return end
+                local nKnife = GetWeapon(LocalPlayer,"knife") if not nKnife then autoKillLoop=nil Notify("武器丢失，清场停止") return end
+                local ntRoot = target.Character and target.Character:FindFirstChild("HumanoidRootPart") local nmRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if ntRoot and nmRoot then nmRoot.CFrame = ntRoot.CFrame*CFrame.new(0,0,2) nKnife:Equip() task.wait(0.05) nKnife:Activate() end
             end
-            if targetDied then killCount += 1 Notify("已击杀 "..target.Name.." ("..killCount.."/"..#targetList..")") else Notify("超时，跳过 "..target.Name) end
+            if died then kills=kills+1 Notify("已击杀 "..target.Name.." ("..kills.."/"..#targets..")") else Notify("超时，跳过 "..target.Name) end
         end
-        autoKillLoop = nil Notify("清场完成，共击杀"..killCount.."个目标")
+        autoKillLoop=nil Notify("清场完成，共击杀"..kills.."个目标")
     end)
 end
 
 local function TP(p)
     local r = LocalPlayer.Character:FindFirstChild("HumanoidRootPart") local tr = p.Character:FindFirstChild("HumanoidRootPart")
-    if r and tr then r.CFrame = tr.CFrame * CFrame.new(0, 0, 2) Notify("已传送到 "..p.Name) end
+    if r and tr then r.CFrame = tr.CFrame*CFrame.new(0,0,2) Notify("已传送到 "..p.Name) end
 end
 
 local function TPC()
     local l = LocalPlayer.Character:FindFirstChild("HumanoidRootPart") if not l then return end
-    local m = math.huge local t
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and GetJob(p) == "平民" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            local d = (p.Character.HumanoidRootPart.Position - l.Position).Magnitude if d < m then m = d; t = p end
+    local minDist, t = math.huge, nil
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p~=LocalPlayer and GetJob(p)=="平民" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (p.Character.HumanoidRootPart.Position - l.Position).Magnitude
+            if d<minDist then minDist=d; t=p end
         end
     end
     if t then TP(t) else Notify("未找到平民") end
 end
 
 local function TPS()
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and GetJob(p) == "警长" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then TP(p) return end
-    end
+    for _,p in ipairs(Players:GetPlayers()) do if p~=LocalPlayer and GetJob(p)=="警长" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then TP(p) return end end
     Notify("未找到警长")
 end
 
 local function TPK()
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and GetJob(p) == "杀手" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then TP(p) return end
-    end
+    for _,p in ipairs(Players:GetPlayers()) do if p~=LocalPlayer and GetJob(p)=="杀手" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then TP(p) return end end
     Notify("未找到杀手")
 end
 
 local function TeleportKillerToSpawn()
     local found = false
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and GetJob(player) == "杀手" then
-            local char = player.Character if char and char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart.CFrame = CFrame.new(352.42, 522.05, -8.30) found = true Notify("已将杀手 "..player.Name.." 传送到出生点") end
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p~=LocalPlayer and GetJob(p)=="杀手" then
+            local char = p.Character if char and char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart.CFrame = CFrame.new(352.42,522.05,-8.30) found=true Notify("已将杀手 "..p.Name.." 传送到出生点") end
         end
     end
     if not found then Notify("未找到存活的杀手") end
 end
 
 local function loadFlightScript()
-    local success, err = pcall(function()
-        do
-            local main = Instance.new("ScreenGui") local Frame = Instance.new("Frame") local up = Instance.new("TextButton") local down = Instance.new("TextButton") local onof = Instance.new("TextButton") local TextLabel = Instance.new("TextLabel") local plus = Instance.new("TextButton") local speed = Instance.new("TextLabel") local mine = Instance.new("TextButton") local closebutton = Instance.new("TextButton") local mini = Instance.new("TextButton") local mini2 = Instance.new("TextButton")
-            main.Name = "main" main.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui") main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling main.ResetOnSpawn = false
-            Frame.Parent = main Frame.BackgroundColor3 = Color3.fromRGB(163, 255, 137) Frame.BorderColor3 = Color3.fromRGB(103, 221, 213) Frame.Position = UDim2.new(0.100320168, 0, 0.379746825, 0) Frame.Size = UDim2.new(0, 190, 0, 57)
-            up.Name = "up" up.Parent = Frame up.BackgroundColor3 = Color3.fromRGB(79, 255, 152) up.Size = UDim2.new(0, 44, 0, 28) up.Font = Enum.Font.SourceSans up.Text = "上升" up.TextColor3 = Color3.fromRGB(0, 0, 0) up.TextSize = 14
-            down.Name = "down" down.Parent = Frame down.BackgroundColor3 = Color3.fromRGB(215, 255, 121) down.Position = UDim2.new(0, 0, 0.491228074, 0) down.Size = UDim2.new(0, 44, 0, 28) down.Font = Enum.Font.SourceSans down.Text = "下落" down.TextColor3 = Color3.fromRGB(0, 0, 0) down.TextSize = 14
-            onof.Name = "onof" onof.Parent = Frame onof.BackgroundColor3 = Color3.fromRGB(255, 249, 74) onof.Position = UDim2.new(0.702823281, 0, 0.491228074, 0) onof.Size = UDim2.new(0, 56, 0, 28) onof.Font = Enum.Font.SourceSans onof.Text = "飞" onof.TextColor3 = Color3.fromRGB(0, 0, 0) onof.TextSize = 14
-            TextLabel.Parent = Frame TextLabel.BackgroundColor3 = Color3.fromRGB(242, 60, 255) TextLabel.Position = UDim2.new(0.469327301, 0, 0, 0) TextLabel.Size = UDim2.new(0, 100, 0, 28) TextLabel.Font = Enum.Font.SourceSans TextLabel.Text = "恐拜大帝" TextLabel.TextColor3 = Color3.fromRGB(0, 0, 0) TextLabel.TextScaled = true TextLabel.TextSize = 14 TextLabel.TextWrapped = true
-            plus.Name = "plus" plus.Parent = Frame plus.BackgroundColor3 = Color3.fromRGB(133, 145, 255) plus.Position = UDim2.new(0.231578946, 0, 0, 0) plus.Size = UDim2.new(0, 45, 0, 28) plus.Font = Enum.Font.SourceSans plus.Text = "+" plus.TextColor3 = Color3.fromRGB(0, 0, 0) plus.TextScaled = true plus.TextSize = 14 plus.TextWrapped = true
-            speed.Name = "speed" speed.Parent = Frame speed.BackgroundColor3 = Color3.fromRGB(255, 85, 0) speed.Position = UDim2.new(0.468421042, 0, 0.491228074, 0) speed.Size = UDim2.new(0, 44, 0, 28) speed.Font = Enum.Font.SourceSans speed.Text = "1" speed.TextColor3 = Color3.fromRGB(0, 0, 0) speed.TextScaled = true speed.TextSize = 14 speed.TextWrapped = true
-            mine.Name = "mine" mine.Parent = Frame mine.BackgroundColor3 = Color3.fromRGB(123, 255, 247) mine.Position = UDim2.new(0.231578946, 0, 0.491228074, 0) mine.Size = UDim2.new(0, 45, 0, 29) mine.Font = Enum.Font.SourceSans mine.Text = "-" mine.TextColor3 = Color3.fromRGB(0, 0, 0) mine.TextScaled = true mine.TextSize = 14 mine.TextWrapped = true
-            closebutton.Name = "Close" closebutton.Parent = Frame closebutton.BackgroundColor3 = Color3.fromRGB(225, 25, 0) closebutton.Font = Enum.Font.SourceSans closebutton.Size = UDim2.new(0, 45, 0, 28) closebutton.Text = "X" closebutton.TextSize = 30 closebutton.Position = UDim2.new(0, 0, -1, 27)
-            mini.Name = "minimize" mini.Parent = Frame mini.BackgroundColor3 = Color3.fromRGB(192, 150, 230) mini.Font = Enum.Font.SourceSans mini.Size = UDim2.new(0, 45, 0, 28) mini.Text = "-" mini.TextSize = 40 mini.Position = UDim2.new(0, 44, -1, 27)
-            mini2.Name = "minimize2" mini2.Parent = Frame mini2.BackgroundColor3 = Color3.fromRGB(192, 150, 230) mini2.Font = Enum.Font.SourceSans mini2.Size = UDim2.new(0, 45, 0, 28) mini2.Text = "+" mini2.TextSize = 40 mini2.Position = UDim2.new(0, 44, 0, 30) mini2.Visible = false
-            speeds = 1
-            local speaker = game:GetService("Players").LocalPlayer local chr = game.Players.LocalPlayer.Character local hum = chr and chr:FindFirstChildWhichIsA("Humanoid") nowe = false
-            game:GetService("StarterGui"):SetCore("SendNotification", { Title = "飞行脚本", Text = "创作者：恐拜大帝", Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150" })
-            Frame.Active = true Frame.Draggable = true
-            closebutton.MouseButton1Click:Connect(function() main:Destroy() end)
-            up.MouseButton1Click:Connect(function() if chr and chr:FindFirstChild("HumanoidRootPart") then chr.HumanoidRootPart.CFrame = chr.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0) end end)
-            down.MouseButton1Click:Connect(function() if chr and chr:FindFirstChild("HumanoidRootPart") then chr.HumanoidRootPart.CFrame = chr.HumanoidRootPart.CFrame + Vector3.new(0, -3, 0) end end)
-            mini.MouseButton1Click:Connect(function() up.Visible = false down.Visible = false onof.Visible = false plus.Visible = false speed.Visible = false mine.Visible = false closebutton.Visible = false mini.Visible = false mini2.Visible = true Frame.Size = UDim2.new(0, 100, 0, 28) TextLabel.Position = UDim2.new(0, 0, 0, 0) end)
-            mini2.MouseButton1Click:Connect(function() up.Visible = true down.Visible = true onof.Visible = true plus.Visible = true speed.Visible = true mine.Visible = true closebutton.Visible = true mini.Visible = true mini2.Visible = false Frame.Size = UDim2.new(0, 190, 0, 57) TextLabel.Position = UDim2.new(0.469327301, 0, 0, 0) end)
-            plus.MouseButton1Click:Connect(function() speeds = speeds + 1 speed.Text = tostring(speeds) end)
-            mine.MouseButton1Click:Connect(function() if speeds > 1 then speeds = speeds - 1 speed.Text = tostring(speeds) else speed.Text = "错误" task.wait(0.2) speed.Text = "1" end end)
-            speaker.CharacterAdded:Connect(function(newChar) chr = newChar hum = chr:FindFirstChildOfClass("Humanoid") end)
-            onof.MouseButton1Click:Connect(function()
-                nowe = not nowe onof.Text = nowe and "飞" or "飞"
-                if nowe then
-                    if hum then
-                        hum:SetStateEnabled(Enum.HumanoidStateType.Climbing, false) hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false) hum:SetStateEnabled(Enum.HumanoidStateType.Flying, false) hum:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false) hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) hum:SetStateEnabled(Enum.HumanoidStateType.Landed, false) hum:SetStateEnabled(Enum.HumanoidStateType.Physics, false) hum:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, false) hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false) hum:SetStateEnabled(Enum.HumanoidStateType.Running, false) hum:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, false) hum:SetStateEnabled(Enum.HumanoidStateType.Seated, false) hum:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics, false) hum:SetStateEnabled(Enum.HumanoidStateType.Swimming, false) hum:ChangeState(Enum.HumanoidStateType.Swimming)
-                    end
-                    if chr.Animate then chr.Animate.Disabled = true end
-                    if hum then for i, v in next, hum:GetPlayingAnimationTracks() do v:AdjustSpeed(0) end end
-                    task.spawn(function()
-                        local runService = game:GetService("RunService")
-                        while nowe and chr and hum do runService.Heartbeat:Wait() if hum.MoveDirection.Magnitude > 0 then chr:TranslateBy(hum.MoveDirection * speeds) end end
-                    end)
-                    if hum.RigType == Enum.HumanoidRigType.R6 then
-                        local plr = game.Players.LocalPlayer local torso = plr.Character.Torso
-                        local bg = Instance.new("BodyGyro", torso) bg.P = 9e4 bg.maxTorque = Vector3.new(9e9, 9e9, 9e9) bg.CFrame = torso.CFrame
-                        local bv = Instance.new("BodyVelocity", torso) bv.Velocity = Vector3.new(0, 0, 0) bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-                        if nowe then plr.Character.Humanoid.PlatformStand = true end
-                        while nowe and plr.Character.Humanoid.Health > 0 do game:GetService("RunService").RenderStepped:Wait() bg.CFrame = workspace.CurrentCamera.CoordinateFrame end
-                        bg:Destroy() bv:Destroy() plr.Character.Humanoid.PlatformStand = false plr.Character.Animate.Disabled = false
-                    else
-                        local plr = game.Players.LocalPlayer local UpperTorso = plr.Character.UpperTorso
-                        local bg = Instance.new("BodyGyro", UpperTorso) bg.P = 9e4 bg.maxTorque = Vector3.new(9e9, 9e9, 9e9) bg.CFrame = UpperTorso.CFrame
-                        local bv = Instance.new("BodyVelocity", UpperTorso) bv.Velocity = Vector3.new(0, 0, 0) bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-                        if nowe then plr.Character.Humanoid.PlatformStand = true end
-                        while nowe and plr.Character.Humanoid.Health > 0 do wait() bg.CFrame = workspace.CurrentCamera.CoordinateFrame end
-                        bg:Destroy() bv:Destroy() plr.Character.Humanoid.PlatformStand = false plr.Character.Animate.Disabled = false
-                    end
-                else
-                    if hum then for _, state in pairs(Enum.HumanoidStateType:GetEnumItems()) do hum:SetStateEnabled(state, true) end hum:ChangeState(Enum.HumanoidStateType.Running) end
-                    if chr.Animate then chr.Animate.Disabled = false end
+    local ok, err = pcall(function()
+        local main = Instance.new("ScreenGui") local Frame = Instance.new("Frame") local up = Instance.new("TextButton") local down = Instance.new("TextButton") local onof = Instance.new("TextButton") local TextLabel = Instance.new("TextLabel") local plus = Instance.new("TextButton") local speed = Instance.new("TextLabel") local mine = Instance.new("TextButton") local closebutton = Instance.new("TextButton") local mini = Instance.new("TextButton") local mini2 = Instance.new("TextButton")
+        main.Name="main" main.Parent=LocalPlayer:WaitForChild("PlayerGui") main.ZIndexBehavior=Enum.ZIndexBehavior.Sibling main.ResetOnSpawn=false
+        Frame.Parent=main Frame.BackgroundColor3=Color3.fromRGB(163,255,137) Frame.BorderColor3=Color3.fromRGB(103,221,213) Frame.Position=UDim2.new(0.100320168,0,0.379746825,0) Frame.Size=UDim2.new(0,190,0,57)
+        up.Name="up" up.Parent=Frame up.BackgroundColor3=Color3.fromRGB(79,255,152) up.Size=UDim2.new(0,44,0,28) up.Font=Enum.Font.SourceSans up.Text="上升" up.TextColor3=Color3.fromRGB(0,0,0) up.TextSize=14
+        down.Name="down" down.Parent=Frame down.BackgroundColor3=Color3.fromRGB(215,255,121) down.Position=UDim2.new(0,0,0.491228074,0) down.Size=UDim2.new(0,44,0,28) down.Font=Enum.Font.SourceSans down.Text="下落" down.TextColor3=Color3.fromRGB(0,0,0) down.TextSize=14
+        onof.Name="onof" onof.Parent=Frame onof.BackgroundColor3=Color3.fromRGB(255,249,74) onof.Position=UDim2.new(0.702823281,0,0.491228074,0) onof.Size=UDim2.new(0,56,0,28) onof.Font=Enum.Font.SourceSans onof.Text="飞" onof.TextColor3=Color3.fromRGB(0,0,0) onof.TextSize=14
+        TextLabel.Parent=Frame TextLabel.BackgroundColor3=Color3.fromRGB(242,60,255) TextLabel.Position=UDim2.new(0.469327301,0,0,0) TextLabel.Size=UDim2.new(0,100,0,28) TextLabel.Font=Enum.Font.SourceSans TextLabel.Text="恐拜大帝" TextLabel.TextColor3=Color3.fromRGB(0,0,0) TextLabel.TextScaled=true TextLabel.TextSize=14 TextLabel.TextWrapped=true
+        plus.Name="plus" plus.Parent=Frame plus.BackgroundColor3=Color3.fromRGB(133,145,255) plus.Position=UDim2.new(0.231578946,0,0,0) plus.Size=UDim2.new(0,45,0,28) plus.Font=Enum.Font.SourceSans plus.Text="+" plus.TextColor3=Color3.fromRGB(0,0,0) plus.TextScaled=true plus.TextSize=14 plus.TextWrapped=true
+        speed.Name="speed" speed.Parent=Frame speed.BackgroundColor3=Color3.fromRGB(255,85,0) speed.Position=UDim2.new(0.468421042,0,0.491228074,0) speed.Size=UDim2.new(0,44,0,28) speed.Font=Enum.Font.SourceSans speed.Text="1" speed.TextColor3=Color3.fromRGB(0,0,0) speed.TextScaled=true speed.TextSize=14 speed.TextWrapped=true
+        mine.Name="mine" mine.Parent=Frame mine.BackgroundColor3=Color3.fromRGB(123,255,247) mine.Position=UDim2.new(0.231578946,0,0.491228074,0) mine.Size=UDim2.new(0,45,0,29) mine.Font=Enum.Font.SourceSans mine.Text="-" mine.TextColor3=Color3.fromRGB(0,0,0) mine.TextScaled=true mine.TextSize=14 mine.TextWrapped=true
+        closebutton.Name="Close" closebutton.Parent=Frame closebutton.BackgroundColor3=Color3.fromRGB(225,25,0) closebutton.Font=Enum.Font.SourceSans closebutton.Size=UDim2.new(0,45,0,28) closebutton.Text="X" closebutton.TextSize=30 closebutton.Position=UDim2.new(0,0,-1,27)
+        mini.Name="minimize" mini.Parent=Frame mini.BackgroundColor3=Color3.fromRGB(192,150,230) mini.Font=Enum.Font.SourceSans mini.Size=UDim2.new(0,45,0,28) mini.Text="-" mini.TextSize=40 mini.Position=UDim2.new(0,44,-1,27)
+        mini2.Name="minimize2" mini2.Parent=Frame mini2.BackgroundColor3=Color3.fromRGB(192,150,230) mini2.Font=Enum.Font.SourceSans mini2.Size=UDim2.new(0,45,0,28) mini2.Text="+" mini2.TextSize=40 mini2.Position=UDim2.new(0,44,0,30) mini2.Visible=false
+        local flySpeeds = 1
+        local flyingNow = false
+        local chr = LocalPlayer.Character
+        local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+        Frame.Active=true Frame.Draggable=true
+        closebutton.MouseButton1Click:Connect(function() main:Destroy() end)
+        up.MouseButton1Click:Connect(function() if chr and chr:FindFirstChild("HumanoidRootPart") then chr.HumanoidRootPart.CFrame = chr.HumanoidRootPart.CFrame + Vector3.new(0,3,0) end end)
+        down.MouseButton1Click:Connect(function() if chr and chr:FindFirstChild("HumanoidRootPart") then chr.HumanoidRootPart.CFrame = chr.HumanoidRootPart.CFrame + Vector3.new(0,-3,0) end end)
+        mini.MouseButton1Click:Connect(function() up.Visible=false down.Visible=false onof.Visible=false plus.Visible=false speed.Visible=false mine.Visible=false closebutton.Visible=false mini.Visible=false mini2.Visible=true Frame.Size=UDim2.new(0,100,0,28) TextLabel.Position=UDim2.new(0,0,0,0) end)
+        mini2.MouseButton1Click:Connect(function() up.Visible=true down.Visible=true onof.Visible=true plus.Visible=true speed.Visible=true mine.Visible=true closebutton.Visible=true mini.Visible=true mini2.Visible=false Frame.Size=UDim2.new(0,190,0,57) TextLabel.Position=UDim2.new(0.469327301,0,0,0) end)
+        plus.MouseButton1Click:Connect(function() flySpeeds = flySpeeds + 1 speed.Text = tostring(flySpeeds) end)
+        mine.MouseButton1Click:Connect(function() if flySpeeds>1 then flySpeeds = flySpeeds - 1 speed.Text = tostring(flySpeeds) else speed.Text="错误" task.wait(0.2) speed.Text="1" end end)
+        LocalPlayer.CharacterAdded:Connect(function(newChar) chr = newChar hum = chr:FindFirstChildOfClass("Humanoid") end)
+        onof.MouseButton1Click:Connect(function()
+            flyingNow = not flyingNow
+            onof.Text = flyingNow and "飞" or "飞"
+            if flyingNow then
+                if hum then
+                    for _, state in pairs(Enum.HumanoidStateType:GetEnumItems()) do hum:SetStateEnabled(state, false) end
+                    hum:ChangeState(Enum.HumanoidStateType.Swimming)
                 end
-            end)
-        end
+                if chr.Animate then chr.Animate.Disabled = true end
+                if hum then for _, track in next, hum:GetPlayingAnimationTracks() do track:AdjustSpeed(0) end end
+                task.spawn(function()
+                    while flyingNow and chr and hum do RunService.Heartbeat:Wait() if hum.MoveDirection.Magnitude>0 then chr:TranslateBy(hum.MoveDirection * flySpeeds) end end
+                end)
+                if hum.RigType == Enum.HumanoidRigType.R6 then
+                    local torso = chr.Torso
+                    local bg = Instance.new("BodyGyro", torso) bg.P = 9e4 bg.MaxTorque = Vector3.new(9e9,9e9,9e9) bg.CFrame = torso.CFrame
+                    local bv = Instance.new("BodyVelocity", torso) bv.Velocity = Vector3.new() bv.MaxForce = Vector3.new(9e9,9e9,9e9)
+                    if flyingNow then chr.Humanoid.PlatformStand = true end
+                    while flyingNow and chr.Humanoid.Health>0 do RunService.RenderStepped:Wait() bg.CFrame = Workspace.CurrentCamera.CoordinateFrame end
+                    bg:Destroy() bv:Destroy() chr.Humanoid.PlatformStand = false chr.Animate.Disabled = false
+                else
+                    local upper = chr.UpperTorso
+                    local bg = Instance.new("BodyGyro", upper) bg.P = 9e4 bg.MaxTorque = Vector3.new(9e9,9e9,9e9) bg.CFrame = upper.CFrame
+                    local bv = Instance.new("BodyVelocity", upper) bv.Velocity = Vector3.new() bv.MaxForce = Vector3.new(9e9,9e9,9e9)
+                    if flyingNow then chr.Humanoid.PlatformStand = true end
+                    while flyingNow and chr.Humanoid.Health>0 do wait() bg.CFrame = Workspace.CurrentCamera.CoordinateFrame end
+                    bg:Destroy() bv:Destroy() chr.Humanoid.PlatformStand = false chr.Animate.Disabled = false
+                end
+            else
+                if hum then for _, state in pairs(Enum.HumanoidStateType:GetEnumItems()) do hum:SetStateEnabled(state, true) end hum:ChangeState(Enum.HumanoidStateType.Running) end
+                if chr.Animate then chr.Animate.Disabled = false end
+            end
+        end)
     end)
-    if success then Notify("飞行脚本已加载") else Notify("飞行脚本加载失败: "..tostring(err)) end
+    if ok then Notify("飞行脚本已加载") else Notify("飞行脚本加载失败: "..tostring(err)) end
 end
 
 Window = Library:CreateWindow({
@@ -1061,12 +883,12 @@ local Tabs = {
 
 local selectedTexture = "恐脚本"
 local function ApplyWindowIcon()
-    local id = (selectedTexture == "恐脚本" and "rbxassetid://113517588654522") or (selectedTexture == "巨魔" and "rbxassetid://131153193945220") or nil
+    local id = (selectedTexture=="恐脚本" and "rbxassetid://113517588654522") or (selectedTexture=="巨魔" and "rbxassetid://131153193945220") or nil
     for _, gui in ipairs(PlayerGui:GetChildren()) do
         if gui:IsA("ScreenGui") then
             for _, obj in ipairs(gui:GetDescendants()) do
-                if obj:IsA("ImageLabel") and obj.Image == "rbxassetid://113517588654522" then
-                    if selectedTexture == "删除" then obj.Image = "" obj.ImageTransparency = 1 else obj.Image = id obj.ImageTransparency = 0 end
+                if obj:IsA("ImageLabel") and obj.Image=="rbxassetid://113517588654522" then
+                    if selectedTexture=="删除" then obj.Image="" obj.ImageTransparency=1 else obj.Image=id obj.ImageTransparency=0 end
                     Notify("窗口图标已更新") return
                 end
             end
@@ -1106,28 +928,28 @@ TeleRight:AddButton({ Text = '强制取消跟随', Func = ForceStopFollow })
 TeleRight:AddButton({ Text = '将杀手传送到出生点', Func = TeleportKillerToSpawn })
 
 local AttrLeft = Tabs.Attr:AddLeftGroupbox("移动与视野")
-AttrLeft:AddSlider({ Title = "移动速度", Step = 1, Value = {Min = 0, Max = 100, Default = 16}, Callback = function(v) Yisan_ws = v if Yisan_LocalPlayer.Character and Yisan_LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then Yisan_LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = v end end })
-AttrLeft:AddSlider({ Title = "视野范围", Step = 1, Value = {Min = 0, Max = 100, Default = 70}, Callback = function(v) Yisan_fov = v Yisan_Workspace.CurrentCamera.FieldOfView = v end })
+AttrLeft:AddSlider({ Title = "移动速度", Step = 1, Value = {Min = 0, Max = 100, Default = 16}, Callback = function(v) Yisan_ws = v if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = v end end })
+AttrLeft:AddSlider({ Title = "视野范围", Step = 1, Value = {Min = 0, Max = 100, Default = 70}, Callback = function(v) Yisan_fov = v Camera.FieldOfView = v end })
 AttrLeft:AddToggle({ Title = "飞行 v2 (BodyVelocity)", Default = false, Callback = function(state) if state then Yisan_startFlying() else Yisan_stopFlying() end end })
 AttrLeft:AddInput({ Title = "飞行速度", Value = "", Placeholder = "", Callback = function(s) Yisan_flySpeed = tonumber(s) or Yisan_flySpeed end })
-AttrLeft:AddToggle({ Title = "穿墙", Default = false, Callback = function(state) Yisan_clip = not state if state then Yisan_nocliploop = Yisan_RunService.Stepped:Connect(function() if not Yisan_clip and Yisan_LocalPlayer.Character then for _, child in ipairs(Yisan_LocalPlayer.Character:GetDescendants()) do if child:IsA("BasePart") and child.CanCollide then child.CanCollide = false end end end end) else if Yisan_nocliploop then Yisan_nocliploop:Disconnect() end end end })
-AttrLeft:AddSlider({ Title = "重力", Step = 10, Value = {Min = 0, Max = 500, Default = 196}, Callback = function(v) Yisan_Workspace.Gravity = v end })
-AttrLeft:AddSlider({ Title = "跳跃力量", Step = 5, Value = {Min = 0, Max = 200, Default = 50}, Callback = function(v) if Yisan_LocalPlayer.Character and Yisan_LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then Yisan_LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = v end end })
+AttrLeft:AddToggle({ Title = "穿墙", Default = false, Callback = function(state) Yisan_clip = not state if state then Yisan_nocliploop = RunService.Stepped:Connect(function() if not Yisan_clip and LocalPlayer.Character then for _, child in ipairs(LocalPlayer.Character:GetDescendants()) do if child:IsA("BasePart") and child.CanCollide then child.CanCollide = false end end end end) else if Yisan_nocliploop then Yisan_nocliploop:Disconnect() end end end })
+AttrLeft:AddSlider({ Title = "重力", Step = 10, Value = {Min = 0, Max = 500, Default = 196}, Callback = function(v) Workspace.Gravity = v end })
+AttrLeft:AddSlider({ Title = "跳跃力量", Step = 5, Value = {Min = 0, Max = 200, Default = 50}, Callback = function(v) Yisan_JumpPower = v if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = v end end })
 
 local SheriffLeft = Tabs.Sheriff:AddLeftGroupbox("警长攻击")
 SheriffLeft:AddToggle({ Title = "自动射击", Default = false, Callback = function(state) if state then Yisan_EnableAutoShoot() Notify("自动射击已开启") else Yisan_DisableAutoShoot() Notify("自动射击已关闭") end end })
-SheriffLeft:AddButton({ Title = "甩飞杀手", Func = function() local m = Yisan_findMurderer() if not m then Notify("找不到杀手") elseif m == Yisan_LocalPlayer then Notify("不能甩飞自己") else Yisan_powerfulFling(m) end end })
-SheriffLeft:AddButton({ Title = "射击杀手", Func = function() if Yisan_findSheriff() ~= Yisan_LocalPlayer then Notify("你不是警长") return end local m = Yisan_findMurderer() or Yisan_findSheriffThatsNotMe() if not m then Notify("找不到杀手") return end if not Yisan_LocalPlayer.Character:FindFirstChild("Gun") then if Yisan_LocalPlayer.Backpack:FindFirstChild("Gun") then Yisan_LocalPlayer.Character:FindFirstChild("Humanoid"):EquipTool(Yisan_LocalPlayer.Backpack:FindFirstChild("Gun")) else Notify("你没有枪") return end end local hrp = m.Character:FindFirstChild("HumanoidRootPart") if not hrp then Notify("找不到杀手部位") return end local pp = Yisan_getPredictedPosition(m, Yisan_TaffyshootTChina) Yisan_LocalPlayer.Character.Gun.KnifeLocal.CreateBeam.RemoteFunction:InvokeServer(1, pp, "AH2") Notify("已射击杀手") end end })
+SheriffLeft:AddButton({ Title = "甩飞杀手", Func = function() local m = Yisan_findMurderer() if not m then Notify("找不到杀手") elseif m == LocalPlayer then Notify("不能甩飞自己") else Yisan_powerfulFling(m) end end })
+SheriffLeft:AddButton({ Title = "射击杀手", Func = function() if Yisan_findSheriff() ~= LocalPlayer then Notify("你不是警长") return end local m = Yisan_findMurderer() or Yisan_findSheriffThatsNotMe() if not m then Notify("找不到杀手") return end if not LocalPlayer.Character:FindFirstChild("Gun") then if LocalPlayer.Backpack:FindFirstChild("Gun") then LocalPlayer.Character:FindFirstChild("Humanoid"):EquipTool(LocalPlayer.Backpack:FindFirstChild("Gun")) else Notify("你没有枪") return end end local hrp = m.Character:FindFirstChild("HumanoidRootPart") if not hrp then Notify("找不到杀手部位") return end local pp = Yisan_getPredictedPosition(m, Yisan_TaffyshootTChina) LocalPlayer.Character.Gun.KnifeLocal.CreateBeam.RemoteFunction:InvokeServer(1, pp, "AH2") Notify("已射击杀手") end end })
 local SheriffSection = Tabs.Sheriff:AddLeftGroupbox("射击参数")
 SheriffSection:AddInput({ Title = "射击偏移量", Value = "2.8", Placeholder = "推荐2.8", Callback = function(i) Yisan_TaffyshootTChina = tonumber(i) or 2.8 end })
 SheriffSection:AddInput({ Title = "偏移量到ping乘数", Value = "1", Placeholder = "默认1", Callback = function(i) Yisan_TaffyPing = tonumber(i) or 1 end })
 
 local KillerLeft = Tabs.Killer:AddLeftGroupbox("杀手攻击")
 KillerLeft:AddToggle({ Title = "杀戮光环", Default = false, Callback = function(state) if state then Yisan_EnableKillAura() Notify("杀戮光环已开启") else Yisan_DisableKillAura() Notify("杀戮光环已关闭") end end })
-KillerLeft:AddButton({ Title = "甩飞警长", Func = function() local s = Yisan_findSheriff() if not s then Notify("找不到警长") elseif s == Yisan_LocalPlayer then Notify("不能甩飞自己") else Yisan_powerfulFling(s) end end })
-KillerLeft:AddButton({ Title = "杀死最近玩家", Func = function() if Yisan_findMurderer() ~= Yisan_LocalPlayer then Notify("你不是杀手") return end if not Yisan_LocalPlayer.Character:FindFirstChild("Knife") then if Yisan_LocalPlayer.Backpack:FindFirstChild("Knife") then Yisan_LocalPlayer.Character:FindFirstChild("Humanoid"):EquipTool(Yisan_LocalPlayer.Backpack:FindFirstChild("Knife")) else Notify("你没有刀") return end end local np = Yisan_findNearestPlayer() if not np or not np.Character then Notify("找不到玩家") return end local nhrp = np.Character:FindFirstChild("HumanoidRootPart") if not nhrp then Notify("找不到玩家部位") return end if not Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then Notify("你的角色无效") return end if not Yisan_TaffyMooKnife then nhrp.Anchored = true nhrp.CFrame = Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart").CFrame + Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart").CFrame.LookVector * 2 task.wait(0.1) Yisan_LocalPlayer.Character.Knife.Stab:FireServer("Slash") else local lpknife = Yisan_LocalPlayer.Character:FindFirstChild("Knife") if not lpknife then return end local raycastParams = RaycastParams.new() raycastParams.FilterType = Enum.RaycastFilterType.Exclude raycastParams.FilterDescendantsInstances = {Yisan_LocalPlayer.Character} Yisan_LocalPlayer.Character.Knife.Throw:FireServer(lpknife:GetPivot(), nhrp.Position) end Notify("已杀死最近玩家") end end })
-KillerLeft:AddButton({ Title = "杀死所有人", Func = function() if Yisan_findMurderer() ~= Yisan_LocalPlayer then Notify("你不是杀手") return end if not Yisan_LocalPlayer.Character:FindFirstChild("Knife") then if Yisan_LocalPlayer.Backpack:FindFirstChild("Knife") then Yisan_LocalPlayer.Character:FindFirstChild("Humanoid"):EquipTool(Yisan_LocalPlayer.Backpack:FindFirstChild("Knife")) else Notify("你没有刀") return end end for _, player in ipairs(Yisan_Players:GetPlayers()) do if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player ~= Yisan_LocalPlayer then player.Character:FindFirstChild("HumanoidRootPart").Anchored = true player.Character:FindFirstChild("HumanoidRootPart").CFrame = Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart").CFrame + Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart").CFrame.LookVector * 1 end end Yisan_LocalPlayer.Character.Knife.Stab:FireServer("Slash") Notify("已尝试杀死所有人") end end })
-KillerLeft:AddButton({ Title = "扣为人质", Func = function() if Yisan_findMurderer() ~= Yisan_LocalPlayer then Notify("你不是杀手") return end for _, player in ipairs(Yisan_Players:GetPlayers()) do if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player ~= Yisan_LocalPlayer then player.Character:FindFirstChild("HumanoidRootPart").Anchored = true player.Character:FindFirstChild("HumanoidRootPart").CFrame = Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart").CFrame + Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart").CFrame.LookVector * 5 end end Notify("已扣为人质") end end })
+KillerLeft:AddButton({ Title = "甩飞警长", Func = function() local s = Yisan_findSheriff() if not s then Notify("找不到警长") elseif s == LocalPlayer then Notify("不能甩飞自己") else Yisan_powerfulFling(s) end end })
+KillerLeft:AddButton({ Title = "杀死最近玩家", Func = function() if Yisan_findMurderer() ~= LocalPlayer then Notify("你不是杀手") return end if not LocalPlayer.Character:FindFirstChild("Knife") then if LocalPlayer.Backpack:FindFirstChild("Knife") then LocalPlayer.Character:FindFirstChild("Humanoid"):EquipTool(LocalPlayer.Backpack:FindFirstChild("Knife")) else Notify("你没有刀") return end end local np = Yisan_findNearestPlayer() if not np or not np.Character then Notify("找不到玩家") return end local nhrp = np.Character:FindFirstChild("HumanoidRootPart") if not nhrp then Notify("找不到玩家部位") return end if not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then Notify("你的角色无效") return end if not Yisan_TaffyMooKnife then nhrp.Anchored = true nhrp.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame + LocalPlayer.Character.HumanoidRootPart.CFrame.LookVector * 2 task.wait(0.1) LocalPlayer.Character.Knife.Stab:FireServer("Slash") else local lpknife = LocalPlayer.Character:FindFirstChild("Knife") if not lpknife then return end local rp = RaycastParams.new() rp.FilterType = Enum.RaycastFilterType.Exclude rp.FilterDescendantsInstances = {LocalPlayer.Character} LocalPlayer.Character.Knife.Throw:FireServer(lpknife:GetPivot(), nhrp.Position) end Notify("已杀死最近玩家") end end })
+KillerLeft:AddButton({ Title = "杀死所有人", Func = function() if Yisan_findMurderer() ~= LocalPlayer then Notify("你不是杀手") return end if not LocalPlayer.Character:FindFirstChild("Knife") then if LocalPlayer.Backpack:FindFirstChild("Knife") then LocalPlayer.Character:FindFirstChild("Humanoid"):EquipTool(LocalPlayer.Backpack:FindFirstChild("Knife")) else Notify("你没有刀") return end end for _, p in ipairs(Players:GetPlayers()) do if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then p.Character.HumanoidRootPart.Anchored = true p.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame + LocalPlayer.Character.HumanoidRootPart.CFrame.LookVector * 1 end end LocalPlayer.Character.Knife.Stab:FireServer("Slash") Notify("已尝试杀死所有人") end end })
+KillerLeft:AddButton({ Title = "扣为人质", Func = function() if Yisan_findMurderer() ~= LocalPlayer then Notify("你不是杀手") return end for _, p in ipairs(Players:GetPlayers()) do if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then p.Character.HumanoidRootPart.Anchored = true p.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame + LocalPlayer.Character.HumanoidRootPart.CFrame.LookVector * 5 end end Notify("已扣为人质") end end })
 KillerLeft:AddToggle({ Title = "模拟飞刀击杀", Default = false, Callback = function(state) Yisan_TaffyMooKnife = state end })
 
 local MiscLeft = Tabs.Misc:AddLeftGroupbox("杂项")
@@ -1137,82 +959,112 @@ MiscLeft:AddToggle({ Title = "陷阱检测", Default = false, Callback = functio
 MiscLeft:AddToggle({ Title = "忽略飞刀", Default = false, Callback = function(state) Yisan_TaffyChinaknife = state end })
 MiscLeft:AddButton({ Title = "上帝模式", Func = function() Yisan_GodMode() end })
 MiscLeft:AddButton({ Title = "发送警长/杀手名到聊天", Func = function() local channels = game:GetService("TextChatService"):WaitForChild("TextChannels"):GetChildren() for _, ch in ipairs(channels) do if ch.Name == "RBXSystem" then continue end local murd = Yisan_findMurderer() local sher = Yisan_findSheriff() local mn = murd and murd.Name or "[未检测到]" local sn = sher and sher.Name or "[未检测到]" ch:SendAsync("警长:"..sn.." | 杀手:"..mn) end Notify("已发送") end })
-MiscLeft:AddButton({ Title = "传送到大厅", Func = function() Yisan_LocalPlayer.Character:MoveTo(Vector3.new(-4985.83203125, 308.9087829589844, 7.557879447937012)) end })
-MiscLeft:AddButton({ Title = "传送到地图", Func = function() local map = Yisan_getMap() if not map then Notify("找不到地图") return end local spawnsFolder = map:FindFirstChild("Spawns") if spawnsFolder and #spawnsFolder:GetChildren() > 0 then local spawns = spawnsFolder:GetChildren() local r = spawns[math.random(1, #spawns)] if Yisan_LocalPlayer.Character and Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then Yisan_LocalPlayer.Character:MoveTo(r.Position) end else Notify("找不到生成点") end end })
-MiscLeft:AddButton({ Title = "传送到掉落的枪", Func = function() local map = Yisan_getMap() if not map or not map:FindFirstChild("GunDrop") then Notify("没有掉落枪支") return end local gd = map:FindFirstChild("GunDrop") if Yisan_LocalPlayer.Character and Yisan_LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then local prev = Yisan_LocalPlayer.Character.HumanoidRootPart.CFrame Yisan_LocalPlayer.Character.HumanoidRootPart.CFrame = gd:GetPivot() local conn conn = Yisan_LocalPlayer.Backpack.ChildAdded:Connect(function(child) if child.Name == "Gun" then conn:Disconnect() task.wait(0.5) Yisan_LocalPlayer.Character.HumanoidRootPart.CFrame = prev end end) task.delay(5, function() if conn then conn:Disconnect() Yisan_LocalPlayer.Character.HumanoidRootPart.CFrame = prev end end) end end })
+MiscLeft:AddButton({ Title = "传送到大厅", Func = function() LocalPlayer.Character:MoveTo(Vector3.new(-4985.83203125, 308.9087829589844, 7.557879447937012)) end })
+MiscLeft:AddButton({ Title = "传送到地图", Func = function() local map = Yisan_getMap() if not map then Notify("找不到地图") return end local spawns = map:FindFirstChild("Spawns") if spawns and #spawns:GetChildren()>0 then local r = spawns:GetChildren()[math.random(1,#spawns:GetChildren())] if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then LocalPlayer.Character:MoveTo(r.Position) end else Notify("找不到生成点") end end })
+MiscLeft:AddButton({ Title = "传送到掉落的枪", Func = function() local map = Yisan_getMap() if not map or not map:FindFirstChild("GunDrop") then Notify("没有掉落枪支") return end local gd = map:FindFirstChild("GunDrop") if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then local prev = LocalPlayer.Character.HumanoidRootPart.CFrame LocalPlayer.Character.HumanoidRootPart.CFrame = gd:GetPivot() local conn conn = LocalPlayer.Backpack.ChildAdded:Connect(function(child) if child.Name=="Gun" then conn:Disconnect() task.wait(0.5) LocalPlayer.Character.HumanoidRootPart.CFrame = prev end end) task.delay(5, function() if conn then conn:Disconnect() LocalPlayer.Character.HumanoidRootPart.CFrame = prev end end) end end })
 
 local CtSection = Tabs.Attr:AddLeftGroupbox("范围修改")
-CtSection:AddInput({ Title = "范围数值", Value = "1", Placeholder = "", Callback = function(i) Yisan_Taffyhit = tonumber(i) or 1 for _, v in ipairs(Yisan_Players:GetPlayers()) do if v ~= Yisan_LocalPlayer and v.Character:FindFirstChild('HumanoidRootPart') then local sizeArg = tonumber(i) local Size = Vector3.new(sizeArg,sizeArg,sizeArg) if Yisan_TaffyBox then for _, part in ipairs(v.Character:GetChildren()) do if part:IsA("BasePart") then if not i or sizeArg == 1 then part.Size = Vector3.new(2,1,1) part.Transparency = 0.2 else part.Size = Size part.Transparency = 0.2 end end end else local Root = v.Character:FindFirstChild('HumanoidRootPart') if Root:IsA("BasePart") then if not i or sizeArg == 1 then Root.Size = Vector3.new(2,1,1) Root.Transparency = 0.2 else Root.Size = Size Root.Transparency = 0.2 end Root.CanCollide = false end end end end end })
-CtSection:AddToggle({ Title = "范围 v1 (仅根部件)", Default = false, Callback = function(state) if state then Yisan_loopTaffyhit = Yisan_RunService.Heartbeat:Connect(function() for _, v in ipairs(Yisan_Players:GetPlayers()) do if v ~= Yisan_LocalPlayer and v.Character:FindFirstChild('HumanoidRootPart') then local sizeArg = tonumber(Yisan_Taffyhit) local Size = Vector3.new(sizeArg,sizeArg,sizeArg) local Root = v.Character:FindFirstChild('HumanoidRootPart') if Root:IsA("BasePart") then if not Yisan_Taffyhit or sizeArg == 1 then Root.Size = Vector3.new(2,1,1) Root.Transparency = 0.2 else Root.Size = Size Root.Transparency = 0.2 end Root.CanCollide = false end end end end) else if Yisan_loopTaffyhit then Yisan_loopTaffyhit:Disconnect() end end end })
-CtSection:AddToggle({ Title = "范围 v2 (所有部位)", Default = false, Callback = function(state) Yisan_TaffyBox = state if state then Yisan_loopTaffyhit = Yisan_RunService.Heartbeat:Connect(function() for _, v in ipairs(Yisan_Players:GetPlayers()) do if v ~= Yisan_LocalPlayer and v.Character:FindFirstChild('HumanoidRootPart') then local sizeArg = tonumber(Yisan_Taffyhit) local Size = Vector3.new(sizeArg,sizeArg,sizeArg) for _, part in ipairs(v.Character:GetChildren()) do if part:IsA("BasePart") then if not Yisan_Taffyhit or sizeArg == 1 then part.Size = Vector3.new(2,1,1) part.Transparency = 0.2 else part.Size = Size part.Transparency = 0.2 end end end end end end) else if Yisan_loopTaffyhit then Yisan_loopTaffyhit:Disconnect() end end end })
+CtSection:AddInput({ Title = "范围数值", Value = "1", Placeholder = "", Callback = function(i) Yisan_Taffyhit = tonumber(i) or 1 for _, v in ipairs(Players:GetPlayers()) do if v ~= LocalPlayer and v.Character:FindFirstChild('HumanoidRootPart') then local sz = Vector3.new(tonumber(i) or 1, tonumber(i) or 1, tonumber(i) or 1) if Yisan_TaffyBox then for _, part in ipairs(v.Character:GetChildren()) do if part:IsA("BasePart") then part.Size = sz part.Transparency = 0.2 end end else local root = v.Character.HumanoidRootPart if root:IsA("BasePart") then root.Size = sz root.Transparency = 0.2 root.CanCollide = false end end end end end })
+CtSection:AddToggle({ Title = "范围 v1 (仅根部件)", Default = false, Callback = function(state)
+    if state then
+        if Yisan_TaffyBox then Notify("请先关闭范围 v2") return end
+        if Yisan_loopTaffyhit then Yisan_loopTaffyhit:Disconnect() end
+        Yisan_loopTaffyhit = RunService.Heartbeat:Connect(function()
+            for _, v in ipairs(Players:GetPlayers()) do
+                if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild('HumanoidRootPart') then
+                    local root = v.Character.HumanoidRootPart
+                    local sz = Vector3.new(Yisan_Taffyhit, Yisan_Taffyhit, Yisan_Taffyhit)
+                    root.Size = sz root.Transparency = 0.2 root.CanCollide = false
+                end
+            end
+        end)
+    else
+        if Yisan_loopTaffyhit then Yisan_loopTaffyhit:Disconnect() end
+    end
+end })
+CtSection:AddToggle({ Title = "范围 v2 (所有部位)", Default = false, Callback = function(state)
+    Yisan_TaffyBox = state
+    if state then
+        if Yisan_loopTaffyhit then Yisan_loopTaffyhit:Disconnect() end
+        Yisan_loopTaffyhit = RunService.Heartbeat:Connect(function()
+            for _, v in ipairs(Players:GetPlayers()) do
+                if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild('HumanoidRootPart') then
+                    local sz = Vector3.new(Yisan_Taffyhit, Yisan_Taffyhit, Yisan_Taffyhit)
+                    for _, part in ipairs(v.Character:GetChildren()) do
+                        if part:IsA("BasePart") then part.Size = sz part.Transparency = 0.2 end
+                    end
+                end
+            end
+        end)
+    else
+        if Yisan_loopTaffyhit then Yisan_loopTaffyhit:Disconnect() end
+    end
+end })
 
 local AmSection = Tabs.Attr:AddLeftGroupbox("瞄准")
-AmSection:AddInput({ Title = "目标玩家", Value = "", Placeholder = "", Callback = function(i) if not Yisan_Players:FindFirstChild(Yisan_getPlayer(i, Yisan_LocalPlayer)) then Notify("玩家未找到") return end Yisan_target = Yisan_Players:FindFirstChild(Yisan_getPlayer(i, Yisan_LocalPlayer)) Notify("目标设置为 "..Yisan_target.Name) end })
-AmSection:AddButton({ Title = "瞄准锁定", Func = function() if Yisan_Taffyaim then return end if Yisan_Taffyaimrscon then Yisan_Taffyaimrscon:Disconnect() end if not Yisan_target then Notify("没有输入玩家名字") return end Yisan_Taffyaimrscon = Yisan_RunService.RenderStepped:Connect(function() if not Yisan_target or not Yisan_target.Character or not Yisan_target.Character:FindFirstChild("HumanoidRootPart") then Notify("目标无效") Yisan_Taffyaimrscon:Disconnect() return end Yisan_Workspace.CurrentCamera.CFrame = CFrame.new(Yisan_Workspace.CurrentCamera.CFrame.Position, Yisan_target.Character:FindFirstChild("HumanoidRootPart").Position) end) Yisan_Taffyaim = true end })
+AmSection:AddInput({ Title = "目标玩家", Value = "", Placeholder = "", Callback = function(i) if not Players:FindFirstChild(Yisan_getPlayer(i, LocalPlayer)) then Notify("玩家未找到") return end Yisan_target = Players:FindFirstChild(Yisan_getPlayer(i, LocalPlayer)) Notify("目标设置为 "..Yisan_target.Name) end })
+AmSection:AddButton({ Title = "瞄准锁定", Func = function() if Yisan_Taffyaim then return end if Yisan_Taffyaimrscon then Yisan_Taffyaimrscon:Disconnect() end if not Yisan_target then Notify("没有输入玩家名字") return end Yisan_Taffyaimrscon = RunService.RenderStepped:Connect(function() if not Yisan_target or not Yisan_target.Character or not Yisan_target.Character:FindFirstChild("HumanoidRootPart") then Notify("目标无效") Yisan_Taffyaimrscon:Disconnect() return end Camera.CFrame = CFrame.new(Camera.CFrame.Position, Yisan_target.Character.HumanoidRootPart.Position) end) Yisan_Taffyaim = true end })
 AmSection:AddButton({ Title = "取消瞄准锁定", Func = function() if not Yisan_Taffyaim then return end Yisan_Taffyaim = false if Yisan_Taffyaimrscon then Yisan_Taffyaimrscon:Disconnect() end end })
 
 local FgSection = Tabs.Attr:AddLeftGroupbox("甩飞")
-FgSection:AddInput({ Title = "甩飞目标", Value = "", Placeholder = "", Callback = function(i) if not Yisan_Players:FindFirstChild(Yisan_getPlayer(i, Yisan_LocalPlayer)) then Notify("玩家未找到") return end Yisan_TaffyplayerFt = Yisan_Players:FindFirstChild(Yisan_getPlayer(i, Yisan_LocalPlayer)) Notify("甩飞目标设置为 "..Yisan_TaffyplayerFt.Name) end })
-FgSection:AddButton({ Title = "甩飞指定玩家", Func = function() if not Yisan_TaffyplayerFt then Notify("请先设置甩飞目标") return end if not Yisan_Players:FindFirstChild(Yisan_TaffyplayerFt.Name) then Notify("目标玩家不存在") return end if Yisan_TaffyplayerFt == Yisan_LocalPlayer then Notify("不能甩飞自己") return end Yisan_powerfulFling(Yisan_TaffyplayerFt) end })
-FgSection:AddToggle({ Title = "防甩飞", Default = false, Callback = function(state) Yisan_TaffyantiFly = state if state then Yisan_flingDetectionCon = Yisan_RunService.Heartbeat:Connect(function() for _, pl in ipairs(Yisan_Players:GetPlayers()) do if pl.Character:IsDescendantOf(Yisan_Workspace) then if pl.Character.PrimaryPart.AssemblyAngularVelocity.Magnitude > 50 or pl.Character.PrimaryPart.AssemblyLinearVelocity.Magnitude > 100 then if not Yisan_detectedPlayers[pl.Name] then Notify("检测到甩飞者: "..pl.Name) Yisan_detectedPlayers[pl.Name] = true end for _, p in ipairs(pl.Character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false p.AssemblyAngularVelocity = Vector3.zero p.AssemblyLinearVelocity = Vector3.zero p.CustomPhysicalProperties = PhysicalProperties.new(0,0,0) end end end end end end) Yisan_flingNeutralizerCon = Yisan_RunService.Heartbeat:Connect(function() if Yisan_LocalPlayer.Character and Yisan_LocalPlayer.Character.PrimaryPart then if Yisan_LocalPlayer.Character.PrimaryPart.AssemblyLinearVelocity.Magnitude > 250 or Yisan_LocalPlayer.Character.PrimaryPart.AssemblyAngularVelocity.Magnitude > 250 then Yisan_LocalPlayer.Character.PrimaryPart.AssemblyLinearVelocity = Vector3.zero Yisan_LocalPlayer.Character.PrimaryPart.AssemblyAngularVelocity = Vector3.zero if Yisan_TaffyantiFlyLastPos ~= Vector3.zero then Yisan_LocalPlayer.Character.PrimaryPart.CFrame = CFrame.new(Yisan_TaffyantiFlyLastPos) end else Yisan_TaffyantiFlyLastPos = Yisan_LocalPlayer.Character.PrimaryPart.Position end end end) else if Yisan_flingDetectionCon then Yisan_flingDetectionCon:Disconnect() end if Yisan_flingNeutralizerCon then Yisan_flingNeutralizerCon:Disconnect() end Yisan_detectedPlayers = {} end end })
+FgSection:AddInput({ Title = "甩飞目标", Value = "", Placeholder = "", Callback = function(i) if not Players:FindFirstChild(Yisan_getPlayer(i, LocalPlayer)) then Notify("玩家未找到") return end Yisan_TaffyplayerFt = Players:FindFirstChild(Yisan_getPlayer(i, LocalPlayer)) Notify("甩飞目标设置为 "..Yisan_TaffyplayerFt.Name) end })
+FgSection:AddButton({ Title = "甩飞指定玩家", Func = function() if not Yisan_TaffyplayerFt then Notify("请先设置甩飞目标") return end if not Players:FindFirstChild(Yisan_TaffyplayerFt.Name) then Notify("目标玩家不存在") return end if Yisan_TaffyplayerFt == LocalPlayer then Notify("不能甩飞自己") return end Yisan_powerfulFling(Yisan_TaffyplayerFt) end })
+FgSection:AddToggle({ Title = "防甩飞", Default = false, Callback = function(state) Yisan_TaffyantiFly = state if state then Yisan_flingDetectionCon = RunService.Heartbeat:Connect(function() for _, pl in ipairs(Players:GetPlayers()) do if pl.Character:IsDescendantOf(Workspace) then if pl.Character.PrimaryPart.AssemblyAngularVelocity.Magnitude>50 or pl.Character.PrimaryPart.AssemblyLinearVelocity.Magnitude>100 then if not Yisan_detectedPlayers[pl.Name] then Notify("检测到甩飞者: "..pl.Name) Yisan_detectedPlayers[pl.Name]=true end for _, p in ipairs(pl.Character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide=false p.AssemblyAngularVelocity=Vector3.zero p.AssemblyLinearVelocity=Vector3.zero p.CustomPhysicalProperties=PhysicalProperties.new(0,0,0) end end end end end end) Yisan_flingNeutralizerCon = RunService.Heartbeat:Connect(function() if LocalPlayer.Character and LocalPlayer.Character.PrimaryPart then if LocalPlayer.Character.PrimaryPart.AssemblyLinearVelocity.Magnitude>250 or LocalPlayer.Character.PrimaryPart.AssemblyAngularVelocity.Magnitude>250 then LocalPlayer.Character.PrimaryPart.AssemblyLinearVelocity=Vector3.zero LocalPlayer.Character.PrimaryPart.AssemblyAngularVelocity=Vector3.zero if Yisan_TaffyantiFlyLastPos~=Vector3.zero then LocalPlayer.Character.PrimaryPart.CFrame=CFrame.new(Yisan_TaffyantiFlyLastPos) end else Yisan_TaffyantiFlyLastPos=LocalPlayer.Character.PrimaryPart.Position end end end) else if Yisan_flingDetectionCon then Yisan_flingDetectionCon:Disconnect() end if Yisan_flingNeutralizerCon then Yisan_flingNeutralizerCon:Disconnect() end Yisan_detectedPlayers={} end end })
 
-Yisan_Workspace.ChildAdded:Connect(function(ch)
+Workspace.ChildAdded:Connect(function(ch)
     if ch == Yisan_getMap() and Yisan_playerESP then Notify("地图已加载等待分配角色...") repeat task.wait(1) until Yisan_findMurderer() Notify("玩家ESP已移除,请重新开启") end
 end)
-Yisan_Workspace.ChildRemoved:Connect(function(ch)
-    if ch == Yisan_getMap() and Yisan_playerESP then Notify("游戏结束移除玩家ESP") Yisan_playerData = {} for _, v in ipairs(Yisan_Workspace:GetChildren()) do if v.Name == "PlayerESP" then v:Destroy() end end end
+Workspace.ChildRemoved:Connect(function(ch)
+    if ch == Yisan_getMap() and Yisan_playerESP then Notify("游戏结束移除玩家ESP") Yisan_playerData={} for _, v in ipairs(Workspace:GetChildren()) do if v.Name=="PlayerESP" then v:Destroy() end end end
 end)
-Yisan_Workspace.DescendantAdded:Connect(function(ch)
-    if Yisan_TaffyDete and ch.Name == "Trap" and ch.Parent:IsDescendantOf(Yisan_Workspace) then
-        ch.Transparency = 0
-        local trapesp = Yisan_trapESP:Clone() trapesp.Parent = Yisan_Workspace trapesp.Adornee = ch
+Workspace.DescendantAdded:Connect(function(ch)
+    if Yisan_TaffyDete and ch.Name=="Trap" and ch.Parent:IsDescendantOf(Workspace) then
+        ch.Transparency=0
+        local esp = Yisan_trapESP:Clone() esp.Parent=Workspace esp.Adornee=ch
         Notify("杀手放置了陷阱")
     end
-    if Yisan_TaffygunESP and ch.Name == "GunDrop" then
-        if not Yisan_Workspace:FindFirstChild("GunESP") then
-            local gunesp = Instance.new("Highlight", Yisan_Workspace) gunesp.OutlineTransparency = 1 gunesp.FillColor = Color3.fromRGB(255, 255, 0) gunesp.Name = "GunESP" gunesp.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop gunesp.Adornee = ch gunesp.Enabled = true
+    if Yisan_TaffygunESP and ch.Name=="GunDrop" then
+        if not Workspace:FindFirstChild("GunESP") then
+            local hl = Instance.new("Highlight", Workspace) hl.OutlineTransparency=1 hl.FillColor=Color3.fromRGB(255,255,0) hl.Name="GunESP" hl.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop hl.Adornee=ch hl.Enabled=true
         end
-        Yisan_Workspace:FindFirstChild("GunESP").Adornee = ch Yisan_Workspace:FindFirstChild("GunESP").Enabled = true
+        Workspace:FindFirstChild("GunESP").Adornee=ch Workspace:FindFirstChild("GunESP").Enabled=true
         Notify("枪已掉落,寻找黄色透视物品")
         if Yisan_TaffyGetGun then
             task.wait(0.01)
             if not Yisan_getMap():FindFirstChild("GunDrop") then return end
-            local prevPos = Yisan_LocalPlayer.Character:GetPivot()
-            Yisan_LocalPlayer.Character:MoveTo(Yisan_getMap():FindFirstChild("GunDrop").Position)
-            Yisan_LocalPlayer.Backpack.ChildAdded:Wait()
-            Yisan_LocalPlayer.Character:PivotTo(prevPos)
+            local prev = LocalPlayer.Character:GetPivot()
+            LocalPlayer.Character:MoveTo(Yisan_getMap():FindFirstChild("GunDrop").Position)
+            LocalPlayer.Backpack.ChildAdded:Wait()
+            LocalPlayer.Character:PivotTo(prev)
         end
     end
 end)
-Yisan_Workspace.DescendantRemoving:Connect(function(ch)
-    if Yisan_TaffygunESP and ch.Name == "GunDrop" then
-        if Yisan_Workspace:FindFirstChild("GunESP") then Yisan_Workspace:FindFirstChild("GunESP"):Destroy() end
+Workspace.DescendantRemoving:Connect(function(ch)
+    if Yisan_TaffygunESP and ch.Name=="GunDrop" then
+        if Workspace:FindFirstChild("GunESP") then Workspace:FindFirstChild("GunESP"):Destroy() end
         Notify("有人拿走了掉落的枪")
         task.wait(0.6)
-        local sheriff = Yisan_findSheriff()
-        if sheriff then Notify("警长是 "..sheriff.DisplayName) end
+        local sher = Yisan_findSheriff()
+        if sher then Notify("警长是 "..sher.DisplayName) end
     end
 end)
 game.Workspace.ChildAdded:Connect(function(chi)
-    if chi.Name == "ThrowingKnife" and Yisan_TaffyChinaknife then chi:Destroy() end
+    if chi.Name=="ThrowingKnife" and Yisan_TaffyChinaknife then chi:Destroy() end
 end)
 
-Yisan_LocalPlayer.CharacterAdded:Connect(function(character)
-    character:WaitForChild("Humanoid")
+LocalPlayer.CharacterAdded:Connect(function(char)
+    char:WaitForChild("Humanoid")
     task.wait(0.5)
-    if Yisan_ws ~= 16 then character:FindFirstChild("Humanoid").WalkSpeed = Yisan_ws end
-    if Yisan_LocalPlayer.Character and Yisan_LocalPlayer.Character:FindFirstChildOfClass("Humanoid") and Yisan_LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower ~= 50 then
-        Yisan_LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = 50
-    end
+    if Yisan_ws ~= 16 then char:FindFirstChild("Humanoid").WalkSpeed = Yisan_ws end
+    char:FindFirstChild("Humanoid").JumpPower = Yisan_JumpPower
 end)
 
 task.spawn(function()
-    if game:GetService("RunService"):IsStudio() then return end
+    if RunService:IsStudio() then return end
     local OldNameCall
     OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
         local Args = {...}
-        local NamecallMethod = getnamecallmethod()
-        if Yisan_antifail and NamecallMethod == "FireServer" and Args[1] == "SetPlayerMinigameResult" then
+        if Yisan_antifail and getnamecallmethod() == "FireServer" and Args[1] == "SetPlayerMinigameResult" then
             Args[2] = true
         end
         return OldNameCall(Self, unpack(Args))
