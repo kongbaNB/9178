@@ -843,15 +843,16 @@ local function startHarass()
         
         local myRoot = myChar.HumanoidRootPart
         local targetPos = targetRoot.Position
-        local behindPos = targetPos + targetRoot.CFrame.LookVector * -2.5
-        local frontPos = targetPos + targetRoot.CFrame.LookVector * 2.5
+        local targetLook = targetRoot.CFrame.LookVector
         
-        -- 快速在前后切换
+        local behindPos = targetPos + targetLook * -2.5
+        local onTargetPos = targetPos
+        
         local t = tick() % 0.2
         if t < 0.1 then
-            myRoot.CFrame = CFrame.new(behindPos)
+            myRoot.CFrame = CFrame.new(behindPos, behindPos + targetLook)
         else
-            myRoot.CFrame = CFrame.new(frontPos)
+            myRoot.CFrame = CFrame.new(onTargetPos, onTargetPos + targetLook)
         end
     end)
 end
@@ -866,7 +867,7 @@ local function stopHarass()
 end
 
 local function showHarassSelect()
-    if harassEnabled then return end -- 如果已经在运行则不重复打开
+    if harassEnabled then return end
     
     local selectGui = Instance.new("ScreenGui")
     selectGui.Name = "HarassSelect"
@@ -928,7 +929,6 @@ local function showHarassSelect()
     end
     scrollFrame.CanvasSize = UDim2.new(0, 0, 0, y)
 
-    -- 取消操人按钮
     local cancelBtn = Instance.new("TextButton")
     cancelBtn.Parent = bg
     cancelBtn.Size = UDim2.new(1, -20, 0, 30)
@@ -1608,16 +1608,15 @@ do
             end
             local posX1, posX2 = 4, page.AbsoluteSize.X * 0.52
             local rowHeight = 45
-            -- 左列按钮
+            -- 左列
             local autoTranslateBtn = addSemiTransparentButton(page, "自动翻译：关", posX1, 4)
             local antiPushBtn = addSemiTransparentButton(page, "防甩飞：关", posX1, 4 + rowHeight)
             local coordBtn = addSemiTransparentButton(page, "查询坐标传送", posX1, 4 + 2*rowHeight)
             local aimbotBtn = addSemiTransparentButton(page, "自瞄：关", posX1, 4 + 3*rowHeight)
             local lockViewBtn = addSemiTransparentButton(page, "锁定视角：关", posX1, 4 + 4*rowHeight)
-            -- 飞行控制（修复显示状态）
             local flyControlBtn = addSemiTransparentButton(page, "飞行控制：关", posX1, 4 + 5*rowHeight)
 
-            -- 右列按钮
+            -- 右列
             local teleportNearestBtn = addSemiTransparentButton(page, "传送最近玩家", posX2, 4)
             local followNearestBtn = addSemiTransparentButton(page, "跟随最近玩家：关", posX2, 4 + rowHeight)
             local teleportPlayerBtn = addSemiTransparentButton(page, "传送到指定玩家", posX2, 4 + 2*rowHeight)
@@ -1626,10 +1625,9 @@ do
                 game:GetService("StarterGui"):SetCore("SendNotification", { Title = "撸管", Text = "正在生成工具...", Duration = 3 })
                 task.spawn(function() loadLuGuan() end)
             end)
-            -- 操人（移到右列使布局对称）
             local harassBtn = addSemiTransparentButton(page, "操人", posX2, 4 + 5*rowHeight)
 
-            -- 绑定按钮事件
+            -- 绑定事件
             aimbotBtn.MouseButton1Click:Connect(function()
                 AimbotEnabled = not AimbotEnabled
                 aimbotBtn.Text = AimbotEnabled and "自瞄：开" or "自瞄：关"
