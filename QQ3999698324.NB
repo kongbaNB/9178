@@ -87,7 +87,7 @@ function showMain()
     title.TextSize = 18
     title.Parent = frame
     
-    local code = [[loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/%E6%81%90%E8%84%9A%E6%9C%AC.NB"))()]]
+    local code = [[loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本.NB"))()]]
     
     local content = Instance.new("TextLabel")
     content.Size = UDim2.new(1, -20, 0, 140)
