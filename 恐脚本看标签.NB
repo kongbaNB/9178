@@ -1,0 +1,782 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+local CollectionService = game:GetService("CollectionService")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+
+local translatedTexts = {}
+local function translateText(text)
+    if not text or text == "" or #text < 2 then return nil end
+    if translatedTexts[text] then return translatedTexts[text] end
+    local success, result = pcall(function()
+        local url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=" .. HttpService:UrlEncode(text)
+        local response = game:HttpGet(url)
+        local decoded = HttpService:JSONDecode(response)
+        if decoded and decoded[1] and decoded[1][1] and decoded[1][1][1] then
+            return decoded[1][1][1]
+        end
+    end)
+    if success and result then
+        translatedTexts[text] = result
+        return result
+    end
+    return nil
+end
+
+local function getAllUniqueTags()
+    local unique = {}
+    for _, obj in ipairs(game:GetDescendants()) do
+        local tags = CollectionService:GetTags(obj)
+        for _, tag in ipairs(tags) do
+            unique[tag] = true
+        end
+    end
+    local list = {}
+    for tag in pairs(unique) do
+        table.insert(list, tag)
+    end
+    table.sort(list)
+    return list
+end
+
+local function copyToClipboard(text)
+    pcall(function()
+        if setclipboard then
+            setclipboard(text)
+        elseif game:GetService("ClipboardService") then
+            game:GetService("ClipboardService"):SetClipboard(text)
+        end
+    end)
+end
+
+local animGui = Instance.new("ScreenGui")
+animGui.Parent = PlayerGui
+animGui.IgnoreGuiInset = true
+local animFrame = Instance.new("Frame")
+animFrame.Size = UDim2.new(1,0,1,0)
+animFrame.BackgroundColor3 = Color3.new(0,0,0)
+animFrame.BackgroundTransparency = 1
+animFrame.Parent = animGui
+local show = TweenService:Create(animFrame, TweenInfo.new(0.5), {BackgroundTransparency = 0})
+show:Play()
+show.Completed:Wait()
+task.wait(1)
+local hide = TweenService:Create(animFrame, TweenInfo.new(0.5), {BackgroundTransparency = 1})
+hide:Play()
+hide.Completed:Wait()
+animGui:Destroy()
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TagViewer"
+screenGui.Parent = PlayerGui
+screenGui.IgnoreGuiInset = true
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local ball = Instance.new("ImageButton")
+ball.Size = UDim2.new(0, 70, 0, 70)
+ball.Position = UDim2.new(0.8, 0, 0.3, 0)
+ball.BackgroundTransparency = 1
+ball.AutoButtonColor = false
+ball.Image = "rbxassetid://113517588654522"
+ball.Visible = false
+ball.Draggable = true
+ball.Parent = screenGui
+Instance.new("UICorner", ball).CornerRadius = UDim.new(1,0)
+
+local ballSpinConn
+local function startBallSpin()
+    if ballSpinConn then ballSpinConn:Disconnect() end
+    local lastTime = tick()
+    ballSpinConn = RunService.Heartbeat:Connect(function()
+        local dt = tick() - lastTime
+        lastTime = tick()
+        ball.Rotation = (ball.Rotation + 60 * dt) % 360
+    end)
+end
+local function stopBallSpin()
+    if ballSpinConn then
+        ballSpinConn:Disconnect()
+        ballSpinConn = nil
+    end
+end
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 480, 0, 420)
+mainFrame.Position = UDim2.new(0.5, -240, 0.5, -190)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.Visible = true
+mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 2
+stroke.Color = Color3.fromRGB(100, 200, 255)
+stroke.Parent = mainFrame
+
+local topBar = Instance.new("Frame")
+topBar.Size = UDim2.new(1, 0, 0, 40)
+topBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+topBar.Parent = mainFrame
+Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 12)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(0, 180, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "标签查看器"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = topBar
+
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0, 30, 0, 28)
+minimizeBtn.Position = UDim2.new(1, -70, 0, 6)
+minimizeBtn.Text = "—"
+minimizeBtn.Font = Enum.Font.SourceSansBold
+minimizeBtn.TextSize = 18
+minimizeBtn.TextColor3 = Color3.new(1,1,1)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+minimizeBtn.Parent = topBar
+Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(0, 6)
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 28)
+closeBtn.Position = UDim2.new(1, -35, 0, 6)
+closeBtn.Text = "X"
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.TextSize = 18
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+closeBtn.Parent = topBar
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+
+local dragging, dragStart, startPos
+topBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+local function minimizeWindow()
+    mainFrame.Visible = false
+    ball.Visible = true
+    startBallSpin()
+end
+local function restoreWindow()
+    ball.Visible = false
+    stopBallSpin()
+    mainFrame.Visible = true
+end
+
+minimizeBtn.MouseButton1Click:Connect(minimizeWindow)
+ball.MouseButton1Click:Connect(restoreWindow)
+closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+local tabBar = Instance.new("Frame")
+tabBar.Size = UDim2.new(1, 0, 0, 35)
+tabBar.Position = UDim2.new(0, 0, 0, 40)
+tabBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+tabBar.Parent = mainFrame
+
+local allTabBtn = Instance.new("TextButton")
+allTabBtn.Size = UDim2.new(0, 100, 0, 28)
+allTabBtn.Position = UDim2.new(0, 5, 0, 3)
+allTabBtn.Text = "全部标签"
+allTabBtn.Font = Enum.Font.SourceSansBold
+allTabBtn.TextSize = 14
+allTabBtn.TextColor3 = Color3.new(1,1,1)
+allTabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+allTabBtn.Parent = tabBar
+Instance.new("UICorner", allTabBtn).CornerRadius = UDim.new(0, 6)
+
+local selectedTabBtn = Instance.new("TextButton")
+selectedTabBtn.Size = UDim2.new(0, 100, 0, 28)
+selectedTabBtn.Position = UDim2.new(0, 115, 0, 3)
+selectedTabBtn.Text = "选定物品"
+selectedTabBtn.Font = Enum.Font.SourceSansBold
+selectedTabBtn.TextSize = 14
+selectedTabBtn.TextColor3 = Color3.new(1,1,1)
+selectedTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+selectedTabBtn.Parent = tabBar
+Instance.new("UICorner", selectedTabBtn).CornerRadius = UDim.new(0, 6)
+
+local quickTabBtn = Instance.new("TextButton")
+quickTabBtn.Size = UDim2.new(0, 100, 0, 28)
+quickTabBtn.Position = UDim2.new(0, 225, 0, 3)
+quickTabBtn.Text = "选定物品v2"
+quickTabBtn.Font = Enum.Font.SourceSansBold
+quickTabBtn.TextSize = 14
+quickTabBtn.TextColor3 = Color3.new(1,1,1)
+quickTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+quickTabBtn.Parent = tabBar
+Instance.new("UICorner", quickTabBtn).CornerRadius = UDim.new(0, 6)
+
+local function setActiveTab(btn)
+    allTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    selectedTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    quickTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+end
+
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(1, -10, 1, -80)
+scrollFrame.Position = UDim2.new(0, 5, 0, 80)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
+scrollFrame.ScrollBarThickness = 6
+scrollFrame.BorderSizePixel = 0
+scrollFrame.Parent = mainFrame
+
+local allTags = {}
+local selectedItemTags = {}
+local quickSelectedItemTags = {}
+local currentTab = "all"
+
+local function renderTags(tags, emptyText)
+    for _, child in ipairs(scrollFrame:GetChildren()) do
+        child:Destroy()
+    end
+    if #tags == 0 then
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -10, 0, 30)
+        label.Position = UDim2.new(0, 5, 0, 5)
+        label.BackgroundTransparency = 1
+        label.Text = emptyText or "暂无标签"
+        label.TextColor3 = Color3.fromRGB(200,200,200)
+        label.Font = Enum.Font.SourceSans
+        label.TextSize = 16
+        label.Parent = scrollFrame
+        scrollFrame.CanvasSize = UDim2.new(0,0,0,40)
+        return
+    end
+
+    local y = 5
+    for _, tag in ipairs(tags) do
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(1, -10, 0, 80)
+        frame.Position = UDim2.new(0, 5, 0, y)
+        frame.BackgroundColor3 = Color3.fromRGB(45,45,45)
+        frame.BorderSizePixel = 0
+        frame.Parent = scrollFrame
+        Instance.new("UICorner", frame).CornerRadius = UDim.new(0,8)
+
+        local chinese = Instance.new("TextLabel")
+        chinese.Size = UDim2.new(1, -10, 0, 22)
+        chinese.Position = UDim2.new(0,5,0,3)
+        chinese.BackgroundTransparency = 1
+        chinese.Text = "翻译中..."
+        chinese.TextColor3 = Color3.fromRGB(200,200,200)
+        chinese.Font = Enum.Font.SourceSansBold
+        chinese.TextSize = 16
+        chinese.TextXAlignment = Enum.TextXAlignment.Left
+        chinese.Parent = frame
+
+        local original = Instance.new("TextLabel")
+        original.Size = UDim2.new(1, -10, 0, 22)
+        original.Position = UDim2.new(0,5,0,28)
+        original.BackgroundTransparency = 1
+        original.Text = tag
+        original.TextColor3 = Color3.new(1,1,1)
+        original.Font = Enum.Font.SourceSans
+        original.TextSize = 14
+        original.TextXAlignment = Enum.TextXAlignment.Left
+        original.Parent = frame
+
+        local copyCN = Instance.new("TextButton")
+        copyCN.Size = UDim2.new(0, 100, 0, 22)
+        copyCN.Position = UDim2.new(0,5,0,53)
+        copyCN.Text = "复制中文名"
+        copyCN.Font = Enum.Font.SourceSans
+        copyCN.TextSize = 12
+        copyCN.TextColor3 = Color3.new(1,1,1)
+        copyCN.BackgroundColor3 = Color3.fromRGB(0,150,0)
+        copyCN.Parent = frame
+        Instance.new("UICorner", copyCN).CornerRadius = UDim.new(0,4)
+
+        local copyOrig = Instance.new("TextButton")
+        copyOrig.Size = UDim2.new(0, 100, 0, 22)
+        copyOrig.Position = UDim2.new(0,115,0,53)
+        copyOrig.Text = "复制原标签"
+        copyOrig.Font = Enum.Font.SourceSans
+        copyOrig.TextSize = 12
+        copyOrig.TextColor3 = Color3.new(1,1,1)
+        copyOrig.BackgroundColor3 = Color3.fromRGB(0,100,200)
+        copyOrig.Parent = frame
+        Instance.new("UICorner", copyOrig).CornerRadius = UDim.new(0,4)
+
+        task.spawn(function()
+            local trans = translateText(tag)
+            chinese.Text = trans or "翻译失败"
+            copyCN.MouseButton1Click:Connect(function()
+                copyToClipboard(trans or tag)
+            end)
+        end)
+        copyOrig.MouseButton1Click:Connect(function()
+            copyToClipboard(tag)
+        end)
+
+        y = y + 85
+    end
+    scrollFrame.CanvasSize = UDim2.new(0,0,0, y + 10)
+end
+
+local function switchTab(tab)
+    currentTab = tab
+    if tab == "all" then
+        setActiveTab(allTabBtn)
+        allTags = getAllUniqueTags()
+        renderTags(allTags, "游戏中暂无标签")
+    elseif tab == "selected" then
+        setActiveTab(selectedTabBtn)
+        renderTags(selectedItemTags, "尚未精准选择物品")
+    elseif tab == "quick" then
+        setActiveTab(quickTabBtn)
+        renderTags(quickSelectedItemTags, "尚未点击2D元素")
+    end
+end
+
+switchTab("all")
+
+allTabBtn.MouseButton1Click:Connect(function() switchTab("all") end)
+selectedTabBtn.MouseButton1Click:Connect(function() switchTab("selected") end)
+quickTabBtn.MouseButton1Click:Connect(function() switchTab("quick") end)
+
+local preciseSelectBtn = Instance.new("TextButton")
+preciseSelectBtn.Size = UDim2.new(0, 80, 0, 28)
+preciseSelectBtn.Position = UDim2.new(1, -160, 0, 6)
+preciseSelectBtn.Text = "精准选择"
+preciseSelectBtn.Font = Enum.Font.SourceSansBold
+preciseSelectBtn.TextSize = 12
+preciseSelectBtn.TextColor3 = Color3.new(1,1,1)
+preciseSelectBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
+preciseSelectBtn.Parent = topBar
+Instance.new("UICorner", preciseSelectBtn).CornerRadius = UDim.new(0, 6)
+
+local esp3DBtn = Instance.new("TextButton")
+esp3DBtn.Size = UDim2.new(0, 90, 0, 28)
+esp3DBtn.Position = UDim2.new(1, -260, 0, 6)
+esp3DBtn.Text = "透视3D标签:关"
+esp3DBtn.Font = Enum.Font.SourceSansBold
+esp3DBtn.TextSize = 11
+esp3DBtn.TextColor3 = Color3.new(1,1,1)
+esp3DBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+esp3DBtn.Parent = topBar
+Instance.new("UICorner", esp3DBtn).CornerRadius = UDim.new(0, 6)
+
+local esp2DBtn = Instance.new("TextButton")
+esp2DBtn.Size = UDim2.new(0, 90, 0, 28)
+esp2DBtn.Position = UDim2.new(1, -360, 0, 6)
+esp2DBtn.Text = "透视2D标签:关"
+esp2DBtn.Font = Enum.Font.SourceSansBold
+esp2DBtn.TextSize = 11
+esp2DBtn.TextColor3 = Color3.new(1,1,1)
+esp2DBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+esp2DBtn.Parent = topBar
+Instance.new("UICorner", esp2DBtn).CornerRadius = UDim.new(0, 6)
+
+local clearBlockBtn = Instance.new("TextButton")
+clearBlockBtn.Size = UDim2.new(0, 90, 0, 28)
+clearBlockBtn.Position = UDim2.new(1, -460, 0, 6)
+clearBlockBtn.Text = "清空屏蔽"
+clearBlockBtn.Font = Enum.Font.SourceSansBold
+clearBlockBtn.TextSize = 11
+clearBlockBtn.TextColor3 = Color3.new(1,1,1)
+clearBlockBtn.BackgroundColor3 = Color3.fromRGB(150, 30, 30)
+clearBlockBtn.Visible = false
+clearBlockBtn.Parent = topBar
+Instance.new("UICorner", clearBlockBtn).CornerRadius = UDim.new(0, 6)
+
+local blockedTags = {}
+
+local selecting = false
+local selectionGui = nil
+local currentHighlight = nil
+
+local function clearHighlight()
+    if currentHighlight then
+        currentHighlight:Destroy()
+        currentHighlight = nil
+    end
+end
+
+local function highlightTarget(target)
+    clearHighlight()
+    if target and target:IsA("BasePart") then
+        local highlight = Instance.new("Highlight")
+        highlight.FillTransparency = 1
+        highlight.OutlineColor = Color3.fromRGB(0, 255, 200)
+        highlight.OutlineTransparency = 0
+        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        highlight.Parent = target
+        currentHighlight = highlight
+    elseif target and (target:IsA("Model") or target:IsA("Accessory")) then
+        local primaryPart = target.PrimaryPart or (target:FindFirstChild("HumanoidRootPart") or target:FindFirstChildWhichIsA("BasePart"))
+        if primaryPart then
+            local highlight = Instance.new("Highlight")
+            highlight.FillTransparency = 1
+            highlight.OutlineColor = Color3.fromRGB(0, 255, 200)
+            highlight.OutlineTransparency = 0
+            highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            highlight.Parent = primaryPart
+            currentHighlight = highlight
+        end
+    end
+end
+
+local function getCrosshairTarget()
+    local viewportSize = Camera.ViewportSize
+    local screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+    local ray = Camera:ScreenPointToRay(screenCenter.X, screenCenter.Y)
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+    local result = workspace:Raycast(ray.Origin, ray.Direction * 1000, raycastParams)
+    if result then
+        return result.Instance
+    end
+    return nil
+end
+
+local function startPreciseSelection()
+    if selecting then return end
+    selecting = true
+    minimizeWindow()
+    
+    selectionGui = Instance.new("ScreenGui")
+    selectionGui.Name = "SelectionGui"
+    selectionGui.Parent = PlayerGui
+    selectionGui.IgnoreGuiInset = true
+    selectionGui.ResetOnSpawn = false
+    
+    local crosshair = Instance.new("Frame")
+    crosshair.Size = UDim2.new(0, 30, 0, 30)
+    crosshair.Position = UDim2.new(0.5, -15, 0.5, -15)
+    crosshair.BackgroundTransparency = 1
+    crosshair.Parent = selectionGui
+    
+    local hLine = Instance.new("Frame")
+    hLine.Size = UDim2.new(1, 0, 0, 2)
+    hLine.Position = UDim2.new(0, 0, 0.5, -1)
+    hLine.BackgroundColor3 = Color3.new(0, 255, 0)
+    hLine.BorderSizePixel = 0
+    hLine.Parent = crosshair
+    
+    local vLine = Instance.new("Frame")
+    vLine.Size = UDim2.new(0, 2, 1, 0)
+    vLine.Position = UDim2.new(0.5, -1, 0, 0)
+    vLine.BackgroundColor3 = Color3.new(0, 255, 0)
+    vLine.BorderSizePixel = 0
+    vLine.Parent = crosshair
+    
+    local confirmBtn = Instance.new("TextButton")
+    confirmBtn.Size = UDim2.new(0, 120, 0, 35)
+    confirmBtn.Position = UDim2.new(0.5, -60, 0.7, 0)
+    confirmBtn.Text = "确定此物品"
+    confirmBtn.Font = Enum.Font.SourceSansBold
+    confirmBtn.TextSize = 16
+    confirmBtn.TextColor3 = Color3.new(1,1,1)
+    confirmBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+    confirmBtn.Parent = selectionGui
+    Instance.new("UICorner", confirmBtn).CornerRadius = UDim.new(0, 8)
+    
+    local cancelBtn = Instance.new("TextButton")
+    cancelBtn.Size = UDim2.new(0, 80, 0, 35)
+    cancelBtn.Position = UDim2.new(0.5, -40, 0.8, 0)
+    cancelBtn.Text = "取消"
+    cancelBtn.Font = Enum.Font.SourceSansBold
+    cancelBtn.TextSize = 16
+    cancelBtn.TextColor3 = Color3.new(1,1,1)
+    cancelBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+    cancelBtn.Parent = selectionGui
+    Instance.new("UICorner", cancelBtn).CornerRadius = UDim.new(0, 8)
+    
+    local heartbeatConnection
+    heartbeatConnection = RunService.Heartbeat:Connect(function()
+        if not selecting then return end
+        local target = getCrosshairTarget()
+        highlightTarget(target)
+    end)
+    
+    confirmBtn.MouseButton1Click:Connect(function()
+        if not selecting then return end
+        local target = getCrosshairTarget()
+        local tags = target and CollectionService:GetTags(target) or {}
+        if #tags > 0 then
+            selectedItemTags = {}
+            for _, t in ipairs(tags) do selectedItemTags[#selectedItemTags+1] = t end
+            table.sort(selectedItemTags)
+            switchTab("selected")
+            print("精准选择物体: " .. target:GetFullName() .. "  标签: " .. table.concat(selectedItemTags, ", "))
+            pcall(function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "精准选择",
+                    Text = "已记录在「选定物品」分类",
+                    Duration = 5
+                })
+            end)
+        else
+            pcall(function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "精准选择",
+                    Text = "该物体没有标签",
+                    Duration = 3
+                })
+            end)
+        end
+        clearHighlight()
+        if heartbeatConnection then heartbeatConnection:Disconnect() end
+        if selectionGui then selectionGui:Destroy() end
+        selecting = false
+        restoreWindow()
+    end)
+    
+    cancelBtn.MouseButton1Click:Connect(function()
+        clearHighlight()
+        if heartbeatConnection then heartbeatConnection:Disconnect() end
+        if selectionGui then selectionGui:Destroy() end
+        selecting = false
+        restoreWindow()
+    end)
+    
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "精准选择模式",
+            Text = "将准星对准物体，点击确定按钮",
+            Duration = 3
+        })
+    end)
+end
+
+local esp3DEnabled = false
+local esp2DEnabled = false
+local esp3DContainer = nil
+local esp2DContainer = nil
+
+local function clear3DESP()
+    if esp3DContainer then
+        esp3DContainer:Destroy()
+        esp3DContainer = nil
+    end
+end
+
+local function clear2DESP()
+    if esp2DContainer then
+        esp2DContainer:Destroy()
+        esp2DContainer = nil
+    end
+end
+
+local function updateBlockButtonVisibility()
+    clearBlockBtn.Visible = next(blockedTags) ~= nil
+end
+
+local function makeLongPressable(button, tagText)
+    local pressStart = nil
+    local isPressed = false
+    local blockConnection
+
+    button.MouseButton1Down:Connect(function()
+        if isPressed then return end
+        isPressed = true
+        pressStart = tick()
+        button.TextColor3 = Color3.fromRGB(255, 0, 0)
+        blockConnection = RunService.Heartbeat:Connect(function()
+            if not isPressed then
+                blockConnection:Disconnect()
+                return
+            end
+            local elapsed = tick() - pressStart
+            if elapsed >= 10 then
+                blockedTags[tagText] = true
+                if esp2DContainer then
+                    for _, child in ipairs(esp2DContainer:GetChildren()) do
+                        if child:IsA("TextButton") and child.Text == tagText then
+                            child:Destroy()
+                        end
+                    end
+                end
+                updateBlockButtonVisibility()
+                pcall(function()
+                    game:GetService("StarterGui"):SetCore("SendNotification", {
+                        Title = "标签已屏蔽",
+                        Text = "已屏蔽所有同名2D标签: " .. tagText,
+                        Duration = 5
+                    })
+                end)
+                isPressed = false
+                blockConnection:Disconnect()
+            end
+        end)
+    end)
+
+    button.MouseButton1Up:Connect(function()
+        isPressed = false
+        if blockConnection then
+            blockConnection:Disconnect()
+        end
+        button.TextColor3 = Color3.fromRGB(255, 165, 0)
+    end)
+
+    button.MouseLeave:Connect(function()
+        isPressed = false
+        if blockConnection then
+            blockConnection:Disconnect()
+        end
+        button.TextColor3 = Color3.fromRGB(255, 165, 0)
+    end)
+end
+
+local function update2DESP()
+    clear2DESP()
+    if not esp2DEnabled then return end
+    local container = Instance.new("ScreenGui")
+    container.Name = "ESP_2D"
+    container.Parent = PlayerGui
+    container.IgnoreGuiInset = true
+    container.ResetOnSpawn = false
+    container.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    esp2DContainer = container
+
+    local function addLabels(parent)
+        for _, obj in ipairs(parent:GetChildren()) do
+            if obj:IsA("GuiObject") and obj.Visible then
+                local tags = CollectionService:GetTags(obj)
+                if #tags > 0 then
+                    local tagText = table.concat(tags, ", ")
+                    if blockedTags[tagText] then
+                        addLabels(obj)
+                        continue
+                    end
+                    local btn = Instance.new("TextButton")
+                    btn.Size = UDim2.new(0, 200, 0, 16)
+                    btn.BackgroundTransparency = 0.5
+                    btn.BackgroundColor3 = Color3.new(0,0,0)
+                    btn.Text = tagText
+                    btn.TextColor3 = Color3.fromRGB(255, 165, 0)
+                    btn.Font = Enum.Font.SourceSansBold
+                    btn.TextSize = 12
+                    btn.AutoButtonColor = false
+                    btn.Parent = container
+                    makeLongPressable(btn, tagText)
+                    coroutine.wrap(function()
+                        while esp2DEnabled and obj and obj.Parent and btn and btn.Parent do
+                            local pos = obj.AbsolutePosition
+                            local size = obj.AbsoluteSize
+                            btn.Position = UDim2.new(0, pos.X + size.X/2 - btn.AbsoluteSize.X/2, 0, pos.Y - btn.AbsoluteSize.Y - 2)
+                            RunService.RenderStepped:Wait()
+                        end
+                        if btn then btn:Destroy() end
+                    end)()
+                end
+            end
+            addLabels(obj)
+        end
+    end
+
+    for _, gui in ipairs(PlayerGui:GetChildren()) do
+        if gui:IsA("ScreenGui") and gui ~= container and gui ~= screenGui then
+            addLabels(gui)
+        end
+    end
+    for _, gui in ipairs(game:GetService("CoreGui"):GetChildren()) do
+        if gui:IsA("ScreenGui") then
+            addLabels(gui)
+        end
+    end
+end
+
+clearBlockBtn.MouseButton1Click:Connect(function()
+    blockedTags = {}
+    updateBlockButtonVisibility()
+    if esp2DEnabled then
+        update2DESP()
+    end
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "屏蔽已清空",
+            Text = "所有2D标签屏蔽已解除",
+            Duration = 3
+        })
+    end)
+end)
+
+local function update3DESP()
+    clear3DESP()
+    if not esp3DEnabled then return end
+    local container = Instance.new("Folder")
+    container.Name = "ESP_3D"
+    container.Parent = workspace
+    esp3DContainer = container
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") or obj:IsA("Model") or obj:IsA("Accessory") then
+            local tags = CollectionService:GetTags(obj)
+            if #tags > 0 then
+                local part = obj
+                if obj:IsA("Model") then
+                    part = obj.PrimaryPart or obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildWhichIsA("BasePart")
+                end
+                if part then
+                    local billboard = Instance.new("BillboardGui")
+                    billboard.Name = "TagESP"
+                    billboard.Adornee = part
+                    billboard.Size = UDim2.new(0, 200, 0, 30)
+                    billboard.StudsOffset = Vector3.new(0, 2, 0)
+                    billboard.AlwaysOnTop = true
+                    billboard.Parent = container
+                    local label = Instance.new("TextLabel")
+                    label.Size = UDim2.new(1,0,1,0)
+                    label.BackgroundTransparency = 0.7
+                    label.BackgroundColor3 = Color3.fromRGB(0,0,0)
+                    label.TextColor3 = Color3.fromRGB(0,255,0)
+                    label.Font = Enum.Font.SourceSans
+                    label.TextSize = 14
+                    label.Text = table.concat(tags, ", ")
+                    label.Parent = billboard
+                end
+            end
+        end
+    end
+end
+
+esp3DBtn.MouseButton1Click:Connect(function()
+    esp3DEnabled = not esp3DEnabled
+    esp3DBtn.Text = esp3DEnabled and "透视3D标签:开" or "透视3D标签:关"
+    esp3DBtn.BackgroundColor3 = esp3DEnabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(80,80,80)
+    update3DESP()
+end)
+
+esp2DBtn.MouseButton1Click:Connect(function()
+    esp2DEnabled = not esp2DEnabled
+    esp2DBtn.Text = esp2DEnabled and "透视2D标签:开" or "透视2D标签:关"
+    esp2DBtn.BackgroundColor3 = esp2DEnabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(80,80,80)
+    if esp2DEnabled then
+        update2DESP()
+    else
+        clear2DESP()
+    end
+end)
+
+preciseSelectBtn.MouseButton1Click:Connect(function()
+    if not selecting then startPreciseSelection() end
+end)
