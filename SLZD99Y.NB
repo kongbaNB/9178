@@ -1,0 +1,700 @@
+local repo = 'https://raw.githubusercontent.com/KingScriptAE/No-sirve-nada./refs/heads/main/'
+local function safeLoad(url)
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet(url))()
+    end)
+    if not success then
+        warn("加载失败: " .. url)
+        return nil
+    end
+    return result
+end
+
+local Library = safeLoad(repo .. 'Library.lua')
+local ThemeManager = safeLoad(repo .. 'addons/ThemeManager.lua')
+local SaveManager = safeLoad(repo .. 'addons/SaveManager.lua')
+
+if not Library then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "错误",
+        Text = "UI 库加载失败，请检查网络或脚本资源",
+        Duration = 5,
+    })
+    return
+end
+
+local Options = Library.Options
+local Toggles = Library.Toggles
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+
+local LP = Players.LocalPlayer
+local Character = LP.Character or LP.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local HRP = Character:WaitForChild("HumanoidRootPart")
+
+local KillAura = {Enabled = false, Range = 50, Method = "范围"}
+local ChopAura = {Enabled = false, Range = 200}
+local AutoFeed = {Enabled = false, Foods = {}, Threshold = 75}
+local AutoCook = {Enabled = false, Items = {}}
+local AutoCraft = {Enabled = false, ItemName = "Shelf", Interval = 5}
+local AutoPlant = {Enabled = false, Shape = "square", Size = 80, Height = 3, Spacing = 1, Delay = 1}
+local FunPattern = {Enabled = false, Pattern = "sphere", Speed = 5, Radius = 75}
+local CollisionBox = {Show = false, Wolf = false, Bunny = false, Cultist = false, All = false, Size = 10}
+local Fishing = {Auto = false, NoDelay = false, Instant = false}
+local AutoStunDeer = false
+local GodMode = false
+local AutoPullRawMeat = false
+
+local PullTarget = "自己"
+local PullConfig = {
+    Enabled = false,
+    Speed = 0.5,
+    TotalCount = 0,
+    PulledCount = 0,
+    SelectedFuel = {},
+    SelectedScrap = {},
+    SelectedEquip = {},
+    SelectedFood = {},
+    SelectedMed = {},
+}
+
+local PlayerState = {Speed = 16, SpeedEnabled = false, InstantInteract = false}
+local ESP = {ItemsEnabled = false, MobsEnabled = false, SelectedItems = {}, SelectedMobs = {}}
+local Environment = {DisableFog = false, DisableCampfireEffect = false, Fullbright = false}
+
+local InfiniteJumpEnabled = false
+local NightVisionEnabled = false
+local AntiAFKEnabled = false
+
+local ItemCN = {
+    ["木头"] = "Log",
+    ["煤"] = "Coal",
+    ["油桶"] = "Fuel Canister",
+    ["椅子"] = "Chair",
+    ["生物燃料"] = "Biofuel",
+    ["螺栓"] = "Bolt",
+    ["破风扇"] = "Broken Fan",
+    ["坏微波炉"] = "Broken Microwave",
+    ["旧收音机"] = "Old Radio",
+    ["洗衣机"] = "Washing Machine",
+    ["旧汽车引擎"] = "Old Car Engine",
+    ["轮胎"] = "tyre",
+    ["金属板"] = "Sheet Metal",
+    ["左轮手枪"] = "Revolver",
+    ["步枪"] = "Rifle",
+    ["皮革背心"] = "Leather Body",
+    ["铁甲"] = "Iron Body",
+    ["左轮弹药"] = "Revolver Ammo",
+    ["步枪弹药"] = "Rifle Ammo",
+    ["巨袋"] = "Giant Sack",
+    ["好的背包"] = "Good Sack",
+    ["强力斧头"] = "Strong Axe",
+    ["好的斧头"] = "Good Axe",
+    ["苹果"] = "Apple",
+    ["浆果"] = "Berry",
+    ["胡萝卜"] = "Carrot",
+    ["蛋糕"] = "Cake",
+    ["辣椒"] = "Chili",
+    ["熟肉块"] = "Cooked Morsel",
+    ["熟牛排"] = "Cooked Steak",
+    ["生肉块"] = "Morsel",
+    ["生牛排"] = "Steak",
+    ["绷带"] = "Bandage",
+    ["医疗包"] = "MedKit",
+}
+
+local CNtoEN = {}
+for cn, en in pairs(ItemCN) do CNtoEN[en] = cn end
+
+local ToolsDamageIDs = {
+    ["Old Axe"] = "3_7367831688",
+    ["Good Axe"] = "112_7367831688",
+    ["Strong Axe"] = "116_7367831688",
+    ["Chainsaw"] = "647_8992824875",
+    ["Infernal Sword"] = "2_4340578793",
+    ["Spear"] = "196_8999010016"
+}
+
+local function getAnyTool(isChop)
+    for name, _ in pairs(ToolsDamageIDs) do
+        if isChop and name ~= "Old Axe" and name ~= "Good Axe" and name ~= "Strong Axe" then continue end
+        local tool = LP:FindFirstChild("Inventory") and LP.Inventory:FindFirstChild(name)
+        if tool then return tool end
+    end
+    return nil
+end
+
+local function equipTool(tool)
+    if tool then
+        ReplicatedStorage.RemoteEvents.EquipItemHandle:FireServer("FireAllClients", tool)
+    end
+end
+
+local function moveItemToPos(item, position)
+    if not item or not item:IsDescendantOf(Workspace) then return end
+    local part = item:IsA("Model") and (item.PrimaryPart or item:FindFirstChildWhichIsA("BasePart") or item:FindFirstChild("Handle")) or item
+    if not part or not part:IsA("BasePart") then return end
+    pcall(function()
+        ReplicatedStorage.RemoteEvents.RequestStartDraggingItem:FireServer(item)
+        if item:IsA("Model") then
+            item:SetPrimaryPartCFrame(CFrame.new(position))
+        else
+            part.CFrame = CFrame.new(position)
+        end
+        ReplicatedStorage.RemoteEvents.StopDraggingItem:FireServer(item)
+    end)
+end
+
+local function getPullTargetPos()
+    if PullTarget == "篝火" then
+        return Vector3.new(-0.0967, 7.937, -0.178)
+    elseif PullTarget == "建造台" then
+        return Vector3.new(21.67, 6.34, -4.05)
+    else
+        local char = LP.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            return char.HumanoidRootPart.Position + Vector3.new(0, 2, 0)
+        end
+        return Vector3.new(0, 20, 0)
+    end
+end
+
+local infJumpConnection
+local function setInfiniteJump(state)
+    InfiniteJumpEnabled = state
+    if state then
+        if infJumpConnection then infJumpConnection:Disconnect() end
+        infJumpConnection = UIS.JumpRequest:Connect(function()
+            local char = LP.Character
+            if char then
+                local root = char:FindFirstChild("HumanoidRootPart")
+                if root then
+                    root.Velocity = Vector3.new(root.Velocity.X, 50, root.Velocity.Z)
+                end
+            end
+        end)
+    else
+        if infJumpConnection then
+            infJumpConnection:Disconnect()
+            infJumpConnection = nil
+        end
+    end
+end
+
+local function setNightVision(state)
+    NightVisionEnabled = state
+    if state then
+        Lighting.Ambient = Color3.new(1, 1, 1)
+        Lighting.ColorShift_Bottom = Color3.new(1, 1, 1)
+        Lighting.ColorShift_Top = Color3.new(1, 1, 1)
+        Lighting.FogEnd = 100000
+        Lighting.FogStart = 100000
+        Lighting.Brightness = 1
+        Lighting.GlobalShadows = false
+        Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+        Lighting.ClockTime = 12
+    else
+        Lighting.Ambient = Color3.new(0, 0, 0)
+        Lighting.ColorShift_Bottom = Color3.new(0, 0, 0)
+        Lighting.ColorShift_Top = Color3.new(0, 0, 0)
+        Lighting.FogEnd = 1000
+        Lighting.FogStart = 0
+        Lighting.Brightness = 1
+        Lighting.GlobalShadows = true
+        Lighting.OutdoorAmbient = Color3.new(0.7, 0.7, 0.7)
+    end
+end
+
+local function loadLuGuan()
+    local ToolName = "撸管（r15）"
+    local function cleanupOldTool()
+        if LP:FindFirstChild("Backpack") then
+            local oldTool = LP.Backpack:FindFirstChild(ToolName)
+            if oldTool then oldTool:Destroy() end
+        end
+        if LP.Character then
+            local oldTool = LP.Character:FindFirstChild(ToolName)
+            if oldTool then oldTool:Destroy() end
+        end
+        if Workspace:FindFirstChild("animationContainer") then
+            Workspace.animationContainer:Destroy()
+        end
+    end
+
+    local function giveTool()
+        cleanupOldTool()
+        local character = LP.Character or LP.CharacterAdded:Wait()
+        local humanoid = character:WaitForChild("Humanoid")
+        local backpack = LP:WaitForChild("Backpack")
+
+        local function getCharacterModel()
+            return humanoid.RigType == Enum.HumanoidRigType.R15 and "R15" or "R6"
+        end
+
+        local animationObject = Instance.new("Animation")
+        animationObject.Name = "animationContainer"
+        animationObject.Parent = Workspace
+
+        if getCharacterModel() == "R15" then
+            animationObject.AnimationId = "rbxassetid://698251653"
+        else
+            animationObject.AnimationId = "rbxassetid://72042024"
+        end
+
+        local toolObject = Instance.new("Tool")
+        toolObject.Name = ToolName
+        toolObject.RequiresHandle = false
+        toolObject.Parent = backpack
+
+        local isActive = false
+        local currentAnimationTrack = nil
+
+        toolObject.Equipped:Connect(function()
+            local char = LP.Character
+            local hum = char and char:FindFirstChild("Humanoid")
+            local animator = hum and (hum:FindFirstChildOfClass("Animator") or hum:WaitForChild("Animator"))
+            if not animator then return end
+
+            isActive = true
+            while isActive do
+                if not currentAnimationTrack then
+                    currentAnimationTrack = animator:LoadAnimation(animationObject)
+                end
+                currentAnimationTrack:Play()
+                currentAnimationTrack:AdjustSpeed(0.7)
+                currentAnimationTrack.TimePosition = 0.6
+                task.wait(0.1)
+
+                while isActive and currentAnimationTrack and currentAnimationTrack.TimePosition < 0.7 do
+                    task.wait(0.05)
+                end
+
+                if currentAnimationTrack then
+                    currentAnimationTrack:Stop()
+                    currentAnimationTrack:Destroy()
+                    currentAnimationTrack = nil
+                end
+            end
+        end)
+
+        toolObject.Unequipped:Connect(function()
+            isActive = false
+            if currentAnimationTrack then
+                currentAnimationTrack:Stop()
+                currentAnimationTrack:Destroy()
+                currentAnimationTrack = nil
+            end
+        end)
+
+        humanoid.Died:Connect(function()
+            isActive = false
+            if currentAnimationTrack then
+                currentAnimationTrack:Stop()
+                currentAnimationTrack:Destroy()
+                currentAnimationTrack = nil
+            end
+        end)
+    end
+
+    giveTool()
+    if _G.AutoToolConnection then _G.AutoToolConnection:Disconnect() end
+    _G.AutoToolConnection = LP.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        giveTool()
+    end)
+end
+
+local antiAFKConnection
+local function setAntiAFK(state)
+    AntiAFKEnabled = state
+    if state then
+        if antiAFKConnection then antiAFKConnection:Disconnect() end
+        antiAFKConnection = LP.Idled:Connect(function()
+            local vu = game:GetService("VirtualUser")
+            vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+            wait(1)
+            vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        end)
+    else
+        if antiAFKConnection then
+            antiAFKConnection:Disconnect()
+            antiAFKConnection = nil
+        end
+    end
+end
+
+RunService.Heartbeat:Connect(function()
+    if PlayerState.SpeedEnabled and Humanoid and Humanoid.Parent then
+        Humanoid.WalkSpeed = PlayerState.Speed
+    end
+    if GodMode then
+        pcall(function()
+            ReplicatedStorage.RemoteEvents.DamagePlayer:FireServer(-math.huge)
+        end)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if KillAura.Enabled then
+            local char = LP.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local tool = getAnyTool(false)
+                if tool then
+                    equipTool(tool)
+                    for _, target in ipairs(Workspace.Characters:GetChildren()) do
+                        if target:IsA("Model") and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChild("HitRegisters") then
+                            local dist = (hrp.Position - target.HumanoidRootPart.Position).Magnitude
+                            if KillAura.Method == "全图" or dist <= KillAura.Range then
+                                pcall(function()
+                                    ReplicatedStorage.RemoteEvents.ToolDamageObject:InvokeServer(target, tool, true, hrp.CFrame)
+                                end)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        if ChopAura.Enabled then
+            local char = LP.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local tool = getAnyTool(true)
+                if tool then
+                    equipTool(tool)
+                    local trees = {}
+                    local map = Workspace:FindFirstChild("Map")
+                    if map then
+                        local function addTrees(folder)
+                            if folder then
+                                for _, obj in ipairs(folder:GetChildren()) do
+                                    if obj:IsA("Model") and ({["Small Tree"]=true, ["TreeBig1"]=true, ["TreeBig2"]=true})[obj.Name] and obj.PrimaryPart then
+                                        table.insert(trees, obj)
+                                    end
+                                end
+                            end
+                        end
+                        addTrees(map:FindFirstChild("Foliage"))
+                        addTrees(map:FindFirstChild("Landmarks"))
+                    end
+                    for _, tree in ipairs(trees) do
+                        if (tree.PrimaryPart.Position - hrp.Position).Magnitude <= ChopAura.Range then
+                            pcall(function()
+                                ReplicatedStorage.RemoteEvents.ToolDamageObject:InvokeServer(tree, tool, 999, hrp.CFrame)
+                            end)
+                        end
+                    end
+                end
+            end
+        end
+
+        if AutoFeed.Enabled then
+            local function getHunger()
+                return math.floor(LP.PlayerGui.Interface.StatBars.HungerBar.Bar.Size.X.Scale * 100)
+            end
+            local function feed(name)
+                for _, item in ipairs(Workspace.Items:GetChildren()) do
+                    if item.Name == name then
+                        ReplicatedStorage.RemoteEvents.RequestConsumeItem:InvokeServer(item)
+                        break
+                    end
+                end
+            end
+            if getHunger() <= AutoFeed.Threshold then
+                for _, food in ipairs(AutoFeed.Foods) do
+                    if Workspace.Items:FindFirstChild(food) then
+                        feed(food)
+                        break
+                    end
+                end
+            end
+        end
+
+        if AutoCook.Enabled then
+            for _, item in ipairs(Workspace.Items:GetChildren()) do
+                if table.find(AutoCook.Items, item.Name) then
+                    moveItemToPos(item, Vector3.new(1.4, 25.9, -0.9))
+                end
+            end
+        end
+
+        if AutoCraft.Enabled then
+            pcall(function()
+                ReplicatedStorage.RemoteEvents.CraftItem:InvokeServer(AutoCraft.ItemName)
+            end)
+            task.wait(AutoCraft.Interval)
+        end
+
+        if PullConfig.Enabled then
+            local allItems = {}
+            local targetPos = getPullTargetPos()
+            local function gather(list)
+                for _, en in ipairs(list) do
+                    for _, item in ipairs(Workspace.Items:GetChildren()) do
+                        if item.Name == en then table.insert(allItems, item) end
+                    end
+                end
+            end
+            gather(PullConfig.SelectedFuel)
+            gather(PullConfig.SelectedScrap)
+            gather(PullConfig.SelectedEquip)
+            gather(PullConfig.SelectedFood)
+            gather(PullConfig.SelectedMed)
+
+            PullConfig.TotalCount = #allItems
+            PullConfig.PulledCount = 0
+            local lastReport = 0
+            for _, item in ipairs(allItems) do
+                if not PullConfig.Enabled then break end
+                moveItemToPos(item, targetPos)
+                PullConfig.PulledCount = PullConfig.PulledCount + 1
+                if PullConfig.PulledCount - lastReport >= 10 then
+                    Library:Notify("拉取进度: " .. PullConfig.PulledCount .. "/" .. PullConfig.TotalCount, 2)
+                    lastReport = PullConfig.PulledCount
+                end
+                task.wait(math.max(0.1, PullConfig.Speed))
+            end
+            if PullConfig.PulledCount > 0 and PullConfig.PulledCount ~= lastReport then
+                Library:Notify("拉取完成: " .. PullConfig.PulledCount .. "/" .. PullConfig.TotalCount, 3)
+            end
+            PullConfig.Enabled = false
+            Toggles.PullToggle:SetValue(false)
+        end
+
+        if AutoPullRawMeat then
+            for _, item in ipairs(Workspace.Items:GetChildren()) do
+                if item.Name == "Morsel" or item.Name == "Steak" then
+                    moveItemToPos(item, Vector3.new(1.4, 25.9, -0.9))
+                end
+            end
+        end
+
+        if Fishing.Instant then
+            pcall(function()
+                local remote = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("FinishFishing")
+                if remote then remote:FireServer(true) end
+            end)
+        end
+
+        if AutoStunDeer then
+            pcall(function()
+                local remote = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("DeerHitByTorch")
+                local deer = Workspace:FindFirstChild("Characters") and Workspace.Characters:FindFirstChild("Deer")
+                if remote and deer then remote:InvokeServer(deer) end
+            end)
+        end
+
+        task.wait(0.1)
+    end
+end)
+
+local Window = Library:CreateWindow({
+    Title = "森林中的99夜",
+    Footer = "By 恐拜大帝",
+    Icon = 131153193945220,
+    NotifySide = "Right",
+    ShowCustomCursor = true,
+})
+
+Library:Notify("森林中的99夜多功能脚本已加载", 5)
+
+local Tabs = {
+    Notice = Window:AddTab("通知", "info"),
+    Combat = Window:AddTab("战斗", "sword"),
+    Auto = Window:AddTab("自动", "cog"),
+    Teleport = Window:AddTab("传送", "map-pin"),
+    Pull = Window:AddTab("拉取物品", "truck"),
+    Player = Window:AddTab("玩家", "user"),
+    Visual = Window:AddTab("视觉", "eye"),
+    Fun = Window:AddTab("趣味", "sparkles"),
+    Settings = Window:AddTab("设置", "settings"),
+}
+
+local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者信息")
+NoticeGroup:AddLabel("作者：恐拜大帝")
+NoticeGroup:AddLabel("欢迎使用森林中的99夜多功能脚本")
+
+local CombatGroup1 = Tabs.Combat:AddLeftGroupbox("攻击")
+CombatGroup1:AddToggle('KillAuraToggle', {Text = '杀戮光环', Default = false, Callback = function(v) KillAura.Enabled = v end})
+CombatGroup1:AddDropdown('KillAuraMethod', {Text = '攻击方式', Values = {'范围','全图'}, Default = '范围', Callback = function(v) KillAura.Method = v end})
+CombatGroup1:AddSlider('KillAuraRange', {Text = '攻击范围', Default = 50, Min = 0, Max = 500, Callback = function(v) KillAura.Range = v end})
+CombatGroup1:AddButton({Text = '显示当前武器', Func = function()
+    local tool = getAnyTool(false)
+    Library:Notify("当前武器: " .. (tool and tool.Name or "无"), 3)
+end})
+CombatGroup1:AddToggle('GodMode', {Text = '无敌', Default = false, Callback = function(v) GodMode = v end})
+
+local CombatGroup2 = Tabs.Combat:AddRightGroupbox("碰撞箱")
+CombatGroup2:AddToggle('CollisionShow', {Text = '显示碰撞箱', Default = false, Callback = function(v) CollisionBox.Show = v end})
+CombatGroup2:AddToggle('CollisionWolf', {Text = '狼碰撞箱', Default = false, Callback = function(v) CollisionBox.Wolf = v end})
+CombatGroup2:AddToggle('CollisionBunny', {Text = '兔子碰撞箱', Default = false, Callback = function(v) CollisionBox.Bunny = v end})
+CombatGroup2:AddToggle('CollisionCultist', {Text = '邪教徒碰撞箱', Default = false, Callback = function(v) CollisionBox.Cultist = v end})
+CombatGroup2:AddToggle('CollisionAll', {Text = '全部碰撞箱', Default = false, Callback = function(v) CollisionBox.All = v end})
+CombatGroup2:AddSlider('CollisionSize', {Text = '碰撞箱大小', Default = 10, Min = 2, Max = 250, Callback = function(v) CollisionBox.Size = v end})
+
+local AutoGroup1 = Tabs.Auto:AddLeftGroupbox("砍树与钓鱼")
+AutoGroup1:AddToggle('ChopAuraToggle', {Text = '砍树光环', Default = false, Callback = function(v) ChopAura.Enabled = v end})
+AutoGroup1:AddSlider('ChopAuraRange', {Text = '砍树范围', Default = 200, Min = 0, Max = 500, Callback = function(v) ChopAura.Range = v end})
+AutoGroup1:AddToggle('FishingAuto', {Text = '自动钓鱼', Default = false, Callback = function(v) Fishing.Auto = v end})
+AutoGroup1:AddToggle('FishingNoDelay', {Text = '无延迟钓鱼', Default = false, Callback = function(v) Fishing.NoDelay = v end})
+AutoGroup1:AddToggle('FishingInstant', {Text = '秒钓鱼', Default = false, Callback = function(v) Fishing.Instant = v end})
+
+local AutoGroup2 = Tabs.Auto:AddRightGroupbox("食物与烹饪")
+AutoGroup2:AddToggle('AutoFeedToggle', {Text = '自动进食', Default = false, Callback = function(v) AutoFeed.Enabled = v end})
+AutoGroup2:AddDropdown('AutoFeedFoods', {Text = '选择食物', Values = {"苹果","浆果","胡萝卜","蛋糕","辣椒","熟肉块","熟牛排"}, Multi = true, Callback = function(v)
+    local en = {}
+    for _, cn in ipairs(v) do if ItemCN[cn] then table.insert(en, ItemCN[cn]) end end
+    AutoFeed.Foods = en
+end})
+AutoGroup2:AddSlider('AutoFeedThreshold', {Text = '饥饿阈值 %', Default = 75, Min = 0, Max = 100, Callback = function(v) AutoFeed.Threshold = v end})
+AutoGroup2:AddDropdown('AutoCookItems', {Text = '烹饪食物', Values = {"生肉块","生牛排","肋骨","三文鱼","鲭鱼"}, Multi = true, Callback = function(v)
+    local en = {}
+    for _, cn in ipairs(v) do if ItemCN[cn] then table.insert(en, ItemCN[cn]) end end
+    AutoCook.Items = en
+end})
+AutoGroup2:AddToggle('AutoCookToggle', {Text = '自动烹饪', Default = false, Callback = function(v) AutoCook.Enabled = v end})
+AutoGroup2:AddToggle('AutoPullRawMeat', {Text = '自动拉肉到篝火', Default = false, Callback = function(v) AutoPullRawMeat = v end})
+
+local AutoGroup3 = Tabs.Auto:AddLeftGroupbox("制作与其它")
+AutoGroup3:AddInput('CraftItemName', {Text = '制作物品名', Default = 'Shelf'})
+AutoGroup3:AddSlider('CraftInterval', {Text = '制作间隔(秒)', Default = 5, Min = 1, Max = 60})
+AutoGroup3:AddButton({Text = '制作一次', Func = function()
+    ReplicatedStorage.RemoteEvents.CraftItem:InvokeServer(Options.CraftItemName)
+    Library:Notify("已制作", 2)
+end})
+AutoGroup3:AddToggle('AutoCraftToggle', {Text = '自动制作', Default = false, Callback = function(v) AutoCraft.Enabled = v end})
+AutoGroup3:AddToggle('AutoStunDeerToggle', {Text = '自动眩晕鹿', Default = false, Callback = function(v) AutoStunDeer = v end})
+
+local TpGroup1 = Tabs.Teleport:AddLeftGroupbox("基础传送点")
+TpGroup1:AddButton({Text = '传送到营火', Func = function()
+    LP.Character.HumanoidRootPart.CFrame = CFrame.new(0.431, 15.776, -1.886)
+end})
+TpGroup1:AddButton({Text = '传送到要塞', Func = function() end})
+TpGroup1:AddButton({Text = '传送到安全区', Func = function()
+    local part = Workspace:FindFirstChild("SafeZonePart") or Instance.new("Part")
+    part.Position = Vector3.new(0,350,0)
+    part.Parent = Workspace
+    LP.Character.HumanoidRootPart.CFrame = CFrame.new(0,360,0)
+end})
+TpGroup1:AddButton({Text = '传送到商人', Func = function()
+    LP.Character.HumanoidRootPart.CFrame = CFrame.new(-37.08, 3.98, -16.33)
+end})
+TpGroup1:AddButton({Text = '传送到随机树', Func = function() end})
+
+local TpGroup2 = Tabs.Teleport:AddRightGroupbox("目标传送")
+TpGroup2:AddDropdown('ChestSelect', {Text = '选择宝箱', Values = {}, Refresh = true})
+TpGroup2:AddButton({Text = '传送到宝箱', Func = function() end})
+TpGroup2:AddDropdown('ChildSelect', {Text = '选择儿童', Values = {}, Refresh = true})
+TpGroup2:AddButton({Text = '传送到儿童', Func = function() end})
+TpGroup2:AddButton({Text = '传送到最近宝箱', Func = function() end})
+TpGroup2:AddButton({Text = '传送回火旁', Func = function()
+    LP.Character.HumanoidRootPart.CFrame = CFrame.new(-0.0967, 7.937, -0.178)
+end})
+
+local PullGroup1 = Tabs.Pull:AddLeftGroupbox("拉取设置")
+PullGroup1:AddDropdown('PullTarget', {Text = '拉取到', Values = {"自己", "篝火", "建造台"}, Default = "自己", Callback = function(v) PullTarget = v end})
+PullGroup1:AddSlider('PullSpeed', {Text = '拉取间隔(秒)', Default = 0.5, Min = 0.1, Max = 5, Float = 1, Callback = function(v) PullConfig.Speed = v end})
+PullGroup1:AddToggle('PullToggle', {Text = '开始拉取', Default = false, Callback = function(v) PullConfig.Enabled = v end})
+
+local PullGroup2 = Tabs.Pull:AddRightGroupbox("选择物品")
+PullGroup2:AddDropdown('PullFuel', {Text = '燃烧物', Values = {"木头","煤","油桶","椅子","生物燃料"}, Multi = true, Callback = function(v)
+    local en = {}
+    for _, cn in ipairs(v) do if ItemCN[cn] then table.insert(en, ItemCN[cn]) end end
+    PullConfig.SelectedFuel = en
+end})
+PullGroup2:AddDropdown('PullScrap', {Text = '废品物', Values = {"螺栓","破风扇","坏微波炉","旧收音机","洗衣机","旧汽车引擎","轮胎","金属板"}, Multi = true, Callback = function(v)
+    local en = {}
+    for _, cn in ipairs(v) do if ItemCN[cn] then table.insert(en, ItemCN[cn]) end end
+    PullConfig.SelectedScrap = en
+end})
+PullGroup2:AddDropdown('PullEquip', {Text = '装备物', Values = {"左轮手枪","步枪","皮革背心","铁甲","左轮弹药","步枪弹药","巨袋","好的背包","强力斧头","好的斧头"}, Multi = true, Callback = function(v)
+    local en = {}
+    for _, cn in ipairs(v) do if ItemCN[cn] then table.insert(en, ItemCN[cn]) end end
+    PullConfig.SelectedEquip = en
+end})
+PullGroup2:AddDropdown('PullFood', {Text = '食物', Values = {"苹果","浆果","胡萝卜","蛋糕","辣椒","熟肉块","熟牛排","生肉块","生牛排"}, Multi = true, Callback = function(v)
+    local en = {}
+    for _, cn in ipairs(v) do if ItemCN[cn] then table.insert(en, ItemCN[cn]) end end
+    PullConfig.SelectedFood = en
+end})
+PullGroup2:AddDropdown('PullMed', {Text = '药品', Values = {"绷带","医疗包"}, Multi = true, Callback = function(v)
+    local en = {}
+    for _, cn in ipairs(v) do if ItemCN[cn] then table.insert(en, ItemCN[cn]) end end
+    PullConfig.SelectedMed = en
+end})
+
+local PullStatusLabel = PullGroup1:AddLabel("待命中...")
+task.spawn(function()
+    while true do
+        if PullConfig.Enabled then
+            PullStatusLabel:SetText("进度: " .. PullConfig.PulledCount .. " / " .. PullConfig.TotalCount)
+        else
+            PullStatusLabel:SetText("待命中...")
+        end
+        task.wait(1)
+    end
+end)
+
+local PlayerGroup1 = Tabs.Player:AddLeftGroupbox("移动与增强")
+PlayerGroup1:AddToggle('SpeedToggle', {Text = '启用速度', Default = false, Callback = function(v) PlayerState.SpeedEnabled = v; if not v and Humanoid then Humanoid.WalkSpeed = 16 end end})
+PlayerGroup1:AddSlider('SpeedSlider', {Text = '速度值', Default = 16, Min = 1, Max = 150, Callback = function(v) PlayerState.Speed = v end})
+PlayerGroup1:AddToggle('InfiniteJump', {Text = '无限跳', Default = false, Callback = function(v) setInfiniteJump(v) end})
+PlayerGroup1:AddButton({Text = '召唤飞行', Func = function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/fly.lua"))()
+end})
+PlayerGroup1:AddToggle('InstantInteractToggle', {Text = '秒互动', Default = false, Callback = function(v) PlayerState.InstantInteract = v end})
+PlayerGroup1:AddToggle('AntiAFK', {Text = '反挂机踢出', Default = false, Callback = function(v) setAntiAFK(v) end})
+
+local VisGroup1 = Tabs.Visual:AddLeftGroupbox("透视")
+VisGroup1:AddToggle('ESPItemsToggle', {Text = '物品透视', Default = false, Callback = function(v) ESP.ItemsEnabled = v end})
+VisGroup1:AddDropdown('ESPItems', {Text = '选择物品', Values = {"木头","螺栓","煤","宝箱","步枪","绷带"}, Multi = true})
+VisGroup1:AddToggle('ESPMobsToggle', {Text = '敌人透视', Default = false, Callback = function(v) ESP.MobsEnabled = v end})
+VisGroup1:AddDropdown('ESPMobs', {Text = '选择实体', Values = {"狼","熊","邪教徒","兔子"}, Multi = true})
+
+local VisGroup2 = Tabs.Visual:AddRightGroupbox("环境")
+VisGroup2:AddToggle('DisableFog', {Text = '关闭雾效', Default = false, Callback = function(v) Environment.DisableFog = v end})
+VisGroup2:AddToggle('DisableCampfireEffect', {Text = '关闭篝火夜间效果', Default = false, Callback = function(v) Environment.DisableCampfireEffect = v end})
+VisGroup2:AddToggle('Fullbright', {Text = '全亮', Default = false, Callback = function(v) Environment.Fullbright = v end})
+
+local FunGroup = Tabs.Fun:AddLeftGroupbox("种植与图案")
+FunGroup:AddDropdown('PlantShape', {Text = '种植形状', Values = {"正方形","圆形","原地"}, Default = "正方形"})
+FunGroup:AddInput('PlantSize', {Text = '种植范围', Default = '80'})
+FunGroup:AddInput('PlantHeight', {Text = '种植高度', Default = '3'})
+FunGroup:AddInput('PlantSpacing', {Text = '树苗间隔', Default = '1'})
+FunGroup:AddInput('PlantDelay', {Text = '种植延迟(秒)', Default = '1'})
+FunGroup:AddToggle('AutoPlantToggle', {Text = '自动种植', Default = false, Callback = function(v) AutoPlant.Enabled = v end})
+FunGroup:AddDropdown('PatternType', {Text = '图案类型', Values = {"球形","项链","流星"}, Default = "球形"})
+FunGroup:AddToggle('AutoPatternToggle', {Text = '自动形成图案', Default = false, Callback = function(v) FunPattern.Enabled = v end})
+
+local FunGroup2 = Tabs.Fun:AddRightGroupbox("娱乐与工具")
+FunGroup2:AddToggle('NightVision', {Text = '夜视', Default = false, Callback = function(v) setNightVision(v) end})
+FunGroup2:AddButton({Text = '撸管', Func = function()
+    Library:Notify("正在生成撸管工具...", 2)
+    loadLuGuan()
+end})
+
+local SettGroup = Tabs.Settings:AddLeftGroupbox("菜单")
+SettGroup:AddButton({Text = '卸载脚本', Func = function() Library:Unload() end})
+SettGroup:AddLabel('菜单快捷键'):AddKeyPicker('MenuKeybind', {Default = 'RightShift', NoUI = true, Text = 'Menu keybind'})
+Library.ToggleKeybind = Options.MenuKeybind
+
+if ThemeManager then
+    ThemeManager:SetLibrary(Library)
+    ThemeManager:SetFolder("99NightsTheme")
+    ThemeManager:ApplyToTab(Tabs.Settings)
+end
+
+if SaveManager then
+    SaveManager:SetLibrary(Library)
+    SaveManager:IgnoreThemeSettings()
+    SaveManager:SetFolder("99NightsConfig")
+    SaveManager:BuildConfigSection(Tabs.Settings)
+end
