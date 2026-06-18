@@ -2256,6 +2256,16 @@ do
                     loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/TCXYFK.NB"))()
                 end)
             end)
+            addSemiTransparentButton(page, "森林中的99夜", posX2, 4 + 5*rowHeight, function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "森林中的99夜",
+                    Text = "正在加载中...",
+                    Duration = 5
+                })
+                task.spawn(function()
+                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SLZD99Y.NB"))()
+                end)
+            end)
         end
         cat.MouseButton1Click:Connect(function()
             if selected then
