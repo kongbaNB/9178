@@ -1018,7 +1018,7 @@ do
     ScrollingFrame.Parent = ContentArea
     ScrollingFrame.BackgroundTransparency = 1
     ScrollingFrame.Size = UDim2.new(1,0,1,0)
-    ScrollingFrame.CanvasSize = UDim2.new(0,0,0,2000)  -- 初始就很大，保证能滑很深
+    ScrollingFrame.CanvasSize = UDim2.new(0,0,0,200)
     ScrollingFrame.ScrollBarThickness = 6
     ScrollingFrame.BorderSizePixel = 0
     ScrollingFrame.ZIndex = 20
@@ -1058,7 +1058,7 @@ do
         })
     end
 
-    -- 自动更新当前页面滚动范围，并强制最小高度 2000
+    -- 自动更新当前页面滚动范围，紧贴最后一个按钮，不留多余空白
     local function updateCanvasForPage(page)
         local maxY = 0
         for _, child in ipairs(page:GetChildren()) do
@@ -1069,7 +1069,11 @@ do
                 end
             end
         end
-        ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, math.max(maxY + 20, 2000))
+        -- 如果页面中没有按钮（比如通知页），给一个基础高度防止无法滚动
+        if maxY == 0 then
+            maxY = 100
+        end
+        ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, maxY + 20)
     end
 
     -- 统一布局函数，保证左右对齐，奇数时左列多一个
@@ -2425,7 +2429,7 @@ do
             if teleportServerPanel then teleportServerPanel.Visible = false end
             if savedServersPanel then savedServersPanel.Visible = false end
             page.Visible = true
-            updateCanvasForPage(page)  -- 关键修复：切换页面后重新计算滚动范围
+            updateCanvasForPage(page)  -- 切换页面时重新计算滚动范围
         end)
         categories[i] = cat; pages[i] = page
     end
