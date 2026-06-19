@@ -29,6 +29,135 @@ local jumpFloatBtn = nil
 local jumpPanel = nil
 local jumpHeight = 60
 
+local function togglePanel(panel, show)
+    if not panel then return end
+    if show == nil then show = not panel.Visible end
+    if show then
+        panel.Size = UDim2.new(0,0,0,0)
+        panel.Visible = true
+        local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+        local tween = TweenService:Create(panel, tweenInfo, {Size = panel._targetSize})
+        tween:Play()
+    else
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+        local tween = TweenService:Create(panel, tweenInfo, {Size = UDim2.new(0,0,0,0)})
+        tween:Play()
+        tween.Completed:Connect(function()
+            panel.Visible = false
+        end)
+    end
+end
+
+local function flingPlayer(targetPlayer)
+    if targetPlayer == LocalPlayer then return end
+    local char = targetPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then hum.Sit = false end
+    hrp.Velocity = Vector3.new(math.random(-500,500), 500, math.random(-500,500))
+    hrp.AssemblyLinearVelocity = Vector3.new(math.random(-500,500), 500, math.random(-500,500))
+end
+
+local function flingAllPlayers()
+    for _, p in ipairs(Players:GetPlayers()) do
+        flingPlayer(p)
+    end
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "甩飞", Text = "已甩飞所有玩家", Duration = 3})
+end
+
+local function flingNearestPlayer()
+    local myChar = LocalPlayer.Character
+    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+    local myPos = myChar.HumanoidRootPart.Position
+    local nearest, minDist = nil, math.huge
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
+            if dist < minDist then
+                minDist = dist
+                nearest = p
+            end
+        end
+    end
+    if nearest then
+        flingPlayer(nearest)
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "甩飞", Text = "已甩飞最近玩家: " .. nearest.Name, Duration = 3})
+    else
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "甩飞", Text = "附近没有玩家", Duration = 3})
+    end
+end
+
+local function showFlingSelect()
+    local selectGui = Instance.new("ScreenGui")
+    selectGui.Name = "FlingSelect"
+    selectGui.Parent = LocalPlayer.PlayerGui
+    selectGui.IgnoreGuiInset = true
+    selectGui.ResetOnSpawn = false
+    local bg = Instance.new("Frame")
+    bg.Parent = selectGui
+    bg.Size = UDim2.new(0,200,0,250)
+    bg._targetSize = bg.Size
+    bg.Position = UDim2.new(0.5,-100,0.5,-125)
+    bg.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    bg.ClipsDescendants = true
+    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0,12); corner.Parent = bg
+    local title = Instance.new("TextLabel")
+    title.Parent = bg
+    title.Size = UDim2.new(1,0,0,30)
+    title.BackgroundTransparency = 1
+    title.Text = "选择甩飞目标"
+    title.TextColor3 = Color3.new(1,1,1)
+    title.Font = Enum.Font.SourceSansBold
+    title.TextSize = 16
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Parent = bg
+    scrollFrame.Size = UDim2.new(1,-10,1,-40)
+    scrollFrame.Position = UDim2.new(0,5,0,35)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
+    scrollFrame.ScrollBarThickness = 4
+    local playersList = Players:GetPlayers()
+    local y = 0
+    for _, p in ipairs(playersList) do
+        if p ~= LocalPlayer then
+            local btn = Instance.new("TextButton")
+            btn.Parent = scrollFrame
+            btn.Size = UDim2.new(1,-10,0,30)
+            btn.Position = UDim2.new(0,5,0,y)
+            btn.Text = p.Name
+            btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+            btn.TextColor3 = Color3.new(1,1,1)
+            btn.Font = Enum.Font.SourceSans
+            btn.TextSize = 14
+            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0,6); btnCorner.Parent = btn
+            btn.MouseButton1Click:Connect(function()
+                flingPlayer(p)
+                selectGui:Destroy()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "甩飞", Text = "已甩飞: " .. p.Name, Duration = 3})
+            end)
+            y = y + 35
+        end
+    end
+    scrollFrame.CanvasSize = UDim2.new(0,0,0,y)
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Parent = bg
+    closeBtn.Size = UDim2.new(0,30,0,20)
+    closeBtn.Position = UDim2.new(1,-35,0,5)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+    closeBtn.Text = "X"
+    closeBtn.TextColor3 = Color3.new(1,1,1)
+    closeBtn.Font = Enum.Font.SourceSansBold
+    closeBtn.TextSize = 14
+    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0,4); closeCorner.Parent = closeBtn
+    closeBtn.MouseButton1Click:Connect(function() selectGui:Destroy() end)
+    bg.Size = UDim2.new(0,0,0,0)
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(bg, tweenInfo, {Size = bg._targetSize})
+    tween:Play()
+end
+
 local espEnabled = false
 local function enableESP(player)
     if player == LocalPlayer then return end
@@ -470,8 +599,10 @@ local function showPlayerSelect()
     local bg = Instance.new("Frame")
     bg.Parent = selectGui
     bg.Size = UDim2.new(0, 200, 0, 250)
+    bg._targetSize = bg.Size
     bg.Position = UDim2.new(0.5, -100, 0.5, -125)
     bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    bg.ClipsDescendants = true
     local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
     local title = Instance.new("TextLabel")
     title.Parent = bg
@@ -522,6 +653,10 @@ local function showPlayerSelect()
     closeBtn.MouseButton1Click:Connect(function()
         selectGui:Destroy()
     end)
+    bg.Size = UDim2.new(0,0,0,0)
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(bg, tweenInfo, {Size = bg._targetSize})
+    tween:Play()
 end
 local function startSpeedAntiPull(speed)
     if speedAntiPull then speedAntiPull:Disconnect() end
@@ -847,8 +982,10 @@ local function showHarassSelect()
     local bg = Instance.new("Frame")
     bg.Parent = selectGui
     bg.Size = UDim2.new(0, 220, 0, 300)
+    bg._targetSize = bg.Size
     bg.Position = UDim2.new(0.5, -110, 0.5, -150)
     bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    bg.ClipsDescendants = true
     local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
     local title = Instance.new("TextLabel")
     title.Parent = bg
@@ -926,6 +1063,10 @@ local function showHarassSelect()
     closeBtn.MouseButton1Click:Connect(function()
         selectGui:Destroy()
     end)
+    bg.Size = UDim2.new(0,0,0,0)
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(bg, tweenInfo, {Size = bg._targetSize})
+    tween:Play()
 end
 
 local function createJumpFloat()
@@ -952,9 +1093,11 @@ local function createJumpFloat()
     Instance.new("UICorner", gearBtn).CornerRadius = UDim.new(1,0)
     jumpPanel = Instance.new("Frame", jumpFloatGui)
     jumpPanel.Size = UDim2.new(0,220,0,140)
+    jumpPanel._targetSize = jumpPanel.Size
     jumpPanel.Position = UDim2.new(1,-240,1,-160)
     jumpPanel.BackgroundColor3 = Color3.fromRGB(30,30,30)
     jumpPanel.Visible = false
+    jumpPanel.ClipsDescendants = true
     Instance.new("UICorner", jumpPanel).CornerRadius = UDim.new(0,8)
     local closeBtn = Instance.new("TextButton", jumpPanel)
     closeBtn.Size = UDim2.new(0,20,0,20)
@@ -964,7 +1107,7 @@ local function createJumpFloat()
     closeBtn.TextColor3 = Color3.new(1,1,1)
     closeBtn.Font = Enum.Font.SourceSansBold
     Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(1,0)
-    closeBtn.MouseButton1Click:Connect(function() jumpPanel.Visible = false end)
+    closeBtn.MouseButton1Click:Connect(function() togglePanel(jumpPanel, false) end)
     local heightLabel = Instance.new("TextLabel", jumpPanel)
     heightLabel.Size = UDim2.new(1,-30,0,30)
     heightLabel.Position = UDim2.new(0,10,0,5)
@@ -990,7 +1133,7 @@ local function createJumpFloat()
     Instance.new("UICorner", confirmBtn).CornerRadius = UDim.new(0,6)
     confirmBtn.MouseButton1Click:Connect(function()
         local num = tonumber(inputBox.Text)
-        if num and num >= 16 and num <= 100 then
+        if num and num >= 16 and num <= 2000 then
             jumpHeight = num
             heightLabel.Text = "跳跃高度：" .. jumpHeight
         end
@@ -1008,7 +1151,7 @@ local function createJumpFloat()
         inputBox.Text = "60"
         heightLabel.Text = "跳跃高度：" .. jumpHeight
     end)
-    gearBtn.MouseButton1Click:Connect(function() jumpPanel.Visible = not jumpPanel.Visible end)
+    gearBtn.MouseButton1Click:Connect(function() togglePanel(jumpPanel) end)
     local function performJump()
         if not jumpFloatActive then return end
         local char = LocalPlayer.Character
@@ -1252,11 +1395,13 @@ do
         speedPanel.Name = "SpeedPanel"
         speedPanel.Parent = Main
         speedPanel.Size = UDim2.new(0, 250, 0, 160)
+        speedPanel._targetSize = speedPanel.Size
         speedPanel.Position = UDim2.new(0.5, -125, 0.5, -80)
         speedPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         speedPanel.BackgroundTransparency = 0.2
         speedPanel.Visible = false
         speedPanel.ZIndex = 200
+        speedPanel.ClipsDescendants = true
         local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = speedPanel
         local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = speedPanel
         local title = Instance.new("TextLabel")
@@ -1349,7 +1494,7 @@ do
         closeBtn.TextSize = 12
         closeBtn.Font = Enum.Font.SourceSansBold
         local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-        closeBtn.MouseButton1Click:Connect(function() speedPanel.Visible = false end)
+        closeBtn.MouseButton1Click:Connect(function() togglePanel(speedPanel, false) end)
         local dragging = false
         knob.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -1386,11 +1531,13 @@ do
         coordPanel.Name = "CoordPanel"
         coordPanel.Parent = Main
         coordPanel.Size = UDim2.new(0, 280, 0, 140)
+        coordPanel._targetSize = coordPanel.Size
         coordPanel.Position = UDim2.new(0.5, -140, 0.5, -70)
         coordPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         coordPanel.BackgroundTransparency = 0.2
         coordPanel.Visible = false
         coordPanel.ZIndex = 200
+        coordPanel.ClipsDescendants = true
         local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = coordPanel
         local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = coordPanel
         local title = Instance.new("TextLabel")
@@ -1452,7 +1599,7 @@ do
         closeBtn.TextSize = 12
         closeBtn.Font = Enum.Font.SourceSansBold
         local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-        closeBtn.MouseButton1Click:Connect(function() coordPanel.Visible = false end)
+        closeBtn.MouseButton1Click:Connect(function() togglePanel(coordPanel, false) end)
         local function parseCoords(str)
             local parts = str:split(",")
             if #parts >= 3 then
@@ -1539,11 +1686,13 @@ do
         aimbotPanel.Name = "AimbotPanel"
         aimbotPanel.Parent = Main
         aimbotPanel.Size = UDim2.new(0, 250, 0, 160)
+        aimbotPanel._targetSize = aimbotPanel.Size
         aimbotPanel.Position = UDim2.new(0.5, -125, 0.5, -80)
         aimbotPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         aimbotPanel.BackgroundTransparency = 0.2
         aimbotPanel.Visible = false
         aimbotPanel.ZIndex = 200
+        aimbotPanel.ClipsDescendants = true
         local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = aimbotPanel
         local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = aimbotPanel
         local title = Instance.new("TextLabel")
@@ -1602,7 +1751,7 @@ do
         local confirmCorner = Instance.new("UICorner"); confirmCorner.CornerRadius = UDim.new(0, 6); confirmCorner.Parent = confirmBtn
         confirmBtn.MouseButton1Click:Connect(function()
             AimbotRadius = currentRadius
-            aimbotPanel.Visible = false
+            togglePanel(aimbotPanel, false)
         end)
         local resetBtn = Instance.new("TextButton")
         resetBtn.Parent = aimbotPanel
@@ -1617,7 +1766,7 @@ do
         resetBtn.MouseButton1Click:Connect(function()
             setRadius(defaultRadius)
             AimbotRadius = defaultRadius
-            aimbotPanel.Visible = false
+            togglePanel(aimbotPanel, false)
         end)
         local closeBtn = Instance.new("TextButton")
         closeBtn.Parent = aimbotPanel
@@ -1628,7 +1777,7 @@ do
         closeBtn.TextSize = 12
         closeBtn.Font = Enum.Font.SourceSansBold
         local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-        closeBtn.MouseButton1Click:Connect(function() aimbotPanel.Visible = false end)
+        closeBtn.MouseButton1Click:Connect(function() togglePanel(aimbotPanel, false) end)
         local dragging = false
         knob.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -1660,11 +1809,13 @@ do
         harassSpeedPanel.Name = "HarassSpeedPanel"
         harassSpeedPanel.Parent = Main
         harassSpeedPanel.Size = UDim2.new(0, 250, 0, 160)
+        harassSpeedPanel._targetSize = harassSpeedPanel.Size
         harassSpeedPanel.Position = UDim2.new(0.5, -125, 0.5, -80)
         harassSpeedPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         harassSpeedPanel.BackgroundTransparency = 0.2
         harassSpeedPanel.Visible = false
         harassSpeedPanel.ZIndex = 200
+        harassSpeedPanel.ClipsDescendants = true
         local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = harassSpeedPanel
         local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = harassSpeedPanel
         local title = Instance.new("TextLabel")
@@ -1721,7 +1872,7 @@ do
         local confirmCorner = Instance.new("UICorner"); confirmCorner.CornerRadius = UDim.new(0, 6); confirmCorner.Parent = confirmBtn
         confirmBtn.MouseButton1Click:Connect(function()
             harassSpeed = currentHarassSpeed
-            harassSpeedPanel.Visible = false
+            togglePanel(harassSpeedPanel, false)
         end)
         local resetBtn = Instance.new("TextButton")
         resetBtn.Parent = harassSpeedPanel
@@ -1735,7 +1886,7 @@ do
         local resetCorner = Instance.new("UICorner"); resetCorner.CornerRadius = UDim.new(0, 6); resetCorner.Parent = resetBtn
         resetBtn.MouseButton1Click:Connect(function()
             setHarassSpeed(5)
-            harassSpeedPanel.Visible = false
+            togglePanel(harassSpeedPanel, false)
         end)
         local closeBtn = Instance.new("TextButton")
         closeBtn.Parent = harassSpeedPanel
@@ -1746,7 +1897,7 @@ do
         closeBtn.TextSize = 12
         closeBtn.Font = Enum.Font.SourceSansBold
         local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-        closeBtn.MouseButton1Click:Connect(function() harassSpeedPanel.Visible = false end)
+        closeBtn.MouseButton1Click:Connect(function() togglePanel(harassSpeedPanel, false) end)
         local dragging = false
         knob.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -1778,11 +1929,13 @@ do
         spinSpeedPanel.Name = "SpinSpeedPanel"
         spinSpeedPanel.Parent = Main
         spinSpeedPanel.Size = UDim2.new(0, 250, 0, 160)
+        spinSpeedPanel._targetSize = spinSpeedPanel.Size
         spinSpeedPanel.Position = UDim2.new(0.5, -125, 0.5, -80)
         spinSpeedPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         spinSpeedPanel.BackgroundTransparency = 0.2
         spinSpeedPanel.Visible = false
         spinSpeedPanel.ZIndex = 200
+        spinSpeedPanel.ClipsDescendants = true
         local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = spinSpeedPanel
         local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = spinSpeedPanel
         local title = Instance.new("TextLabel")
@@ -1839,7 +1992,7 @@ do
         local confirmCorner = Instance.new("UICorner"); confirmCorner.CornerRadius = UDim.new(0, 6); confirmCorner.Parent = confirmBtn
         confirmBtn.MouseButton1Click:Connect(function()
             SpinSpeed = currentSpin
-            spinSpeedPanel.Visible = false
+            togglePanel(spinSpeedPanel, false)
         end)
         local resetBtn = Instance.new("TextButton")
         resetBtn.Parent = spinSpeedPanel
@@ -1853,7 +2006,7 @@ do
         local resetCorner = Instance.new("UICorner"); resetCorner.CornerRadius = UDim.new(0, 6); resetCorner.Parent = resetBtn
         resetBtn.MouseButton1Click:Connect(function()
             setSpinSpeed(360)
-            spinSpeedPanel.Visible = false
+            togglePanel(spinSpeedPanel, false)
         end)
         local closeBtn = Instance.new("TextButton")
         closeBtn.Parent = spinSpeedPanel
@@ -1864,7 +2017,7 @@ do
         closeBtn.TextSize = 12
         closeBtn.Font = Enum.Font.SourceSansBold
         local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-        closeBtn.MouseButton1Click:Connect(function() spinSpeedPanel.Visible = false end)
+        closeBtn.MouseButton1Click:Connect(function() togglePanel(spinSpeedPanel, false) end)
         local dragging = false
         knob.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -1896,11 +2049,13 @@ do
         instanceIdPanel.Name = "InstanceIdPanel"
         instanceIdPanel.Parent = Main
         instanceIdPanel.Size = UDim2.new(0, 280, 0, 170)
+        instanceIdPanel._targetSize = instanceIdPanel.Size
         instanceIdPanel.Position = UDim2.new(0.5, -140, 0.5, -85)
         instanceIdPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         instanceIdPanel.BackgroundTransparency = 0.2
         instanceIdPanel.Visible = false
         instanceIdPanel.ZIndex = 200
+        instanceIdPanel.ClipsDescendants = true
         local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = instanceIdPanel
         local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = instanceIdPanel
         local title = Instance.new("TextLabel")
@@ -1952,7 +2107,7 @@ do
         closeBtn.TextSize = 12
         closeBtn.Font = Enum.Font.SourceSansBold
         local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-        closeBtn.MouseButton1Click:Connect(function() instanceIdPanel.Visible = false end)
+        closeBtn.MouseButton1Click:Connect(function() togglePanel(instanceIdPanel, false) end)
         local function updateIdDisplay()
             idLabel.Text = "ID: " .. game.JobId
         end
@@ -1986,11 +2141,13 @@ do
         placeIdPanel.Name = "PlaceIdPanel"
         placeIdPanel.Parent = Main
         placeIdPanel.Size = UDim2.new(0, 280, 0, 140)
+        placeIdPanel._targetSize = placeIdPanel.Size
         placeIdPanel.Position = UDim2.new(0.5, -140, 0.5, -70)
         placeIdPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         placeIdPanel.BackgroundTransparency = 0.2
         placeIdPanel.Visible = false
         placeIdPanel.ZIndex = 200
+        placeIdPanel.ClipsDescendants = true
         local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = placeIdPanel
         local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = placeIdPanel
         local title = Instance.new("TextLabel")
@@ -2032,7 +2189,7 @@ do
         closeBtn.TextSize = 12
         closeBtn.Font = Enum.Font.SourceSansBold
         local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-        closeBtn.MouseButton1Click:Connect(function() placeIdPanel.Visible = false end)
+        closeBtn.MouseButton1Click:Connect(function() togglePanel(placeIdPanel, false) end)
         local function updateIdDisplay()
             idLabel.Text = "ID: " .. game.PlaceId
         end
@@ -2057,11 +2214,13 @@ do
         teleportServerPanel.Name = "TeleportServerPanel"
         teleportServerPanel.Parent = Main
         teleportServerPanel.Size = UDim2.new(0, 300, 0, 120)
+        teleportServerPanel._targetSize = teleportServerPanel.Size
         teleportServerPanel.Position = UDim2.new(0.5, -150, 0.5, -60)
         teleportServerPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         teleportServerPanel.BackgroundTransparency = 0.2
         teleportServerPanel.Visible = false
         teleportServerPanel.ZIndex = 200
+        teleportServerPanel.ClipsDescendants = true
         local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = teleportServerPanel
         local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = teleportServerPanel
         local title = Instance.new("TextLabel")
@@ -2102,7 +2261,7 @@ do
         closeBtn.TextSize = 12
         closeBtn.Font = Enum.Font.SourceSansBold
         local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-        closeBtn.MouseButton1Click:Connect(function() teleportServerPanel.Visible = false end)
+        closeBtn.MouseButton1Click:Connect(function() togglePanel(teleportServerPanel, false) end)
         teleportBtn.MouseButton1Click:Connect(function()
             local targetId = inputBox.Text
             if targetId == "" then
@@ -2125,11 +2284,13 @@ do
         savedServersPanel.Name = "SavedServersPanel"
         savedServersPanel.Parent = Main
         savedServersPanel.Size = UDim2.new(0, 300, 0, 280)
+        savedServersPanel._targetSize = savedServersPanel.Size
         savedServersPanel.Position = UDim2.new(0.5, -150, 0.5, -140)
         savedServersPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         savedServersPanel.BackgroundTransparency = 0.2
         savedServersPanel.Visible = false
         savedServersPanel.ZIndex = 200
+        savedServersPanel.ClipsDescendants = true
         local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = savedServersPanel
         local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = savedServersPanel
         local title = Instance.new("TextLabel")
@@ -2323,7 +2484,7 @@ do
         closeBtn.TextSize = 12
         closeBtn.Font = Enum.Font.SourceSansBold
         local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-        closeBtn.MouseButton1Click:Connect(function() savedServersPanel.Visible = false end)
+        closeBtn.MouseButton1Click:Connect(function() togglePanel(savedServersPanel, false) end)
         savedServersPanel:GetPropertyChangedSignal("Visible"):Connect(function()
             if savedServersPanel.Visible then refreshList() end
         end)
@@ -2435,7 +2596,7 @@ do
             end, noclipRef)
             page:AddButton("修改移速", function()
                 local panel = createSpeedPanel()
-                panel.Visible = not panel.Visible
+                togglePanel(panel)
             end)
             page:AddButton("夜视：关", function()
                 NightVisionEnabled = not NightVisionEnabled
@@ -2468,6 +2629,15 @@ do
                 end
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "解锁跳跃", Text = jumpFloatActive and "已显示跳跃按钮" or "已隐藏跳跃按钮", Duration = 3})
             end, jumpFloatRef)
+            page:AddButton("全部甩飞", function()
+                flingAllPlayers()
+            end)
+            page:AddButton("甩飞最近", function()
+                flingNearestPlayer()
+            end)
+            page:AddButton("选择甩飞", function()
+                showFlingSelect()
+            end)
         elseif i == 3 then
             local transRef, antiPushRef, aimbotRef, lockRef, flyCtrlRef, spinRef, followRef, smoothRef, harassRef = {}, {}, {}, {}, {}, {}, {}, {}, {}
             page:AddButton("自动翻译：关", function()
@@ -2507,7 +2677,7 @@ do
             end, followRef)
             page:AddButton("查询坐标传送", function()
                 local panel = createCoordPanel()
-                panel.Visible = not panel.Visible
+                togglePanel(panel)
             end)
             page:AddButton("传送到指定玩家", function()
                 showPlayerSelect()
@@ -2516,9 +2686,9 @@ do
                 AimbotEnabled = not AimbotEnabled
                 aimbotRef[1].Text = AimbotEnabled and "自瞄：开" or "自瞄：关"
                 if AimbotEnabled then
-                    local panel = createAimbotPanel(); panel.Visible = true
+                    local panel = createAimbotPanel(); togglePanel(panel, true)
                 else
-                    AimbotCircle.Visible = false; if aimbotPanel then aimbotPanel.Visible = false end
+                    AimbotCircle.Visible = false; if aimbotPanel then togglePanel(aimbotPanel, false) end
                 end
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = AimbotEnabled and "已开启，请在面板中调整半径" or "已关闭", Duration = 3})
             end, aimbotRef)
@@ -2554,10 +2724,10 @@ do
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "原地旋转", Text = SpinEnabled and "已开启" or "已关闭", Duration = 3})
             end, spinRef)
             page:AddButton("操人速度", function()
-                local panel = createHarassSpeedPanel(); panel.Visible = not panel.Visible
+                local panel = createHarassSpeedPanel(); togglePanel(panel)
             end)
             page:AddButton("旋转速度", function()
-                local panel = createSpinSpeedPanel(); panel.Visible = not panel.Visible
+                local panel = createSpinSpeedPanel(); togglePanel(panel)
             end)
         elseif i == 4 then
             local crossRef, crossSpinRef, antiAFKRef = {}, {}, {}
@@ -2587,16 +2757,16 @@ do
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "反挂机踢出", Text = antiAFKEnabled and "已开启" or "已关闭", Duration = 3})
             end, antiAFKRef)
             page:AddButton("获取实例ID", function()
-                local panel = createInstanceIdPanel(); panel.Visible = not panel.Visible
+                local panel = createInstanceIdPanel(); togglePanel(panel)
             end)
             page:AddButton("获取数字ID", function()
-                local panel = createPlaceIdPanel(); panel.Visible = not panel.Visible
+                local panel = createPlaceIdPanel(); togglePanel(panel)
             end)
             page:AddButton("传送指定服务器", function()
-                local panel = createTeleportServerPanel(); panel.Visible = not panel.Visible
+                local panel = createTeleportServerPanel(); togglePanel(panel)
             end)
             page:AddButton("已保存的服务器", function()
-                local panel = createSavedServersPanel(); panel.Visible = not panel.Visible
+                local panel = createSavedServersPanel(); togglePanel(panel)
             end)
         elseif i == 5 then
             page:AddButton("破坏者谜团2", function()
@@ -2656,15 +2826,15 @@ do
             cat.BackgroundTransparency = 0.5; cat.BackgroundColor3 = Color3.fromRGB(70,70,70)
             selected = cat
             for _, p in pairs(pages) do p.frame.Visible = false end
-            if speedPanel then speedPanel.Visible = false end
-            if coordPanel then coordPanel.Visible = false end
-            if aimbotPanel then aimbotPanel.Visible = false end
-            if harassSpeedPanel then harassSpeedPanel.Visible = false end
-            if spinSpeedPanel then spinSpeedPanel.Visible = false end
-            if instanceIdPanel then instanceIdPanel.Visible = false end
-            if placeIdPanel then placeIdPanel.Visible = false end
-            if teleportServerPanel then teleportServerPanel.Visible = false end
-            if savedServersPanel then savedServersPanel.Visible = false end
+            if speedPanel then togglePanel(speedPanel, false) end
+            if coordPanel then togglePanel(coordPanel, false) end
+            if aimbotPanel then togglePanel(aimbotPanel, false) end
+            if harassSpeedPanel then togglePanel(harassSpeedPanel, false) end
+            if spinSpeedPanel then togglePanel(spinSpeedPanel, false) end
+            if instanceIdPanel then togglePanel(instanceIdPanel, false) end
+            if placeIdPanel then togglePanel(placeIdPanel, false) end
+            if teleportServerPanel then togglePanel(teleportServerPanel, false) end
+            if savedServersPanel then togglePanel(savedServersPanel, false) end
             page.frame.Visible = true
             page:UpdateCanvas()
         end)
