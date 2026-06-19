@@ -922,6 +922,7 @@ local function showHarassSelect()
     end)
 end
 
+-- 服务器ID保存/加载功能
 local serversFile = "servers_" .. plrId .. ".json"
 local savedServers = {}
 local function loadSavedServers()
@@ -965,6 +966,7 @@ local function removeServerId(id)
 end
 loadSavedServers()
 
+-- ================== 简洁UI库（Page类） ==================
 local Page = {}
 Page.__index = Page
 
@@ -1017,6 +1019,7 @@ function Page:AddButton(text, callback, toggleRef)
         toggleRef[1] = btn
     end
 
+    -- 自动更新滚动范围
     self:UpdateCanvas()
     return btn
 end
@@ -1037,6 +1040,7 @@ function Page:UpdateCanvas()
         scrollFrame.CanvasSize = UDim2.new(0,0,0, maxY + 20)
     end
 end
+-- =====================================================
 
 local UILibrary = {}
 do
@@ -2112,9 +2116,10 @@ do
         cat.TextSize = 14
         cat.AutoButtonColor = false
         cat.ZIndex = 21
+        -- 使用 Page 类创建页面
         local page = Page.new(ScrollingFrame)
         page.frame.Name = "Page"..i
-        pages[i] = page
+        pages[i] = page  -- 存引用，便于切换
 
         if i == 1 then
             local info = Instance.new("TextLabel")
@@ -2425,13 +2430,14 @@ do
             if teleportServerPanel then teleportServerPanel.Visible = false end
             if savedServersPanel then savedServersPanel.Visible = false end
             page.frame.Visible = true
-            page:UpdateCanvas()
+            page:UpdateCanvas()  -- 确保切换时滚动范围正确
         end)
         categories[i] = cat
     end
     for i = 1, 5 do AddCat(i) end
-    if categories[1] then categories[1]:MouseButton1Click() end
-
+    task.defer(function()
+        if categories[1] then categories[1]:MouseButton1Click() end
+    end)
     local TopBar = Instance.new("Frame")
     TopBar.Name = "TopBar"
     TopBar.Parent = Main
