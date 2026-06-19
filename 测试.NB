@@ -921,6 +921,52 @@ local function showHarassSelect()
         selectGui:Destroy()
     end)
 end
+
+-- 服务器ID保存/加载功能
+local serversFile = "servers_" .. plrId .. ".json"
+local savedServers = {}
+local function loadSavedServers()
+    local success, data = pcall(function() return readfile(serversFile) end)
+    if success and data then
+        local decoded = HttpService:JSONDecode(data)
+        if decoded and type(decoded) == "table" then
+            savedServers = decoded
+        end
+    end
+    -- 去重
+    local seen = {}
+    local unique = {}
+    for _, id in ipairs(savedServers) do
+        if not seen[id] then
+            seen[id] = true
+            table.insert(unique, id)
+        end
+    end
+    savedServers = unique
+end
+local function saveServers()
+    pcall(function() writefile(serversFile, HttpService:JSONEncode(savedServers)) end)
+end
+local function addServerId(id)
+    if not id or id == "" then return end
+    for _, existing in ipairs(savedServers) do
+        if existing == id then return end
+    end
+    table.insert(savedServers, id)
+    saveServers()
+end
+local function removeServerId(id)
+    local newList = {}
+    for _, v in ipairs(savedServers) do
+        if v ~= id then
+            table.insert(newList, v)
+        end
+    end
+    savedServers = newList
+    saveServers()
+end
+loadSavedServers()
+
 local UILibrary = {}
 do
     local PlayerGui = LocalPlayer.PlayerGui
@@ -995,6 +1041,7 @@ do
     local instanceIdPanel = nil
     local placeIdPanel = nil
     local teleportServerPanel = nil
+    local savedServersPanel = nil
     local function copyToClipboard(text, label)
         local success = pcall(function()
             if setclipboard then
@@ -1011,6 +1058,63 @@ do
             Duration = 3,
         })
     end
+
+    -- 统一布局函数，保证左右对齐，奇数时左列多一个
+    local function layoutButtonsInPage(page, buttons)
+        -- buttons: 数组，元素为 {text, callback} 或 {text, callback, specialState}
+        local colWidth = 0.46          -- 每个按钮占页面宽度的46%
+        local leftMargin = 0.03       -- 左边距
+        local rightMargin = 0.03      -- 右边距（用于右列定位）
+        local spacingX = 0.04         -- 列间距
+        local rowHeight = 45          -- 行高
+        local topMargin = 4           -- 顶部间距
+
+        -- 清除旧按钮（如果有）
+        for _, child in ipairs(page:GetChildren()) do
+            if child:IsA("TextButton") then
+                child:Destroy()
+            end
+        end
+
+        for i, btnData in ipairs(buttons) do
+            local isLeft = (i % 2 == 1)  -- 奇数左列，偶数右列
+            local colIdx = isLeft and 0 or 1
+            local rowIdx = math.floor((i-1)/2)
+
+            local posXScale = leftMargin + colIdx * (colWidth + spacingX)
+            local posYOffset = topMargin + rowIdx * rowHeight
+
+            local btn = Instance.new("TextButton")
+            btn.Parent = page
+            btn.BackgroundColor3 = Color3.new(0, 0, 0)
+            btn.BackgroundTransparency = 0.5
+            btn.Size = UDim2.new(colWidth, 0, 0, 38)  -- 高度38，留7间距
+            btn.Position = UDim2.new(posXScale, 0, 0, posYOffset)
+            btn.Text = btnData[1]
+            btn.TextColor3 = Color3.new(1, 1, 1)
+            btn.TextSize = 14
+            btn.AutoButtonColor = false
+            btn.ZIndex = 21
+            local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 6); corner.Parent = btn
+
+            if btnData[2] then
+                btn.MouseButton1Click:Connect(btnData[2])
+            end
+
+            -- 如果有特殊状态标签，返回按钮引用以便外部修改文本
+            if btnData[3] then
+                btnData[3] = btn  -- 把引用存回表里
+            end
+        end
+
+        -- 动态调整CanvasSize
+        local totalRows = math.ceil(#buttons / 2)
+        local totalHeight = topMargin + totalRows * rowHeight + 10
+        if page.Parent and page.Parent:IsA("ScrollingFrame") then
+            page.Parent.CanvasSize = UDim2.new(0, 0, 0, math.max(totalHeight, 200))
+        end
+    end
+
     local function createSpeedPanel()
         if speedPanel then return speedPanel end
         speedPanel = Instance.new("Frame")
@@ -1802,15 +1906,14 @@ do
         teleportServerPanel = Instance.new("Frame")
         teleportServerPanel.Name = "TeleportServerPanel"
         teleportServerPanel.Parent = Main
-        teleportServerPanel.Size = UDim2.new(0, 300, 0, 260)
-        teleportServerPanel.Position = UDim2.new(0.5, -150, 0.5, -130)
+        teleportServerPanel.Size = UDim2.new(0, 300, 0, 120)
+        teleportServerPanel.Position = UDim2.new(0.5, -150, 0.5, -60)
         teleportServerPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         teleportServerPanel.BackgroundTransparency = 0.2
         teleportServerPanel.Visible = false
         teleportServerPanel.ZIndex = 200
         local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = teleportServerPanel
         local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = teleportServerPanel
-
         local title = Instance.new("TextLabel")
         title.Parent = teleportServerPanel
         title.Size = UDim2.new(1, 0, 0, 25)
@@ -1820,85 +1923,26 @@ do
         title.TextColor3 = Color3.new(1, 1, 1)
         title.Font = Enum.Font.SourceSansBold
         title.TextSize = 16
-
-        local idLabel = Instance.new("TextLabel")
-        idLabel.Name = "CurrentJobId"
-        idLabel.Parent = teleportServerPanel
-        idLabel.Size = UDim2.new(1, -20, 0, 24)
-        idLabel.Position = UDim2.new(0, 10, 0, 40)
-        idLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        idLabel.Text = "当前实例: " .. game.JobId
-        idLabel.TextColor3 = Color3.new(1, 1, 1)
-        idLabel.Font = Enum.Font.SourceSans
-        idLabel.TextSize = 12
-        local idCorner = Instance.new("UICorner"); idCorner.CornerRadius = UDim.new(0, 6); idCorner.Parent = idLabel
-
-        local nameInput = Instance.new("TextBox")
-        nameInput.Parent = teleportServerPanel
-        nameInput.Size = UDim2.new(0, 120, 0, 26)
-        nameInput.Position = UDim2.new(0, 10, 0, 72)
-        nameInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        nameInput.PlaceholderText = "名称"
-        nameInput.TextColor3 = Color3.new(1, 1, 1)
-        nameInput.Font = Enum.Font.SourceSans
-        nameInput.TextSize = 13
-        local nameCorner = Instance.new("UICorner"); nameCorner.CornerRadius = UDim.new(0, 6); nameCorner.Parent = nameInput
-
-        local recordBtn = Instance.new("TextButton")
-        recordBtn.Parent = teleportServerPanel
-        recordBtn.Size = UDim2.new(0, 80, 0, 26)
-        recordBtn.Position = UDim2.new(0, 140, 0, 72)
-        recordBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-        recordBtn.Text = "记录当前"
-        recordBtn.TextColor3 = Color3.new(1, 1, 1)
-        recordBtn.Font = Enum.Font.SourceSansBold
-        recordBtn.TextSize = 13
-        local recordCorner = Instance.new("UICorner"); recordCorner.CornerRadius = UDim.new(0, 6); recordCorner.Parent = recordBtn
-
-        local refreshBtn = Instance.new("TextButton")
-        refreshBtn.Parent = teleportServerPanel
-        refreshBtn.Size = UDim2.new(0, 60, 0, 26)
-        refreshBtn.Position = UDim2.new(0, 230, 0, 72)
-        refreshBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        refreshBtn.Text = "刷新"
-        refreshBtn.TextColor3 = Color3.new(1, 1, 1)
-        refreshBtn.Font = Enum.Font.SourceSansBold
-        refreshBtn.TextSize = 13
-        local refreshCorner = Instance.new("UICorner"); refreshCorner.CornerRadius = UDim.new(0, 6); refreshCorner.Parent = refreshBtn
-
-        local listFrame = Instance.new("ScrollingFrame")
-        listFrame.Name = "ServerList"
-        listFrame.Parent = teleportServerPanel
-        listFrame.Size = UDim2.new(1, -20, 0, 100)
-        listFrame.Position = UDim2.new(0, 10, 0, 105)
-        listFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        listFrame.BorderSizePixel = 0
-        listFrame.ScrollBarThickness = 4
-        listFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-        local listCorner = Instance.new("UICorner"); listCorner.CornerRadius = UDim.new(0, 6); listCorner.Parent = listFrame
-
-        local quickInput = Instance.new("TextBox")
-        quickInput.Parent = teleportServerPanel
-        quickInput.Size = UDim2.new(0, 180, 0, 26)
-        quickInput.Position = UDim2.new(0, 10, 0, 215)
-        quickInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        quickInput.PlaceholderText = "输入实例ID"
-        quickInput.TextColor3 = Color3.new(1, 1, 1)
-        quickInput.Font = Enum.Font.SourceSans
-        quickInput.TextSize = 13
-        local quickCorner = Instance.new("UICorner"); quickCorner.CornerRadius = UDim.new(0, 6); quickCorner.Parent = quickInput
-
-        local goBtn = Instance.new("TextButton")
-        goBtn.Parent = teleportServerPanel
-        goBtn.Size = UDim2.new(0, 80, 0, 26)
-        goBtn.Position = UDim2.new(0, 200, 0, 215)
-        goBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 200)
-        goBtn.Text = "即时传送"
-        goBtn.TextColor3 = Color3.new(1, 1, 1)
-        goBtn.Font = Enum.Font.SourceSansBold
-        goBtn.TextSize = 13
-        local goCorner = Instance.new("UICorner"); goCorner.CornerRadius = UDim.new(0, 6); goCorner.Parent = goBtn
-
+        local inputBox = Instance.new("TextBox")
+        inputBox.Parent = teleportServerPanel
+        inputBox.Size = UDim2.new(0, 200, 0, 28)
+        inputBox.Position = UDim2.new(0, 10, 0, 45)
+        inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        inputBox.PlaceholderText = "输入服务器实例ID (JobId)"
+        inputBox.TextColor3 = Color3.new(1, 1, 1)
+        inputBox.Font = Enum.Font.SourceSans
+        inputBox.TextSize = 13
+        local inputCorner = Instance.new("UICorner"); inputCorner.CornerRadius = UDim.new(0, 6); inputCorner.Parent = inputBox
+        local teleportBtn = Instance.new("TextButton")
+        teleportBtn.Parent = teleportServerPanel
+        teleportBtn.Size = UDim2.new(0, 80, 0, 28)
+        teleportBtn.Position = UDim2.new(0, 220, 0, 45)
+        teleportBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+        teleportBtn.Text = "传送"
+        teleportBtn.TextColor3 = Color3.new(1, 1, 1)
+        teleportBtn.Font = Enum.Font.SourceSansBold
+        teleportBtn.TextSize = 14
+        local teleportCorner = Instance.new("UICorner"); teleportCorner.CornerRadius = UDim.new(0, 6); teleportCorner.Parent = teleportBtn
         local closeBtn = Instance.new("TextButton")
         closeBtn.Parent = teleportServerPanel
         closeBtn.Size = UDim2.new(0, 22, 0, 22)
@@ -1909,123 +1953,136 @@ do
         closeBtn.Font = Enum.Font.SourceSansBold
         local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
         closeBtn.MouseButton1Click:Connect(function() teleportServerPanel.Visible = false end)
-
-        local serverListFile = "server_list_" .. plrId .. ".txt"
-        local function loadList()
-            local list = {}
+        teleportBtn.MouseButton1Click:Connect(function()
+            local targetId = inputBox.Text
+            if targetId == "" then
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "传送失败",
+                    Text = "请输入服务器实例ID",
+                    Duration = 3,
+                })
+                return
+            end
             pcall(function()
-                if isfile(serverListFile) then
-                    for line in readfile(serverListFile):gmatch("[^\r\n]+") do
-                        local name, id = line:match("^([^|]*)|([^|]*)$")
-                        if name and id then table.insert(list, {name = name, id = id}) end
-                    end
-                end
+                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, targetId)
             end)
-            return list
-        end
-        local function saveList(list)
-            local lines = {}
-            for _, v in ipairs(list) do
-                table.insert(lines, v.name .. "|" .. v.id)
-            end
-            pcall(function() writefile(serverListFile, table.concat(lines, "\n")) end)
-        end
+        end)
+        return teleportServerPanel
+    end
+    local function createSavedServersPanel()
+        if savedServersPanel then return savedServersPanel end
+        savedServersPanel = Instance.new("Frame")
+        savedServersPanel.Name = "SavedServersPanel"
+        savedServersPanel.Parent = Main
+        savedServersPanel.Size = UDim2.new(0, 300, 0, 280)
+        savedServersPanel.Position = UDim2.new(0.5, -150, 0.5, -140)
+        savedServersPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        savedServersPanel.BackgroundTransparency = 0.2
+        savedServersPanel.Visible = false
+        savedServersPanel.ZIndex = 200
+        local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = savedServersPanel
+        local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = savedServersPanel
+        local title = Instance.new("TextLabel")
+        title.Parent = savedServersPanel
+        title.Size = UDim2.new(1, 0, 0, 25)
+        title.Position = UDim2.new(0, 10, 0, 8)
+        title.BackgroundTransparency = 1
+        title.Text = "已保存的服务器"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.Font = Enum.Font.SourceSansBold
+        title.TextSize = 16
+        local scrollFrame = Instance.new("ScrollingFrame")
+        scrollFrame.Parent = savedServersPanel
+        scrollFrame.Size = UDim2.new(1, -10, 1, -80)
+        scrollFrame.Position = UDim2.new(0, 5, 0, 35)
+        scrollFrame.BackgroundTransparency = 1
+        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+        scrollFrame.ScrollBarThickness = 4
         local function refreshList()
-            for _, child in ipairs(listFrame:GetChildren()) do
-                if child:IsA("Frame") then child:Destroy() end
+            for _, child in ipairs(scrollFrame:GetChildren()) do
+                if child:IsA("TextButton") or child:IsA("Frame") then
+                    child:Destroy()
+                end
             end
-            local list = loadList()
             local y = 0
-            for _, entry in ipairs(list) do
+            for _, id in ipairs(savedServers) do
                 local row = Instance.new("Frame")
-                row.Parent = listFrame
-                row.Size = UDim2.new(1, -4, 0, 28)
-                row.Position = UDim2.new(0, 2, 0, y)
+                row.Parent = scrollFrame
+                row.Size = UDim2.new(1, -10, 0, 30)
+                row.Position = UDim2.new(0, 5, 0, y)
                 row.BackgroundTransparency = 1
-
-                local nameBtn = Instance.new("TextButton")
-                nameBtn.Parent = row
-                nameBtn.Size = UDim2.new(0, 160, 0, 24)
-                nameBtn.Position = UDim2.new(0, 0, 0, 2)
-                nameBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-                nameBtn.Text = entry.name
-                nameBtn.TextColor3 = Color3.new(1, 1, 1)
-                nameBtn.Font = Enum.Font.SourceSans
-                nameBtn.TextSize = 12
-                nameBtn.AutoButtonColor = false
-                local nameCorner = Instance.new("UICorner"); nameCorner.CornerRadius = UDim.new(0, 4); nameCorner.Parent = nameBtn
-
-                local teleBtn = Instance.new("TextButton")
-                teleBtn.Parent = row
-                teleBtn.Size = UDim2.new(0, 50, 0, 24)
-                teleBtn.Position = UDim2.new(0, 165, 0, 2)
-                teleBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-                teleBtn.Text = "传送"
-                teleBtn.TextColor3 = Color3.new(1, 1, 1)
-                teleBtn.Font = Enum.Font.SourceSansBold
-                teleBtn.TextSize = 12
-                local teleCorner = Instance.new("UICorner"); teleCorner.CornerRadius = UDim.new(0, 4); teleCorner.Parent = teleBtn
-                teleBtn.MouseButton1Click:Connect(function()
+                local idLabel = Instance.new("TextLabel")
+                idLabel.Parent = row
+                idLabel.Size = UDim2.new(0.6, 0, 1, 0)
+                idLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                idLabel.Text = id
+                idLabel.TextColor3 = Color3.new(1, 1, 1)
+                idLabel.Font = Enum.Font.SourceSans
+                idLabel.TextSize = 13
+                local idCorner = Instance.new("UICorner"); idCorner.CornerRadius = UDim.new(0, 4); idCorner.Parent = idLabel
+                local tpBtn = Instance.new("TextButton")
+                tpBtn.Parent = row
+                tpBtn.Size = UDim2.new(0, 45, 1, 0)
+                tpBtn.Position = UDim2.new(0.62, 0, 0, 0)
+                tpBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+                tpBtn.Text = "传送"
+                tpBtn.TextColor3 = Color3.new(1, 1, 1)
+                tpBtn.Font = Enum.Font.SourceSansBold
+                tpBtn.TextSize = 12
+                local tpCorner = Instance.new("UICorner"); tpCorner.CornerRadius = UDim.new(0, 4); tpCorner.Parent = tpBtn
+                tpBtn.MouseButton1Click:Connect(function()
                     pcall(function()
-                        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, entry.id)
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, id)
                     end)
                 end)
-
                 local delBtn = Instance.new("TextButton")
                 delBtn.Parent = row
-                delBtn.Size = UDim2.new(0, 36, 0, 24)
-                delBtn.Position = UDim2.new(0, 220, 0, 2)
+                delBtn.Size = UDim2.new(0, 45, 1, 0)
+                delBtn.Position = UDim2.new(0.78, 0, 0, 0)
                 delBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-                delBtn.Text = "X"
+                delBtn.Text = "删除"
                 delBtn.TextColor3 = Color3.new(1, 1, 1)
                 delBtn.Font = Enum.Font.SourceSansBold
                 delBtn.TextSize = 12
                 local delCorner = Instance.new("UICorner"); delCorner.CornerRadius = UDim.new(0, 4); delCorner.Parent = delBtn
                 delBtn.MouseButton1Click:Connect(function()
-                    local newList = {}
-                    for _, e in ipairs(loadList()) do
-                        if e.id ~= entry.id then table.insert(newList, e) end
-                    end
-                    saveList(newList)
+                    removeServerId(id)
                     refreshList()
                 end)
-
-                y = y + 32
+                y = y + 35
             end
-            listFrame.CanvasSize = UDim2.new(0, 0, 0, y)
+            scrollFrame.CanvasSize = UDim2.new(0, 0, 0, math.max(y, 100))
         end
-
-        recordBtn.MouseButton1Click:Connect(function()
-            local name = nameInput.Text
-            if name == "" then name = "未命名" end
-            local list = loadList()
-            table.insert(list, {name = name, id = game.JobId})
-            saveList(list)
-            nameInput.Text = ""
+        local saveCurrentBtn = Instance.new("TextButton")
+        saveCurrentBtn.Parent = savedServersPanel
+        saveCurrentBtn.Size = UDim2.new(1, -20, 0, 30)
+        saveCurrentBtn.Position = UDim2.new(0, 10, 1, -40)
+        saveCurrentBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        saveCurrentBtn.Text = "保存当前服务器"
+        saveCurrentBtn.TextColor3 = Color3.new(1, 1, 1)
+        saveCurrentBtn.Font = Enum.Font.SourceSansBold
+        saveCurrentBtn.TextSize = 14
+        local saveCorner = Instance.new("UICorner"); saveCorner.CornerRadius = UDim.new(0, 6); saveCorner.Parent = saveCurrentBtn
+        saveCurrentBtn.MouseButton1Click:Connect(function()
+            addServerId(game.JobId)
             refreshList()
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "记录成功",
-                Text = "已保存 " .. name,
-                Duration = 2
-            })
         end)
-        refreshBtn.MouseButton1Click:Connect(refreshList)
-        goBtn.MouseButton1Click:Connect(function()
-            local id = quickInput.Text
-            if id == "" then return end
-            pcall(function()
-                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, id)
-            end)
-        end)
-
-        teleportServerPanel:GetPropertyChangedSignal("Visible"):Connect(function()
-            if teleportServerPanel.Visible then
-                idLabel.Text = "当前实例: " .. game.JobId
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Parent = savedServersPanel
+        closeBtn.Size = UDim2.new(0, 22, 0, 22)
+        closeBtn.Position = UDim2.new(1, -26, 0, 6)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeBtn.Text = "X"
+        closeBtn.TextSize = 12
+        closeBtn.Font = Enum.Font.SourceSansBold
+        local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+        closeBtn.MouseButton1Click:Connect(function() savedServersPanel.Visible = false end)
+        savedServersPanel:GetPropertyChangedSignal("Visible"):Connect(function()
+            if savedServersPanel.Visible then
                 refreshList()
             end
         end)
-
-        return teleportServerPanel
+        return savedServersPanel
     end
     local function AddCat(i)
         local cat = Instance.new("TextButton")
@@ -2061,6 +2118,7 @@ do
             info.TextXAlignment = Enum.TextXAlignment.Center
             info.TextYAlignment = Enum.TextYAlignment.Center
             local infoCorner = Instance.new("UICorner"); infoCorner.CornerRadius = UDim.new(0, 6); infoCorner.Parent = info
+            -- 复制按钮单独放置，用老方法，不与grid混
             local startY = info.Position.Y.Offset + info.Size.Y.Offset + 15
             local blackColor = Color3.fromRGB(35, 35, 35)
             local function createCopyButton(parent, groupLabel, code, posX, posY)
@@ -2103,111 +2161,45 @@ do
             createCopyButton(page, "QQ群", "1106203175", 10, startY)
             createCopyButton(page, "QQ", "3999698324", 10, startY + 45)
         elseif i == 2 then
-            local function addSemiTransparentButton(page, txt, posX, posY, callback)
-                local btn = Instance.new("TextButton")
-                btn.Parent = page
-                btn.BackgroundColor3 = Color3.new(0, 0, 0)
-                btn.BackgroundTransparency = 0.5
-                btn.Size = UDim2.new(0.48, 0, 0, 40)
-                btn.Position = UDim2.new(0, posX, 0, posY)
-                btn.Text = txt
-                btn.TextColor3 = Color3.new(1, 1, 1)
-                btn.TextSize = 14
-                btn.AutoButtonColor = false
-                btn.ZIndex = 21
-                local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 6); corner.Parent = btn
-                if callback then btn.MouseButton1Click:Connect(callback) end
-                return btn
-            end
-            local posX1, posX2 = 4, page.AbsoluteSize.X * 0.52
-            local rowHeight = 45
-            local espBtn = addSemiTransparentButton(page, "透视：关", posX1, 4)
-            local infiniteJumpBtn = addSemiTransparentButton(page, "无限跳：关", posX1, 4 + rowHeight)
-            local noclipBtn = addSemiTransparentButton(page, "穿墙：关", posX1, 4 + 2*rowHeight)
-            local nightVisionBtn = addSemiTransparentButton(page, "夜视：关", posX1, 4 + 3*rowHeight)
-            addSemiTransparentButton(page, "飞行", posX2, 4, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "飞行脚本",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
+            -- 主要页按钮用布局函数
+            local buttons = {}
+            local espRef, jumpRef, noclipRef, nightRef = {}, {}, {}, {}
+            table.insert(buttons, {"透视：关", function()
+                espEnabled = not espEnabled
+                espRef[1].Text = espEnabled and "透视：开" or "透视：关"
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "透视", Text = espEnabled and "已打开" or "已关闭", Duration = 3})
+                if espEnabled then for _, p in ipairs(Players:GetPlayers()) do enableESP(p) end else for _, p in ipairs(Players:GetPlayers()) do disableESP(p) end end
+            end, espRef})
+            table.insert(buttons, {"飞行", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "飞行脚本", Text = "正在加载中...", Duration = 5})
                 task.spawn(function()
                     loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/fly.lua"))()
                 end)
-            end)
-            addSemiTransparentButton(page, "建造方块", posX2, 4 + rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "建造方块",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
+            end})
+            table.insert(buttons, {"无限跳：关", function()
+                InfiniteJumpEnabled = not InfiniteJumpEnabled
+                jumpRef[1].Text = InfiniteJumpEnabled and "无限跳：开" or "无限跳：关"
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "无限跳", Text = InfiniteJumpEnabled and "已开启" or "已关闭", Duration = 3})
+            end, jumpRef})
+            table.insert(buttons, {"建造方块", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "建造方块", Text = "正在加载中...", Duration = 5})
                 task.spawn(function()
                     loadstring(game:HttpGet("https://pastebin.com/raw/Zt4kkQG9"))()
                 end)
-            end)
-            addSemiTransparentButton(page, "修改移速", posX2, 4 + 2*rowHeight, function()
+            end})
+            table.insert(buttons, {"穿墙：关", function()
+                NoclipEnabled = not NoclipEnabled
+                noclipRef[1].Text = NoclipEnabled and "穿墙：开" or "穿墙：关"
+                if NoclipEnabled then startNoclip() else stopNoclip() end
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "穿墙", Text = NoclipEnabled and "已开启" or "已关闭", Duration = 3})
+            end, noclipRef})
+            table.insert(buttons, {"修改移速", function()
                 local panel = createSpeedPanel()
                 panel.Visible = not panel.Visible
-            end)
-            addSemiTransparentButton(page, "偷取道具", posX2, 4 + 3*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "偷取道具",
-                    Text = "正在偷取道具中...",
-                    Duration = 5
-                })
-                task.spawn(function()
-                    local cnt = stealAllItems()
-                    game:GetService("StarterGui"):SetCore("SendNotification", {
-                        Title = "偷取完成",
-                        Text = "共偷取 " .. tostring(cnt) .. " 个道具",
-                        Duration = 3
-                    })
-                end)
-            end)
-            espBtn.MouseButton1Click:Connect(function()
-                espEnabled = not espEnabled
-                espBtn.Text = espEnabled and "透视：开" or "透视：关"
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "透视",
-                    Text = espEnabled and "已打开" or "已关闭",
-                    Duration = 3
-                })
-                if espEnabled then
-                    for _, p in ipairs(Players:GetPlayers()) do
-                        enableESP(p)
-                    end
-                else
-                    for _, p in ipairs(Players:GetPlayers()) do
-                        disableESP(p)
-                    end
-                end
-            end)
-            infiniteJumpBtn.MouseButton1Click:Connect(function()
-                InfiniteJumpEnabled = not InfiniteJumpEnabled
-                infiniteJumpBtn.Text = InfiniteJumpEnabled and "无限跳：开" or "无限跳：关"
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "无限跳",
-                    Text = InfiniteJumpEnabled and "已开启" or "已关闭",
-                    Duration = 3
-                })
-            end)
-            noclipBtn.MouseButton1Click:Connect(function()
-                NoclipEnabled = not NoclipEnabled
-                noclipBtn.Text = NoclipEnabled and "穿墙：开" or "穿墙：关"
-                if NoclipEnabled then
-                    startNoclip()
-                else
-                    stopNoclip()
-                end
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "穿墙",
-                    Text = NoclipEnabled and "已开启" or "已关闭",
-                    Duration = 3
-                })
-            end)
-            nightVisionBtn.MouseButton1Click:Connect(function()
+            end})
+            table.insert(buttons, {"夜视：关", function()
                 NightVisionEnabled = not NightVisionEnabled
-                nightVisionBtn.Text = NightVisionEnabled and "夜视：开" or "夜视：关"
+                nightRef[1].Text = NightVisionEnabled and "夜视：开" or "夜视：关"
                 local Lighting = game:GetService("Lighting")
                 if NightVisionEnabled then
                     Lighting.Ambient = Color3.new(1, 1, 1); Lighting.ColorShift_Bottom = Color3.new(1, 1, 1); Lighting.ColorShift_Top = Color3.new(1, 1, 1)
@@ -2216,177 +2208,26 @@ do
                     Lighting.Ambient = Color3.new(0, 0, 0); Lighting.ColorShift_Bottom = Color3.new(0, 0, 0); Lighting.ColorShift_Top = Color3.new(0, 0, 0)
                     Lighting.FogEnd = 1000; Lighting.FogStart = 0; Lighting.Brightness = 1; Lighting.GlobalShadows = true; Lighting.OutdoorAmbient = Color3.new(0.7, 0.7, 0.7)
                 end
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "夜视",
-                    Text = NightVisionEnabled and "已开启" or "已关闭",
-                    Duration = 3
-                })
-            end)
-        elseif i == 3 then
-            local function addSemiTransparentButton(page, txt, posX, posY, callback)
-                local btn = Instance.new("TextButton")
-                btn.Parent = page
-                btn.BackgroundColor3 = Color3.new(0, 0, 0)
-                btn.BackgroundTransparency = 0.5
-                btn.Size = UDim2.new(0.48, 0, 0, 40)
-                btn.Position = UDim2.new(0, posX, 0, posY)
-                btn.Text = txt
-                btn.TextColor3 = Color3.new(1, 1, 1)
-                btn.TextSize = 14
-                btn.AutoButtonColor = false
-                btn.ZIndex = 21
-                local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 6); corner.Parent = btn
-                if callback then btn.MouseButton1Click:Connect(callback) end
-                return btn
-            end
-            local posX1, posX2 = 4, page.AbsoluteSize.X * 0.52
-            local rowHeight = 45
-            local autoTranslateBtn = addSemiTransparentButton(page, "自动翻译：关", posX1, 4)
-            local antiPushBtn = addSemiTransparentButton(page, "防甩飞：关", posX1, 4 + rowHeight)
-            local coordBtn = addSemiTransparentButton(page, "查询坐标传送", posX1, 4 + 2*rowHeight)
-            local aimbotBtn = addSemiTransparentButton(page, "自瞄：关", posX1, 4 + 3*rowHeight)
-            local lockViewBtn = addSemiTransparentButton(page, "锁定视角：关", posX1, 4 + 4*rowHeight)
-            local flyControlBtn = addSemiTransparentButton(page, "飞行控制：关", posX1, 4 + 5*rowHeight)
-            local spinBtn = addSemiTransparentButton(page, "原地旋转：关", posX1, 4 + 6*rowHeight)
-            local spinSpeedBtn = addSemiTransparentButton(page, "旋转速度", posX1, 4 + 7*rowHeight)
-            local teleportNearestBtn = addSemiTransparentButton(page, "传送最近玩家", posX2, 4)
-            local followNearestBtn = addSemiTransparentButton(page, "跟随最近玩家：关", posX2, 4 + rowHeight)
-            local teleportPlayerBtn = addSemiTransparentButton(page, "传送到指定玩家", posX2, 4 + 2*rowHeight)
-            local smoothFollowBtn = addSemiTransparentButton(page, "平滑跟随：关", posX2, 4 + 3*rowHeight)
-            addSemiTransparentButton(page, "撸管", posX2, 4 + 4*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "撸管",
-                    Text = "正在生成工具...",
-                    Duration = 3
-                })
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "夜视", Text = NightVisionEnabled and "已开启" or "已关闭", Duration = 3})
+            end, nightRef})
+            table.insert(buttons, {"偷取道具", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "偷取道具", Text = "正在偷取道具中...", Duration = 5})
                 task.spawn(function()
-                    loadLuGuan()
+                    local cnt = stealAllItems()
+                    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "偷取完成", Text = "共偷取 " .. tostring(cnt) .. " 个道具", Duration = 3})
                 end)
-            end)
-            local harassBtn = addSemiTransparentButton(page, "操人", posX2, 4 + 5*rowHeight)
-            local harassSpeedBtn = addSemiTransparentButton(page, "操人速度", posX2, 4 + 6*rowHeight)
-            aimbotBtn.MouseButton1Click:Connect(function()
-                AimbotEnabled = not AimbotEnabled
-                aimbotBtn.Text = AimbotEnabled and "自瞄：开" or "自瞄：关"
-                if AimbotEnabled then
-                    local panel = createAimbotPanel()
-                    panel.Visible = true
-                else
-                    AimbotCircle.Visible = false
-                    if aimbotPanel then aimbotPanel.Visible = false end
-                end
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "自瞄",
-                    Text = AimbotEnabled and "已开启，请在面板中调整半径" or "已关闭",
-                    Duration = 3,
-                })
-            end)
-            lockViewBtn.MouseButton1Click:Connect(function()
-                LockViewEnabled = not LockViewEnabled
-                lockViewBtn.Text = LockViewEnabled and "锁定视角：开" or "锁定视角：关"
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "锁定视角",
-                    Text = LockViewEnabled and "已开启" or "已关闭",
-                    Duration = 3
-                })
-            end)
-            flyControlBtn.MouseButton1Click:Connect(function()
-                if flyUIVisible then
-                    hideFlyUI()
-                    flyControlBtn.Text = "飞行控制：关"
-                else
-                    showFlyUI()
-                    flyControlBtn.Text = "飞行控制：开"
-                end
-            end)
-            spinBtn.MouseButton1Click:Connect(function()
-                SpinEnabled = not SpinEnabled
-                spinBtn.Text = SpinEnabled and "原地旋转：开" or "原地旋转：关"
-                if SpinEnabled then
-                    startSpin()
-                else
-                    stopSpin()
-                end
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "原地旋转",
-                    Text = SpinEnabled and "已开启" or "已关闭",
-                    Duration = 3
-                })
-            end)
-            spinSpeedBtn.MouseButton1Click:Connect(function()
-                local panel = createSpinSpeedPanel()
-                panel.Visible = not panel.Visible
-            end)
-            harassBtn.MouseButton1Click:Connect(function()
-                if harassEnabled then
-                    stopHarass()
-                    harassBtn.Text = "操人"
-                    game:GetService("StarterGui"):SetCore("SendNotification", {
-                        Title = "操人",
-                        Text = "已停止",
-                        Duration = 2
-                    })
-                else
-                    showHarassSelect()
-                end
-            end)
-            harassSpeedBtn.MouseButton1Click:Connect(function()
-                local panel = createHarassSpeedPanel()
-                panel.Visible = not panel.Visible
-            end)
-            followNearestBtn.MouseButton1Click:Connect(function()
-                FollowNearestEnabled = not FollowNearestEnabled
-                followNearestBtn.Text = FollowNearestEnabled and "跟随最近玩家：开" or "跟随最近玩家：关"
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "跟随最近玩家",
-                    Text = FollowNearestEnabled and "已开启" or "已关闭",
-                    Duration = 3
-                })
-            end)
-            smoothFollowBtn.MouseButton1Click:Connect(function()
-                SmoothFollowEnabled = not SmoothFollowEnabled
-                smoothFollowBtn.Text = SmoothFollowEnabled and "平滑跟随：开" or "平滑跟随：关"
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "平滑跟随",
-                    Text = SmoothFollowEnabled and "已开启" or "已关闭",
-                    Duration = 3
-                })
-            end)
-            autoTranslateBtn.MouseButton1Click:Connect(function()
+            end})
+            layoutButtonsInPage(page, buttons)
+        elseif i == 3 then
+            local buttons = {}
+            local transRef, antiPushRef, aimbotRef, lockRef, flyCtrlRef, spinRef, followRef, smoothRef, harassRef = {}, {}, {}, {}, {}, {}, {}, {}, {}
+            table.insert(buttons, {"自动翻译：关", function()
                 AutoTranslateEnabled = not AutoTranslateEnabled
-                autoTranslateBtn.Text = AutoTranslateEnabled and "自动翻译：开" or "自动翻译：关"
-                if AutoTranslateEnabled then
-                    startAutoTranslate()
-                else
-                    stopAutoTranslate()
-                end
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "自动翻译",
-                    Text = AutoTranslateEnabled and "已开启" or "已关闭",
-                    Duration = 3
-                })
-            end)
-            antiPushBtn.MouseButton1Click:Connect(function()
-                AntiPushEnabled = not AntiPushEnabled
-                antiPushBtn.Text = AntiPushEnabled and "防甩飞：开" or "防甩飞：关"
-                if not AntiPushEnabled then
-                    local char = LocalPlayer.Character
-                    if char then
-                        local root = char:FindFirstChild("HumanoidRootPart");
-                        if root then root.CanCollide = true end
-                    end
-                end
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "防甩飞",
-                    Text = AntiPushEnabled and "已开启" or "已关闭",
-                    Duration = 3
-                })
-            end)
-            coordBtn.MouseButton1Click:Connect(function()
-                local panel = createCoordPanel()
-                panel.Visible = not panel.Visible
-            end)
-            teleportNearestBtn.MouseButton1Click:Connect(function()
+                transRef[1].Text = AutoTranslateEnabled and "自动翻译：开" or "自动翻译：关"
+                if AutoTranslateEnabled then startAutoTranslate() else stopAutoTranslate() end
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自动翻译", Text = AutoTranslateEnabled and "已开启" or "已关闭", Duration = 3})
+            end, transRef})
+            table.insert(buttons, {"传送最近玩家", function()
                 local nearest = nil
                 local minDist = math.huge
                 local myPos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position
@@ -2394,100 +2235,310 @@ do
                 for _, p in ipairs(Players:GetPlayers()) do
                     if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                         local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
-                        if dist < minDist then
-                            minDist = dist; nearest = p
-                        end
+                        if dist < minDist then minDist = dist; nearest = p end
                     end
                 end
                 if nearest and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                     LocalPlayer.Character.HumanoidRootPart.CFrame = nearest.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, 3)
                 end
-            end)
-            teleportPlayerBtn.MouseButton1Click:Connect(function()
+            end})
+            table.insert(buttons, {"防甩飞：关", function()
+                AntiPushEnabled = not AntiPushEnabled
+                antiPushRef[1].Text = AntiPushEnabled and "防甩飞：开" or "防甩飞：关"
+                if not AntiPushEnabled then
+                    local char = LocalPlayer.Character
+                    if char then local root = char:FindFirstChild("HumanoidRootPart"); if root then root.CanCollide = true end end
+                end
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "防甩飞", Text = AntiPushEnabled and "已开启" or "已关闭", Duration = 3})
+            end, antiPushRef})
+            table.insert(buttons, {"跟随最近玩家：关", function()
+                FollowNearestEnabled = not FollowNearestEnabled
+                followRef[1].Text = FollowNearestEnabled and "跟随最近玩家：开" or "跟随最近玩家：关"
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "跟随最近玩家", Text = FollowNearestEnabled and "已开启" or "已关闭", Duration = 3})
+            end, followRef})
+            table.insert(buttons, {"查询坐标传送", function()
+                local panel = createCoordPanel()
+                panel.Visible = not panel.Visible
+            end})
+            table.insert(buttons, {"传送到指定玩家", function()
                 showPlayerSelect()
-            end)
-        elseif i == 4 then
-            local function addSemiTransparentButton(page, txt, posX, posY, callback)
-                local btn = Instance.new("TextButton")
-                btn.Parent = page
-                btn.BackgroundColor3 = Color3.new(0, 0, 0)
-                btn.BackgroundTransparency = 0.5
-                btn.Size = UDim2.new(0.48, 0, 0, 40)
-                btn.Position = UDim2.new(0, posX, 0, posY)
-                btn.Text = txt
-                btn.TextColor3 = Color3.new(1, 1, 1)
-                btn.TextSize = 14
-                btn.AutoButtonColor = false
-                btn.ZIndex = 21
-                local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 6); corner.Parent = btn
-                if callback then btn.MouseButton1Click:Connect(callback) end
-                return btn
-            end
-            addSemiTransparentButton(page, "显示时间", 4, 4, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "显示时间",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
-                task.spawn(function()
-                    loadstring(game:HttpGet("https://pastebin.com/raw/0zKLyd4W"))()
-                end)
-            end)
-            addSemiTransparentButton(page, "美化包排行榜第一", page.AbsoluteSize.X * 0.52, 4, function()
-                beautifyStats()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "美化包",
-                    Text = "数值已修改为999（若游戏支持）",
-                    Duration = 3
-                })
-            end)
-            local crosshairBtn = addSemiTransparentButton(page, "准星：关", 4, 4 + 45)
-            crosshairBtn.MouseButton1Click:Connect(function()
-                CrosshairEnabled = not CrosshairEnabled
-                crosshairBtn.Text = CrosshairEnabled and "准星：开" or "准星：关"
-                CrosshairFrame.Visible = CrosshairEnabled
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "准星",
-                    Text = CrosshairEnabled and "已显示" or "已隐藏",
-                    Duration = 3
-                })
-            end)
-            local crosshairSpinBtn = addSemiTransparentButton(page, "准星旋转：关", page.AbsoluteSize.X * 0.52, 4 + 45)
-            crosshairSpinBtn.MouseButton1Click:Connect(function()
-                CrosshairSpinEnabled = not CrosshairSpinEnabled
-                crosshairSpinBtn.Text = CrosshairSpinEnabled and "准星旋转：开" or "准星旋转：关"
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "准星旋转",
-                    Text = CrosshairSpinEnabled and "已开启" or "已关闭",
-                    Duration = 3
-                })
-            end)
-            local antiAFKBtn = addSemiTransparentButton(page, "反挂机踢出：关", 4, 4 + 2*45)
-            antiAFKBtn.MouseButton1Click:Connect(function()
-                antiAFKEnabled = not antiAFKEnabled
-                antiAFKBtn.Text = antiAFKEnabled and "反挂机踢出：开" or "反挂机踢出：关"
-                if antiAFKEnabled then
-                    startAntiAFK()
+            end})
+            table.insert(buttons, {"自瞄：关", function()
+                AimbotEnabled = not AimbotEnabled
+                aimbotRef[1].Text = AimbotEnabled and "自瞄：开" or "自瞄：关"
+                if AimbotEnabled then
+                    local panel = createAimbotPanel(); panel.Visible = true
                 else
-                    stopAntiAFK()
+                    AimbotCircle.Visible = false; if aimbotPanel then aimbotPanel.Visible = false end
                 end
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "反挂机踢出",
-                    Text = antiAFKEnabled and "已开启" or "已关闭",
-                    Duration = 3
-                })
-            end)
-            addSemiTransparentButton(page, "获取实例ID", page.AbsoluteSize.X * 0.52, 4 + 2*45, function()
-                local panel = createInstanceIdPanel()
-                panel.Visible = not panel.Visible
-            end)
-            addSemiTransparentButton(page, "获取数字ID", 4, 4 + 3*45, function()
-                local panel = createPlaceIdPanel()
-                panel.Visible = not panel.Visible
-            end)
-            addSemiTransparentButton(page, "复制本脚本", page.AbsoluteSize.X * 0.52, 4 + 3*45, function()
-                local success = pcall(function()
-                    if not getsource then error() end
-                    local src = getsource()
-                    writefile("UniversalScript.lua", src)
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = AimbotEnabled and "已开启，请在面板中调整半径" or "已关闭", Duration = 3})
+            end, aimbotRef})
+            table.insert(buttons, {"平滑跟随：关", function()
+                SmoothFollowEnabled = not SmoothFollowEnabled
+                smoothRef[1].Text = SmoothFollowEnabled and "平滑跟随：开" or "平滑跟随：关"
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "平滑跟随", Text = SmoothFollowEnabled and "已开启" or "已关闭", Duration = 3})
+            end, smoothRef})
+            table.insert(buttons, {"锁定视角：关", function()
+                LockViewEnabled = not LockViewEnabled
+                lockRef[1].Text = LockViewEnabled and "锁定视角：开" or "锁定视角：关"
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "锁定视角", Text = LockViewEnabled and "已开启" or "已关闭", Duration = 3})
+            end, lockRef})
+            table.insert(buttons, {"撸管", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "撸管", Text = "正在生成工具...", Duration = 3})
+                task.spawn(function() loadLuGuan() end)
+            end})
+            table.insert(buttons, {"飞行控制：关", function()
+                if flyUIVisible then hideFlyUI(); flyCtrlRef[1].Text = "飞行控制：关" else showFlyUI(); flyCtrlRef[1].Text = "飞行控制：开" end
+            end, flyCtrlRef})
+            table.insert(buttons, {"操人", function()
+                if harassEnabled then
+                    stopHarass(); harassRef[1].Text = "操人"
+                    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "操人", Text = "已停止", Duration = 2})
+                else
+                    showHarassSelect()
                 end
+            end, harassRef})
+            table.insert(buttons, {"原地旋转：关", function()
+                SpinEnabled = not SpinEnabled
+                spinRef[1].Text = SpinEnabled and "原地旋转：开" or "原地旋转：关"
+                if SpinEnabled then startSpin() else stopSpin() end
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "原地旋转", Text = SpinEnabled and "已开启" or "已关闭", Duration = 3})
+            end, spinRef})
+            table.insert(buttons, {"操人速度", function()
+                local panel = createHarassSpeedPanel(); panel.Visible = not panel.Visible
+            end})
+            table.insert(buttons, {"旋转速度", function()
+                local panel = createSpinSpeedPanel(); panel.Visible = not panel.Visible
+            end})
+            layoutButtonsInPage(page, buttons)
+        elseif i == 4 then
+            local buttons = {}
+            local crossRef, crossSpinRef, antiAFKRef = {}, {}, {}
+            table.insert(buttons, {"显示时间", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "显示时间", Text = "正在加载中...", Duration = 5})
+                task.spawn(function() loadstring(game:HttpGet("https://pastebin.com/raw/0zKLyd4W"))() end)
+            end})
+            table.insert(buttons, {"美化包排行榜第一", function()
+                beautifyStats()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "美化包", Text = "数值已修改为999（若游戏支持）", Duration = 3})
+            end})
+            table.insert(buttons, {"准星：关", function()
+                CrosshairEnabled = not CrosshairEnabled
+                crossRef[1].Text = CrosshairEnabled and "准星：开" or "准星：关"
+                CrosshairFrame.Visible = CrosshairEnabled
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "准星", Text = CrosshairEnabled and "已显示" or "已隐藏", Duration = 3})
+            end, crossRef})
+            table.insert(buttons, {"准星旋转：关", function()
+                CrosshairSpinEnabled = not CrosshairSpinEnabled
+                crossSpinRef[1].Text = CrosshairSpinEnabled and "准星旋转：开" or "准星旋转：关"
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "准星旋转", Text = CrosshairSpinEnabled and "已开启" or "已关闭", Duration = 3})
+            end, crossSpinRef})
+            table.insert(buttons, {"反挂机踢出：关", function()
+                antiAFKEnabled = not antiAFKEnabled
+                antiAFKRef[1].Text = antiAFKEnabled and "反挂机踢出：开" or "反挂机踢出：关"
+                if antiAFKEnabled then startAntiAFK() else stopAntiAFK() end
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "反挂机踢出", Text = antiAFKEnabled and "已开启" or "已关闭", Duration = 3})
+            end, antiAFKRef})
+            table.insert(buttons, {"获取实例ID", function()
+                local panel = createInstanceIdPanel(); panel.Visible = not panel.Visible
+            end})
+            table.insert(buttons, {"获取数字ID", function()
+                local panel = createPlaceIdPanel(); panel.Visible = not panel.Visible
+            end})
+            table.insert(buttons, {"传送指定服务器", function()
+                local panel = createTeleportServerPanel(); panel.Visible = not panel.Visible
+            end})
+            table.insert(buttons, {"已保存的服务器", function()
+                local panel = createSavedServersPanel(); panel.Visible = not panel.Visible
+            end})
+            layoutButtonsInPage(page, buttons)
+        elseif i == 5 then
+            -- 支持服务器页
+            local buttons = {}
+            table.insert(buttons, {"破坏者谜团2", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "破坏者谜团2", Text = "正在加载中...", Duration = 5})
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/PHZMT.NB"))() end)
+            end})
+            table.insert(buttons, {"吃吃世界", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "吃吃世界", Text = "正在加载中...", Duration = 5})
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/CCSJ.NB"))() end)
+            end})
+            table.insert(buttons, {"在超市生活一周", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "在超市生活一周", Text = "正在加载中...", Duration = 5})
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCSSHYZ.NB"))() end)
+            end})
+            table.insert(buttons, {"亡命速递", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "亡命速递（需在指定服务器运行）", Text = "正在加载中...", Duration = 5})
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/WMSD.NB"))() end)
+            end})
+            table.insert(buttons, {"巨剑骑士", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "巨剑骑士", Text = "正在加载中...", Duration = 5})
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/JJQS.NB"))() end)
+            end})
+            table.insert(buttons, {"doors", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "doors", Text = "正在加载中...", Duration = 5})
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/DOORS.NB"))() end)
+            end})
+            table.insert(buttons, {"盲射", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "盲射", Text = "正在加载中...", Duration = 5})
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MS.NB"))() end)
+            end})
+            table.insert(buttons, {"找到按钮", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "找到按钮", Text = "正在加载中...", Duration = 5})
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZDNN.NB"))() end)
+            end})
+            table.insert(buttons, {"墨水游戏", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "墨水游戏", Text = "正在加载中...", Duration = 5})
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MSYS.NB"))() end)
+            end})
+            table.insert(buttons, {"力量传奇", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "力量传奇", Text = "正在加载中...", Duration = 5})
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/LLCC.NB"))() end)
+            end})
+            table.insert(buttons, {"踢出幸运方块", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "踢出幸运方块", Text = "正在加载中...", Duration = 5})
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/TCXYFK.NB"))() end)
+            end})
+            table.insert(buttons, {"森林中的99夜", function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "森林中的99夜", Text = "正在加载中...", Duration = 5})
+                task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SLZD99Y.NB"))() end)
+            end})
+            layoutButtonsInPage(page, buttons)
+        end
+
+        cat.MouseButton1Click:Connect(function()
+            if selected then
+                selected.BackgroundTransparency = 0.8; selected.BackgroundColor3 = Color3.fromRGB(25,25,25)
+            end
+            cat.BackgroundTransparency = 0.5; cat.BackgroundColor3 = Color3.fromRGB(70,70,70)
+            selected = cat
+            for _,p in pairs(pages) do p.Visible = false end
+            if speedPanel then speedPanel.Visible = false end
+            if coordPanel then coordPanel.Visible = false end
+            if aimbotPanel then aimbotPanel.Visible = false end
+            if harassSpeedPanel then harassSpeedPanel.Visible = false end
+            if spinSpeedPanel then spinSpeedPanel.Visible = false end
+            if instanceIdPanel then instanceIdPanel.Visible = false end
+            if placeIdPanel then placeIdPanel.Visible = false end
+            if teleportServerPanel then teleportServerPanel.Visible = false end
+            if savedServersPanel then savedServersPanel.Visible = false end
+            page.Visible = true
+        end)
+        categories[i] = cat; pages[i] = page
+    end
+    for i = 1, 5 do AddCat(i) end
+    task.defer(function()
+        if categories[1] then categories[1]:MouseButton1Click() end
+    end)
+    local TopBar = Instance.new("Frame")
+    TopBar.Name = "TopBar"
+    TopBar.Parent = Main
+    TopBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TopBar.Size = UDim2.new(1, 0, 0, 40)
+    TopBar.ZIndex = 15
+    local TopUICorner = Instance.new("UICorner"); TopUICorner.CornerRadius = UDim.new(0, 10); TopUICorner.Parent = TopBar
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Parent = TopBar
+    Title.BackgroundTransparency = 1
+    Title.Size = UDim2.new(1, -100, 1, 0)
+    Title.Position = UDim2.new(0, 10, 0, 0)
+    Title.Font = Enum.Font.ArialBold
+    Title.Text = "恐脚本--通用" .. string.rep(" ", 6) .. "您已执行 " .. count .. " 次，谢谢您的支持！"
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 18
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.ZIndex = 16
+    local MinimizeBtn = Instance.new("TextButton")
+    MinimizeBtn.Parent = TopBar
+    MinimizeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    MinimizeBtn.Size = UDim2.new(0, 36, 0, 32)
+    MinimizeBtn.Position = UDim2.new(1, -86, 0, 4)
+    MinimizeBtn.Font = Enum.Font.ArialBold
+    MinimizeBtn.Text = "—"
+    MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MinimizeBtn.TextSize = 20
+    MinimizeBtn.ZIndex = 17
+    local MinCorner = Instance.new("UICorner"); MinCorner.CornerRadius = UDim.new(0, 6); MinCorner.Parent = MinimizeBtn
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Parent = TopBar
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    CloseBtn.Size = UDim2.new(0, 36, 0, 32)
+    CloseBtn.Position = UDim2.new(1, -46, 0, 4)
+    CloseBtn.Font = Enum.Font.ArialBold
+    CloseBtn.Text = "X"
+    CloseBtn.TextColor3 = Color3.new(1,1,1)
+    CloseBtn.TextSize = 20
+    CloseBtn.ZIndex = 17
+    local CloseCorner = Instance.new("UICorner"); CloseCorner.CornerRadius = UDim.new(0, 6); CloseCorner.Parent = CloseBtn
+    local ToggleBtn = Instance.new("TextButton")
+    ToggleBtn.Parent = ScreenGui
+    ToggleBtn.BackgroundColor3 = Color3.new(0, 0, 0)
+    ToggleBtn.BackgroundTransparency = 0.5
+    ToggleBtn.Position = UDim2.new(0.8, 0, 0.3, 0)
+    ToggleBtn.Size = UDim2.new(0, 140, 0, 50)
+    ToggleBtn.Font = Enum.Font.ArialBold
+    ToggleBtn.Text = "打开菜单"
+    ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleBtn.TextSize = 20
+    ToggleBtn.ZIndex = 100
+    local ToggleCorner = Instance.new("UICorner"); ToggleCorner.CornerRadius = UDim.new(0, 8); ToggleCorner.Parent = ToggleBtn
+    local dragging, dragInput, dragStartPos, btnStartPos = false, nil, nil, nil
+    ToggleBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if not dragging and not dragInput then
+                dragging = true; dragInput = input; dragStartPos = input.Position; btnStartPos = ToggleBtn.Position
+            end
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input == dragInput then
+            local delta = input.Position - dragStartPos
+            ToggleBtn.Position = UDim2.new(btnStartPos.X.Scale, btnStartPos.X.Offset + delta.X, btnStartPos.Y.Scale, btnStartPos.Y.Offset + delta.Y)
+        end
+    end)
+    ToggleBtn.InputEnded:Connect(function(input)
+        if input == dragInput then
+            dragging = false; dragInput = nil
+        end
+    end)
+    ToggleBtn.MouseButton1Click:Connect(function()
+        Main.Visible = not Main.Visible
+        ToggleBtn.Text = Main.Visible and "关闭菜单" or "打开菜单"
+    end)
+    MinimizeBtn.MouseButton1Click:Connect(function()
+        Main.Visible = false; ToggleBtn.Text = "打开菜单"
+    end)
+    CloseBtn.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+    end)
+    local beans = {"🤓", "😎", "🥳"}
+    local weight = {1, 1, 5}
+    local function GetRandomBean()
+        local total = 0; for _,v in pairs(weight) do total += v end
+        local r = math.random(1, total); local curr = 0
+        for i = 1, #weight do curr += weight[i]; if r <= curr then return beans[i] end end
+        return "🥳"
+    end
+    local function SpawnBean()
+        if #BeanBack:GetChildren() > 25 then return end
+        local label = Instance.new("TextLabel")
+        label.Parent = BeanBack; label.BackgroundTransparency = 1
+        label.Size = UDim2.new(0, 22, 0, 22); label.Text = GetRandomBean(); label.TextSize = 18; label.Font = Enum.Font.Unknown; label.ZIndex = 1
+        local x = math.random(0, Main.AbsoluteSize.X - 22)
+        label.Position = UDim2.new(0, x, 0, -22)
+        local speed = math.random(30, 50); local drift = math.random(-15, 15); local alpha = 0
+        local conn; conn = RunService.Heartbeat:Connect(function(dt)
+            if not label or not label.Parent then conn:Disconnect() return end
+            if not Main.Visible then return end
+            alpha += dt; local newY = alpha * speed - 22
+            if newY > Main.AbsoluteSize.Y then conn:Disconnect(); label:Destroy() return end
+            label.Position = UDim2.new(0, x + math.sin(alpha * 1.2) * drift, 0, newY)
+        end)
+    end
+    task.spawn(function()
+        while task.wait(math.random(150, 300)/1000) do
+            if ScreenGui and ScreenGui.Parent then SpawnBean() else break end
+        end
+    end)
+end
