@@ -933,7 +933,6 @@ local function loadSavedServers()
             savedServers = decoded
         end
     end
-    -- 去重
     local seen = {}
     local unique = {}
     for _, id in ipairs(savedServers) do
@@ -1019,7 +1018,7 @@ do
     ScrollingFrame.Parent = ContentArea
     ScrollingFrame.BackgroundTransparency = 1
     ScrollingFrame.Size = UDim2.new(1,0,1,0)
-    ScrollingFrame.CanvasSize = UDim2.new(0,0,5,0)
+    ScrollingFrame.CanvasSize = UDim2.new(0,0,0,200)
     ScrollingFrame.ScrollBarThickness = 6
     ScrollingFrame.BorderSizePixel = 0
     ScrollingFrame.ZIndex = 20
@@ -1059,17 +1058,28 @@ do
         })
     end
 
+    -- 自动更新当前页面滚动范围
+    local function updateCanvasForPage(page)
+        local maxY = 0
+        for _, child in ipairs(page:GetChildren()) do
+            if child:IsA("TextButton") then
+                local bottom = child.Position.Y.Offset + child.Size.Y.Offset
+                if bottom > maxY then
+                    maxY = bottom
+                end
+            end
+        end
+        ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, math.max(maxY + 20, 200))
+    end
+
     -- 统一布局函数，保证左右对齐，奇数时左列多一个
     local function layoutButtonsInPage(page, buttons)
-        -- buttons: 数组，元素为 {text, callback} 或 {text, callback, specialState}
-        local colWidth = 0.46          -- 每个按钮占页面宽度的46%
-        local leftMargin = 0.03       -- 左边距
-        local rightMargin = 0.03      -- 右边距（用于右列定位）
-        local spacingX = 0.04         -- 列间距
-        local rowHeight = 45          -- 行高
-        local topMargin = 4           -- 顶部间距
+        local colWidth = 0.46
+        local leftMargin = 0.03
+        local spacingX = 0.04
+        local rowHeight = 45
+        local topMargin = 4
 
-        -- 清除旧按钮（如果有）
         for _, child in ipairs(page:GetChildren()) do
             if child:IsA("TextButton") then
                 child:Destroy()
@@ -1077,7 +1087,7 @@ do
         end
 
         for i, btnData in ipairs(buttons) do
-            local isLeft = (i % 2 == 1)  -- 奇数左列，偶数右列
+            local isLeft = (i % 2 == 1)
             local colIdx = isLeft and 0 or 1
             local rowIdx = math.floor((i-1)/2)
 
@@ -1088,7 +1098,7 @@ do
             btn.Parent = page
             btn.BackgroundColor3 = Color3.new(0, 0, 0)
             btn.BackgroundTransparency = 0.5
-            btn.Size = UDim2.new(colWidth, 0, 0, 38)  -- 高度38，留7间距
+            btn.Size = UDim2.new(colWidth, 0, 0, 38)
             btn.Position = UDim2.new(posXScale, 0, 0, posYOffset)
             btn.Text = btnData[1]
             btn.TextColor3 = Color3.new(1, 1, 1)
@@ -1101,18 +1111,12 @@ do
                 btn.MouseButton1Click:Connect(btnData[2])
             end
 
-            -- 如果有特殊状态标签，返回按钮引用以便外部修改文本
             if btnData[3] then
-                btnData[3] = btn  -- 把引用存回表里
+                btnData[3] = btn
             end
         end
 
-        -- 动态调整CanvasSize
-        local totalRows = math.ceil(#buttons / 2)
-        local totalHeight = topMargin + totalRows * rowHeight + 10
-        if page.Parent and page.Parent:IsA("ScrollingFrame") then
-            page.Parent.CanvasSize = UDim2.new(0, 0, 0, math.max(totalHeight, 200))
-        end
+        updateCanvasForPage(page)
     end
 
     local function createSpeedPanel()
@@ -2118,7 +2122,6 @@ do
             info.TextXAlignment = Enum.TextXAlignment.Center
             info.TextYAlignment = Enum.TextYAlignment.Center
             local infoCorner = Instance.new("UICorner"); infoCorner.CornerRadius = UDim.new(0, 6); infoCorner.Parent = info
-            -- 复制按钮单独放置，用老方法，不与grid混
             local startY = info.Position.Y.Offset + info.Size.Y.Offset + 15
             local blackColor = Color3.fromRGB(35, 35, 35)
             local function createCopyButton(parent, groupLabel, code, posX, posY)
@@ -2160,8 +2163,8 @@ do
             end
             createCopyButton(page, "QQ群", "1106203175", 10, startY)
             createCopyButton(page, "QQ", "3999698324", 10, startY + 45)
+            updateCanvasForPage(page)
         elseif i == 2 then
-            -- 主要页按钮用布局函数
             local buttons = {}
             local espRef, jumpRef, noclipRef, nightRef = {}, {}, {}, {}
             table.insert(buttons, {"透视：关", function()
@@ -2353,7 +2356,6 @@ do
             end})
             layoutButtonsInPage(page, buttons)
         elseif i == 5 then
-            -- 支持服务器页
             local buttons = {}
             table.insert(buttons, {"破坏者谜团2", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "破坏者谜团2", Text = "正在加载中...", Duration = 5})
@@ -2423,6 +2425,7 @@ do
             if teleportServerPanel then teleportServerPanel.Visible = false end
             if savedServersPanel then savedServersPanel.Visible = false end
             page.Visible = true
+            updateCanvasForPage(page)  -- 关键修复：切换页面后重新计算滚动范围
         end)
         categories[i] = cat; pages[i] = page
     end
