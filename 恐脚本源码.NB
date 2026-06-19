@@ -22,6 +22,13 @@ game:GetService("StarterGui"):SetCore("SendNotification",{
     Text = "作者：恐拜大帝\nQQ：3999698324",
     Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"
 })
+
+local jumpFloatActive = false
+local jumpFloatGui = nil
+local jumpFloatBtn = nil
+local jumpPanel = nil
+local jumpHeight = 60
+
 local espEnabled = false
 local function enableESP(player)
     if player == LocalPlayer then return end
@@ -62,7 +69,6 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 local InfiniteJumpEnabled = false
 local NoclipEnabled = false
-local JumpHeight = 50
 local NightVisionEnabled = false
 local AntiPushEnabled = false
 local AutoTranslateEnabled = false
@@ -143,7 +149,7 @@ UserInputService.JumpRequest:Connect(function()
         if char then
             local HRP = char:FindFirstChild("HumanoidRootPart")
             if HRP then
-                HRP.Velocity = Vector3.new(HRP.Velocity.X, JumpHeight, HRP.Velocity.Z)
+                HRP.Velocity = Vector3.new(HRP.Velocity.X, 50, HRP.Velocity.Z)
             end
         end
     end
@@ -922,23 +928,131 @@ local function showHarassSelect()
     end)
 end
 
--- 服务器ID保存/加载功能
+local function createJumpFloat()
+    if jumpFloatGui then jumpFloatGui:Destroy() end
+    jumpFloatGui = Instance.new("ScreenGui", CoreGui)
+    jumpFloatGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    jumpFloatBtn = Instance.new("TextButton", jumpFloatGui)
+    jumpFloatBtn.Size = UDim2.new(0,60,0,60)
+    jumpFloatBtn.Position = UDim2.new(1,-80,1,-80)
+    jumpFloatBtn.BackgroundColor3 = Color3.new(0,0.5,1)
+    jumpFloatBtn.Text = "↑"
+    jumpFloatBtn.TextColor3 = Color3.new(1,1,1)
+    jumpFloatBtn.TextSize = 40
+    jumpFloatBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", jumpFloatBtn).CornerRadius = UDim.new(1,0)
+    local gearBtn = Instance.new("TextButton", jumpFloatGui)
+    gearBtn.Size = UDim2.new(0,24,0,24)
+    gearBtn.Position = UDim2.new(1,-86,1,-86)
+    gearBtn.BackgroundColor3 = Color3.new(0.2,0.2,0.2)
+    gearBtn.Text = "⚙"
+    gearBtn.TextColor3 = Color3.new(1,1,1)
+    gearBtn.TextSize = 18
+    gearBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", gearBtn).CornerRadius = UDim.new(1,0)
+    jumpPanel = Instance.new("Frame", jumpFloatGui)
+    jumpPanel.Size = UDim2.new(0,220,0,140)
+    jumpPanel.Position = UDim2.new(1,-240,1,-160)
+    jumpPanel.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    jumpPanel.Visible = false
+    Instance.new("UICorner", jumpPanel).CornerRadius = UDim.new(0,8)
+    local closeBtn = Instance.new("TextButton", jumpPanel)
+    closeBtn.Size = UDim2.new(0,20,0,20)
+    closeBtn.Position = UDim2.new(1,-25,0,5)
+    closeBtn.BackgroundColor3 = Color3.new(0.8,0.2,0.2)
+    closeBtn.Text = "X"
+    closeBtn.TextColor3 = Color3.new(1,1,1)
+    closeBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(1,0)
+    closeBtn.MouseButton1Click:Connect(function() jumpPanel.Visible = false end)
+    local heightLabel = Instance.new("TextLabel", jumpPanel)
+    heightLabel.Size = UDim2.new(1,-30,0,30)
+    heightLabel.Position = UDim2.new(0,10,0,5)
+    heightLabel.BackgroundTransparency = 1
+    heightLabel.Text = "跳跃高度：" .. jumpHeight
+    heightLabel.TextColor3 = Color3.new(1,1,1)
+    heightLabel.Font = Enum.Font.SourceSansBold
+    local inputBox = Instance.new("TextBox", jumpPanel)
+    inputBox.Size = UDim2.new(0.6,0,0,30)
+    inputBox.Position = UDim2.new(0.2,0,0,50)
+    inputBox.BackgroundColor3 = Color3.new(0.2,0.2,0.2)
+    inputBox.Text = tostring(jumpHeight)
+    inputBox.TextColor3 = Color3.new(1,1,1)
+    inputBox.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0,6)
+    local confirmBtn = Instance.new("TextButton", jumpPanel)
+    confirmBtn.Size = UDim2.new(0.4,0,0,30)
+    confirmBtn.Position = UDim2.new(0.1,0,0,90)
+    confirmBtn.BackgroundColor3 = Color3.new(0,0.6,0)
+    confirmBtn.Text = "确认"
+    confirmBtn.TextColor3 = Color3.new(1,1,1)
+    confirmBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", confirmBtn).CornerRadius = UDim.new(0,6)
+    confirmBtn.MouseButton1Click:Connect(function()
+        local num = tonumber(inputBox.Text)
+        if num and num >= 16 and num <= 100 then
+            jumpHeight = num
+            heightLabel.Text = "跳跃高度：" .. jumpHeight
+        end
+    end)
+    local resetBtn = Instance.new("TextButton", jumpPanel)
+    resetBtn.Size = UDim2.new(0.4,0,0,30)
+    resetBtn.Position = UDim2.new(0.5,0,0,90)
+    resetBtn.BackgroundColor3 = Color3.new(0.8,0.4,0)
+    resetBtn.Text = "默认"
+    resetBtn.TextColor3 = Color3.new(1,1,1)
+    resetBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0,6)
+    resetBtn.MouseButton1Click:Connect(function()
+        jumpHeight = 60
+        inputBox.Text = "60"
+        heightLabel.Text = "跳跃高度：" .. jumpHeight
+    end)
+    gearBtn.MouseButton1Click:Connect(function() jumpPanel.Visible = not jumpPanel.Visible end)
+    local function performJump()
+        if not jumpFloatActive then return end
+        local char = LocalPlayer.Character
+        if not char then return end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hrp and hum and hum.Health > 0 and hum.FloorMaterial ~= Enum.Material.Air then
+            hrp.Velocity = Vector3.new(hrp.Velocity.X, jumpHeight, hrp.Velocity.Z)
+        end
+    end
+    jumpFloatBtn.MouseButton1Click:Connect(performJump)
+end
+local function destroyJumpFloat()
+    if jumpFloatGui then
+        jumpFloatGui:Destroy()
+        jumpFloatGui = nil
+        jumpPanel = nil
+        jumpFloatBtn = nil
+    end
+end
+
 local serversFile = "servers_" .. plrId .. ".json"
 local savedServers = {}
 local function loadSavedServers()
     local success, data = pcall(function() return readfile(serversFile) end)
     if success and data then
         local decoded = HttpService:JSONDecode(data)
-        if decoded and type(decoded) == "table" then
-            savedServers = decoded
+        if decoded then
+            savedServers = {}
+            for _, item in ipairs(decoded) do
+                if type(item) == "string" then
+                    table.insert(savedServers, {id = item, name = item})
+                elseif type(item) == "table" and item.id then
+                    table.insert(savedServers, {id = item.id, name = item.name or item.id})
+                end
+            end
         end
     end
     local seen = {}
     local unique = {}
-    for _, id in ipairs(savedServers) do
-        if not seen[id] then
-            seen[id] = true
-            table.insert(unique, id)
+    for _, entry in ipairs(savedServers) do
+        if not seen[entry.id] then
+            seen[entry.id] = true
+            table.insert(unique, entry)
         end
     end
     savedServers = unique
@@ -946,30 +1060,45 @@ end
 local function saveServers()
     pcall(function() writefile(serversFile, HttpService:JSONEncode(savedServers)) end)
 end
-local function addServerId(id)
+local function addServerId(id, name)
     if not id or id == "" then return end
-    for _, existing in ipairs(savedServers) do
-        if existing == id then return end
+    for _, entry in ipairs(savedServers) do
+        if entry.id == id then
+            if name and name ~= entry.name then
+                entry.name = name
+                saveServers()
+            end
+            return
+        end
     end
-    table.insert(savedServers, id)
+    table.insert(savedServers, {id = id, name = name or id})
     saveServers()
 end
 local function removeServerId(id)
     local newList = {}
-    for _, v in ipairs(savedServers) do
-        if v ~= id then
-            table.insert(newList, v)
+    for _, entry in ipairs(savedServers) do
+        if entry.id ~= id then
+            table.insert(newList, entry)
         end
     end
     savedServers = newList
     saveServers()
 end
+local function renameServerId(id, newName)
+    if not newName or newName == "" then return end
+    for _, entry in ipairs(savedServers) do
+        if entry.id == id then
+            entry.name = newName
+            saveServers()
+            return true
+        end
+    end
+    return false
+end
 loadSavedServers()
 
--- ================== 简洁UI库（Page类） ==================
 local Page = {}
 Page.__index = Page
-
 function Page.new(parentScrollingFrame)
     local self = setmetatable({}, Page)
     self.frame = Instance.new("Frame")
@@ -981,23 +1110,19 @@ function Page.new(parentScrollingFrame)
     self.buttonCount = 0
     return self
 end
-
 function Page:AddButton(text, callback, toggleRef)
     local colWidth = 0.46
     local leftMargin = 0.03
     local spacingX = 0.04
     local rowHeight = 45
     local topMargin = 4
-
     self.buttonCount = self.buttonCount + 1
     local i = self.buttonCount
     local isLeft = (i % 2 == 1)
     local colIdx = isLeft and 0 or 1
     local rowIdx = math.floor((i-1)/2)
-
     local posXScale = leftMargin + colIdx * (colWidth + spacingX)
     local posYOffset = topMargin + rowIdx * rowHeight
-
     local btn = Instance.new("TextButton")
     btn.Parent = self.frame
     btn.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -1010,28 +1135,17 @@ function Page:AddButton(text, callback, toggleRef)
     btn.AutoButtonColor = false
     btn.ZIndex = 21
     local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 6); corner.Parent = btn
-
-    if callback then
-        btn.MouseButton1Click:Connect(callback)
-    end
-
-    if toggleRef then
-        toggleRef[1] = btn
-    end
-
-    -- 自动更新滚动范围
+    if callback then btn.MouseButton1Click:Connect(callback) end
+    if toggleRef then toggleRef[1] = btn end
     self:UpdateCanvas()
     return btn
 end
-
 function Page:UpdateCanvas()
     local maxY = 0
     for _, child in ipairs(self.frame:GetChildren()) do
         if child:IsA("TextButton") then
             local bottom = child.Position.Y.Offset + child.Size.Y.Offset
-            if bottom > maxY then
-                maxY = bottom
-            end
+            if bottom > maxY then maxY = bottom end
         end
     end
     if maxY == 0 then maxY = 100 end
@@ -1040,7 +1154,6 @@ function Page:UpdateCanvas()
         scrollFrame.CanvasSize = UDim2.new(0,0,0, maxY + 20)
     end
 end
--- =====================================================
 
 local UILibrary = {}
 do
@@ -1133,7 +1246,6 @@ do
             Duration = 3,
         })
     end
-
     local function createSpeedPanel()
         if speedPanel then return speedPanel end
         speedPanel = Instance.new("Frame")
@@ -1783,8 +1895,8 @@ do
         instanceIdPanel = Instance.new("Frame")
         instanceIdPanel.Name = "InstanceIdPanel"
         instanceIdPanel.Parent = Main
-        instanceIdPanel.Size = UDim2.new(0, 280, 0, 140)
-        instanceIdPanel.Position = UDim2.new(0.5, -140, 0.5, -70)
+        instanceIdPanel.Size = UDim2.new(0, 280, 0, 170)
+        instanceIdPanel.Position = UDim2.new(0.5, -140, 0.5, -85)
         instanceIdPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         instanceIdPanel.BackgroundTransparency = 0.2
         instanceIdPanel.Visible = false
@@ -1814,13 +1926,23 @@ do
         local copyBtn = Instance.new("TextButton")
         copyBtn.Parent = instanceIdPanel
         copyBtn.Size = UDim2.new(0, 120, 0, 28)
-        copyBtn.Position = UDim2.new(0.5, -60, 0, 85)
+        copyBtn.Position = UDim2.new(0, 10, 0, 85)
         copyBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
         copyBtn.Text = "复制实例ID"
         copyBtn.TextColor3 = Color3.new(1, 1, 1)
         copyBtn.Font = Enum.Font.SourceSansBold
         copyBtn.TextSize = 14
         local copyCorner = Instance.new("UICorner"); copyCorner.CornerRadius = UDim.new(0, 6); copyCorner.Parent = copyBtn
+        local saveBtn = Instance.new("TextButton")
+        saveBtn.Parent = instanceIdPanel
+        saveBtn.Size = UDim2.new(0, 120, 0, 28)
+        saveBtn.Position = UDim2.new(0, 140, 0, 85)
+        saveBtn.BackgroundColor3 = Color3.fromRGB(0, 160, 80)
+        saveBtn.Text = "保存到列表"
+        saveBtn.TextColor3 = Color3.new(1, 1, 1)
+        saveBtn.Font = Enum.Font.SourceSansBold
+        saveBtn.TextSize = 14
+        local saveCorner = Instance.new("UICorner"); saveCorner.CornerRadius = UDim.new(0, 6); saveCorner.Parent = saveBtn
         local closeBtn = Instance.new("TextButton")
         closeBtn.Parent = instanceIdPanel
         closeBtn.Size = UDim2.new(0, 22, 0, 22)
@@ -1839,6 +1961,15 @@ do
             game:GetService("StarterGui"):SetCore("SendNotification", {
                 Title = "实例ID",
                 Text = "✅ 已复制: " .. game.JobId,
+                Duration = 3,
+            })
+        end)
+        saveBtn.MouseButton1Click:Connect(function()
+            local defaultName = "服务器 " .. (#savedServers + 1)
+            addServerId(game.JobId, defaultName)
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "保存服务器",
+                Text = "已保存当前服务器到列表 (可稍后重命名)",
                 Duration = 3,
             })
         end)
@@ -2019,12 +2150,12 @@ do
         scrollFrame.ScrollBarThickness = 4
         local function refreshList()
             for _, child in ipairs(scrollFrame:GetChildren()) do
-                if child:IsA("TextButton") or child:IsA("Frame") then
+                if child:IsA("Frame") then
                     child:Destroy()
                 end
             end
             local y = 0
-            for _, id in ipairs(savedServers) do
+            for _, entry in ipairs(savedServers) do
                 local row = Instance.new("Frame")
                 row.Parent = scrollFrame
                 row.Size = UDim2.new(1, -10, 0, 30)
@@ -2032,40 +2163,96 @@ do
                 row.BackgroundTransparency = 1
                 local idLabel = Instance.new("TextLabel")
                 idLabel.Parent = row
-                idLabel.Size = UDim2.new(0.6, 0, 1, 0)
+                idLabel.Size = UDim2.new(0, 140, 1, 0)
                 idLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-                idLabel.Text = id
+                idLabel.Text = entry.name .. " (" .. entry.id:sub(1,10) .. "...)"
                 idLabel.TextColor3 = Color3.new(1, 1, 1)
                 idLabel.Font = Enum.Font.SourceSans
-                idLabel.TextSize = 13
+                idLabel.TextSize = 12
                 local idCorner = Instance.new("UICorner"); idCorner.CornerRadius = UDim.new(0, 4); idCorner.Parent = idLabel
                 local tpBtn = Instance.new("TextButton")
                 tpBtn.Parent = row
-                tpBtn.Size = UDim2.new(0, 45, 1, 0)
-                tpBtn.Position = UDim2.new(0.62, 0, 0, 0)
+                tpBtn.Size = UDim2.new(0, 35, 1, 0)
+                tpBtn.Position = UDim2.new(0, 145, 0, 0)
                 tpBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-                tpBtn.Text = "传送"
+                tpBtn.Text = "传"
                 tpBtn.TextColor3 = Color3.new(1, 1, 1)
                 tpBtn.Font = Enum.Font.SourceSansBold
                 tpBtn.TextSize = 12
                 local tpCorner = Instance.new("UICorner"); tpCorner.CornerRadius = UDim.new(0, 4); tpCorner.Parent = tpBtn
                 tpBtn.MouseButton1Click:Connect(function()
                     pcall(function()
-                        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, id)
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, entry.id)
                     end)
+                end)
+                local renameBtn = Instance.new("TextButton")
+                renameBtn.Parent = row
+                renameBtn.Size = UDim2.new(0, 40, 1, 0)
+                renameBtn.Position = UDim2.new(0, 183, 0, 0)
+                renameBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 200)
+                renameBtn.Text = "改名"
+                renameBtn.TextColor3 = Color3.new(1, 1, 1)
+                renameBtn.Font = Enum.Font.SourceSansBold
+                renameBtn.TextSize = 11
+                local renameCorner = Instance.new("UICorner"); renameCorner.CornerRadius = UDim.new(0, 4); renameCorner.Parent = renameBtn
+                renameBtn.MouseButton1Click:Connect(function()
+                    local renamePanel = Instance.new("Frame")
+                    renamePanel.Parent = savedServersPanel
+                    renamePanel.Size = UDim2.new(0, 200, 0, 60)
+                    renamePanel.Position = UDim2.new(0.5, -100, 0.5, -30)
+                    renamePanel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                    renamePanel.ZIndex = 300
+                    local rc = Instance.new("UICorner"); rc.CornerRadius = UDim.new(0, 8); rc.Parent = renamePanel
+                    local input = Instance.new("TextBox")
+                    input.Parent = renamePanel
+                    input.Size = UDim2.new(1, -20, 0, 25)
+                    input.Position = UDim2.new(0, 10, 0, 5)
+                    input.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                    input.Text = entry.name
+                    input.TextColor3 = Color3.new(1,1,1)
+                    input.Font = Enum.Font.SourceSans
+                    input.TextSize = 14
+                    local inputCorner = Instance.new("UICorner"); inputCorner.CornerRadius = UDim.new(0, 4); inputCorner.Parent = input
+                    local confirmBtn = Instance.new("TextButton")
+                    confirmBtn.Parent = renamePanel
+                    confirmBtn.Size = UDim2.new(0, 60, 0, 22)
+                    confirmBtn.Position = UDim2.new(0, 10, 0, 33)
+                    confirmBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+                    confirmBtn.Text = "确定"
+                    confirmBtn.TextColor3 = Color3.new(1,1,1)
+                    confirmBtn.Font = Enum.Font.SourceSansBold
+                    confirmBtn.TextSize = 13
+                    local cfCorner = Instance.new("UICorner"); cfCorner.CornerRadius = UDim.new(0, 4); cfCorner.Parent = confirmBtn
+                    local cancelBtn = Instance.new("TextButton")
+                    cancelBtn.Parent = renamePanel
+                    cancelBtn.Size = UDim2.new(0, 60, 0, 22)
+                    cancelBtn.Position = UDim2.new(0, 80, 0, 33)
+                    cancelBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                    cancelBtn.Text = "取消"
+                    cancelBtn.TextColor3 = Color3.new(1,1,1)
+                    cancelBtn.Font = Enum.Font.SourceSansBold
+                    cancelBtn.TextSize = 13
+                    local clCorner = Instance.new("UICorner"); clCorner.CornerRadius = UDim.new(0, 4); clCorner.Parent = cancelBtn
+                    confirmBtn.MouseButton1Click:Connect(function()
+                        if renameServerId(entry.id, input.Text) then
+                            refreshList()
+                        end
+                        renamePanel:Destroy()
+                    end)
+                    cancelBtn.MouseButton1Click:Connect(function() renamePanel:Destroy() end)
                 end)
                 local delBtn = Instance.new("TextButton")
                 delBtn.Parent = row
-                delBtn.Size = UDim2.new(0, 45, 1, 0)
-                delBtn.Position = UDim2.new(0.78, 0, 0, 0)
+                delBtn.Size = UDim2.new(0, 35, 1, 0)
+                delBtn.Position = UDim2.new(0, 226, 0, 0)
                 delBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-                delBtn.Text = "删除"
+                delBtn.Text = "删"
                 delBtn.TextColor3 = Color3.new(1, 1, 1)
                 delBtn.Font = Enum.Font.SourceSansBold
                 delBtn.TextSize = 12
                 local delCorner = Instance.new("UICorner"); delCorner.CornerRadius = UDim.new(0, 4); delCorner.Parent = delBtn
                 delBtn.MouseButton1Click:Connect(function()
-                    removeServerId(id)
+                    removeServerId(entry.id)
                     refreshList()
                 end)
                 y = y + 35
@@ -2083,8 +2270,49 @@ do
         saveCurrentBtn.TextSize = 14
         local saveCorner = Instance.new("UICorner"); saveCorner.CornerRadius = UDim.new(0, 6); saveCorner.Parent = saveCurrentBtn
         saveCurrentBtn.MouseButton1Click:Connect(function()
-            addServerId(game.JobId)
-            refreshList()
+            local namePanel = Instance.new("Frame")
+            namePanel.Parent = savedServersPanel
+            namePanel.Size = UDim2.new(0, 200, 0, 60)
+            namePanel.Position = UDim2.new(0.5, -100, 0.5, -30)
+            namePanel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            namePanel.ZIndex = 300
+            local nc = Instance.new("UICorner"); nc.CornerRadius = UDim.new(0, 8); nc.Parent = namePanel
+            local input = Instance.new("TextBox")
+            input.Parent = namePanel
+            input.Size = UDim2.new(1, -20, 0, 25)
+            input.Position = UDim2.new(0, 10, 0, 5)
+            input.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            input.Text = "我的服务器 " .. (#savedServers + 1)
+            input.TextColor3 = Color3.new(1,1,1)
+            input.Font = Enum.Font.SourceSans
+            input.TextSize = 14
+            local ic = Instance.new("UICorner"); ic.CornerRadius = UDim.new(0, 4); ic.Parent = input
+            local confirmBtn = Instance.new("TextButton")
+            confirmBtn.Parent = namePanel
+            confirmBtn.Size = UDim2.new(0, 60, 0, 22)
+            confirmBtn.Position = UDim2.new(0, 10, 0, 33)
+            confirmBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+            confirmBtn.Text = "保存"
+            confirmBtn.TextColor3 = Color3.new(1,1,1)
+            confirmBtn.Font = Enum.Font.SourceSansBold
+            confirmBtn.TextSize = 13
+            local cf = Instance.new("UICorner"); cf.CornerRadius = UDim.new(0, 4); cf.Parent = confirmBtn
+            local cancelBtn = Instance.new("TextButton")
+            cancelBtn.Parent = namePanel
+            cancelBtn.Size = UDim2.new(0, 60, 0, 22)
+            cancelBtn.Position = UDim2.new(0, 80, 0, 33)
+            cancelBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+            cancelBtn.Text = "取消"
+            cancelBtn.TextColor3 = Color3.new(1,1,1)
+            cancelBtn.Font = Enum.Font.SourceSansBold
+            cancelBtn.TextSize = 13
+            local cl = Instance.new("UICorner"); cl.CornerRadius = UDim.new(0, 4); cl.Parent = cancelBtn
+            confirmBtn.MouseButton1Click:Connect(function()
+                addServerId(game.JobId, input.Text)
+                refreshList()
+                namePanel:Destroy()
+            end)
+            cancelBtn.MouseButton1Click:Connect(function() namePanel:Destroy() end)
         end)
         local closeBtn = Instance.new("TextButton")
         closeBtn.Parent = savedServersPanel
@@ -2097,9 +2325,7 @@ do
         local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
         closeBtn.MouseButton1Click:Connect(function() savedServersPanel.Visible = false end)
         savedServersPanel:GetPropertyChangedSignal("Visible"):Connect(function()
-            if savedServersPanel.Visible then
-                refreshList()
-            end
+            if savedServersPanel.Visible then refreshList() end
         end)
         return savedServersPanel
     end
@@ -2116,10 +2342,9 @@ do
         cat.TextSize = 14
         cat.AutoButtonColor = false
         cat.ZIndex = 21
-        -- 使用 Page 类创建页面
         local page = Page.new(ScrollingFrame)
         page.frame.Name = "Page"..i
-        pages[i] = page  -- 存引用，便于切换
+        pages[i] = page
 
         if i == 1 then
             local info = Instance.new("TextLabel")
@@ -2232,6 +2457,17 @@ do
                     game:GetService("StarterGui"):SetCore("SendNotification", {Title = "偷取完成", Text = "共偷取 " .. tostring(cnt) .. " 个道具", Duration = 3})
                 end)
             end)
+            local jumpFloatRef = {}
+            page:AddButton("解锁跳跃：关", function()
+                jumpFloatActive = not jumpFloatActive
+                jumpFloatRef[1].Text = jumpFloatActive and "解锁跳跃：开" or "解锁跳跃：关"
+                if jumpFloatActive then
+                    createJumpFloat()
+                else
+                    destroyJumpFloat()
+                end
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "解锁跳跃", Text = jumpFloatActive and "已显示跳跃按钮" or "已隐藏跳跃按钮", Duration = 3})
+            end, jumpFloatRef)
         elseif i == 3 then
             local transRef, antiPushRef, aimbotRef, lockRef, flyCtrlRef, spinRef, followRef, smoothRef, harassRef = {}, {}, {}, {}, {}, {}, {}, {}, {}
             page:AddButton("自动翻译：关", function()
@@ -2430,7 +2666,7 @@ do
             if teleportServerPanel then teleportServerPanel.Visible = false end
             if savedServersPanel then savedServersPanel.Visible = false end
             page.frame.Visible = true
-            page:UpdateCanvas()  -- 确保切换时滚动范围正确
+            page:UpdateCanvas()
         end)
         categories[i] = cat
     end
