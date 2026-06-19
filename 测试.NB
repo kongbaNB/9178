@@ -97,15 +97,15 @@ local function showFlingSelect()
     selectGui.ResetOnSpawn = false
     local bg = Instance.new("Frame")
     bg.Parent = selectGui
-    bg.Size = UDim2.new(0,200,0,250)
+    bg.Size = UDim2.new(0, 200, 0, 250)
     bg._targetSize = bg.Size
-    bg.Position = UDim2.new(0.5,-100,0.5,-125)
-    bg.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    bg.Position = UDim2.new(0.5, -100, 0.5, -125)
+    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     bg.ClipsDescendants = true
-    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0,12); corner.Parent = bg
+    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
     local title = Instance.new("TextLabel")
     title.Parent = bg
-    title.Size = UDim2.new(1,0,0,30)
+    title.Size = UDim2.new(1, 0, 0, 30)
     title.BackgroundTransparency = 1
     title.Text = "选择甩飞目标"
     title.TextColor3 = Color3.new(1,1,1)
@@ -113,10 +113,10 @@ local function showFlingSelect()
     title.TextSize = 16
     local scrollFrame = Instance.new("ScrollingFrame")
     scrollFrame.Parent = bg
-    scrollFrame.Size = UDim2.new(1,-10,1,-40)
-    scrollFrame.Position = UDim2.new(0,5,0,35)
+    scrollFrame.Size = UDim2.new(1, -10, 1, -40)
+    scrollFrame.Position = UDim2.new(0, 5, 0, 35)
     scrollFrame.BackgroundTransparency = 1
-    scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
     scrollFrame.ScrollBarThickness = 4
     local playersList = Players:GetPlayers()
     local y = 0
@@ -124,14 +124,14 @@ local function showFlingSelect()
         if p ~= LocalPlayer then
             local btn = Instance.new("TextButton")
             btn.Parent = scrollFrame
-            btn.Size = UDim2.new(1,-10,0,30)
-            btn.Position = UDim2.new(0,5,0,y)
+            btn.Size = UDim2.new(1, -10, 0, 30)
+            btn.Position = UDim2.new(0, 5, 0, y)
             btn.Text = p.Name
-            btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
             btn.TextColor3 = Color3.new(1,1,1)
             btn.Font = Enum.Font.SourceSans
             btn.TextSize = 14
-            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0,6); btnCorner.Parent = btn
+            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = btn
             btn.MouseButton1Click:Connect(function()
                 flingPlayer(p)
                 selectGui:Destroy()
@@ -140,17 +140,17 @@ local function showFlingSelect()
             y = y + 35
         end
     end
-    scrollFrame.CanvasSize = UDim2.new(0,0,0,y)
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, y)
     local closeBtn = Instance.new("TextButton")
     closeBtn.Parent = bg
-    closeBtn.Size = UDim2.new(0,30,0,20)
-    closeBtn.Position = UDim2.new(1,-35,0,5)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+    closeBtn.Size = UDim2.new(0, 30, 0, 20)
+    closeBtn.Position = UDim2.new(1, -35, 0, 5)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
     closeBtn.Text = "X"
     closeBtn.TextColor3 = Color3.new(1,1,1)
     closeBtn.Font = Enum.Font.SourceSansBold
     closeBtn.TextSize = 14
-    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0,4); closeCorner.Parent = closeBtn
+    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
     closeBtn.MouseButton1Click:Connect(function() selectGui:Destroy() end)
     bg.Size = UDim2.new(0,0,0,0)
     local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
