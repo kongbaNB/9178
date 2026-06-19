@@ -22,6 +22,14 @@ game:GetService("StarterGui"):SetCore("SendNotification",{
     Text = "作者：恐拜大帝\nQQ：3999698324",
     Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"
 })
+
+-- 跳跃功能相关变量（新增）
+local jumpFloatActive = false
+local jumpFloatGui = nil
+local jumpFloatBtn = nil
+local jumpPanel = nil
+local jumpHeight = 24
+
 local espEnabled = false
 local function enableESP(player)
     if player == LocalPlayer then return end
@@ -62,7 +70,6 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 local InfiniteJumpEnabled = false
 local NoclipEnabled = false
-local JumpHeight = 50
 local NightVisionEnabled = false
 local AntiPushEnabled = false
 local AutoTranslateEnabled = false
@@ -143,7 +150,7 @@ UserInputService.JumpRequest:Connect(function()
         if char then
             local HRP = char:FindFirstChild("HumanoidRootPart")
             if HRP then
-                HRP.Velocity = Vector3.new(HRP.Velocity.X, JumpHeight, HRP.Velocity.Z)
+                HRP.Velocity = Vector3.new(HRP.Velocity.X, 50, HRP.Velocity.Z)
             end
         end
     end
@@ -922,9 +929,112 @@ local function showHarassSelect()
     end)
 end
 
+-- ==================== 跳跃UI功能（新增） ====================
+local function createJumpFloat()
+    if jumpFloatGui then jumpFloatGui:Destroy() end
+    jumpFloatGui = Instance.new("ScreenGui", CoreGui)
+    jumpFloatGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    jumpFloatBtn = Instance.new("TextButton", jumpFloatGui)
+    jumpFloatBtn.Size = UDim2.new(0,60,0,60)
+    jumpFloatBtn.Position = UDim2.new(1,-80,1,-80)
+    jumpFloatBtn.BackgroundColor3 = Color3.new(0,0.5,1)
+    jumpFloatBtn.Text = "↑"
+    jumpFloatBtn.TextColor3 = Color3.new(1,1,1)
+    jumpFloatBtn.TextSize = 40
+    jumpFloatBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", jumpFloatBtn).CornerRadius = UDim.new(1,0)
+    local gearBtn = Instance.new("TextButton", jumpFloatGui)
+    gearBtn.Size = UDim2.new(0,24,0,24)
+    gearBtn.Position = UDim2.new(1,-86,1,-86)
+    gearBtn.BackgroundColor3 = Color3.new(0.2,0.2,0.2)
+    gearBtn.Text = "⚙"
+    gearBtn.TextColor3 = Color3.new(1,1,1)
+    gearBtn.TextSize = 18
+    gearBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", gearBtn).CornerRadius = UDim.new(1,0)
+    jumpPanel = Instance.new("Frame", jumpFloatGui)
+    jumpPanel.Size = UDim2.new(0,220,0,140)
+    jumpPanel.Position = UDim2.new(1,-240,1,-160)
+    jumpPanel.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    jumpPanel.Visible = false
+    Instance.new("UICorner", jumpPanel).CornerRadius = UDim.new(0,8)
+    local closeBtn = Instance.new("TextButton", jumpPanel)
+    closeBtn.Size = UDim2.new(0,20,0,20)
+    closeBtn.Position = UDim2.new(1,-25,0,5)
+    closeBtn.BackgroundColor3 = Color3.new(0.8,0.2,0.2)
+    closeBtn.Text = "X"
+    closeBtn.TextColor3 = Color3.new(1,1,1)
+    closeBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(1,0)
+    closeBtn.MouseButton1Click:Connect(function() jumpPanel.Visible = false end)
+    local heightLabel = Instance.new("TextLabel", jumpPanel)
+    heightLabel.Size = UDim2.new(1,-30,0,30)
+    heightLabel.Position = UDim2.new(0,10,0,5)
+    heightLabel.BackgroundTransparency = 1
+    heightLabel.Text = "跳跃高度：" .. jumpHeight
+    heightLabel.TextColor3 = Color3.new(1,1,1)
+    heightLabel.Font = Enum.Font.SourceSansBold
+    local inputBox = Instance.new("TextBox", jumpPanel)
+    inputBox.Size = UDim2.new(0.6,0,0,30)
+    inputBox.Position = UDim2.new(0.2,0,0,50)
+    inputBox.BackgroundColor3 = Color3.new(0.2,0.2,0.2)
+    inputBox.Text = tostring(jumpHeight)
+    inputBox.TextColor3 = Color3.new(1,1,1)
+    inputBox.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0,6)
+    local confirmBtn = Instance.new("TextButton", jumpPanel)
+    confirmBtn.Size = UDim2.new(0.4,0,0,30)
+    confirmBtn.Position = UDim2.new(0.1,0,0,90)
+    confirmBtn.BackgroundColor3 = Color3.new(0,0.6,0)
+    confirmBtn.Text = "确认"
+    confirmBtn.TextColor3 = Color3.new(1,1,1)
+    confirmBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", confirmBtn).CornerRadius = UDim.new(0,6)
+    confirmBtn.MouseButton1Click:Connect(function()
+        local num = tonumber(inputBox.Text)
+        if num and num >= 16 and num <= 100 then
+            jumpHeight = num
+            heightLabel.Text = "跳跃高度：" .. jumpHeight
+        end
+    end)
+    local resetBtn = Instance.new("TextButton", jumpPanel)
+    resetBtn.Size = UDim2.new(0.4,0,0,30)
+    resetBtn.Position = UDim2.new(0.5,0,0,90)
+    resetBtn.BackgroundColor3 = Color3.new(0.8,0.4,0)
+    resetBtn.Text = "默认"
+    resetBtn.TextColor3 = Color3.new(1,1,1)
+    resetBtn.Font = Enum.Font.SourceSansBold
+    Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0,6)
+    resetBtn.MouseButton1Click:Connect(function()
+        jumpHeight = 24
+        inputBox.Text = "24"
+        heightLabel.Text = "跳跃高度：" .. jumpHeight
+    end)
+    gearBtn.MouseButton1Click:Connect(function() jumpPanel.Visible = not jumpPanel.Visible end)
+    local function performJump()
+        if not jumpFloatActive then return end
+        local char = LocalPlayer.Character
+        if not char then return end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hrp and hum and hum.Health > 0 and hum.FloorMaterial ~= Enum.Material.Air then
+            hrp.Velocity = Vector3.new(hrp.Velocity.X, jumpHeight, hrp.Velocity.Z)
+        end
+    end
+    jumpFloatBtn.MouseButton1Click:Connect(performJump)
+end
+local function destroyJumpFloat()
+    if jumpFloatGui then
+        jumpFloatGui:Destroy()
+        jumpFloatGui = nil
+        jumpPanel = nil
+        jumpFloatBtn = nil
+    end
+end
+-- ==================== 跳跃功能结束 ====================
+
 local serversFile = "servers_" .. plrId .. ".json"
 local savedServers = {}
-
 local function loadSavedServers()
     local success, data = pcall(function() return readfile(serversFile) end)
     if success and data then
@@ -950,11 +1060,9 @@ local function loadSavedServers()
     end
     savedServers = unique
 end
-
 local function saveServers()
     pcall(function() writefile(serversFile, HttpService:JSONEncode(savedServers)) end)
 end
-
 local function addServerId(id, name)
     if not id or id == "" then return end
     for _, entry in ipairs(savedServers) do
@@ -969,7 +1077,6 @@ local function addServerId(id, name)
     table.insert(savedServers, {id = id, name = name or id})
     saveServers()
 end
-
 local function removeServerId(id)
     local newList = {}
     for _, entry in ipairs(savedServers) do
@@ -980,7 +1087,6 @@ local function removeServerId(id)
     savedServers = newList
     saveServers()
 end
-
 local function renameServerId(id, newName)
     if not newName or newName == "" then return end
     for _, entry in ipairs(savedServers) do
@@ -992,12 +1098,10 @@ local function renameServerId(id, newName)
     end
     return false
 end
-
 loadSavedServers()
 
 local Page = {}
 Page.__index = Page
-
 function Page.new(parentScrollingFrame)
     local self = setmetatable({}, Page)
     self.frame = Instance.new("Frame")
@@ -1009,23 +1113,19 @@ function Page.new(parentScrollingFrame)
     self.buttonCount = 0
     return self
 end
-
 function Page:AddButton(text, callback, toggleRef)
     local colWidth = 0.46
     local leftMargin = 0.03
     local spacingX = 0.04
     local rowHeight = 45
     local topMargin = 4
-
     self.buttonCount = self.buttonCount + 1
     local i = self.buttonCount
     local isLeft = (i % 2 == 1)
     local colIdx = isLeft and 0 or 1
     local rowIdx = math.floor((i-1)/2)
-
     local posXScale = leftMargin + colIdx * (colWidth + spacingX)
     local posYOffset = topMargin + rowIdx * rowHeight
-
     local btn = Instance.new("TextButton")
     btn.Parent = self.frame
     btn.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -1038,27 +1138,17 @@ function Page:AddButton(text, callback, toggleRef)
     btn.AutoButtonColor = false
     btn.ZIndex = 21
     local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 6); corner.Parent = btn
-
-    if callback then
-        btn.MouseButton1Click:Connect(callback)
-    end
-
-    if toggleRef then
-        toggleRef[1] = btn
-    end
-
+    if callback then btn.MouseButton1Click:Connect(callback) end
+    if toggleRef then toggleRef[1] = btn end
     self:UpdateCanvas()
     return btn
 end
-
 function Page:UpdateCanvas()
     local maxY = 0
     for _, child in ipairs(self.frame:GetChildren()) do
         if child:IsA("TextButton") then
             local bottom = child.Position.Y.Offset + child.Size.Y.Offset
-            if bottom > maxY then
-                maxY = bottom
-            end
+            if bottom > maxY then maxY = bottom end
         end
     end
     if maxY == 0 then maxY = 100 end
@@ -1159,7 +1249,6 @@ do
             Duration = 3,
         })
     end
-
     local function createSpeedPanel()
         if speedPanel then return speedPanel end
         speedPanel = Instance.new("Frame")
@@ -2371,6 +2460,18 @@ do
                     game:GetService("StarterGui"):SetCore("SendNotification", {Title = "偷取完成", Text = "共偷取 " .. tostring(cnt) .. " 个道具", Duration = 3})
                 end)
             end)
+            -- 新增“解锁跳跃”按钮
+            local jumpFloatRef = {}
+            page:AddButton("解锁跳跃：关", function()
+                jumpFloatActive = not jumpFloatActive
+                jumpFloatRef[1].Text = jumpFloatActive and "解锁跳跃：开" or "解锁跳跃：关"
+                if jumpFloatActive then
+                    createJumpFloat()
+                else
+                    destroyJumpFloat()
+                end
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "解锁跳跃", Text = jumpFloatActive and "已显示跳跃按钮" or "已隐藏跳跃按钮", Duration = 3})
+            end, jumpFloatRef)
         elseif i == 3 then
             local transRef, antiPushRef, aimbotRef, lockRef, flyCtrlRef, spinRef, followRef, smoothRef, harassRef = {}, {}, {}, {}, {}, {}, {}, {}, {}
             page:AddButton("自动翻译：关", function()
