@@ -23,12 +23,11 @@ game:GetService("StarterGui"):SetCore("SendNotification",{
     Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"
 })
 
--- 跳跃功能相关变量（新增）
 local jumpFloatActive = false
 local jumpFloatGui = nil
 local jumpFloatBtn = nil
 local jumpPanel = nil
-local jumpHeight = 24
+local jumpHeight = 60
 
 local espEnabled = false
 local function enableESP(player)
@@ -929,7 +928,6 @@ local function showHarassSelect()
     end)
 end
 
--- ==================== 跳跃UI功能（新增） ====================
 local function createJumpFloat()
     if jumpFloatGui then jumpFloatGui:Destroy() end
     jumpFloatGui = Instance.new("ScreenGui", CoreGui)
@@ -1006,8 +1004,8 @@ local function createJumpFloat()
     resetBtn.Font = Enum.Font.SourceSansBold
     Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0,6)
     resetBtn.MouseButton1Click:Connect(function()
-        jumpHeight = 24
-        inputBox.Text = "24"
+        jumpHeight = 60
+        inputBox.Text = "60"
         heightLabel.Text = "跳跃高度：" .. jumpHeight
     end)
     gearBtn.MouseButton1Click:Connect(function() jumpPanel.Visible = not jumpPanel.Visible end)
@@ -1031,7 +1029,6 @@ local function destroyJumpFloat()
         jumpFloatBtn = nil
     end
 end
--- ==================== 跳跃功能结束 ====================
 
 local serversFile = "servers_" .. plrId .. ".json"
 local savedServers = {}
@@ -2460,7 +2457,6 @@ do
                     game:GetService("StarterGui"):SetCore("SendNotification", {Title = "偷取完成", Text = "共偷取 " .. tostring(cnt) .. " 个道具", Duration = 3})
                 end)
             end)
-            -- 新增“解锁跳跃”按钮
             local jumpFloatRef = {}
             page:AddButton("解锁跳跃：关", function()
                 jumpFloatActive = not jumpFloatActive
