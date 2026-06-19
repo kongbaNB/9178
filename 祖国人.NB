@@ -102,4 +102,5 @@ task.spawn(function()
         task.wait(0.1)
     end
 end)
--- This script was generated using the MoonVeil Obfuscator v1.4.5 [https://moonveil.cc] local ra,Ed,zc,gf,H,Yc=type,pairs,getmetatable,bit32.bxor local Fe,_b,m,Od,kf,re_,Ib,D,te,be,Jf,d_,Of,Bd,Gf,lb,oc,u_,Xa,se_,mc,Ce,hd,r_,fb,Cb,ad,Pc,ic,Lc,c,ac,Rf,Oc,Na,Nc,Xb,pf,z,ke,oe,Lb,Ia,E;ad=(getfenv());fb,Ib
+-- This script was generated using the MoonVeil Obfuscator v1.4.5 [https://moonveil.cc] 
+local ra,Ed,zc,gf,H,Yc=type,pairs,getmetatable,bit32.bxor local Fe,_b,m,Od,kf,re_,Ib,D,te,be,Jf,d_,Of,Bd,Gf,lb,oc,u_,Xa,se_,mc,Ce,hd,r_,fb,Cb,ad,Pc,ic,Lc,c,ac,Rf,Oc,Na,Nc,Xb,pf,z,ke,oe,Lb,Ia,E;ad=(getfenv());fb,Ib
