@@ -966,6 +966,82 @@ local function removeServerId(id)
 end
 loadSavedServers()
 
+-- ================== 简洁UI库（Page类） ==================
+local Page = {}
+Page.__index = Page
+
+function Page.new(parentScrollingFrame)
+    local self = setmetatable({}, Page)
+    self.frame = Instance.new("Frame")
+    self.frame.Parent = parentScrollingFrame
+    self.frame.BackgroundTransparency = 1
+    self.frame.Size = UDim2.new(1,0,1,0)
+    self.frame.Visible = false
+    self.frame.ZIndex = 20
+    self.buttonCount = 0
+    return self
+end
+
+function Page:AddButton(text, callback, toggleRef)
+    local colWidth = 0.46
+    local leftMargin = 0.03
+    local spacingX = 0.04
+    local rowHeight = 45
+    local topMargin = 4
+
+    self.buttonCount = self.buttonCount + 1
+    local i = self.buttonCount
+    local isLeft = (i % 2 == 1)
+    local colIdx = isLeft and 0 or 1
+    local rowIdx = math.floor((i-1)/2)
+
+    local posXScale = leftMargin + colIdx * (colWidth + spacingX)
+    local posYOffset = topMargin + rowIdx * rowHeight
+
+    local btn = Instance.new("TextButton")
+    btn.Parent = self.frame
+    btn.BackgroundColor3 = Color3.new(0, 0, 0)
+    btn.BackgroundTransparency = 0.5
+    btn.Size = UDim2.new(colWidth, 0, 0, 38)
+    btn.Position = UDim2.new(posXScale, 0, 0, posYOffset)
+    btn.Text = text
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.TextSize = 14
+    btn.AutoButtonColor = false
+    btn.ZIndex = 21
+    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 6); corner.Parent = btn
+
+    if callback then
+        btn.MouseButton1Click:Connect(callback)
+    end
+
+    if toggleRef then
+        toggleRef[1] = btn
+    end
+
+    -- 自动更新滚动范围
+    self:UpdateCanvas()
+    return btn
+end
+
+function Page:UpdateCanvas()
+    local maxY = 0
+    for _, child in ipairs(self.frame:GetChildren()) do
+        if child:IsA("TextButton") then
+            local bottom = child.Position.Y.Offset + child.Size.Y.Offset
+            if bottom > maxY then
+                maxY = bottom
+            end
+        end
+    end
+    if maxY == 0 then maxY = 100 end
+    local scrollFrame = self.frame.Parent
+    if scrollFrame and scrollFrame:IsA("ScrollingFrame") then
+        scrollFrame.CanvasSize = UDim2.new(0,0,0, maxY + 20)
+    end
+end
+-- =====================================================
+
 local UILibrary = {}
 do
     local PlayerGui = LocalPlayer.PlayerGui
@@ -1056,71 +1132,6 @@ do
             Text = success and ("✅ 已复制: " .. text) or ("❌ 复制失败，请手动复制：" .. text),
             Duration = 3,
         })
-    end
-
-    -- 自动更新当前页面滚动范围，紧贴最后一个按钮，不留多余空白
-    local function updateCanvasForPage(page)
-        local maxY = 0
-        for _, child in ipairs(page:GetChildren()) do
-            if child:IsA("TextButton") then
-                local bottom = child.Position.Y.Offset + child.Size.Y.Offset
-                if bottom > maxY then
-                    maxY = bottom
-                end
-            end
-        end
-        -- 如果页面中没有按钮（比如通知页），给一个基础高度防止无法滚动
-        if maxY == 0 then
-            maxY = 100
-        end
-        ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, maxY + 20)
-    end
-
-    -- 统一布局函数，保证左右对齐，奇数时左列多一个
-    local function layoutButtonsInPage(page, buttons)
-        local colWidth = 0.46
-        local leftMargin = 0.03
-        local spacingX = 0.04
-        local rowHeight = 45
-        local topMargin = 4
-
-        for _, child in ipairs(page:GetChildren()) do
-            if child:IsA("TextButton") then
-                child:Destroy()
-            end
-        end
-
-        for i, btnData in ipairs(buttons) do
-            local isLeft = (i % 2 == 1)
-            local colIdx = isLeft and 0 or 1
-            local rowIdx = math.floor((i-1)/2)
-
-            local posXScale = leftMargin + colIdx * (colWidth + spacingX)
-            local posYOffset = topMargin + rowIdx * rowHeight
-
-            local btn = Instance.new("TextButton")
-            btn.Parent = page
-            btn.BackgroundColor3 = Color3.new(0, 0, 0)
-            btn.BackgroundTransparency = 0.5
-            btn.Size = UDim2.new(colWidth, 0, 0, 38)
-            btn.Position = UDim2.new(posXScale, 0, 0, posYOffset)
-            btn.Text = btnData[1]
-            btn.TextColor3 = Color3.new(1, 1, 1)
-            btn.TextSize = 14
-            btn.AutoButtonColor = false
-            btn.ZIndex = 21
-            local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 6); corner.Parent = btn
-
-            if btnData[2] then
-                btn.MouseButton1Click:Connect(btnData[2])
-            end
-
-            if btnData[3] then
-                btnData[3] = btn
-            end
-        end
-
-        updateCanvasForPage(page)
     end
 
     local function createSpeedPanel()
@@ -2105,16 +2116,14 @@ do
         cat.TextSize = 14
         cat.AutoButtonColor = false
         cat.ZIndex = 21
-        local page = Instance.new("Frame")
-        page.Name = "Page"..i
-        page.Parent = ScrollingFrame
-        page.BackgroundTransparency = 1
-        page.Size = UDim2.new(1,0,1,0)
-        page.Visible = false
-        page.ZIndex = 20
+        -- 使用 Page 类创建页面
+        local page = Page.new(ScrollingFrame)
+        page.frame.Name = "Page"..i
+        pages[i] = page  -- 存引用，便于切换
+
         if i == 1 then
             local info = Instance.new("TextLabel")
-            info.Parent = page
+            info.Parent = page.frame
             info.Size = UDim2.new(1, -20, 0, 60)
             info.Position = UDim2.new(0, 10, 0, 10)
             info.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
@@ -2165,46 +2174,45 @@ do
                 end)
                 return btn
             end
-            createCopyButton(page, "QQ群", "1106203175", 10, startY)
-            createCopyButton(page, "QQ", "3999698324", 10, startY + 45)
-            updateCanvasForPage(page)
+            createCopyButton(page.frame, "QQ群", "1106203175", 10, startY)
+            createCopyButton(page.frame, "QQ", "3999698324", 10, startY + 45)
+            page:UpdateCanvas()
         elseif i == 2 then
-            local buttons = {}
             local espRef, jumpRef, noclipRef, nightRef = {}, {}, {}, {}
-            table.insert(buttons, {"透视：关", function()
+            page:AddButton("透视：关", function()
                 espEnabled = not espEnabled
                 espRef[1].Text = espEnabled and "透视：开" or "透视：关"
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "透视", Text = espEnabled and "已打开" or "已关闭", Duration = 3})
                 if espEnabled then for _, p in ipairs(Players:GetPlayers()) do enableESP(p) end else for _, p in ipairs(Players:GetPlayers()) do disableESP(p) end end
-            end, espRef})
-            table.insert(buttons, {"飞行", function()
+            end, espRef)
+            page:AddButton("飞行", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "飞行脚本", Text = "正在加载中...", Duration = 5})
                 task.spawn(function()
                     loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/fly.lua"))()
                 end)
-            end})
-            table.insert(buttons, {"无限跳：关", function()
+            end)
+            page:AddButton("无限跳：关", function()
                 InfiniteJumpEnabled = not InfiniteJumpEnabled
                 jumpRef[1].Text = InfiniteJumpEnabled and "无限跳：开" or "无限跳：关"
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "无限跳", Text = InfiniteJumpEnabled and "已开启" or "已关闭", Duration = 3})
-            end, jumpRef})
-            table.insert(buttons, {"建造方块", function()
+            end, jumpRef)
+            page:AddButton("建造方块", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "建造方块", Text = "正在加载中...", Duration = 5})
                 task.spawn(function()
                     loadstring(game:HttpGet("https://pastebin.com/raw/Zt4kkQG9"))()
                 end)
-            end})
-            table.insert(buttons, {"穿墙：关", function()
+            end)
+            page:AddButton("穿墙：关", function()
                 NoclipEnabled = not NoclipEnabled
                 noclipRef[1].Text = NoclipEnabled and "穿墙：开" or "穿墙：关"
                 if NoclipEnabled then startNoclip() else stopNoclip() end
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "穿墙", Text = NoclipEnabled and "已开启" or "已关闭", Duration = 3})
-            end, noclipRef})
-            table.insert(buttons, {"修改移速", function()
+            end, noclipRef)
+            page:AddButton("修改移速", function()
                 local panel = createSpeedPanel()
                 panel.Visible = not panel.Visible
-            end})
-            table.insert(buttons, {"夜视：关", function()
+            end)
+            page:AddButton("夜视：关", function()
                 NightVisionEnabled = not NightVisionEnabled
                 nightRef[1].Text = NightVisionEnabled and "夜视：开" or "夜视：关"
                 local Lighting = game:GetService("Lighting")
@@ -2216,25 +2224,23 @@ do
                     Lighting.FogEnd = 1000; Lighting.FogStart = 0; Lighting.Brightness = 1; Lighting.GlobalShadows = true; Lighting.OutdoorAmbient = Color3.new(0.7, 0.7, 0.7)
                 end
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "夜视", Text = NightVisionEnabled and "已开启" or "已关闭", Duration = 3})
-            end, nightRef})
-            table.insert(buttons, {"偷取道具", function()
+            end, nightRef)
+            page:AddButton("偷取道具", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "偷取道具", Text = "正在偷取道具中...", Duration = 5})
                 task.spawn(function()
                     local cnt = stealAllItems()
                     game:GetService("StarterGui"):SetCore("SendNotification", {Title = "偷取完成", Text = "共偷取 " .. tostring(cnt) .. " 个道具", Duration = 3})
                 end)
-            end})
-            layoutButtonsInPage(page, buttons)
+            end)
         elseif i == 3 then
-            local buttons = {}
             local transRef, antiPushRef, aimbotRef, lockRef, flyCtrlRef, spinRef, followRef, smoothRef, harassRef = {}, {}, {}, {}, {}, {}, {}, {}, {}
-            table.insert(buttons, {"自动翻译：关", function()
+            page:AddButton("自动翻译：关", function()
                 AutoTranslateEnabled = not AutoTranslateEnabled
                 transRef[1].Text = AutoTranslateEnabled and "自动翻译：开" or "自动翻译：关"
                 if AutoTranslateEnabled then startAutoTranslate() else stopAutoTranslate() end
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自动翻译", Text = AutoTranslateEnabled and "已开启" or "已关闭", Duration = 3})
-            end, transRef})
-            table.insert(buttons, {"传送最近玩家", function()
+            end, transRef)
+            page:AddButton("传送最近玩家", function()
                 local nearest = nil
                 local minDist = math.huge
                 local myPos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position
@@ -2248,8 +2254,8 @@ do
                 if nearest and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                     LocalPlayer.Character.HumanoidRootPart.CFrame = nearest.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, 3)
                 end
-            end})
-            table.insert(buttons, {"防甩飞：关", function()
+            end)
+            page:AddButton("防甩飞：关", function()
                 AntiPushEnabled = not AntiPushEnabled
                 antiPushRef[1].Text = AntiPushEnabled and "防甩飞：开" or "防甩飞：关"
                 if not AntiPushEnabled then
@@ -2257,20 +2263,20 @@ do
                     if char then local root = char:FindFirstChild("HumanoidRootPart"); if root then root.CanCollide = true end end
                 end
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "防甩飞", Text = AntiPushEnabled and "已开启" or "已关闭", Duration = 3})
-            end, antiPushRef})
-            table.insert(buttons, {"跟随最近玩家：关", function()
+            end, antiPushRef)
+            page:AddButton("跟随最近玩家：关", function()
                 FollowNearestEnabled = not FollowNearestEnabled
                 followRef[1].Text = FollowNearestEnabled and "跟随最近玩家：开" or "跟随最近玩家：关"
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "跟随最近玩家", Text = FollowNearestEnabled and "已开启" or "已关闭", Duration = 3})
-            end, followRef})
-            table.insert(buttons, {"查询坐标传送", function()
+            end, followRef)
+            page:AddButton("查询坐标传送", function()
                 local panel = createCoordPanel()
                 panel.Visible = not panel.Visible
-            end})
-            table.insert(buttons, {"传送到指定玩家", function()
+            end)
+            page:AddButton("传送到指定玩家", function()
                 showPlayerSelect()
-            end})
-            table.insert(buttons, {"自瞄：关", function()
+            end)
+            page:AddButton("自瞄：关", function()
                 AimbotEnabled = not AimbotEnabled
                 aimbotRef[1].Text = AimbotEnabled and "自瞄：开" or "自瞄：关"
                 if AimbotEnabled then
@@ -2279,137 +2285,132 @@ do
                     AimbotCircle.Visible = false; if aimbotPanel then aimbotPanel.Visible = false end
                 end
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = AimbotEnabled and "已开启，请在面板中调整半径" or "已关闭", Duration = 3})
-            end, aimbotRef})
-            table.insert(buttons, {"平滑跟随：关", function()
+            end, aimbotRef)
+            page:AddButton("平滑跟随：关", function()
                 SmoothFollowEnabled = not SmoothFollowEnabled
                 smoothRef[1].Text = SmoothFollowEnabled and "平滑跟随：开" or "平滑跟随：关"
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "平滑跟随", Text = SmoothFollowEnabled and "已开启" or "已关闭", Duration = 3})
-            end, smoothRef})
-            table.insert(buttons, {"锁定视角：关", function()
+            end, smoothRef)
+            page:AddButton("锁定视角：关", function()
                 LockViewEnabled = not LockViewEnabled
                 lockRef[1].Text = LockViewEnabled and "锁定视角：开" or "锁定视角：关"
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "锁定视角", Text = LockViewEnabled and "已开启" or "已关闭", Duration = 3})
-            end, lockRef})
-            table.insert(buttons, {"撸管", function()
+            end, lockRef)
+            page:AddButton("撸管", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "撸管", Text = "正在生成工具...", Duration = 3})
                 task.spawn(function() loadLuGuan() end)
-            end})
-            table.insert(buttons, {"飞行控制：关", function()
+            end)
+            page:AddButton("飞行控制：关", function()
                 if flyUIVisible then hideFlyUI(); flyCtrlRef[1].Text = "飞行控制：关" else showFlyUI(); flyCtrlRef[1].Text = "飞行控制：开" end
-            end, flyCtrlRef})
-            table.insert(buttons, {"操人", function()
+            end, flyCtrlRef)
+            page:AddButton("操人", function()
                 if harassEnabled then
                     stopHarass(); harassRef[1].Text = "操人"
                     game:GetService("StarterGui"):SetCore("SendNotification", {Title = "操人", Text = "已停止", Duration = 2})
                 else
                     showHarassSelect()
                 end
-            end, harassRef})
-            table.insert(buttons, {"原地旋转：关", function()
+            end, harassRef)
+            page:AddButton("原地旋转：关", function()
                 SpinEnabled = not SpinEnabled
                 spinRef[1].Text = SpinEnabled and "原地旋转：开" or "原地旋转：关"
                 if SpinEnabled then startSpin() else stopSpin() end
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "原地旋转", Text = SpinEnabled and "已开启" or "已关闭", Duration = 3})
-            end, spinRef})
-            table.insert(buttons, {"操人速度", function()
+            end, spinRef)
+            page:AddButton("操人速度", function()
                 local panel = createHarassSpeedPanel(); panel.Visible = not panel.Visible
-            end})
-            table.insert(buttons, {"旋转速度", function()
+            end)
+            page:AddButton("旋转速度", function()
                 local panel = createSpinSpeedPanel(); panel.Visible = not panel.Visible
-            end})
-            layoutButtonsInPage(page, buttons)
+            end)
         elseif i == 4 then
-            local buttons = {}
             local crossRef, crossSpinRef, antiAFKRef = {}, {}, {}
-            table.insert(buttons, {"显示时间", function()
+            page:AddButton("显示时间", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "显示时间", Text = "正在加载中...", Duration = 5})
                 task.spawn(function() loadstring(game:HttpGet("https://pastebin.com/raw/0zKLyd4W"))() end)
-            end})
-            table.insert(buttons, {"美化包排行榜第一", function()
+            end)
+            page:AddButton("美化包排行榜第一", function()
                 beautifyStats()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "美化包", Text = "数值已修改为999（若游戏支持）", Duration = 3})
-            end})
-            table.insert(buttons, {"准星：关", function()
+            end)
+            page:AddButton("准星：关", function()
                 CrosshairEnabled = not CrosshairEnabled
                 crossRef[1].Text = CrosshairEnabled and "准星：开" or "准星：关"
                 CrosshairFrame.Visible = CrosshairEnabled
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "准星", Text = CrosshairEnabled and "已显示" or "已隐藏", Duration = 3})
-            end, crossRef})
-            table.insert(buttons, {"准星旋转：关", function()
+            end, crossRef)
+            page:AddButton("准星旋转：关", function()
                 CrosshairSpinEnabled = not CrosshairSpinEnabled
                 crossSpinRef[1].Text = CrosshairSpinEnabled and "准星旋转：开" or "准星旋转：关"
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "准星旋转", Text = CrosshairSpinEnabled and "已开启" or "已关闭", Duration = 3})
-            end, crossSpinRef})
-            table.insert(buttons, {"反挂机踢出：关", function()
+            end, crossSpinRef)
+            page:AddButton("反挂机踢出：关", function()
                 antiAFKEnabled = not antiAFKEnabled
                 antiAFKRef[1].Text = antiAFKEnabled and "反挂机踢出：开" or "反挂机踢出：关"
                 if antiAFKEnabled then startAntiAFK() else stopAntiAFK() end
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "反挂机踢出", Text = antiAFKEnabled and "已开启" or "已关闭", Duration = 3})
-            end, antiAFKRef})
-            table.insert(buttons, {"获取实例ID", function()
+            end, antiAFKRef)
+            page:AddButton("获取实例ID", function()
                 local panel = createInstanceIdPanel(); panel.Visible = not panel.Visible
-            end})
-            table.insert(buttons, {"获取数字ID", function()
+            end)
+            page:AddButton("获取数字ID", function()
                 local panel = createPlaceIdPanel(); panel.Visible = not panel.Visible
-            end})
-            table.insert(buttons, {"传送指定服务器", function()
+            end)
+            page:AddButton("传送指定服务器", function()
                 local panel = createTeleportServerPanel(); panel.Visible = not panel.Visible
-            end})
-            table.insert(buttons, {"已保存的服务器", function()
+            end)
+            page:AddButton("已保存的服务器", function()
                 local panel = createSavedServersPanel(); panel.Visible = not panel.Visible
-            end})
-            layoutButtonsInPage(page, buttons)
+            end)
         elseif i == 5 then
-            local buttons = {}
-            table.insert(buttons, {"破坏者谜团2", function()
+            page:AddButton("破坏者谜团2", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "破坏者谜团2", Text = "正在加载中...", Duration = 5})
                 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/PHZMT.NB"))() end)
-            end})
-            table.insert(buttons, {"吃吃世界", function()
+            end)
+            page:AddButton("吃吃世界", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "吃吃世界", Text = "正在加载中...", Duration = 5})
                 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/CCSJ.NB"))() end)
-            end})
-            table.insert(buttons, {"在超市生活一周", function()
+            end)
+            page:AddButton("在超市生活一周", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "在超市生活一周", Text = "正在加载中...", Duration = 5})
                 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCSSHYZ.NB"))() end)
-            end})
-            table.insert(buttons, {"亡命速递", function()
+            end)
+            page:AddButton("亡命速递", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "亡命速递（需在指定服务器运行）", Text = "正在加载中...", Duration = 5})
                 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/WMSD.NB"))() end)
-            end})
-            table.insert(buttons, {"巨剑骑士", function()
+            end)
+            page:AddButton("巨剑骑士", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "巨剑骑士", Text = "正在加载中...", Duration = 5})
                 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/JJQS.NB"))() end)
-            end})
-            table.insert(buttons, {"doors", function()
+            end)
+            page:AddButton("doors", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "doors", Text = "正在加载中...", Duration = 5})
                 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/DOORS.NB"))() end)
-            end})
-            table.insert(buttons, {"盲射", function()
+            end)
+            page:AddButton("盲射", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "盲射", Text = "正在加载中...", Duration = 5})
                 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MS.NB"))() end)
-            end})
-            table.insert(buttons, {"找到按钮", function()
+            end)
+            page:AddButton("找到按钮", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "找到按钮", Text = "正在加载中...", Duration = 5})
                 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZDNN.NB"))() end)
-            end})
-            table.insert(buttons, {"墨水游戏", function()
+            end)
+            page:AddButton("墨水游戏", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "墨水游戏", Text = "正在加载中...", Duration = 5})
                 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MSYS.NB"))() end)
-            end})
-            table.insert(buttons, {"力量传奇", function()
+            end)
+            page:AddButton("力量传奇", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "力量传奇", Text = "正在加载中...", Duration = 5})
                 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/LLCC.NB"))() end)
-            end})
-            table.insert(buttons, {"踢出幸运方块", function()
+            end)
+            page:AddButton("踢出幸运方块", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "踢出幸运方块", Text = "正在加载中...", Duration = 5})
                 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/TCXYFK.NB"))() end)
-            end})
-            table.insert(buttons, {"森林中的99夜", function()
+            end)
+            page:AddButton("森林中的99夜", function()
                 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "森林中的99夜", Text = "正在加载中...", Duration = 5})
                 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SLZD99Y.NB"))() end)
-            end})
-            layoutButtonsInPage(page, buttons)
+            end)
         end
 
         cat.MouseButton1Click:Connect(function()
@@ -2418,7 +2419,7 @@ do
             end
             cat.BackgroundTransparency = 0.5; cat.BackgroundColor3 = Color3.fromRGB(70,70,70)
             selected = cat
-            for _,p in pairs(pages) do p.Visible = false end
+            for _, p in pairs(pages) do p.frame.Visible = false end
             if speedPanel then speedPanel.Visible = false end
             if coordPanel then coordPanel.Visible = false end
             if aimbotPanel then aimbotPanel.Visible = false end
@@ -2428,10 +2429,10 @@ do
             if placeIdPanel then placeIdPanel.Visible = false end
             if teleportServerPanel then teleportServerPanel.Visible = false end
             if savedServersPanel then savedServersPanel.Visible = false end
-            page.Visible = true
-            updateCanvasForPage(page)  -- 切换页面时重新计算滚动范围
+            page.frame.Visible = true
+            page:UpdateCanvas()  -- 确保切换时滚动范围正确
         end)
-        categories[i] = cat; pages[i] = page
+        categories[i] = cat
     end
     for i = 1, 5 do AddCat(i) end
     task.defer(function()
