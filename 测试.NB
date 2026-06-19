@@ -992,7 +992,9 @@ do
     local aimbotPanel = nil
     local harassSpeedPanel = nil
     local spinSpeedPanel = nil
-    local serverIdPanel = nil
+    local instanceIdPanel = nil
+    local placeIdPanel = nil
+    local teleportServerPanel = nil
     local function copyToClipboard(text, label)
         local success = pcall(function()
             if setclipboard then
@@ -1653,122 +1655,51 @@ do
         updateSliderDisplay(360)
         return spinSpeedPanel
     end
-    local function createServerIdPanel()
-        if serverIdPanel then return serverIdPanel end
-        serverIdPanel = Instance.new("Frame")
-        serverIdPanel.Name = "ServerIdPanel"
-        serverIdPanel.Parent = Main
-        serverIdPanel.Size = UDim2.new(0, 380, 0, 420)
-        serverIdPanel.Position = UDim2.new(0.5, -190, 0.5, -210)
-        serverIdPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        serverIdPanel.BackgroundTransparency = 0.2
-        serverIdPanel.Visible = false
-        serverIdPanel.ZIndex = 200
-        local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = serverIdPanel
-        local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = serverIdPanel
-
+    local function createInstanceIdPanel()
+        if instanceIdPanel then return instanceIdPanel end
+        instanceIdPanel = Instance.new("Frame")
+        instanceIdPanel.Name = "InstanceIdPanel"
+        instanceIdPanel.Parent = Main
+        instanceIdPanel.Size = UDim2.new(0, 280, 0, 140)
+        instanceIdPanel.Position = UDim2.new(0.5, -140, 0.5, -70)
+        instanceIdPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        instanceIdPanel.BackgroundTransparency = 0.2
+        instanceIdPanel.Visible = false
+        instanceIdPanel.ZIndex = 200
+        local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = instanceIdPanel
+        local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = instanceIdPanel
         local title = Instance.new("TextLabel")
-        title.Parent = serverIdPanel
+        title.Parent = instanceIdPanel
         title.Size = UDim2.new(1, 0, 0, 25)
         title.Position = UDim2.new(0, 10, 0, 8)
         title.BackgroundTransparency = 1
-        title.Text = "服务器ID管理"
+        title.Text = "实例 ID (JobId)"
         title.TextColor3 = Color3.new(1, 1, 1)
         title.Font = Enum.Font.SourceSansBold
         title.TextSize = 16
-
         local idLabel = Instance.new("TextLabel")
-        idLabel.Name = "ServerIdText"
-        idLabel.Parent = serverIdPanel
-        idLabel.Size = UDim2.new(1, -20, 0, 24)
+        idLabel.Name = "InstanceIdText"
+        idLabel.Parent = instanceIdPanel
+        idLabel.Size = UDim2.new(1, -20, 0, 30)
         idLabel.Position = UDim2.new(0, 10, 0, 40)
         idLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        idLabel.Text = "当前ID: " .. game.JobId
+        idLabel.Text = "ID: 加载中..."
         idLabel.TextColor3 = Color3.new(1, 1, 1)
         idLabel.Font = Enum.Font.SourceSans
-        idLabel.TextSize = 13
+        idLabel.TextSize = 12
         local idCorner = Instance.new("UICorner"); idCorner.CornerRadius = UDim.new(0, 6); idCorner.Parent = idLabel
-
         local copyBtn = Instance.new("TextButton")
-        copyBtn.Parent = serverIdPanel
-        copyBtn.Size = UDim2.new(0, 90, 0, 26)
-        copyBtn.Position = UDim2.new(0, 10, 0, 72)
+        copyBtn.Parent = instanceIdPanel
+        copyBtn.Size = UDim2.new(0, 120, 0, 28)
+        copyBtn.Position = UDim2.new(0.5, -60, 0, 85)
         copyBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-        copyBtn.Text = "复制当前ID"
+        copyBtn.Text = "复制实例ID"
         copyBtn.TextColor3 = Color3.new(1, 1, 1)
         copyBtn.Font = Enum.Font.SourceSansBold
-        copyBtn.TextSize = 13
+        copyBtn.TextSize = 14
         local copyCorner = Instance.new("UICorner"); copyCorner.CornerRadius = UDim.new(0, 6); copyCorner.Parent = copyBtn
-
-        local recordNameInput = Instance.new("TextBox")
-        recordNameInput.Parent = serverIdPanel
-        recordNameInput.Size = UDim2.new(0, 120, 0, 26)
-        recordNameInput.Position = UDim2.new(0, 10, 0, 108)
-        recordNameInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        recordNameInput.PlaceholderText = "服务器名称"
-        recordNameInput.TextColor3 = Color3.new(1, 1, 1)
-        recordNameInput.Font = Enum.Font.SourceSans
-        recordNameInput.TextSize = 13
-        local nameCorner = Instance.new("UICorner"); nameCorner.CornerRadius = UDim.new(0, 6); nameCorner.Parent = recordNameInput
-
-        local recordBtn = Instance.new("TextButton")
-        recordBtn.Parent = serverIdPanel
-        recordBtn.Size = UDim2.new(0, 90, 0, 26)
-        recordBtn.Position = UDim2.new(0, 140, 0, 108)
-        recordBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-        recordBtn.Text = "记录当前ID"
-        recordBtn.TextColor3 = Color3.new(1, 1, 1)
-        recordBtn.Font = Enum.Font.SourceSansBold
-        recordBtn.TextSize = 13
-        local recordCorner = Instance.new("UICorner"); recordCorner.CornerRadius = UDim.new(0, 6); recordCorner.Parent = recordBtn
-
-        local refreshListBtn = Instance.new("TextButton")
-        refreshListBtn.Parent = serverIdPanel
-        refreshListBtn.Size = UDim2.new(0, 80, 0, 26)
-        refreshListBtn.Position = UDim2.new(0, 240, 0, 108)
-        refreshListBtn.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
-        refreshListBtn.Text = "刷新列表"
-        refreshListBtn.TextColor3 = Color3.new(1, 1, 1)
-        refreshListBtn.Font = Enum.Font.SourceSansBold
-        refreshListBtn.TextSize = 13
-        local refreshCorner = Instance.new("UICorner"); refreshCorner.CornerRadius = UDim.new(0, 6); refreshCorner.Parent = refreshListBtn
-
-        local listScrollingFrame = Instance.new("ScrollingFrame")
-        listScrollingFrame.Name = "ServerListFrame"
-        listScrollingFrame.Parent = serverIdPanel
-        listScrollingFrame.Size = UDim2.new(1, -20, 0, 220)
-        listScrollingFrame.Position = UDim2.new(0, 10, 0, 145)
-        listScrollingFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        listScrollingFrame.BorderSizePixel = 0
-        listScrollingFrame.ScrollBarThickness = 4
-        listScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-        listScrollingFrame.ZIndex = 200
-        local listCorner = Instance.new("UICorner"); listCorner.CornerRadius = UDim.new(0, 6); listCorner.Parent = listScrollingFrame
-
-        local inputBox = Instance.new("TextBox")
-        inputBox.Parent = serverIdPanel
-        inputBox.Size = UDim2.new(0, 180, 0, 26)
-        inputBox.Position = UDim2.new(0, 10, 0, 375)
-        inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        inputBox.PlaceholderText = "输入目标服务器ID"
-        inputBox.TextColor3 = Color3.new(1, 1, 1)
-        inputBox.Font = Enum.Font.SourceSans
-        inputBox.TextSize = 13
-        local inputCorner = Instance.new("UICorner"); inputCorner.CornerRadius = UDim.new(0, 6); inputCorner.Parent = inputBox
-
-        local teleportBtn = Instance.new("TextButton")
-        teleportBtn.Parent = serverIdPanel
-        teleportBtn.Size = UDim2.new(0, 120, 0, 26)
-        teleportBtn.Position = UDim2.new(0, 200, 0, 375)
-        teleportBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-        teleportBtn.Text = "传送到指定服务器"
-        teleportBtn.TextColor3 = Color3.new(1, 1, 1)
-        teleportBtn.Font = Enum.Font.SourceSansBold
-        teleportBtn.TextSize = 13
-        local teleportCorner = Instance.new("UICorner"); teleportCorner.CornerRadius = UDim.new(0, 6); teleportCorner.Parent = teleportBtn
-
         local closeBtn = Instance.new("TextButton")
-        closeBtn.Parent = serverIdPanel
+        closeBtn.Parent = instanceIdPanel
         closeBtn.Size = UDim2.new(0, 22, 0, 22)
         closeBtn.Position = UDim2.new(1, -26, 0, 6)
         closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
@@ -1776,146 +1707,154 @@ do
         closeBtn.TextSize = 12
         closeBtn.Font = Enum.Font.SourceSansBold
         local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-        closeBtn.MouseButton1Click:Connect(function() serverIdPanel.Visible = false end)
-
-        local serverListFile = "server_list_" .. plrId .. ".txt"
-        local function loadServerList()
-            local list = {}
-            local success, data = pcall(function() return readfile(serverListFile) end)
-            if success and data then
-                for line in data:gmatch("[^\r\n]+") do
-                    local name, id = line:match("^([^|]*)|([^|]*)$")
-                    if name and id then
-                        table.insert(list, {name = name, id = id})
-                    end
-                end
-            end
-            return list
+        closeBtn.MouseButton1Click:Connect(function() instanceIdPanel.Visible = false end)
+        local function updateIdDisplay()
+            idLabel.Text = "ID: " .. game.JobId
         end
-        local function saveServerList(list)
-            local lines = {}
-            for _, entry in ipairs(list) do
-                table.insert(lines, entry.name .. "|" .. entry.id)
-            end
-            pcall(function() writefile(serverListFile, table.concat(lines, "\n")) end)
-        end
-        local function refreshListUI()
-            for _, child in ipairs(listScrollingFrame:GetChildren()) do
-                if child:IsA("Frame") then child:Destroy() end
-            end
-            local list = loadServerList()
-            local y = 0
-            for _, entry in ipairs(list) do
-                local row = Instance.new("Frame")
-                row.Parent = listScrollingFrame
-                row.Size = UDim2.new(1, -6, 0, 30)
-                row.Position = UDim2.new(0, 3, 0, y)
-                row.BackgroundTransparency = 1
-                row.ZIndex = 201
-
-                local nameBtn = Instance.new("TextButton")
-                nameBtn.Parent = row
-                nameBtn.Size = UDim2.new(0, 180, 0, 26)
-                nameBtn.Position = UDim2.new(0, 0, 0, 2)
-                nameBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-                nameBtn.Text = entry.name .. " (" .. entry.id .. ")"
-                nameBtn.TextColor3 = Color3.new(1, 1, 1)
-                nameBtn.Font = Enum.Font.SourceSans
-                nameBtn.TextSize = 12
-                nameBtn.AutoButtonColor = false
-                nameBtn.TextXAlignment = Enum.TextXAlignment.Left
-                nameBtn.TextTruncate = Enum.TextTruncate.AtEnd
-                local nameCorner = Instance.new("UICorner"); nameCorner.CornerRadius = UDim.new(0, 4); nameCorner.Parent = nameBtn
-                nameBtn.MouseButton1Click:Connect(function()
-                    pcall(function() setclipboard(entry.id) end)
-                    game:GetService("StarterGui"):SetCore("SendNotification", {
-                        Title = "服务器ID",
-                        Text = "已复制ID: " .. entry.id,
-                        Duration = 2
-                    })
-                end)
-
-                local teleportSmallBtn = Instance.new("TextButton")
-                teleportSmallBtn.Parent = row
-                teleportSmallBtn.Size = UDim2.new(0, 60, 0, 26)
-                teleportSmallBtn.Position = UDim2.new(0, 190, 0, 2)
-                teleportSmallBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-                teleportSmallBtn.Text = "传送"
-                teleportSmallBtn.TextColor3 = Color3.new(1, 1, 1)
-                teleportSmallBtn.Font = Enum.Font.SourceSansBold
-                teleportSmallBtn.TextSize = 12
-                local teleportSmallCorner = Instance.new("UICorner"); teleportSmallCorner.CornerRadius = UDim.new(0, 4); teleportSmallCorner.Parent = teleportSmallBtn
-                teleportSmallBtn.MouseButton1Click:Connect(function()
-                    pcall(function()
-                        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, entry.id)
-                    end)
-                end)
-
-                local deleteBtn = Instance.new("TextButton")
-                deleteBtn.Parent = row
-                deleteBtn.Size = UDim2.new(0, 40, 0, 26)
-                deleteBtn.Position = UDim2.new(0, 258, 0, 2)
-                deleteBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-                deleteBtn.Text = "X"
-                deleteBtn.TextColor3 = Color3.new(1, 1, 1)
-                deleteBtn.Font = Enum.Font.SourceSansBold
-                deleteBtn.TextSize = 12
-                local deleteCorner = Instance.new("UICorner"); deleteCorner.CornerRadius = UDim.new(0, 4); deleteCorner.Parent = deleteBtn
-                deleteBtn.MouseButton1Click:Connect(function()
-                    local updatedList = {}
-                    for _, e in ipairs(loadServerList()) do
-                        if e.id ~= entry.id then
-                            table.insert(updatedList, e)
-                        end
-                    end
-                    saveServerList(updatedList)
-                    refreshListUI()
-                end)
-
-                y = y + 35
-            end
-            listScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, y)
-        end
-
         copyBtn.MouseButton1Click:Connect(function()
             pcall(function() setclipboard(game.JobId) end)
             game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "服务器ID",
+                Title = "实例ID",
                 Text = "✅ 已复制: " .. game.JobId,
                 Duration = 3,
             })
         end)
-
-        recordBtn.MouseButton1Click:Connect(function()
-            local name = recordNameInput.Text
-            if name == "" then
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "记录失败",
-                    Text = "请输入服务器名称",
-                    Duration = 2,
-                })
-                return
+        instanceIdPanel:GetPropertyChangedSignal("Visible"):Connect(function()
+            if instanceIdPanel.Visible then
+                updateIdDisplay()
             end
-            local list = loadServerList()
-            table.insert(list, {name = name, id = game.JobId})
-            saveServerList(list)
-            recordNameInput.Text = ""
-            refreshListUI()
+        end)
+        return instanceIdPanel
+    end
+    local function createPlaceIdPanel()
+        if placeIdPanel then return placeIdPanel end
+        placeIdPanel = Instance.new("Frame")
+        placeIdPanel.Name = "PlaceIdPanel"
+        placeIdPanel.Parent = Main
+        placeIdPanel.Size = UDim2.new(0, 280, 0, 140)
+        placeIdPanel.Position = UDim2.new(0.5, -140, 0.5, -70)
+        placeIdPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        placeIdPanel.BackgroundTransparency = 0.2
+        placeIdPanel.Visible = false
+        placeIdPanel.ZIndex = 200
+        local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = placeIdPanel
+        local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = placeIdPanel
+        local title = Instance.new("TextLabel")
+        title.Parent = placeIdPanel
+        title.Size = UDim2.new(1, 0, 0, 25)
+        title.Position = UDim2.new(0, 10, 0, 8)
+        title.BackgroundTransparency = 1
+        title.Text = "数字 ID (PlaceId)"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.Font = Enum.Font.SourceSansBold
+        title.TextSize = 16
+        local idLabel = Instance.new("TextLabel")
+        idLabel.Name = "PlaceIdText"
+        idLabel.Parent = placeIdPanel
+        idLabel.Size = UDim2.new(1, -20, 0, 30)
+        idLabel.Position = UDim2.new(0, 10, 0, 40)
+        idLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        idLabel.Text = "ID: 加载中..."
+        idLabel.TextColor3 = Color3.new(1, 1, 1)
+        idLabel.Font = Enum.Font.SourceSans
+        idLabel.TextSize = 14
+        local idCorner = Instance.new("UICorner"); idCorner.CornerRadius = UDim.new(0, 6); idCorner.Parent = idLabel
+        local copyBtn = Instance.new("TextButton")
+        copyBtn.Parent = placeIdPanel
+        copyBtn.Size = UDim2.new(0, 120, 0, 28)
+        copyBtn.Position = UDim2.new(0.5, -60, 0, 85)
+        copyBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        copyBtn.Text = "复制数字ID"
+        copyBtn.TextColor3 = Color3.new(1, 1, 1)
+        copyBtn.Font = Enum.Font.SourceSansBold
+        copyBtn.TextSize = 14
+        local copyCorner = Instance.new("UICorner"); copyCorner.CornerRadius = UDim.new(0, 6); copyCorner.Parent = copyBtn
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Parent = placeIdPanel
+        closeBtn.Size = UDim2.new(0, 22, 0, 22)
+        closeBtn.Position = UDim2.new(1, -26, 0, 6)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeBtn.Text = "X"
+        closeBtn.TextSize = 12
+        closeBtn.Font = Enum.Font.SourceSansBold
+        local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+        closeBtn.MouseButton1Click:Connect(function() placeIdPanel.Visible = false end)
+        local function updateIdDisplay()
+            idLabel.Text = "ID: " .. game.PlaceId
+        end
+        copyBtn.MouseButton1Click:Connect(function()
+            pcall(function() setclipboard(game.PlaceId) end)
             game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "记录成功",
-                Text = "已保存: " .. name,
-                Duration = 2,
+                Title = "数字ID",
+                Text = "✅ 已复制: " .. game.PlaceId,
+                Duration = 3,
             })
         end)
-
-        refreshListBtn.MouseButton1Click:Connect(refreshListUI)
-
+        placeIdPanel:GetPropertyChangedSignal("Visible"):Connect(function()
+            if placeIdPanel.Visible then
+                updateIdDisplay()
+            end
+        end)
+        return placeIdPanel
+    end
+    local function createTeleportServerPanel()
+        if teleportServerPanel then return teleportServerPanel end
+        teleportServerPanel = Instance.new("Frame")
+        teleportServerPanel.Name = "TeleportServerPanel"
+        teleportServerPanel.Parent = Main
+        teleportServerPanel.Size = UDim2.new(0, 300, 0, 120)
+        teleportServerPanel.Position = UDim2.new(0.5, -150, 0.5, -60)
+        teleportServerPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        teleportServerPanel.BackgroundTransparency = 0.2
+        teleportServerPanel.Visible = false
+        teleportServerPanel.ZIndex = 200
+        local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = teleportServerPanel
+        local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = teleportServerPanel
+        local title = Instance.new("TextLabel")
+        title.Parent = teleportServerPanel
+        title.Size = UDim2.new(1, 0, 0, 25)
+        title.Position = UDim2.new(0, 10, 0, 8)
+        title.BackgroundTransparency = 1
+        title.Text = "传送指定服务器"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.Font = Enum.Font.SourceSansBold
+        title.TextSize = 16
+        local inputBox = Instance.new("TextBox")
+        inputBox.Parent = teleportServerPanel
+        inputBox.Size = UDim2.new(0, 200, 0, 28)
+        inputBox.Position = UDim2.new(0, 10, 0, 45)
+        inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        inputBox.PlaceholderText = "输入服务器实例ID (JobId)"
+        inputBox.TextColor3 = Color3.new(1, 1, 1)
+        inputBox.Font = Enum.Font.SourceSans
+        inputBox.TextSize = 13
+        local inputCorner = Instance.new("UICorner"); inputCorner.CornerRadius = UDim.new(0, 6); inputCorner.Parent = inputBox
+        local teleportBtn = Instance.new("TextButton")
+        teleportBtn.Parent = teleportServerPanel
+        teleportBtn.Size = UDim2.new(0, 80, 0, 28)
+        teleportBtn.Position = UDim2.new(0, 220, 0, 45)
+        teleportBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+        teleportBtn.Text = "传送"
+        teleportBtn.TextColor3 = Color3.new(1, 1, 1)
+        teleportBtn.Font = Enum.Font.SourceSansBold
+        teleportBtn.TextSize = 14
+        local teleportCorner = Instance.new("UICorner"); teleportCorner.CornerRadius = UDim.new(0, 6); teleportCorner.Parent = teleportBtn
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Parent = teleportServerPanel
+        closeBtn.Size = UDim2.new(0, 22, 0, 22)
+        closeBtn.Position = UDim2.new(1, -26, 0, 6)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeBtn.Text = "X"
+        closeBtn.TextSize = 12
+        closeBtn.Font = Enum.Font.SourceSansBold
+        local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+        closeBtn.MouseButton1Click:Connect(function() teleportServerPanel.Visible = false end)
         teleportBtn.MouseButton1Click:Connect(function()
             local targetId = inputBox.Text
             if targetId == "" then
                 game:GetService("StarterGui"):SetCore("SendNotification", {
                     Title = "传送失败",
-                    Text = "请输入目标服务器ID",
+                    Text = "请输入服务器实例ID",
                     Duration = 3,
                 })
                 return
@@ -1924,15 +1863,7 @@ do
                 game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, targetId)
             end)
         end)
-
-        serverIdPanel:GetPropertyChangedSignal("Visible"):Connect(function()
-            if serverIdPanel.Visible then
-                idLabel.Text = "当前ID: " .. game.JobId
-                refreshListUI()
-            end
-        end)
-
-        return serverIdPanel
+        return teleportServerPanel
     end
     local function AddCat(i)
         local cat = Instance.new("TextButton")
@@ -2384,8 +2315,16 @@ do
                     Duration = 3
                 })
             end)
-            addSemiTransparentButton(page, "服务器ID", page.AbsoluteSize.X * 0.52, 4 + 2*45, function()
-                local panel = createServerIdPanel()
+            addSemiTransparentButton(page, "获取实例ID", 4, 4 + 3*45, function()
+                local panel = createInstanceIdPanel()
+                panel.Visible = not panel.Visible
+            end)
+            addSemiTransparentButton(page, "获取数字ID", page.AbsoluteSize.X * 0.52, 4 + 3*45, function()
+                local panel = createPlaceIdPanel()
+                panel.Visible = not panel.Visible
+            end)
+            addSemiTransparentButton(page, "传送指定服务器", 4, 4 + 4*45, function()
+                local panel = createTeleportServerPanel()
                 panel.Visible = not panel.Visible
             end)
         elseif i == 5 then
@@ -2540,7 +2479,9 @@ do
             if aimbotPanel then aimbotPanel.Visible = false end
             if harassSpeedPanel then harassSpeedPanel.Visible = false end
             if spinSpeedPanel then spinSpeedPanel.Visible = false end
-            if serverIdPanel then serverIdPanel.Visible = false end
+            if instanceIdPanel then instanceIdPanel.Visible = false end
+            if placeIdPanel then placeIdPanel.Visible = false end
+            if teleportServerPanel then teleportServerPanel.Visible = false end
             page.Visible = true
         end)
         categories[i] = cat; pages[i] = page
