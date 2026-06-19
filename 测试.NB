@@ -1802,14 +1802,15 @@ do
         teleportServerPanel = Instance.new("Frame")
         teleportServerPanel.Name = "TeleportServerPanel"
         teleportServerPanel.Parent = Main
-        teleportServerPanel.Size = UDim2.new(0, 300, 0, 120)
-        teleportServerPanel.Position = UDim2.new(0.5, -150, 0.5, -60)
+        teleportServerPanel.Size = UDim2.new(0, 300, 0, 260)
+        teleportServerPanel.Position = UDim2.new(0.5, -150, 0.5, -130)
         teleportServerPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         teleportServerPanel.BackgroundTransparency = 0.2
         teleportServerPanel.Visible = false
         teleportServerPanel.ZIndex = 200
         local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = teleportServerPanel
         local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(100, 100, 100); stroke.Parent = teleportServerPanel
+
         local title = Instance.new("TextLabel")
         title.Parent = teleportServerPanel
         title.Size = UDim2.new(1, 0, 0, 25)
@@ -1819,26 +1820,85 @@ do
         title.TextColor3 = Color3.new(1, 1, 1)
         title.Font = Enum.Font.SourceSansBold
         title.TextSize = 16
-        local inputBox = Instance.new("TextBox")
-        inputBox.Parent = teleportServerPanel
-        inputBox.Size = UDim2.new(0, 200, 0, 28)
-        inputBox.Position = UDim2.new(0, 10, 0, 45)
-        inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        inputBox.PlaceholderText = "输入服务器实例ID (JobId)"
-        inputBox.TextColor3 = Color3.new(1, 1, 1)
-        inputBox.Font = Enum.Font.SourceSans
-        inputBox.TextSize = 13
-        local inputCorner = Instance.new("UICorner"); inputCorner.CornerRadius = UDim.new(0, 6); inputCorner.Parent = inputBox
-        local teleportBtn = Instance.new("TextButton")
-        teleportBtn.Parent = teleportServerPanel
-        teleportBtn.Size = UDim2.new(0, 80, 0, 28)
-        teleportBtn.Position = UDim2.new(0, 220, 0, 45)
-        teleportBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-        teleportBtn.Text = "传送"
-        teleportBtn.TextColor3 = Color3.new(1, 1, 1)
-        teleportBtn.Font = Enum.Font.SourceSansBold
-        teleportBtn.TextSize = 14
-        local teleportCorner = Instance.new("UICorner"); teleportCorner.CornerRadius = UDim.new(0, 6); teleportCorner.Parent = teleportBtn
+
+        local idLabel = Instance.new("TextLabel")
+        idLabel.Name = "CurrentJobId"
+        idLabel.Parent = teleportServerPanel
+        idLabel.Size = UDim2.new(1, -20, 0, 24)
+        idLabel.Position = UDim2.new(0, 10, 0, 40)
+        idLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        idLabel.Text = "当前实例: " .. game.JobId
+        idLabel.TextColor3 = Color3.new(1, 1, 1)
+        idLabel.Font = Enum.Font.SourceSans
+        idLabel.TextSize = 12
+        local idCorner = Instance.new("UICorner"); idCorner.CornerRadius = UDim.new(0, 6); idCorner.Parent = idLabel
+
+        local nameInput = Instance.new("TextBox")
+        nameInput.Parent = teleportServerPanel
+        nameInput.Size = UDim2.new(0, 120, 0, 26)
+        nameInput.Position = UDim2.new(0, 10, 0, 72)
+        nameInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        nameInput.PlaceholderText = "名称"
+        nameInput.TextColor3 = Color3.new(1, 1, 1)
+        nameInput.Font = Enum.Font.SourceSans
+        nameInput.TextSize = 13
+        local nameCorner = Instance.new("UICorner"); nameCorner.CornerRadius = UDim.new(0, 6); nameCorner.Parent = nameInput
+
+        local recordBtn = Instance.new("TextButton")
+        recordBtn.Parent = teleportServerPanel
+        recordBtn.Size = UDim2.new(0, 80, 0, 26)
+        recordBtn.Position = UDim2.new(0, 140, 0, 72)
+        recordBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+        recordBtn.Text = "记录当前"
+        recordBtn.TextColor3 = Color3.new(1, 1, 1)
+        recordBtn.Font = Enum.Font.SourceSansBold
+        recordBtn.TextSize = 13
+        local recordCorner = Instance.new("UICorner"); recordCorner.CornerRadius = UDim.new(0, 6); recordCorner.Parent = recordBtn
+
+        local refreshBtn = Instance.new("TextButton")
+        refreshBtn.Parent = teleportServerPanel
+        refreshBtn.Size = UDim2.new(0, 60, 0, 26)
+        refreshBtn.Position = UDim2.new(0, 230, 0, 72)
+        refreshBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        refreshBtn.Text = "刷新"
+        refreshBtn.TextColor3 = Color3.new(1, 1, 1)
+        refreshBtn.Font = Enum.Font.SourceSansBold
+        refreshBtn.TextSize = 13
+        local refreshCorner = Instance.new("UICorner"); refreshCorner.CornerRadius = UDim.new(0, 6); refreshCorner.Parent = refreshBtn
+
+        local listFrame = Instance.new("ScrollingFrame")
+        listFrame.Name = "ServerList"
+        listFrame.Parent = teleportServerPanel
+        listFrame.Size = UDim2.new(1, -20, 0, 100)
+        listFrame.Position = UDim2.new(0, 10, 0, 105)
+        listFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        listFrame.BorderSizePixel = 0
+        listFrame.ScrollBarThickness = 4
+        listFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+        local listCorner = Instance.new("UICorner"); listCorner.CornerRadius = UDim.new(0, 6); listCorner.Parent = listFrame
+
+        local quickInput = Instance.new("TextBox")
+        quickInput.Parent = teleportServerPanel
+        quickInput.Size = UDim2.new(0, 180, 0, 26)
+        quickInput.Position = UDim2.new(0, 10, 0, 215)
+        quickInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        quickInput.PlaceholderText = "输入实例ID"
+        quickInput.TextColor3 = Color3.new(1, 1, 1)
+        quickInput.Font = Enum.Font.SourceSans
+        quickInput.TextSize = 13
+        local quickCorner = Instance.new("UICorner"); quickCorner.CornerRadius = UDim.new(0, 6); quickCorner.Parent = quickInput
+
+        local goBtn = Instance.new("TextButton")
+        goBtn.Parent = teleportServerPanel
+        goBtn.Size = UDim2.new(0, 80, 0, 26)
+        goBtn.Position = UDim2.new(0, 200, 0, 215)
+        goBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 200)
+        goBtn.Text = "即时传送"
+        goBtn.TextColor3 = Color3.new(1, 1, 1)
+        goBtn.Font = Enum.Font.SourceSansBold
+        goBtn.TextSize = 13
+        local goCorner = Instance.new("UICorner"); goCorner.CornerRadius = UDim.new(0, 6); goCorner.Parent = goBtn
+
         local closeBtn = Instance.new("TextButton")
         closeBtn.Parent = teleportServerPanel
         closeBtn.Size = UDim2.new(0, 22, 0, 22)
@@ -1849,20 +1909,122 @@ do
         closeBtn.Font = Enum.Font.SourceSansBold
         local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
         closeBtn.MouseButton1Click:Connect(function() teleportServerPanel.Visible = false end)
-        teleportBtn.MouseButton1Click:Connect(function()
-            local targetId = inputBox.Text
-            if targetId == "" then
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "传送失败",
-                    Text = "请输入服务器实例ID",
-                    Duration = 3,
-                })
-                return
-            end
+
+        local serverListFile = "server_list_" .. plrId .. ".txt"
+        local function loadList()
+            local list = {}
             pcall(function()
-                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, targetId)
+                if isfile(serverListFile) then
+                    for line in readfile(serverListFile):gmatch("[^\r\n]+") do
+                        local name, id = line:match("^([^|]*)|([^|]*)$")
+                        if name and id then table.insert(list, {name = name, id = id}) end
+                    end
+                end
+            end)
+            return list
+        end
+        local function saveList(list)
+            local lines = {}
+            for _, v in ipairs(list) do
+                table.insert(lines, v.name .. "|" .. v.id)
+            end
+            pcall(function() writefile(serverListFile, table.concat(lines, "\n")) end)
+        end
+        local function refreshList()
+            for _, child in ipairs(listFrame:GetChildren()) do
+                if child:IsA("Frame") then child:Destroy() end
+            end
+            local list = loadList()
+            local y = 0
+            for _, entry in ipairs(list) do
+                local row = Instance.new("Frame")
+                row.Parent = listFrame
+                row.Size = UDim2.new(1, -4, 0, 28)
+                row.Position = UDim2.new(0, 2, 0, y)
+                row.BackgroundTransparency = 1
+
+                local nameBtn = Instance.new("TextButton")
+                nameBtn.Parent = row
+                nameBtn.Size = UDim2.new(0, 160, 0, 24)
+                nameBtn.Position = UDim2.new(0, 0, 0, 2)
+                nameBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                nameBtn.Text = entry.name
+                nameBtn.TextColor3 = Color3.new(1, 1, 1)
+                nameBtn.Font = Enum.Font.SourceSans
+                nameBtn.TextSize = 12
+                nameBtn.AutoButtonColor = false
+                local nameCorner = Instance.new("UICorner"); nameCorner.CornerRadius = UDim.new(0, 4); nameCorner.Parent = nameBtn
+
+                local teleBtn = Instance.new("TextButton")
+                teleBtn.Parent = row
+                teleBtn.Size = UDim2.new(0, 50, 0, 24)
+                teleBtn.Position = UDim2.new(0, 165, 0, 2)
+                teleBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+                teleBtn.Text = "传送"
+                teleBtn.TextColor3 = Color3.new(1, 1, 1)
+                teleBtn.Font = Enum.Font.SourceSansBold
+                teleBtn.TextSize = 12
+                local teleCorner = Instance.new("UICorner"); teleCorner.CornerRadius = UDim.new(0, 4); teleCorner.Parent = teleBtn
+                teleBtn.MouseButton1Click:Connect(function()
+                    pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, entry.id)
+                    end)
+                end)
+
+                local delBtn = Instance.new("TextButton")
+                delBtn.Parent = row
+                delBtn.Size = UDim2.new(0, 36, 0, 24)
+                delBtn.Position = UDim2.new(0, 220, 0, 2)
+                delBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                delBtn.Text = "X"
+                delBtn.TextColor3 = Color3.new(1, 1, 1)
+                delBtn.Font = Enum.Font.SourceSansBold
+                delBtn.TextSize = 12
+                local delCorner = Instance.new("UICorner"); delCorner.CornerRadius = UDim.new(0, 4); delCorner.Parent = delBtn
+                delBtn.MouseButton1Click:Connect(function()
+                    local newList = {}
+                    for _, e in ipairs(loadList()) do
+                        if e.id ~= entry.id then table.insert(newList, e) end
+                    end
+                    saveList(newList)
+                    refreshList()
+                end)
+
+                y = y + 32
+            end
+            listFrame.CanvasSize = UDim2.new(0, 0, 0, y)
+        end
+
+        recordBtn.MouseButton1Click:Connect(function()
+            local name = nameInput.Text
+            if name == "" then name = "未命名" end
+            local list = loadList()
+            table.insert(list, {name = name, id = game.JobId})
+            saveList(list)
+            nameInput.Text = ""
+            refreshList()
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "记录成功",
+                Text = "已保存 " .. name,
+                Duration = 2
+            })
+        end)
+        refreshBtn.MouseButton1Click:Connect(refreshList)
+        goBtn.MouseButton1Click:Connect(function()
+            local id = quickInput.Text
+            if id == "" then return end
+            pcall(function()
+                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, id)
             end)
         end)
+
+        teleportServerPanel:GetPropertyChangedSignal("Visible"):Connect(function()
+            if teleportServerPanel.Visible then
+                idLabel.Text = "当前实例: " .. game.JobId
+                refreshList()
+            end
+        end)
+
         return teleportServerPanel
     end
     local function AddCat(i)
@@ -2315,290 +2477,17 @@ do
                     Duration = 3
                 })
             end)
-            addSemiTransparentButton(page, "获取实例ID", 4, 4 + 3*45, function()
+            addSemiTransparentButton(page, "获取实例ID", page.AbsoluteSize.X * 0.52, 4 + 2*45, function()
                 local panel = createInstanceIdPanel()
                 panel.Visible = not panel.Visible
             end)
-            addSemiTransparentButton(page, "获取数字ID", page.AbsoluteSize.X * 0.52, 4 + 3*45, function()
+            addSemiTransparentButton(page, "获取数字ID", 4, 4 + 3*45, function()
                 local panel = createPlaceIdPanel()
                 panel.Visible = not panel.Visible
             end)
-            addSemiTransparentButton(page, "传送指定服务器", 4, 4 + 4*45, function()
-                local panel = createTeleportServerPanel()
-                panel.Visible = not panel.Visible
-            end)
-        elseif i == 5 then
-            local function addSemiTransparentButton(page, txt, posX, posY, callback)
-                local btn = Instance.new("TextButton")
-                btn.Parent = page
-                btn.BackgroundColor3 = Color3.new(0, 0, 0)
-                btn.BackgroundTransparency = 0.5
-                btn.Size = UDim2.new(0.48, 0, 0, 40)
-                btn.Position = UDim2.new(0, posX, 0, posY)
-                btn.Text = txt
-                btn.TextColor3 = Color3.new(1, 1, 1)
-                btn.TextSize = 14
-                btn.AutoButtonColor = false
-                btn.ZIndex = 21
-                local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 6); corner.Parent = btn
-                if callback then btn.MouseButton1Click:Connect(callback) end
-                return btn
-            end
-            local posX1, posX2 = 4, page.AbsoluteSize.X * 0.52
-            local rowHeight = 45
-            addSemiTransparentButton(page, "破坏者谜团2", posX1, 4, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "破坏者谜团2",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
-                task.spawn(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/PHZMT.NB"))()
-                end)
-            end)
-            addSemiTransparentButton(page, "吃吃世界", posX2, 4, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "吃吃世界",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
-                task.spawn(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/CCSJ.NB"))()
-                end)
-            end)
-            addSemiTransparentButton(page, "在超市生活一周", posX1, 4 + rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "在超市生活一周",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
-                task.spawn(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCSSHYZ.NB"))()
-                end)
-            end)
-            addSemiTransparentButton(page, "亡命速递", posX2, 4 + rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "亡命速递（需在指定服务器运行）",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
-                task.spawn(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/WMSD.NB"))()
-                end)
-            end)
-            addSemiTransparentButton(page, "巨剑骑士", posX1, 4 + 2*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "巨剑骑士",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
-                task.spawn(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/JJQS.NB"))()
-                end)
-            end)
-            addSemiTransparentButton(page, "doors", posX2, 4 + 2*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "doors",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
-                task.spawn(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/DOORS.NB"))()
-                end)
-            end)
-            addSemiTransparentButton(page, "盲射", posX1, 4 + 3*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "盲射",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
-                task.spawn(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MS.NB"))()
-                end)
-            end)
-            addSemiTransparentButton(page, "找到按钮", posX2, 4 + 3*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "找到按钮",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
-                task.spawn(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZDNN.NB"))()
-                end)
-            end)
-            addSemiTransparentButton(page, "墨水游戏", posX1, 4 + 4*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "墨水游戏",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
-                task.spawn(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MSYS.NB"))()
-                end)
-            end)
-            addSemiTransparentButton(page, "力量传奇", posX2, 4 + 4*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "力量传奇",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
-                task.spawn(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/LLCC.NB"))()
-                end)
-            end)
-            addSemiTransparentButton(page, "踢出幸运方块", posX1, 4 + 5*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "踢出幸运方块",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
-                task.spawn(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/TCXYFK.NB"))()
-                end)
-            end)
-            addSemiTransparentButton(page, "森林中的99夜", posX2, 4 + 5*rowHeight, function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "森林中的99夜",
-                    Text = "正在加载中...",
-                    Duration = 5
-                })
-                task.spawn(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SLZD99Y.NB"))()
-                end)
-            end)
-        end
-        cat.MouseButton1Click:Connect(function()
-            if selected then
-                selected.BackgroundTransparency = 0.8; selected.BackgroundColor3 = Color3.fromRGB(25,25,25)
-            end
-            cat.BackgroundTransparency = 0.5; cat.BackgroundColor3 = Color3.fromRGB(70,70,70)
-            selected = cat
-            for _,p in pairs(pages) do p.Visible = false end
-            if speedPanel then speedPanel.Visible = false end
-            if coordPanel then coordPanel.Visible = false end
-            if aimbotPanel then aimbotPanel.Visible = false end
-            if harassSpeedPanel then harassSpeedPanel.Visible = false end
-            if spinSpeedPanel then spinSpeedPanel.Visible = false end
-            if instanceIdPanel then instanceIdPanel.Visible = false end
-            if placeIdPanel then placeIdPanel.Visible = false end
-            if teleportServerPanel then teleportServerPanel.Visible = false end
-            page.Visible = true
-        end)
-        categories[i] = cat; pages[i] = page
-    end
-    for i = 1, 5 do AddCat(i) end
-    task.defer(function()
-        if categories[1] then categories[1]:MouseButton1Click() end
-    end)
-    local TopBar = Instance.new("Frame")
-    TopBar.Name = "TopBar"
-    TopBar.Parent = Main
-    TopBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    TopBar.Size = UDim2.new(1, 0, 0, 40)
-    TopBar.ZIndex = 15
-    local TopUICorner = Instance.new("UICorner"); TopUICorner.CornerRadius = UDim.new(0, 10); TopUICorner.Parent = TopBar
-    local Title = Instance.new("TextLabel")
-    Title.Name = "Title"
-    Title.Parent = TopBar
-    Title.BackgroundTransparency = 1
-    Title.Size = UDim2.new(1, -100, 1, 0)
-    Title.Position = UDim2.new(0, 10, 0, 0)
-    Title.Font = Enum.Font.ArialBold
-    Title.Text = "恐脚本--通用" .. string.rep(" ", 6) .. "您已执行 " .. count .. " 次，谢谢您的支持！"
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 18
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.ZIndex = 16
-    local MinimizeBtn = Instance.new("TextButton")
-    MinimizeBtn.Parent = TopBar
-    MinimizeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    MinimizeBtn.Size = UDim2.new(0, 36, 0, 32)
-    MinimizeBtn.Position = UDim2.new(1, -86, 0, 4)
-    MinimizeBtn.Font = Enum.Font.ArialBold
-    MinimizeBtn.Text = "—"
-    MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    MinimizeBtn.TextSize = 20
-    MinimizeBtn.ZIndex = 17
-    local MinCorner = Instance.new("UICorner"); MinCorner.CornerRadius = UDim.new(0, 6); MinCorner.Parent = MinimizeBtn
-    local CloseBtn = Instance.new("TextButton")
-    CloseBtn.Parent = TopBar
-    CloseBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    CloseBtn.Size = UDim2.new(0, 36, 0, 32)
-    CloseBtn.Position = UDim2.new(1, -46, 0, 4)
-    CloseBtn.Font = Enum.Font.ArialBold
-    CloseBtn.Text = "X"
-    CloseBtn.TextColor3 = Color3.new(1,1,1)
-    CloseBtn.TextSize = 20
-    CloseBtn.ZIndex = 17
-    local CloseCorner = Instance.new("UICorner"); CloseCorner.CornerRadius = UDim.new(0, 6); CloseCorner.Parent = CloseBtn
-    local ToggleBtn = Instance.new("TextButton")
-    ToggleBtn.Parent = ScreenGui
-    ToggleBtn.BackgroundColor3 = Color3.new(0, 0, 0)
-    ToggleBtn.BackgroundTransparency = 0.5
-    ToggleBtn.Position = UDim2.new(0.8, 0, 0.3, 0)
-    ToggleBtn.Size = UDim2.new(0, 140, 0, 50)
-    ToggleBtn.Font = Enum.Font.ArialBold
-    ToggleBtn.Text = "打开菜单"
-    ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleBtn.TextSize = 20
-    ToggleBtn.ZIndex = 100
-    local ToggleCorner = Instance.new("UICorner"); ToggleCorner.CornerRadius = UDim.new(0, 8); ToggleCorner.Parent = ToggleBtn
-    local dragging, dragInput, dragStartPos, btnStartPos = false, nil, nil, nil
-    ToggleBtn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            if not dragging and not dragInput then
-                dragging = true; dragInput = input; dragStartPos = input.Position; btnStartPos = ToggleBtn.Position
-            end
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and input == dragInput then
-            local delta = input.Position - dragStartPos
-            ToggleBtn.Position = UDim2.new(btnStartPos.X.Scale, btnStartPos.X.Offset + delta.X, btnStartPos.Y.Scale, btnStartPos.Y.Offset + delta.Y)
-        end
-    end)
-    ToggleBtn.InputEnded:Connect(function(input)
-        if input == dragInput then
-            dragging = false; dragInput = nil
-        end
-    end)
-    ToggleBtn.MouseButton1Click:Connect(function()
-        Main.Visible = not Main.Visible
-        ToggleBtn.Text = Main.Visible and "关闭菜单" or "打开菜单"
-    end)
-    MinimizeBtn.MouseButton1Click:Connect(function()
-        Main.Visible = false; ToggleBtn.Text = "打开菜单"
-    end)
-    CloseBtn.MouseButton1Click:Connect(function()
-        ScreenGui:Destroy()
-    end)
-    local beans = {"🤓", "😎", "🥳"}
-    local weight = {1, 1, 5}
-    local function GetRandomBean()
-        local total = 0; for _,v in pairs(weight) do total += v end
-        local r = math.random(1, total); local curr = 0
-        for i = 1, #weight do curr += weight[i]; if r <= curr then return beans[i] end end
-        return "🥳"
-    end
-    local function SpawnBean()
-        if #BeanBack:GetChildren() > 25 then return end
-        local label = Instance.new("TextLabel")
-        label.Parent = BeanBack; label.BackgroundTransparency = 1
-        label.Size = UDim2.new(0, 22, 0, 22); label.Text = GetRandomBean(); label.TextSize = 18; label.Font = Enum.Font.Unknown; label.ZIndex = 1
-        local x = math.random(0, Main.AbsoluteSize.X - 22)
-        label.Position = UDim2.new(0, x, 0, -22)
-        local speed = math.random(30, 50); local drift = math.random(-15, 15); local alpha = 0
-        local conn; conn = RunService.Heartbeat:Connect(function(dt)
-            if not label or not label.Parent then conn:Disconnect() return end
-            if not Main.Visible then return end
-            alpha += dt; local newY = alpha * speed - 22
-            if newY > Main.AbsoluteSize.Y then conn:Disconnect(); label:Destroy() return end
-            label.Position = UDim2.new(0, x + math.sin(alpha * 1.2) * drift, 0, newY)
-        end)
-    end
-    task.spawn(function()
-        while task.wait(math.random(150, 300)/1000) do
-            if ScreenGui and ScreenGui.Parent then SpawnBean() else break end
-        end
-    end)
-end
+            addSemiTransparentButton(page, "复制本脚本", page.AbsoluteSize.X * 0.52, 4 + 3*45, function()
+                local success = pcall(function()
+                    if not getsource then error() end
+                    local src = getsource()
+                    writefile("UniversalScript.lua", src)
+                end
