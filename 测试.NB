@@ -300,46 +300,56 @@ RunService.RenderStepped:Connect(function()
         Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(camPos, camPos + dir), 0.2)
     end
 end)
-local CrosshairGui = Instance.new("ScreenGui")
-CrosshairGui.Name = "CrosshairGui"
-CrosshairGui.Parent = LocalPlayer.PlayerGui
-CrosshairGui.ResetOnSpawn = false
-CrosshairGui.IgnoreGuiInset = true
-local CrosshairFrame = Instance.new("Frame")
-CrosshairFrame.Name = "Crosshair"
-CrosshairFrame.Parent = CrosshairGui
-CrosshairFrame.Size = UDim2.new(0, 30, 0, 30)
-CrosshairFrame.Position = UDim2.new(0.5, -15, 0.5, -15)
-CrosshairFrame.BackgroundTransparency = 1
-CrosshairFrame.Visible = false
-local hLine = Instance.new("Frame")
-hLine.Parent = CrosshairFrame
-hLine.Size = UDim2.new(1, 0, 0, 2)
-hLine.Position = UDim2.new(0, 0, 0.5, -1)
-hLine.BackgroundColor3 = Color3.new(1,1,1)
-hLine.BorderSizePixel = 0
-local vLine = Instance.new("Frame")
-vLine.Parent = CrosshairFrame
-vLine.Size = UDim2.new(0, 2, 1, 0)
-vLine.Position = UDim2.new(0.5, -1, 0, 0)
-vLine.BackgroundColor3 = Color3.new(1,1,1)
-vLine.BorderSizePixel = 0
-local dot = Instance.new("Frame")
-dot.Parent = CrosshairFrame
-dot.Size = UDim2.new(0, 6, 0, 6)
-dot.Position = UDim2.new(0.5, -3, 0.5, -3)
-dot.BackgroundColor3 = Color3.new(1,1,1)
-dot.BorderSizePixel = 0
-local dotCorner = Instance.new("UICorner")
-dotCorner.CornerRadius = UDim.new(1,0)
-dotCorner.Parent = dot
+local CrosshairGui = nil
+local CrosshairFrame = nil
+local function createCrosshair()
+    if CrosshairGui then return end
+    CrosshairGui = Instance.new("ScreenGui")
+    CrosshairGui.Name = "CrosshairGui"
+    CrosshairGui.Parent = LocalPlayer.PlayerGui
+    CrosshairGui.ResetOnSpawn = false
+    CrosshairGui.IgnoreGuiInset = true
+    CrosshairFrame = Instance.new("Frame")
+    CrosshairFrame.Name = "Crosshair"
+    CrosshairFrame.Parent = CrosshairGui
+    CrosshairFrame.Size = UDim2.new(0, 30, 0, 30)
+    CrosshairFrame.Position = UDim2.new(0.5, -15, 0.5, -15)
+    CrosshairFrame.BackgroundTransparency = 1
+    CrosshairFrame.Visible = false
+    local hLine = Instance.new("Frame")
+    hLine.Parent = CrosshairFrame
+    hLine.Size = UDim2.new(1, 0, 0, 2)
+    hLine.Position = UDim2.new(0, 0, 0.5, -1)
+    hLine.BackgroundColor3 = Color3.new(1,1,1)
+    hLine.BorderSizePixel = 0
+    local vLine = Instance.new("Frame")
+    vLine.Parent = CrosshairFrame
+    vLine.Size = UDim2.new(0, 2, 1, 0)
+    vLine.Position = UDim2.new(0.5, -1, 0, 0)
+    vLine.BackgroundColor3 = Color3.new(1,1,1)
+    vLine.BorderSizePixel = 0
+    local dot = Instance.new("Frame")
+    dot.Parent = CrosshairFrame
+    dot.Size = UDim2.new(0, 6, 0, 6)
+    dot.Position = UDim2.new(0.5, -3, 0.5, -3)
+    dot.BackgroundColor3 = Color3.new(1,1,1)
+    dot.BorderSizePixel = 0
+    local dotCorner = Instance.new("UICorner")
+    dotCorner.CornerRadius = UDim.new(1,0)
+    dotCorner.Parent = dot
+end
 RunService.Heartbeat:Connect(function()
-    if CrosshairEnabled and CrosshairSpinEnabled then
+    if not CrosshairEnabled then
+        if CrosshairFrame then CrosshairFrame.Visible = false end
+        return
+    end
+    if not CrosshairGui then createCrosshair() end
+    if CrosshairSpinEnabled then
         CrosshairFrame.Rotation = (CrosshairFrame.Rotation + 1) % 360
-    elseif CrosshairEnabled and not CrosshairSpinEnabled then
+    else
         CrosshairFrame.Rotation = 0
     end
-    CrosshairFrame.Visible = CrosshairEnabled
+    CrosshairFrame.Visible = true
 end)
 local isStealing = false
 local function stealAllItems()
@@ -684,35 +694,15 @@ local function stopSpeedAntiPull()
         speedAntiPull:Disconnect(); speedAntiPull = nil
     end
 end
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "DeltaControlGui"
-screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = true
-screenGui.Parent = PlayerGui
-local toggleButton = Instance.new("ImageButton")
-toggleButton.Name = "FlyToggle"
-toggleButton.Size = UDim2.new(0, 100, 0, 100)
-toggleButton.Position = UDim2.new(0.5, -50, 0.5, -50)
-toggleButton.Image = "rbxassetid://76316158972959"
-toggleButton.BackgroundTransparency = 1
-toggleButton.Draggable = true
-toggleButton.Active = true
-toggleButton.Visible = false
-toggleButton.Parent = screenGui
-local brakeButton = Instance.new("ImageButton")
-brakeButton.Name = "BrakeButton"
-brakeButton.Size = UDim2.new(0, 80, 0, 80)
-brakeButton.Position = UDim2.new(0.5, -40, 0.5, 60)
-brakeButton.Image = "rbxassetid://132411019634629"
-brakeButton.BackgroundTransparency = 1
-brakeButton.Visible = false
-brakeButton.Active = true
-brakeButton.Parent = screenGui
+local flyUIVisible = false
+local screenGui = nil
+local toggleButton = nil
+local brakeButton = nil
 local active = false
 local braking = false
 local rotConn, flyConn, animTrack
 local bodyVelocity
+
 local function getCharacter()
     return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 end
@@ -802,7 +792,7 @@ local function activate()
     playFlyAnimation()
     startFlying()
     startRotation()
-    brakeButton.Visible = true
+    if brakeButton then brakeButton.Visible = true end
 end
 local function deactivate()
     active = false
@@ -810,7 +800,7 @@ local function deactivate()
     stopFlying()
     stopRotation()
     setTPWalk(false)
-    brakeButton.Visible = false
+    if brakeButton then brakeButton.Visible = false end
 end
 local function toggleBrake()
     braking = not braking
@@ -821,14 +811,44 @@ local function toggleBrake()
         playFlyAnimation()
     end
 end
-toggleButton.MouseButton1Click:Connect(function()
-    if active then
-        deactivate()
-    else
-        activate()
-    end
-end)
-brakeButton.MouseButton1Click:Connect(toggleBrake)
+
+local function createFlyUI()
+    if screenGui then return end
+    local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+    screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "DeltaControlGui"
+    screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
+    screenGui.Parent = PlayerGui
+    toggleButton = Instance.new("ImageButton")
+    toggleButton.Name = "FlyToggle"
+    toggleButton.Size = UDim2.new(0, 100, 0, 100)
+    toggleButton.Position = UDim2.new(0.5, -50, 0.5, -50)
+    toggleButton.Image = "rbxassetid://76316158972959"
+    toggleButton.BackgroundTransparency = 1
+    toggleButton.Draggable = true
+    toggleButton.Active = true
+    toggleButton.Visible = false
+    toggleButton.Parent = screenGui
+    brakeButton = Instance.new("ImageButton")
+    brakeButton.Name = "BrakeButton"
+    brakeButton.Size = UDim2.new(0, 80, 0, 80)
+    brakeButton.Position = UDim2.new(0.5, -40, 0.5, 60)
+    brakeButton.Image = "rbxassetid://132411019634629"
+    brakeButton.BackgroundTransparency = 1
+    brakeButton.Visible = false
+    brakeButton.Active = true
+    brakeButton.Parent = screenGui
+    toggleButton.MouseButton1Click:Connect(function()
+        if active then
+            deactivate()
+        else
+            activate()
+        end
+    end)
+    brakeButton.MouseButton1Click:Connect(toggleBrake)
+end
+
 LocalPlayer.CharacterAdded:Connect(function()
     if active then
         task.wait(1)
@@ -838,17 +858,18 @@ LocalPlayer.CharacterAdded:Connect(function()
         end
     end
 end)
-local flyUIVisible = false
+
 local function showFlyUI()
-    toggleButton.Visible = true
+    createFlyUI()
+    if toggleButton then toggleButton.Visible = true end
     flyUIVisible = true
 end
 local function hideFlyUI()
     if active then
         deactivate()
     end
-    toggleButton.Visible = false
-    brakeButton.Visible = false
+    if toggleButton then toggleButton.Visible = false end
+    if brakeButton then brakeButton.Visible = false end
     flyUIVisible = false
 end
 local function loadLuGuan()
