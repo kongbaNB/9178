@@ -17,6 +17,9 @@ local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+
+local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/恐脚本.UI"))()
+
 game:GetService("StarterGui"):SetCore("SendNotification",{
     Title = "恐脚本--通用",
     Text = "作者：恐拜大帝\nQQ：3999698324",
@@ -87,6 +90,36 @@ local SpinSpeed = 360
 local spinConnection = nil
 local antiAFKEnabled = false
 local antiAFKConnection = nil
+local WQAntiFlingEnabled = false
+local WQAntiFlingConnection = nil
+local function startWQAntiFling()
+    if WQAntiFlingConnection then WQAntiFlingConnection:Disconnect() end
+    WQAntiFlingConnection = RunService.Heartbeat:Connect(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                if part.Velocity.Magnitude > 500 or part.AssemblyLinearVelocity.Magnitude > 500 then
+                    part.Velocity = Vector3.zero
+                    part.AssemblyLinearVelocity = Vector3.zero
+                    part.RotVelocity = Vector3.zero
+                    part.AssemblyAngularVelocity = Vector3.zero
+                    part.CFrame = CFrame.new(part.Position + Vector3.new(0, 0.01, 0))
+                end
+                if part.RotVelocity.Magnitude > 50 then
+                    part.RotVelocity = Vector3.zero
+                    part.AssemblyAngularVelocity = Vector3.zero
+                end
+            end
+        end
+    end)
+end
+local function stopWQAntiFling()
+    if WQAntiFlingConnection then
+        WQAntiFlingConnection:Disconnect()
+        WQAntiFlingConnection = nil
+    end
+end
 local function startSpin()
     if spinConnection then spinConnection:Disconnect() end
     spinConnection = RunService.Heartbeat:Connect(function(dt)
@@ -1263,8 +1296,6 @@ local function renameServerId(id, newName)
 end
 loadSavedServers()
 
-local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/恐脚本.UI"))()
-
 local window = UILib:CreateWindow({
     Title = "恐脚本--通用" .. string.rep(" ", 6) .. "您已执行 " .. count .. " 次，谢谢您的支持！",
     ToggleText = "打开菜单",
@@ -1697,6 +1728,16 @@ page3:AddSpinSpeedPanel({
 })
 
 local page4 = window:AddPage("杂项")
+
+page4:AddToggle({
+    Text = "防甩飞",
+    Default = false,
+    Callback = function(state)
+        WQAntiFlingEnabled = state
+        if state then startWQAntiFling() else stopWQAntiFling() end
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "防甩飞", Text = state and "已开启" or "已关闭", Duration = 3})
+    end
+})
 
 page4:AddButton({
     Text = "显示时间",
