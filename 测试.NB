@@ -17,6 +17,8 @@ local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+
+local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/测试.UI"))()
 game:GetService("StarterGui"):SetCore("SendNotification",{
     Title = "恐脚本--通用",
     Text = "作者：恐拜大帝\nQQ：3999698324",
@@ -28,7 +30,6 @@ local jumpFloatGui = nil
 local jumpFloatBtn = nil
 local jumpPanel = nil
 local jumpHeight = 60
-
 local espEnabled = false
 local function enableESP(player)
     if player == LocalPlayer then return end
@@ -1262,8 +1263,6 @@ local function renameServerId(id, newName)
     return false
 end
 loadSavedServers()
-
-local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/恐脚本.UI"))()
 
 local window = UILib:CreateWindow({
     Title = "恐脚本--通用" .. string.rep(" ", 6) .. "您已执行 " .. count .. " 次，谢谢您的支持！",
