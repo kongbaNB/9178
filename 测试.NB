@@ -211,28 +211,48 @@ RunService.Stepped:Connect(function()
         end
     end
 end)
-RunService.Heartbeat:Connect(function()
-    if not SmoothFollowEnabled then return end
-    local myChar = LocalPlayer.Character
-    if not myChar then return end
-    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return end
-    local nearest = nil
-    local minDist = math.huge
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            local dist = (p.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude
-            if dist < minDist then
-                minDist = dist; nearest = p
-            end
+local followTarget = nil
+local followConnection = nil
+local followRange = 5
+local function startFollow(targetPlayer)
+    if followConnection then followConnection:Disconnect() end
+    followTarget = targetPlayer
+    followConnection = RunService.Heartbeat:Connect(function()
+        if not followTarget or not followTarget:IsDescendantOf(Players) or not followTarget.Character or not followTarget.Character:FindFirstChild("HumanoidRootPart") then
+            followConnection:Disconnect()
+            followConnection = nil
+            followTarget = nil
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "跟随", Text = "目标已消失，跟随停止", Duration = 3})
+            return
         end
+        local myChar = LocalPlayer.Character
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+        local myRoot = myChar.HumanoidRootPart
+        local myHum = myChar:FindFirstChildOfClass("Humanoid")
+        if not myHum then return end
+        local targetRoot = followTarget.Character.HumanoidRootPart
+        local dist = (targetRoot.Position - myRoot.Position).Magnitude
+        if dist > followRange then
+            myHum:MoveTo(targetRoot.Position)
+        else
+            myHum:MoveTo(myRoot.Position)
+        end
+    end)
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "跟随", Text = "开始跟随 " .. targetPlayer.Name, Duration = 3})
+end
+local function stopFollow()
+    if followConnection then
+        followConnection:Disconnect()
+        followConnection = nil
     end
-    if nearest then
-        local targetRoot = nearest.Character.HumanoidRootPart
-        local offset = targetRoot.CFrame.LookVector * -2.5
-        myRoot.CFrame = CFrame.new(targetRoot.Position + offset, targetRoot.Position)
+    followTarget = nil
+    local myChar = LocalPlayer.Character
+    if myChar then
+        local myHum = myChar:FindFirstChildOfClass("Humanoid")
+        if myHum then myHum:MoveTo(myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or myChar:GetPivot().Position) end
     end
-end)
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "跟随", Text = "已停止跟随", Duration = 3})
+end
 RunService:BindToRenderStep("LockView", Enum.RenderPriority.Camera.Value + 1, function()
     if not LockViewEnabled then return end
     local char = LocalPlayer.Character
@@ -1547,12 +1567,17 @@ page3:AddToggle({
     end
 })
 
-page3:AddToggle({
-    Text = "跟随最近玩家",
-    Default = false,
-    Callback = function(state)
-        FollowNearestEnabled = state
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "跟随最近玩家", Text = state and "已开启" or "已关闭", Duration = 3})
+page3:AddPlayerSelector({
+    Text = "选定玩家跟随",
+    Callback = function(player)
+        startFollow(player)
+    end
+})
+
+page3:AddButton({
+    Text = "停止跟随",
+    Callback = function()
+        stopFollow()
     end
 })
 
