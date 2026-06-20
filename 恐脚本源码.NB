@@ -211,28 +211,48 @@ RunService.Stepped:Connect(function()
         end
     end
 end)
-RunService.Heartbeat:Connect(function()
-    if not SmoothFollowEnabled then return end
-    local myChar = LocalPlayer.Character
-    if not myChar then return end
-    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return end
-    local nearest = nil
-    local minDist = math.huge
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            local dist = (p.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude
-            if dist < minDist then
-                minDist = dist; nearest = p
-            end
+local followTarget = nil
+local followConnection = nil
+local followRange = 5
+local function startFollow(targetPlayer)
+    if followConnection then followConnection:Disconnect() end
+    followTarget = targetPlayer
+    followConnection = RunService.Heartbeat:Connect(function()
+        if not followTarget or not followTarget:IsDescendantOf(Players) or not followTarget.Character or not followTarget.Character:FindFirstChild("HumanoidRootPart") then
+            followConnection:Disconnect()
+            followConnection = nil
+            followTarget = nil
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "跟随", Text = "目标已消失，跟随停止", Duration = 3})
+            return
         end
+        local myChar = LocalPlayer.Character
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+        local myRoot = myChar.HumanoidRootPart
+        local myHum = myChar:FindFirstChildOfClass("Humanoid")
+        if not myHum then return end
+        local targetRoot = followTarget.Character.HumanoidRootPart
+        local dist = (targetRoot.Position - myRoot.Position).Magnitude
+        if dist > followRange then
+            myHum:MoveTo(targetRoot.Position)
+        else
+            myHum:MoveTo(myRoot.Position)
+        end
+    end)
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "跟随", Text = "开始跟随 " .. targetPlayer.Name, Duration = 3})
+end
+local function stopFollow()
+    if followConnection then
+        followConnection:Disconnect()
+        followConnection = nil
     end
-    if nearest then
-        local targetRoot = nearest.Character.HumanoidRootPart
-        local offset = targetRoot.CFrame.LookVector * -2.5
-        myRoot.CFrame = CFrame.new(targetRoot.Position + offset, targetRoot.Position)
+    followTarget = nil
+    local myChar = LocalPlayer.Character
+    if myChar then
+        local myHum = myChar:FindFirstChildOfClass("Humanoid")
+        if myHum then myHum:MoveTo(myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or myChar:GetPivot().Position) end
     end
-end)
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "跟随", Text = "已停止跟随", Duration = 3})
+end
 RunService:BindToRenderStep("LockView", Enum.RenderPriority.Camera.Value + 1, function()
     if not LockViewEnabled then return end
     local char = LocalPlayer.Character
@@ -280,46 +300,56 @@ RunService.RenderStepped:Connect(function()
         Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(camPos, camPos + dir), 0.2)
     end
 end)
-local CrosshairGui = Instance.new("ScreenGui")
-CrosshairGui.Name = "CrosshairGui"
-CrosshairGui.Parent = LocalPlayer.PlayerGui
-CrosshairGui.ResetOnSpawn = false
-CrosshairGui.IgnoreGuiInset = true
-local CrosshairFrame = Instance.new("Frame")
-CrosshairFrame.Name = "Crosshair"
-CrosshairFrame.Parent = CrosshairGui
-CrosshairFrame.Size = UDim2.new(0, 30, 0, 30)
-CrosshairFrame.Position = UDim2.new(0.5, -15, 0.5, -15)
-CrosshairFrame.BackgroundTransparency = 1
-CrosshairFrame.Visible = false
-local hLine = Instance.new("Frame")
-hLine.Parent = CrosshairFrame
-hLine.Size = UDim2.new(1, 0, 0, 2)
-hLine.Position = UDim2.new(0, 0, 0.5, -1)
-hLine.BackgroundColor3 = Color3.new(1,1,1)
-hLine.BorderSizePixel = 0
-local vLine = Instance.new("Frame")
-vLine.Parent = CrosshairFrame
-vLine.Size = UDim2.new(0, 2, 1, 0)
-vLine.Position = UDim2.new(0.5, -1, 0, 0)
-vLine.BackgroundColor3 = Color3.new(1,1,1)
-vLine.BorderSizePixel = 0
-local dot = Instance.new("Frame")
-dot.Parent = CrosshairFrame
-dot.Size = UDim2.new(0, 6, 0, 6)
-dot.Position = UDim2.new(0.5, -3, 0.5, -3)
-dot.BackgroundColor3 = Color3.new(1,1,1)
-dot.BorderSizePixel = 0
-local dotCorner = Instance.new("UICorner")
-dotCorner.CornerRadius = UDim.new(1,0)
-dotCorner.Parent = dot
+local CrosshairGui = nil
+local CrosshairFrame = nil
+local function createCrosshair()
+    if CrosshairGui then return end
+    CrosshairGui = Instance.new("ScreenGui")
+    CrosshairGui.Name = "CrosshairGui"
+    CrosshairGui.Parent = LocalPlayer.PlayerGui
+    CrosshairGui.ResetOnSpawn = false
+    CrosshairGui.IgnoreGuiInset = true
+    CrosshairFrame = Instance.new("Frame")
+    CrosshairFrame.Name = "Crosshair"
+    CrosshairFrame.Parent = CrosshairGui
+    CrosshairFrame.Size = UDim2.new(0, 30, 0, 30)
+    CrosshairFrame.Position = UDim2.new(0.5, -15, 0.5, -15)
+    CrosshairFrame.BackgroundTransparency = 1
+    CrosshairFrame.Visible = false
+    local hLine = Instance.new("Frame")
+    hLine.Parent = CrosshairFrame
+    hLine.Size = UDim2.new(1, 0, 0, 2)
+    hLine.Position = UDim2.new(0, 0, 0.5, -1)
+    hLine.BackgroundColor3 = Color3.new(1,1,1)
+    hLine.BorderSizePixel = 0
+    local vLine = Instance.new("Frame")
+    vLine.Parent = CrosshairFrame
+    vLine.Size = UDim2.new(0, 2, 1, 0)
+    vLine.Position = UDim2.new(0.5, -1, 0, 0)
+    vLine.BackgroundColor3 = Color3.new(1,1,1)
+    vLine.BorderSizePixel = 0
+    local dot = Instance.new("Frame")
+    dot.Parent = CrosshairFrame
+    dot.Size = UDim2.new(0, 6, 0, 6)
+    dot.Position = UDim2.new(0.5, -3, 0.5, -3)
+    dot.BackgroundColor3 = Color3.new(1,1,1)
+    dot.BorderSizePixel = 0
+    local dotCorner = Instance.new("UICorner")
+    dotCorner.CornerRadius = UDim.new(1,0)
+    dotCorner.Parent = dot
+end
 RunService.Heartbeat:Connect(function()
-    if CrosshairEnabled and CrosshairSpinEnabled then
+    if not CrosshairEnabled then
+        if CrosshairFrame then CrosshairFrame.Visible = false end
+        return
+    end
+    if not CrosshairGui then createCrosshair() end
+    if CrosshairSpinEnabled then
         CrosshairFrame.Rotation = (CrosshairFrame.Rotation + 1) % 360
-    elseif CrosshairEnabled and not CrosshairSpinEnabled then
+    else
         CrosshairFrame.Rotation = 0
     end
-    CrosshairFrame.Visible = CrosshairEnabled
+    CrosshairFrame.Visible = true
 end)
 local isStealing = false
 local function stealAllItems()
@@ -664,35 +694,15 @@ local function stopSpeedAntiPull()
         speedAntiPull:Disconnect(); speedAntiPull = nil
     end
 end
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "DeltaControlGui"
-screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = true
-screenGui.Parent = PlayerGui
-local toggleButton = Instance.new("ImageButton")
-toggleButton.Name = "FlyToggle"
-toggleButton.Size = UDim2.new(0, 100, 0, 100)
-toggleButton.Position = UDim2.new(0.5, -50, 0.5, -50)
-toggleButton.Image = "rbxassetid://76316158972959"
-toggleButton.BackgroundTransparency = 1
-toggleButton.Draggable = true
-toggleButton.Active = true
-toggleButton.Visible = false
-toggleButton.Parent = screenGui
-local brakeButton = Instance.new("ImageButton")
-brakeButton.Name = "BrakeButton"
-brakeButton.Size = UDim2.new(0, 80, 0, 80)
-brakeButton.Position = UDim2.new(0.5, -40, 0.5, 60)
-brakeButton.Image = "rbxassetid://132411019634629"
-brakeButton.BackgroundTransparency = 1
-brakeButton.Visible = false
-brakeButton.Active = true
-brakeButton.Parent = screenGui
+local flyUIVisible = false
+local screenGui = nil
+local toggleButton = nil
+local brakeButton = nil
 local active = false
 local braking = false
 local rotConn, flyConn, animTrack
 local bodyVelocity
+
 local function getCharacter()
     return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 end
@@ -782,7 +792,7 @@ local function activate()
     playFlyAnimation()
     startFlying()
     startRotation()
-    brakeButton.Visible = true
+    if brakeButton then brakeButton.Visible = true end
 end
 local function deactivate()
     active = false
@@ -790,7 +800,7 @@ local function deactivate()
     stopFlying()
     stopRotation()
     setTPWalk(false)
-    brakeButton.Visible = false
+    if brakeButton then brakeButton.Visible = false end
 end
 local function toggleBrake()
     braking = not braking
@@ -801,14 +811,44 @@ local function toggleBrake()
         playFlyAnimation()
     end
 end
-toggleButton.MouseButton1Click:Connect(function()
-    if active then
-        deactivate()
-    else
-        activate()
-    end
-end)
-brakeButton.MouseButton1Click:Connect(toggleBrake)
+
+local function createFlyUI()
+    if screenGui then return end
+    local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+    screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "DeltaControlGui"
+    screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
+    screenGui.Parent = PlayerGui
+    toggleButton = Instance.new("ImageButton")
+    toggleButton.Name = "FlyToggle"
+    toggleButton.Size = UDim2.new(0, 100, 0, 100)
+    toggleButton.Position = UDim2.new(0.5, -50, 0.5, -50)
+    toggleButton.Image = "rbxassetid://76316158972959"
+    toggleButton.BackgroundTransparency = 1
+    toggleButton.Draggable = true
+    toggleButton.Active = true
+    toggleButton.Visible = false
+    toggleButton.Parent = screenGui
+    brakeButton = Instance.new("ImageButton")
+    brakeButton.Name = "BrakeButton"
+    brakeButton.Size = UDim2.new(0, 80, 0, 80)
+    brakeButton.Position = UDim2.new(0.5, -40, 0.5, 60)
+    brakeButton.Image = "rbxassetid://132411019634629"
+    brakeButton.BackgroundTransparency = 1
+    brakeButton.Visible = false
+    brakeButton.Active = true
+    brakeButton.Parent = screenGui
+    toggleButton.MouseButton1Click:Connect(function()
+        if active then
+            deactivate()
+        else
+            activate()
+        end
+    end)
+    brakeButton.MouseButton1Click:Connect(toggleBrake)
+end
+
 LocalPlayer.CharacterAdded:Connect(function()
     if active then
         task.wait(1)
@@ -818,17 +858,18 @@ LocalPlayer.CharacterAdded:Connect(function()
         end
     end
 end)
-local flyUIVisible = false
+
 local function showFlyUI()
-    toggleButton.Visible = true
+    createFlyUI()
+    if toggleButton then toggleButton.Visible = true end
     flyUIVisible = true
 end
 local function hideFlyUI()
     if active then
         deactivate()
     end
-    toggleButton.Visible = false
-    brakeButton.Visible = false
+    if toggleButton then toggleButton.Visible = false end
+    if brakeButton then brakeButton.Visible = false end
     flyUIVisible = false
 end
 local function loadLuGuan()
@@ -1221,6 +1262,7 @@ local function renameServerId(id, newName)
     return false
 end
 loadSavedServers()
+
 local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/恐脚本.UI"))()
 
 local window = UILib:CreateWindow({
@@ -1228,8 +1270,6 @@ local window = UILib:CreateWindow({
     ToggleText = "打开菜单",
     ToggleTextClose = "关闭菜单",
 })
-
-local Main = window.Main
 
 local function copyToClipboard(text, label)
     local success = pcall(function()
@@ -1243,44 +1283,7 @@ local function copyToClipboard(text, label)
     end)
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = label or "提示",
-        Text = success and ("✅ 已复制: " .. text) or ("❌ 复制失败，请手动复制：" .. text),
-        Duration = 3,
-    })
-end
-
-local speedPanel = nil
-local coordPanel = nil
-local aimbotPanel = nil
-local harassSpeedPanel = nil
-local spinSpeedPanel = nil
-local instanceIdPanel = nil
-local placeIdPanel = nil
-local teleportServerPanel = nil
-local savedServersPanel = nil
-
-local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/恐脚本.UI"))()
-
-local window = UILib:CreateWindow({
-    Title = "恐脚本--通用" .. string.rep(" ", 6) .. "您已执行 " .. count .. " 次，谢谢您的支持！",
-    ToggleText = "打开菜单",
-    ToggleTextClose = "关闭菜单",
-})
-
-local Main = window.Main
-
-local function copyToClipboard(text, label)
-    local success = pcall(function()
-        if setclipboard then
-            setclipboard(text)
-        elseif game:GetService("ClipboardService") then
-            game:GetService("ClipboardService"):SetClipboard(text)
-        else
-            error("无法访问剪贴板")
-        end
-    end)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = label or "提示",
-        Text = success and ("✅ 已复制: " .. text) or ("❌ 复制失败，请手动复制：" .. text),
+        Text = success and ("已复制: " .. text) or ("复制失败，请手动复制：" .. text),
         Duration = 3,
     })
 end
@@ -1451,7 +1454,6 @@ page2:AddToggle({
     end
 })
 
-
 page2:AddButton({
     Text = "甩飞全部人",
     Callback = function()
@@ -1547,16 +1549,22 @@ page3:AddToggle({
     end
 })
 
-page3:AddToggle({
-    Text = "跟随最近玩家",
-    Default = false,
-    Callback = function(state)
-        FollowNearestEnabled = state
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "跟随最近玩家", Text = state and "已开启" or "已关闭", Duration = 3})
+page3:AddPlayerSelector({
+    Text = "选定玩家跟随",
+    Callback = function(player)
+        startFollow(player)
     end
 })
 
-local coordPanel = page3:AddCoordPanel({
+page3:AddButton({
+    Text = "停止跟随",
+    Callback = function()
+        stopFollow()
+    end
+})
+
+page3:AddCoordPanel({
+    Text = "实时坐标",
     Title = "实时坐标",
     GetPosition = function()
         local char = LocalPlayer.Character
@@ -1566,14 +1574,14 @@ local coordPanel = page3:AddCoordPanel({
         return nil
     end,
     OnTeleport = function(x, y, z)
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送成功", Text = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3})
-    else
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = "角色未加载", Duration = 3})
-    end
-end,
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送成功", Text = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3})
+        else
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = "角色未加载", Duration = 3})
+        end
+    end,
     OnCopy = function(text)
         copyToClipboard(text, "坐标")
     end,
@@ -1582,21 +1590,15 @@ end,
     end
 })
 
-page3:AddButton({
-    Text = "查询坐标传送",
-    Callback = function()
-        coordPanel.Visible = not coordPanel.Visible
-    end
-})
-
 page3:AddPlayerSelector({
-    Text = "传送到指定玩家",
+    Text = "选人传送",
     Callback = function(p)
         teleportToPlayer(p)
     end
 })
 
-local aimbotPanel = page3:AddAimbotPanel({
+page3:AddAimbotPanel({
+    Text = "自瞄半径",
     Title = "自瞄半径",
     Default = math.floor(Camera.ViewportSize.Y / 3),
     Min = 50,
@@ -1611,12 +1613,6 @@ page3:AddToggle({
     Default = false,
     Callback = function(state)
         AimbotEnabled = state
-        if state then
-            aimbotPanel.Visible = true
-        else
-            AimbotCircle.Visible = false
-            aimbotPanel.Visible = false
-        end
         game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = state and "已开启，请在面板中调整半径" or "已关闭", Duration = 3})
     end
 })
@@ -1678,7 +1674,8 @@ page3:AddToggle({
     end
 })
 
-local harassSpeedPanel = page3:AddHarassSpeedPanel({
+page3:AddHarassSpeedPanel({
+    Text = "操人速度",
     Title = "操人速度 (次/秒)",
     Default = 5,
     Min = 1,
@@ -1688,27 +1685,14 @@ local harassSpeedPanel = page3:AddHarassSpeedPanel({
     end
 })
 
-page3:AddButton({
-    Text = "操人速度",
-    Callback = function()
-        harassSpeedPanel.Visible = not harassSpeedPanel.Visible
-    end
-})
-
-local spinSpeedPanel = page3:AddSpinSpeedPanel({
+page3:AddSpinSpeedPanel({
+    Text = "旋转速度",
     Title = "旋转速度 (度/秒)",
     Default = 360,
     Min = 1,
     Max = 10000,
     OnChange = function(speed)
         SpinSpeed = speed
-    end
-})
-
-page3:AddButton({
-    Text = "旋转速度",
-    Callback = function()
-        spinSpeedPanel.Visible = not spinSpeedPanel.Visible
     end
 })
 
@@ -1759,42 +1743,31 @@ page4:AddToggle({
     end
 })
 
-local instanceIdPanel = page4:AddInstanceIdPanel({
+page4:AddInstanceIdPanel({
+    Text = "获取实例ID",
     Title = "实例 ID (JobId)",
     OnCopy = function(id)
         pcall(function() setclipboard(id) end)
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "实例ID", Text = "✅ 已复制: " .. id, Duration = 3})
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "实例ID", Text = "已复制: " .. id, Duration = 3})
     end,
     OnSave = function(id)
         local defaultName = "服务器 " .. (#savedServers + 1)
         addServerId(id, defaultName)
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "保存服务器", Text = "已保存当前服务器到列表 (可稍后重命名)", Duration = 3})
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "保存服务器", Text = "已保存当前服务器到列表", Duration = 3})
     end
 })
 
-page4:AddButton({
-    Text = "获取实例ID",
-    Callback = function()
-        instanceIdPanel.Visible = not instanceIdPanel.Visible
-    end
-})
-
-local placeIdPanel = page4:AddPlaceIdPanel({
+page4:AddPlaceIdPanel({
+    Text = "获取数字ID",
     Title = "数字 ID (PlaceId)",
     OnCopy = function(id)
         pcall(function() setclipboard(id) end)
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "数字ID", Text = "✅ 已复制: " .. id, Duration = 3})
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "数字ID", Text = "已复制: " .. id, Duration = 3})
     end
 })
 
-page4:AddButton({
-    Text = "获取数字ID",
-    Callback = function()
-        placeIdPanel.Visible = not placeIdPanel.Visible
-    end
-})
-
-local teleportServerPanel = page4:AddTeleportServerPanel({
+page4:AddTeleportServerPanel({
+    Text = "传送指定服务器",
     Title = "传送指定服务器",
     OnTeleport = function(jobId)
         pcall(function()
@@ -1806,14 +1779,8 @@ local teleportServerPanel = page4:AddTeleportServerPanel({
     end
 })
 
-page4:AddButton({
-    Text = "传送指定服务器",
-    Callback = function()
-        teleportServerPanel.Visible = not teleportServerPanel.Visible
-    end
-})
-
-local savedServersPanel = page4:AddSavedServersPanel({
+page4:AddSavedServersPanel({
+    Text = "已保存的服务器",
     Title = "已保存的服务器",
     Servers = savedServers,
     OnTeleport = function(id)
@@ -1829,13 +1796,6 @@ local savedServersPanel = page4:AddSavedServersPanel({
     end,
     OnDelete = function(id)
         removeServerId(id)
-    end
-})
-
-page4:AddButton({
-    Text = "已保存的服务器",
-    Callback = function()
-        savedServersPanel.Visible = not savedServersPanel.Visible
     end
 })
 
@@ -1868,7 +1828,7 @@ page5:AddButton({
 page5:AddButton({
     Text = "亡命速递",
     Callback = function()
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "亡命速递（需在指定服务器运行）", Text = "正在加载中...", Duration = 5})
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "亡命速递", Text = "正在加载中...", Duration = 5})
         task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/WMSD.NB"))() end)
     end
 })
