@@ -1284,6 +1284,7 @@ page2:AddSlider({
         local hum = getHumanoid()
         if hum then hum.WalkSpeed = val end
         startSpeedAntiPull(val)
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "修改移速", Text = "移速已设置为：" .. tostring(val), Duration = 3})
     end
 })
 
@@ -1388,12 +1389,14 @@ local coordPanel = page3:AddCoordPanel({
         return nil
     end,
     OnTeleport = function(x, y, z)
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
-            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送成功", Text = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3})
-        end
-    end,
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送成功", Text = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3})
+    else
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = "角色未加载", Duration = 3})
+    end
+end,
     OnCopy = function(text)
         copyToClipboard(text, "坐标")
     end,
