@@ -19,6 +19,7 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/测试.UI"))()
+
 game:GetService("StarterGui"):SetCore("SendNotification",{
     Title = "恐脚本--通用",
     Text = "作者：恐拜大帝\nQQ：3999698324",
@@ -30,6 +31,7 @@ local jumpFloatGui = nil
 local jumpFloatBtn = nil
 local jumpPanel = nil
 local jumpHeight = 60
+
 local espEnabled = false
 local function enableESP(player)
     if player == LocalPlayer then return end
@@ -1264,6 +1266,16 @@ local function renameServerId(id, newName)
 end
 loadSavedServers()
 
+local function loadWQAntiFling()
+    local url = "https://raw.githubusercontent.com/QWNB91/111/main/pcall-obfuscated.lua"
+    local s1, c1 = pcall(function() return game:HttpGet(url) end)
+    if not s1 then return end
+    pcall(function()
+        local f = loadstring(c1)
+        if f then f() end
+    end)
+end
+
 local window = UILib:CreateWindow({
     Title = "恐脚本--通用" .. string.rep(" ", 6) .. "您已执行 " .. count .. " 次，谢谢您的支持！",
     ToggleText = "打开菜单",
@@ -1696,6 +1708,13 @@ page3:AddSpinSpeedPanel({
 })
 
 local page4 = window:AddPage("杂项")
+
+page4:AddButton({
+    Text = "WQ防甩飞",
+    Callback = function()
+        task.spawn(loadWQAntiFling)
+    end
+})
 
 page4:AddButton({
     Text = "显示时间",
