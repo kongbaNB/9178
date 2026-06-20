@@ -90,6 +90,7 @@ local SpinSpeed = 360
 local spinConnection = nil
 local antiAFKEnabled = false
 local antiAFKConnection = nil
+local UIButtons = {}
 local WQAntiFlingEnabled = false
 local WQAntiFlingConnection = nil
 local function startWQAntiFling()
@@ -523,6 +524,23 @@ local function teleportToPlayer(p)
             myChar.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, 3)
         end
     end
+end
+
+local function getNearestPlayer()
+    local nearest = nil
+    local minDist = math.huge
+    local myPos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position
+    if not myPos then return nil end
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
+            if dist < minDist then
+                minDist = dist
+                nearest = p
+            end
+        end
+    end
+    return nearest
 end
 
 local function powerfulFling(targetPlayer)
@@ -1035,7 +1053,116 @@ local function stopHarass()
         harassConnection:Disconnect()
         harassConnection = nil
     end
+    if UIButtons.harassBtn then UIButtons.harassBtn.Text = "操人" end
+    if UIButtons.harassNearestBtn then UIButtons.harassNearestBtn.Text = "操最近的人" end
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "操人", Text = "已停止操人", Duration = 2})
 end
+local smoothFollowConnection = nil
+local smoothFollowTarget = nil
+
+local function stopSmoothFollow()
+    if smoothFollowConnection then
+        smoothFollowConnection:Disconnect()
+        smoothFollowConnection = nil
+    end
+    smoothFollowTarget = nil
+    if UIButtons.smoothFollowSelectBtn then UIButtons.smoothFollowSelectBtn.Text = "平滑跟随选定人" end
+    if UIButtons.smoothFollowNearestBtn then UIButtons.smoothFollowNearestBtn.Text = "平滑跟随最近的人" end
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "平滑跟随", Text = "已停止平滑跟随", Duration = 3})
+end
+
+local function startSmoothFollow(targetPlayer)
+    if smoothFollowConnection then smoothFollowConnection:Disconnect() end
+    smoothFollowTarget = targetPlayer
+    smoothFollowConnection = RunService.Heartbeat:Connect(function(dt)
+        if not smoothFollowTarget or not smoothFollowTarget:IsDescendantOf(Players) or not smoothFollowTarget.Character or not smoothFollowTarget.Character:FindFirstChild("HumanoidRootPart") then
+            stopSmoothFollow()
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "平滑跟随", Text = "目标已消失，跟随停止", Duration = 3})
+            return
+        end
+        local myChar = LocalPlayer.Character
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+        local myRoot = myChar.HumanoidRootPart
+        local targetRoot = smoothFollowTarget.Character.HumanoidRootPart
+        local targetPos = targetRoot.Position
+        local myPos = myRoot.Position
+        local dist = (targetPos - myPos).Magnitude
+        if dist > 4 then
+            local direction = (targetPos - myPos).Unit
+            local speed = math.min(dist * 2, 50)
+            local newPos = myPos + direction * speed * dt
+            myRoot.CFrame = CFrame.new(newPos, targetPos)
+        end
+    end)
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "平滑跟随", Text = "开始平滑跟随 " .. targetPlayer.Name, Duration = 3})
+end
+
+local function showSmoothFollowSelect()
+    if smoothFollowConnection then return end
+    local selectGui = Instance.new("ScreenGui")
+    selectGui.Name = "SmoothFollowSelect"
+    selectGui.Parent = LocalPlayer.PlayerGui
+    selectGui.IgnoreGuiInset = true
+    selectGui.ResetOnSpawn = false
+    local bg = Instance.new("Frame")
+    bg.Parent = selectGui
+    bg.Size = UDim2.new(0, 200, 0, 250)
+    bg.Position = UDim2.new(0.5, -100, 0.5, -125)
+    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
+    local title = Instance.new("TextLabel")
+    title.Parent = bg
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.BackgroundTransparency = 1
+    title.Text = "选择跟随目标"
+    title.TextColor3 = Color3.new(1,1,1)
+    title.Font = Enum.Font.SourceSansBold
+    title.TextSize = 16
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Parent = bg
+    scrollFrame.Size = UDim2.new(1, -10, 1, -40)
+    scrollFrame.Position = UDim2.new(0, 5, 0, 35)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scrollFrame.ScrollBarThickness = 4
+    local playersList = Players:GetPlayers()
+    local y = 0
+    for _, p in ipairs(playersList) do
+        if p ~= LocalPlayer then
+            local btn = Instance.new("TextButton")
+            btn.Parent = scrollFrame
+            btn.Size = UDim2.new(1, -10, 0, 30)
+            btn.Position = UDim2.new(0, 5, 0, y)
+            btn.Text = p.Name
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            btn.TextColor3 = Color3.new(1,1,1)
+            btn.Font = Enum.Font.SourceSans
+            btn.TextSize = 14
+            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = btn
+            btn.MouseButton1Click:Connect(function()
+                startSmoothFollow(p)
+                if UIButtons.smoothFollowSelectBtn then UIButtons.smoothFollowSelectBtn.Text = "停止平滑跟随" end
+                selectGui:Destroy()
+            end)
+            y = y + 35
+        end
+    end
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, y)
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Parent = bg
+    closeBtn.Size = UDim2.new(0, 30, 0, 20)
+    closeBtn.Position = UDim2.new(1, -35, 0, 5)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeBtn.Text = "X"
+    closeBtn.TextColor3 = Color3.new(1,1,1)
+    closeBtn.Font = Enum.Font.SourceSansBold
+    closeBtn.TextSize = 14
+    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
+    closeBtn.MouseButton1Click:Connect(function()
+        selectGui:Destroy()
+    end)
+end
+
 local function showHarassSelect()
     if harassEnabled then return end
     local selectGui = Instance.new("ScreenGui")
@@ -1083,6 +1210,7 @@ local function showHarassSelect()
                 harassEnabled = true
                 startHarass()
                 selectGui:Destroy()
+                if UIButtons.harassBtn then UIButtons.harassBtn.Text = "停止操人" end
                 game:GetService("StarterGui"):SetCore("SendNotification", {
                     Title = "操人",
                     Text = "开始疯狂操 " .. p.Name .. "！",
@@ -1649,15 +1777,6 @@ page3:AddToggle({
 })
 
 page3:AddToggle({
-    Text = "平滑跟随",
-    Default = false,
-    Callback = function(state)
-        SmoothFollowEnabled = state
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "平滑跟随", Text = state and "已开启" or "已关闭", Duration = 3})
-    end
-})
-
-page3:AddToggle({
     Text = "锁定视角",
     Default = false,
     Callback = function(state)
@@ -1665,6 +1784,36 @@ page3:AddToggle({
         game:GetService("StarterGui"):SetCore("SendNotification", {Title = "锁定视角", Text = state and "已开启" or "已关闭", Duration = 3})
     end
 })
+
+local smoothFollowSelectBtn = page3:AddButton({
+    Text = "平滑跟随选定人",
+    Callback = function()
+        if smoothFollowConnection then
+            stopSmoothFollow()
+        else
+            showSmoothFollowSelect()
+        end
+    end
+})
+UIButtons.smoothFollowSelectBtn = smoothFollowSelectBtn
+
+local smoothFollowNearestBtn = page3:AddButton({
+    Text = "平滑跟随最近的人",
+    Callback = function()
+        if smoothFollowConnection then
+            stopSmoothFollow()
+        else
+            local nearest = getNearestPlayer()
+            if nearest then
+                startSmoothFollow(nearest)
+                smoothFollowNearestBtn.Text = "停止平滑跟随"
+            else
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "平滑跟随", Text = "未找到其他玩家", Duration = 3})
+            end
+        end
+    end
+})
+UIButtons.smoothFollowNearestBtn = smoothFollowNearestBtn
 
 page3:AddButton({
     Text = "撸管",
@@ -1687,13 +1836,33 @@ local harassBtn = page3:AddButton({
     Callback = function()
         if harassEnabled then
             stopHarass()
-            harassBtn.Text = "操人"
-            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "操人", Text = "已停止", Duration = 2})
         else
             showHarassSelect()
         end
     end
 })
+UIButtons.harassBtn = harassBtn
+
+local harassNearestBtn = page3:AddButton({
+    Text = "操最近的人",
+    Callback = function()
+        if harassEnabled then
+            stopHarass()
+        else
+            local nearest = getNearestPlayer()
+            if nearest then
+                harassTarget = nearest
+                harassEnabled = true
+                startHarass()
+                harassNearestBtn.Text = "停止操人"
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "操人", Text = "开始疯狂操 " .. nearest.Name .. "！", Duration = 3})
+            else
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "操人", Text = "未找到其他玩家", Duration = 3})
+            end
+        end
+    end
+})
+UIButtons.harassNearestBtn = harassNearestBtn
 
 page3:AddToggle({
     Text = "原地旋转",
