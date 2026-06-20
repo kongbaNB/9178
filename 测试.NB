@@ -1262,42 +1262,6 @@ local function renameServerId(id, newName)
     return false
 end
 loadSavedServers()
-local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/恐脚本.UI"))()
-
-local window = UILib:CreateWindow({
-    Title = "恐脚本--通用" .. string.rep(" ", 6) .. "您已执行 " .. count .. " 次，谢谢您的支持！",
-    ToggleText = "打开菜单",
-    ToggleTextClose = "关闭菜单",
-})
-
-local Main = window.Main
-
-local function copyToClipboard(text, label)
-    local success = pcall(function()
-        if setclipboard then
-            setclipboard(text)
-        elseif game:GetService("ClipboardService") then
-            game:GetService("ClipboardService"):SetClipboard(text)
-        else
-            error("无法访问剪贴板")
-        end
-    end)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = label or "提示",
-        Text = success and ("✅ 已复制: " .. text) or ("❌ 复制失败，请手动复制：" .. text),
-        Duration = 3,
-    })
-end
-
-local speedPanel = nil
-local coordPanel = nil
-local aimbotPanel = nil
-local harassSpeedPanel = nil
-local spinSpeedPanel = nil
-local instanceIdPanel = nil
-local placeIdPanel = nil
-local teleportServerPanel = nil
-local savedServersPanel = nil
 
 local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/恐脚本.UI"))()
 
@@ -1306,8 +1270,6 @@ local window = UILib:CreateWindow({
     ToggleText = "打开菜单",
     ToggleTextClose = "关闭菜单",
 })
-
-local Main = window.Main
 
 local function copyToClipboard(text, label)
     local success = pcall(function()
@@ -1492,7 +1454,6 @@ page2:AddToggle({
     end
 })
 
-
 page2:AddButton({
     Text = "甩飞全部人",
     Callback = function()
@@ -1602,7 +1563,8 @@ page3:AddButton({
     end
 })
 
-local coordPanel = page3:AddCoordPanel({
+page3:AddCoordPanel({
+    Text = "实时坐标",
     Title = "实时坐标",
     GetPosition = function()
         local char = LocalPlayer.Character
@@ -1612,14 +1574,14 @@ local coordPanel = page3:AddCoordPanel({
         return nil
     end,
     OnTeleport = function(x, y, z)
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送成功", Text = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3})
-    else
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = "角色未加载", Duration = 3})
-    end
-end,
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送成功", Text = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3})
+        else
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = "角色未加载", Duration = 3})
+        end
+    end,
     OnCopy = function(text)
         copyToClipboard(text, "坐标")
     end,
@@ -1628,21 +1590,15 @@ end,
     end
 })
 
-page3:AddButton({
-    Text = "查询坐标传送",
-    Callback = function()
-        coordPanel.Visible = not coordPanel.Visible
-    end
-})
-
 page3:AddPlayerSelector({
-    Text = "传送到指定玩家",
+    Text = "选人传送",
     Callback = function(p)
         teleportToPlayer(p)
     end
 })
 
-local aimbotPanel = page3:AddAimbotPanel({
+page3:AddAimbotPanel({
+    Text = "自瞄半径",
     Title = "自瞄半径",
     Default = math.floor(Camera.ViewportSize.Y / 3),
     Min = 50,
@@ -1657,12 +1613,6 @@ page3:AddToggle({
     Default = false,
     Callback = function(state)
         AimbotEnabled = state
-        if state then
-            aimbotPanel.Visible = true
-        else
-            AimbotCircle.Visible = false
-            aimbotPanel.Visible = false
-        end
         game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = state and "已开启，请在面板中调整半径" or "已关闭", Duration = 3})
     end
 })
@@ -1724,7 +1674,8 @@ page3:AddToggle({
     end
 })
 
-local harassSpeedPanel = page3:AddHarassSpeedPanel({
+page3:AddHarassSpeedPanel({
+    Text = "操人速度",
     Title = "操人速度 (次/秒)",
     Default = 5,
     Min = 1,
@@ -1734,27 +1685,14 @@ local harassSpeedPanel = page3:AddHarassSpeedPanel({
     end
 })
 
-page3:AddButton({
-    Text = "操人速度",
-    Callback = function()
-        harassSpeedPanel.Visible = not harassSpeedPanel.Visible
-    end
-})
-
-local spinSpeedPanel = page3:AddSpinSpeedPanel({
+page3:AddSpinSpeedPanel({
+    Text = "旋转速度",
     Title = "旋转速度 (度/秒)",
     Default = 360,
     Min = 1,
     Max = 10000,
     OnChange = function(speed)
         SpinSpeed = speed
-    end
-})
-
-page3:AddButton({
-    Text = "旋转速度",
-    Callback = function()
-        spinSpeedPanel.Visible = not spinSpeedPanel.Visible
     end
 })
 
@@ -1805,7 +1743,8 @@ page4:AddToggle({
     end
 })
 
-local instanceIdPanel = page4:AddInstanceIdPanel({
+page4:AddInstanceIdPanel({
+    Text = "获取实例ID",
     Title = "实例 ID (JobId)",
     OnCopy = function(id)
         pcall(function() setclipboard(id) end)
@@ -1818,14 +1757,8 @@ local instanceIdPanel = page4:AddInstanceIdPanel({
     end
 })
 
-page4:AddButton({
-    Text = "获取实例ID",
-    Callback = function()
-        instanceIdPanel.Visible = not instanceIdPanel.Visible
-    end
-})
-
-local placeIdPanel = page4:AddPlaceIdPanel({
+page4:AddPlaceIdPanel({
+    Text = "获取数字ID",
     Title = "数字 ID (PlaceId)",
     OnCopy = function(id)
         pcall(function() setclipboard(id) end)
@@ -1833,14 +1766,8 @@ local placeIdPanel = page4:AddPlaceIdPanel({
     end
 })
 
-page4:AddButton({
-    Text = "获取数字ID",
-    Callback = function()
-        placeIdPanel.Visible = not placeIdPanel.Visible
-    end
-})
-
-local teleportServerPanel = page4:AddTeleportServerPanel({
+page4:AddTeleportServerPanel({
+    Text = "传送指定服务器",
     Title = "传送指定服务器",
     OnTeleport = function(jobId)
         pcall(function()
@@ -1852,14 +1779,8 @@ local teleportServerPanel = page4:AddTeleportServerPanel({
     end
 })
 
-page4:AddButton({
-    Text = "传送指定服务器",
-    Callback = function()
-        teleportServerPanel.Visible = not teleportServerPanel.Visible
-    end
-})
-
-local savedServersPanel = page4:AddSavedServersPanel({
+page4:AddSavedServersPanel({
+    Text = "已保存的服务器",
     Title = "已保存的服务器",
     Servers = savedServers,
     OnTeleport = function(id)
@@ -1875,13 +1796,6 @@ local savedServersPanel = page4:AddSavedServersPanel({
     end,
     OnDelete = function(id)
         removeServerId(id)
-    end
-})
-
-page4:AddButton({
-    Text = "已保存的服务器",
-    Callback = function()
-        savedServersPanel.Visible = not savedServersPanel.Visible
     end
 })
 
