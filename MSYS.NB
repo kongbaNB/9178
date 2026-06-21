@@ -34,59 +34,16 @@ local TweenService = game:GetService("TweenService")
 local VirtualUser = game:GetService("VirtualUser")
 local Camera = Workspace.CurrentCamera
 
--- ==================== 全局连接管理器（修复连接泄漏） ====================
+-- ==================== 连接与循环管理 ====================
 local AllConnections = {}
+local ActiveLoops = {}
+
 local function SafeConnect(event, callback)
     local conn = event:Connect(callback)
     table.insert(AllConnections, conn)
     return conn
 end
-local function DisconnectAllConnections()
-    for _, conn in ipairs(AllConnections) do
-        if conn and conn.Disconnect then
-            pcall(function() conn:Disconnect() end)
-        end
-    end
-    AllConnections = {}
-end
 
--- ==================== 安全的 Hook 管理器（修复 hook 冲突） ====================
-local OriginalNamecall = nil
-local NamecallHooks = {}
-
-local function RegisterNamecallHook(id, conditionFunc, handlerFunc)
-    NamecallHooks[id] = {
-        condition = conditionFunc,
-        handler = handlerFunc
-    }
-end
-
-local function UnregisterNamecallHook(id)
-    NamecallHooks[id] = nil
-end
-
-local function SetupNamecallHook()
-    if OriginalNamecall then return end
-    OriginalNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
-        local args = {...}
-        local selfName = tostring(self)
-
-        for id, hook in pairs(NamecallHooks) do
-            if hook.condition(selfName, method, args, self, ...) then
-                local result = hook.handler(self, method, args, ...)
-                if result ~= nil then
-                    return result
-                end
-            end
-        end
-
-        return OriginalNamecall(self, ...)
-    end)
-end
-
--- ==================== 安全的循环包装器 ====================
-local ActiveLoops = {}
 local function SafeLoop(id, interval, callback)
     if ActiveLoops[id] then return end
     ActiveLoops[id] = true
@@ -94,9 +51,9 @@ local function SafeLoop(id, interval, callback)
         while ActiveLoops[id] and not Library.Unloaded do
             local success, err = pcall(callback)
             if not success then
-                warn("[" .. id .. "] 循环错误: " .. tostring(err))
+                warn("[" .. id .. "] 错误: " .. tostring(err))
             end
-            task.wait(interval or 0.1)
+            task.wait(interval)
         end
         ActiveLoops[id] = nil
     end)
@@ -106,9 +63,21 @@ local function StopLoop(id)
     ActiveLoops[id] = nil
 end
 
--- ==================== 窗口创建 ====================
+local function DisconnectAll()
+    for _, conn in ipairs(AllConnections) do
+        if conn and conn.Disconnect then
+            pcall(function() conn:Disconnect() end)
+        end
+    end
+    AllConnections = {}
+    for id, _ in pairs(ActiveLoops) do
+        ActiveLoops[id] = nil
+    end
+end
+
+-- ==================== 窗口 ====================
 local Window = Library:CreateWindow({
-    Title = "墨水游戏脚本",
+    Title = "墨水游戏脚本 (安全版)",
     Footer = "By 恐拜大帝",
     Icon = 131153193945220,
     NotifySide = "Right",
@@ -126,8 +95,9 @@ local Tabs = {
 local NoticeGroup = Tabs.Notice:AddLeftGroupbox("公告")
 NoticeGroup:AddLabel("恐拜大帝持续更新此脚本")
 NoticeGroup:AddLabel("QQ3999698324")
+NoticeGroup:AddLabel("安全版: 去掉了Hook和PlatformStand")
 
--- ==================== 传送功能 ====================
+-- ==================== 传送 ====================
 local function smoothTeleport(targetPos)
     local char = LocalPlayer.Character
     if not char then return end
@@ -196,15 +166,17 @@ WoodGroup:AddToggle('GodMode', {
     Callback = function(Value) godModeEnabled = Value end
 })
 
+-- 移除子弹：改为事件驱动，不再遍历整个workspace
 local removeBulletsEnabled = false
+local bulletConnection = nil
 WoodGroup:AddToggle('RemoveBullets', {
     Text = '移除子弹（仅视觉 不卡）',
     Default = false,
     Callback = function(Value)
         removeBulletsEnabled = Value
         if Value then
-            SafeLoop("RemoveBullets", 0.5, function()
-                if not removeBulletsEnabled then return end
+            -- 先清理现有的
+            pcall(function()
                 for _, v in ipairs(workspace:GetDescendants()) do
                     if v:IsA("BasePart") then
                         local name = v.Name:lower()
@@ -215,28 +187,43 @@ WoodGroup:AddToggle('RemoveBullets', {
                     end
                 end
             end)
+            -- 监听新创建的
+            if bulletConnection then pcall(function() bulletConnection:Disconnect() end) end
+            bulletConnection = workspace.DescendantAdded:Connect(function(v)
+                if not removeBulletsEnabled then return end
+                if v:IsA("BasePart") then
+                    local name = v.Name:lower()
+                    if name:find("bullet") or name:find("projectile") or name:find("ammo") then
+                        v.Transparency = 1
+                        v.CanCollide = false
+                    end
+                end
+            end)
+            table.insert(AllConnections, bulletConnection)
         else
-            StopLoop("RemoveBullets")
+            if bulletConnection then
+                pcall(function() bulletConnection:Disconnect() end)
+                bulletConnection = nil
+            end
         end
     end
 })
 
--- ==================== 红绿灯无敌（修复 hook 冲突） ====================
+-- 红绿灯无敌：去掉__namecall Hook，改为纯客户端位置冻结
 local redLightGodmodeEnabled = false
 local redLightConnection = nil
 local isGreenLight = true
 local lastRootPartCFrame = nil
+local redLightLoopId = "RedLightTrack"
 
 WoodGroup:AddToggle('RedLightGodmode', {
-    Text = '红绿灯无敌模式',
+    Text = '红绿灯无敌模式(安全版)',
     Default = false,
     Callback = function(Value)
         redLightGodmodeEnabled = Value
         if Value then
             isGreenLight = true
-            if redLightConnection then
-                pcall(function() redLightConnection:Disconnect() end)
-            end
+            if redLightConnection then pcall(function() redLightConnection:Disconnect() end) end
             redLightConnection = ReplicatedStorage.Remotes.Effects.OnClientEvent:Connect(function(data)
                 if type(data) == "table" and data.EffectName == "TrafficLight" then
                     isGreenLight = data.GreenLight == true
@@ -244,33 +231,32 @@ WoodGroup:AddToggle('RedLightGodmode', {
             end)
             table.insert(AllConnections, redLightConnection)
 
-            SafeLoop("RedLightTrack", 0.05, function()
+            SafeLoop(redLightLoopId, 0.05, function()
                 if not redLightGodmodeEnabled then return end
                 local char = LocalPlayer.Character
-                if char then
-                    local root = char:FindFirstChild("HumanoidRootPart")
-                    if root and isGreenLight then
-                        lastRootPartCFrame = root.CFrame
+                if not char then return end
+                local root = char:FindFirstChild("HumanoidRootPart")
+                if not root then return end
+
+                if isGreenLight then
+                    lastRootPartCFrame = root.CFrame
+                else
+                    -- 红灯时强制保持位置，不拦截远程事件
+                    if lastRootPartCFrame then
+                        pcall(function()
+                            root.CFrame = lastRootPartCFrame
+                        end)
                     end
                 end
             end)
-
-            RegisterNamecallHook("RedLight", function(selfName, method, args)
-                return selfName == "rootCFrame" and method == "FireServer"
-            end, function(self, method, args)
-                if not isGreenLight and lastRootPartCFrame then
-                    return OriginalNamecall(self, lastRootPartCFrame)
-                end
-                return nil
-            end)
-            SetupNamecallHook()
+            Library:Notify("红绿灯无敌已开启(纯客户端模式)", 3)
         else
             if redLightConnection then
                 pcall(function() redLightConnection:Disconnect() end)
                 redLightConnection = nil
             end
-            StopLoop("RedLightTrack")
-            UnregisterNamecallHook("RedLight")
+            StopLoop(redLightLoopId)
+            Library:Notify("红绿灯无敌已关闭", 3)
         end
     end
 })
@@ -359,10 +345,10 @@ CandyGroup:AddButton({
     end,
 })
 
--- ==================== 糖饼不破（修复 hook 冲突） ====================
+-- 糖饼不破：去掉Hook，改为定时发送修复包
 local unbreakableEnabled = false
 CandyGroup:AddToggle('UnbreakableDalgona', {
-    Text = '糖饼不破',
+    Text = '糖饼不破(安全版)',
     Default = false,
     Callback = function(Value)
         unbreakableEnabled = Value
@@ -378,19 +364,9 @@ CandyGroup:AddToggle('UnbreakableDalgona', {
                     })
                 end)
             end)
-
-            RegisterNamecallHook("Unbreakable", function(selfName, method, args)
-                return selfName == "DALGONATEMPREMPTE" and method == "FireServer" and 
-                       args[1] ~= nil and type(args[1]) == "table" and args[1].CrackAmount ~= nil
-            end, function(self, method, args)
-                Library:Notify("已阻止你的饼干碎裂", 3)
-                return nil
-            end)
-            SetupNamecallHook()
         else
             Library:Notify("糖饼不破已关闭", 3)
             StopLoop("Unbreakable")
-            UnregisterNamecallHook("Unbreakable")
         end
     end
 })
@@ -429,14 +405,15 @@ TugGroup:AddToggle('AutoPull', {
 -- ==================== 玻璃桥 ====================
 local GlassGroup = Tabs.Game:AddLeftGroupbox("玻璃桥")
 local revealGlassEnabled = false
+local glassConnection = nil
 GlassGroup:AddToggle('RevealGlass', {
-    Text = '显示安全玻璃',
+    Text = '显示安全玻璃(事件驱动)',
     Default = false,
     Callback = function(Value)
         revealGlassEnabled = Value
         if Value then
-            SafeLoop("RevealGlass", 0.5, function()
-                if not revealGlassEnabled then return end
+            -- 先处理现有的
+            pcall(function()
                 local glassHolder = workspace:FindFirstChild("GlassBridge") and workspace.GlassBridge:FindFirstChild("GlassHolder")
                 if glassHolder then
                     for _, tilePair in pairs(glassHolder:GetChildren()) do
@@ -456,8 +433,31 @@ GlassGroup:AddToggle('RevealGlass', {
                     end
                 end
             end)
+            -- 监听新的
+            if glassConnection then pcall(function() glassConnection:Disconnect() end) end
+            glassConnection = workspace.DescendantAdded:Connect(function(v)
+                if not revealGlassEnabled then return end
+                if v:IsA("Model") and v:FindFirstChild("PrimaryPart") then
+                    local parent = v.Parent
+                    if parent and parent.Parent and parent.Parent.Name == "GlassBridge" then
+                        local primaryPart = v.PrimaryPart
+                        local isBreakable = primaryPart:GetAttribute("exploitingisevil") == true
+                        local targetColor = isBreakable and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
+                        for _, part in pairs(v:GetDescendants()) do
+                            if part:IsA("BasePart") then
+                                part.Color = targetColor
+                                part.Transparency = 0.5
+                            end
+                        end
+                    end
+                end
+            end)
+            table.insert(AllConnections, glassConnection)
         else
-            StopLoop("RevealGlass")
+            if glassConnection then
+                pcall(function() glassConnection:Disconnect() end)
+                glassConnection = nil
+            end
         end
     end
 })
@@ -836,7 +836,7 @@ TaskGroup:AddToggle('AutoJump1', {
     end
 })
 
--- ==================== 自定义标签（修复 task.spawn 不能 Disconnect） ====================
+-- ==================== 自定义标签 ====================
 local customTagConnections = {}
 local customTagCharacterAdded = nil
 local customTagRenderLoops = {}
@@ -892,7 +892,6 @@ local function applyCustomTag(character)
     local msgIndex = 1
     displayName.Text = messages[msgIndex]
 
-    -- 用循环代替 task.spawn 存储
     local messageThread = task.spawn(function()
         while character.Parent do
             task.wait(2)
@@ -957,6 +956,7 @@ local infiniteJumpEnabled = false
 local walkSpeedEnabled = false
 local walkSpeedValue = 50
 local flyBodyVelocity = nil
+local flyBodyGyro = nil
 local flyThread = nil
 
 PlayerGroup:AddToggle('Noclip', {
@@ -978,7 +978,6 @@ PlayerGroup:AddToggle('Noclip', {
             end)
         else
             StopLoop("Noclip")
-            -- 恢复碰撞
             local char = LocalPlayer.Character
             if char then
                 for _, child in pairs(char:GetDescendants()) do
@@ -991,8 +990,9 @@ PlayerGroup:AddToggle('Noclip', {
     end
 })
 
+-- 飞行：去掉PlatformStand，改用BodyGyro保持姿态
 PlayerGroup:AddToggle('Fly', {
-    Text = '飞行',
+    Text = '飞行(安全版)',
     Default = false,
     Callback = function(Value)
         flyEnabled = Value
@@ -1002,21 +1002,33 @@ PlayerGroup:AddToggle('Fly', {
         local hum = char:FindFirstChildOfClass("Humanoid")
         if not root or not hum then return end
 
+        -- 清理旧的
         if flyBodyVelocity then
             pcall(function() flyBodyVelocity:Destroy() end)
             flyBodyVelocity = nil
+        end
+        if flyBodyGyro then
+            pcall(function() flyBodyGyro:Destroy() end)
+            flyBodyGyro = nil
         end
         if flyThread then
             pcall(function() task.cancel(flyThread) end)
             flyThread = nil
         end
 
-        hum.PlatformStand = Value
         if Value then
+            -- 不修改PlatformStand，避免冻结输入
+            flyBodyGyro = Instance.new("BodyGyro")
+            flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+            flyBodyGyro.P = 9e4
+            flyBodyGyro.CFrame = root.CFrame
+            flyBodyGyro.Parent = root
+
             flyBodyVelocity = Instance.new("BodyVelocity")
             flyBodyVelocity.Velocity = Vector3.zero
             flyBodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
             flyBodyVelocity.Parent = root
+
             flyThread = task.spawn(function()
                 local camera = workspace.CurrentCamera
                 while flyEnabled and not Library.Unloaded do
@@ -1027,8 +1039,16 @@ PlayerGroup:AddToggle('Fly', {
                     if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camera.CFrame.RightVector end
                     if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
                     if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+
                     if flyBodyVelocity and flyBodyVelocity.Parent then
-                        flyBodyVelocity.Velocity = moveDir.Unit * flySpeed
+                        if moveDir.Magnitude > 0 then
+                            flyBodyVelocity.Velocity = moveDir.Unit * flySpeed
+                        else
+                            flyBodyVelocity.Velocity = Vector3.zero
+                        end
+                    end
+                    if flyBodyGyro and flyBodyGyro.Parent then
+                        flyBodyGyro.CFrame = camera.CFrame
                     end
                     task.wait(0.05)
                 end
@@ -1036,11 +1056,20 @@ PlayerGroup:AddToggle('Fly', {
                     pcall(function() flyBodyVelocity:Destroy() end)
                     flyBodyVelocity = nil
                 end
+                if flyBodyGyro then
+                    pcall(function() flyBodyGyro:Destroy() end)
+                    flyBodyGyro = nil
+                end
             end)
         else
+            -- 恢复状态
             if flyBodyVelocity then
                 pcall(function() flyBodyVelocity:Destroy() end)
                 flyBodyVelocity = nil
+            end
+            if flyBodyGyro then
+                pcall(function() flyBodyGyro:Destroy() end)
+                flyBodyGyro = nil
             end
         end
     end
@@ -1125,7 +1154,6 @@ PlayerGroup:AddToggle('KillauraInkGame', {
         if Value then
             SafeLoop("Killaura", 0.5, function()
                 if not (Toggles.KillauraInkGame and Toggles.KillauraInkGame.Value) then return end
-                -- 用户自行填充攻击逻辑
             end)
         else
             StopLoop("Killaura")
@@ -1133,7 +1161,7 @@ PlayerGroup:AddToggle('KillauraInkGame', {
     end
 })
 
--- ==================== 防眩晕（修复重复连接） ====================
+-- 防眩晕
 local antiRagdollEnabled = false
 local antiRagdollConnection = nil
 
@@ -1531,7 +1559,7 @@ GuardAimGroup:AddToggle('AutoAttack', {
     end
 })
 
--- ==================== 投掷光环（修复极端物理导致的卡住） ====================
+-- ==================== 投掷光环（不禁用Main脚本） ====================
 local flingAuraActive = false
 local flingAuraThread = nil
 
@@ -1539,29 +1567,27 @@ local function getRoot(character)
     return character and (character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso"))
 end
 
--- 不再禁用 Main 脚本，避免卡住对话系统
 local function startFlingAura()
     if flingAuraActive then return end
     flingAuraActive = true
-    Library:Notify("投掷光环已启用", 3)
+    Library:Notify("投掷光环已启用(安全模式)", 3)
     flingAuraThread = task.spawn(function()
         while flingAuraActive and not Library.Unloaded do
             local character = LocalPlayer.Character
             local root = getRoot(character)
             if character and root and root.Parent then
                 local originalVel = root.Velocity
-                -- 降低倍数，避免物理引擎卡死
-                root.Velocity = originalVel * 500 + Vector3.new(0, 500, 0)
-                task.wait(0.03)
+                root.Velocity = originalVel * 300 + Vector3.new(0, 300, 0)
+                task.wait(0.05)
                 if character and root and root.Parent then
                     root.Velocity = originalVel
                 end
-                task.wait(0.03)
+                task.wait(0.05)
                 if character and root and root.Parent then
-                    root.Velocity = originalVel + Vector3.new(0, 0.5, 0)
+                    root.Velocity = originalVel + Vector3.new(0, 0.3, 0)
                 end
             end
-            task.wait(0.05)
+            task.wait(0.1)
         end
     end)
 end
@@ -1748,7 +1774,7 @@ SafeLoop("SafeHeartbeat", 2, function()
     end
 end)
 
--- ==================== 全局心跳（修复连接管理） ====================
+-- ==================== 全局心跳 ====================
 local heartbeatConn = RunService.Heartbeat:Connect(function()
     updateHealthTexts()
     updateDistanceTexts()
@@ -1801,37 +1827,19 @@ local MenuGroup = Tabs.Settings:AddLeftGroupbox('菜单')
 MenuGroup:AddButton('卸载脚本', function()
     clearAllESP()
     clearAllCustomTags()
-    StopLoop("SafeHeartbeat")
-    StopLoop("RemoveBullets")
-    StopLoop("RedLightTrack")
-    StopLoop("Unbreakable")
-    StopLoop("AutoPull")
-    StopLoop("RevealGlass")
-    StopLoop("ExpandHitbox")
-    StopLoop("CarouselQTE")
-    StopLoop("HoldJump")
-    StopLoop("AutoQTE")
-    StopLoop("Killaura")
-    StopLoop("GhostStep")
-    StopLoop("AutoAttack")
-    StopLoop("Noclip")
-
-    -- 恢复 namecall hook
-    if OriginalNamecall then
-        -- 无法真正卸载 hook，但可以清空所有注册的处理函数
-        NamecallHooks = {}
-    end
-
-    stopFlingAura()
-    DisconnectAllConnections()
+    DisconnectAll()
 
     if flyBodyVelocity then
         pcall(function() flyBodyVelocity:Destroy() end)
+    end
+    if flyBodyGyro then
+        pcall(function() flyBodyGyro:Destroy() end)
     end
     if flyThread then
         pcall(function() task.cancel(flyThread) end)
     end
 
+    stopFlingAura()
     Library:Unload()
 end)
 
