@@ -92,12 +92,33 @@ local function setNoClip(enabled)
     end
 end
 
+local function getFinishArea()
+    local finish = workspace:FindFirstChild("Areas") and workspace.Areas:FindFirstChild("Finish")
+    if not finish then finish = workspace:FindFirstChild("Finish") end
+    if not finish then finish = workspace:FindFirstChild("FinishLine") end
+    if not finish then finish = workspace:FindFirstChild("End") end
+    if not finish then finish = workspace:FindFirstChild("EndZone") end
+    return finish
+end
+
+local function tryJump()
+    local humanoid = lp.Character and lp.Character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end
+
 local function FollowWave_V1()
     if not waves then return end
     if following then following:Disconnect() end
     setNoClip(false)
     local hrp = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
+    local jumpCount = 0
+    local lastJumpTime = 0
+    local lastWavePos = nil
+    local stopFrames = 0
+
     following = rs.RenderStepped:Connect(function()
         if not Handler.Status or Handler.Status ~= "Tsunami" then
             if following then following:Disconnect(); following = nil end
@@ -105,7 +126,40 @@ local function FollowWave_V1()
         end
         local wave = waves:FindFirstChildWhichIsA("Model") and waves:FindFirstChildWhichIsA("Model"):FindFirstChildWhichIsA("Part")
         if not wave then return end
+
         hrp.CFrame = CFrame.new(wave.Position + Vector3.new(80, 0, 0), wave.Position)
+
+        if jumpCount < 2 then
+            local shouldJump = false
+            local finishArea = getFinishArea()
+            if finishArea then
+                if (hrp.Position - finishArea.Position).Magnitude < 60 then
+                    shouldJump = true
+                end
+            else
+                if lastWavePos then
+                    local moved = (wave.Position - lastWavePos).Magnitude
+                    if moved < 0.2 then
+                        stopFrames = stopFrames + 1
+                        if stopFrames >= 3 then
+                            shouldJump = true
+                        end
+                    else
+                        stopFrames = 0
+                    end
+                end
+                lastWavePos = wave.Position
+            end
+
+            if shouldJump then
+                local now = tick()
+                if jumpCount == 0 or (now - lastJumpTime >= 0.25) then
+                    tryJump()
+                    jumpCount = jumpCount + 1
+                    lastJumpTime = now
+                end
+            end
+        end
     end)
 end
 
@@ -115,6 +169,11 @@ local function FollowWave_V2()
     setNoClip(false)
     local hrp = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
+    local jumpCount = 0
+    local lastJumpTime = 0
+    local lastWavePos = nil
+    local stopFrames = 0
+
     following = rs.RenderStepped:Connect(function()
         if not Handler.Status or Handler.Status ~= "Tsunami" then
             if following then following:Disconnect(); following = nil end
@@ -129,6 +188,38 @@ local function FollowWave_V2()
         local targetPos = Vector3.new(wavePos.X + 400, currentPos.Y, wavePos.Z)
         local targetCFrame = CFrame.new(targetPos)
         hrp.CFrame = hrp.CFrame:Lerp(targetCFrame, 0.15)
+
+        if jumpCount < 2 then
+            local shouldJump = false
+            local finishArea = getFinishArea()
+            if finishArea then
+                if (hrp.Position - finishArea.Position).Magnitude < 60 then
+                    shouldJump = true
+                end
+            else
+                if lastWavePos then
+                    local moved = (wavePos - lastWavePos).Magnitude
+                    if moved < 0.2 then
+                        stopFrames = stopFrames + 1
+                        if stopFrames >= 3 then
+                            shouldJump = true
+                        end
+                    else
+                        stopFrames = 0
+                    end
+                end
+                lastWavePos = wavePos
+            end
+
+            if shouldJump then
+                local now = tick()
+                if jumpCount == 0 or (now - lastJumpTime >= 0.25) then
+                    tryJump()
+                    jumpCount = jumpCount + 1
+                    lastJumpTime = now
+                end
+            end
+        end
     end)
 end
 
