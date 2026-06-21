@@ -206,7 +206,6 @@ KickGroup:AddToggle('AutoKick', {
 -- ========== 锻炼 ==========
 local ExerciseGroup = Tabs.Main:AddLeftGroupbox("锻炼")
 
--- 手动积攒锻炼奖励：点一下爆发触发，很快自动停止
 ExerciseGroup:AddButton({
     Text = '手动积攒锻炼奖励',
     Func = function()
@@ -239,6 +238,18 @@ ExerciseGroup:AddToggle('AutoTaviMishkal', {
                     end
                 end)
             end
+        end)
+    end
+})
+
+-- ========== 出售 ==========
+local SellGroup = Tabs.Main:AddRightGroupbox("出售")
+
+SellGroup:AddButton({
+    Text = '出售全部物品栏脑腐',
+    Func = function()
+        pcall(function()
+            rep.Shared.Packages.Network.ref_B_SellAll:InvokeServer()
         end)
     end
 })
