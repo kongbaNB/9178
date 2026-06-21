@@ -172,7 +172,9 @@ if SaveManager then
     SaveManager:BuildConfigSection(Tabs.Settings)
 end
 
+-- ========== 踢击 ==========
 local KickGroup = Tabs.Main:AddLeftGroupbox("踢击")
+
 KickGroup:AddButton({
     Text = '全力踢击',
     Func = function()
@@ -201,9 +203,51 @@ KickGroup:AddToggle('AutoKick', {
     end
 })
 
+-- ========== 锻炼 ==========
+local ExerciseGroup = Tabs.Main:AddLeftGroupbox("锻炼")
+
+-- 手动积攒锻炼奖励：点一下爆发触发，很快自动停止
+ExerciseGroup:AddButton({
+    Text = '手动积攒锻炼奖励',
+    Func = function()
+        spawn(function()
+            for i = 1, 50 do
+                pcall(function()
+                    if Network and Network["rev_TaviMishkal"] then
+                        Network["rev_TaviMishkal"]:FireServer()
+                    end
+                end)
+                task.wait(0.02)
+            end
+            Library:Notify("手动积攒锻炼奖励 执行完毕", 2)
+        end)
+    end
+})
+
+local autoTavi = false
+ExerciseGroup:AddToggle('AutoTaviMishkal', {
+    Text = '积攒锻炼奖励',
+    Default = false,
+    Callback = function(v)
+        autoTavi = v
+        if not v then return end
+        spawn(function()
+            while wait(0.05) and autoTavi do
+                pcall(function()
+                    if Network and Network["rev_TaviMishkal"] then
+                        Network["rev_TaviMishkal"]:FireServer()
+                    end
+                end)
+            end
+        end)
+    end
+})
+
+-- ========== 跑到终点 ==========
 local WaveGroup = Tabs.Main:AddRightGroupbox("跑到终点")
+
 WaveGroup:AddButton({
-    Text = '手动跑到终点',
+    Text = '自动跑回家一次',
     Func = function()
         FollowWave()
     end
@@ -229,6 +273,7 @@ WaveGroup:AddToggle('AutoCollectWave', {
     end
 })
 
+-- ========== 奖励 ==========
 local BonusGroup = Tabs.Main:AddLeftGroupbox("奖励")
 local WeightBonus
 BonusGroup:AddToggle('AutoBonus', {
@@ -249,6 +294,7 @@ BonusGroup:AddToggle('AutoBonus', {
     end
 })
 
+-- ========== 杂项 ==========
 local MiscGroup = Tabs.Main:AddRightGroupbox("杂项")
 MiscGroup:AddToggle('AutoRebirth', {
     Text = '自动转生',
