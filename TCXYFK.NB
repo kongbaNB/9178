@@ -63,12 +63,58 @@ local function _kick(strength)
 end
 
 local following
-local function FollowWave()
+local noclipConnection
+
+local function setNoClip(enabled)
+    if noclipConnection then
+        noclipConnection:Disconnect()
+        noclipConnection = nil
+    end
+    if enabled then
+        noclipConnection = rs.Stepped:Connect(function()
+            local character = lp.Character
+            if not character then return end
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end)
+    else
+        local character = lp.Character
+        if character then
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
+end
+
+local function FollowWave_V1()
     if not waves then return end
     if following then following:Disconnect() end
+    setNoClip(false)
     local hrp = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
+    following = rs.RenderStepped:Connect(function()
+        if not Handler.Status or Handler.Status ~= "Tsunami" then
+            if following then following:Disconnect(); following = nil end
+            return
+        end
+        local wave = waves:FindFirstChildWhichIsA("Model") and waves:FindFirstChildWhichIsA("Model"):FindFirstChildWhichIsA("Part")
+        if not wave then return end
+        hrp.CFrame = CFrame.new(wave.Position + Vector3.new(80, 0, 0), wave.Position)
+    end)
+end
 
+local function FollowWave_V2()
+    if not waves then return end
+    if following then following:Disconnect() end
+    setNoClip(false)
+    local hrp = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
     following = rs.RenderStepped:Connect(function()
         if not Handler.Status or Handler.Status ~= "Tsunami" then
             if following then following:Disconnect(); following = nil end
@@ -78,15 +124,10 @@ local function FollowWave()
         if not waveModel then return end
         local wave = waveModel:FindFirstChildWhichIsA("Part")
         if not wave then return end
-
         local wavePos = wave.Position
         local currentPos = hrp.Position
-
-        -- 距离改为 400（更远），Y 轴保持人物当前高度（不上下抖动），Z 轴跟随波浪
         local targetPos = Vector3.new(wavePos.X + 400, currentPos.Y, wavePos.Z)
         local targetCFrame = CFrame.new(targetPos)
-
-        -- 平滑移动（Lerp 插值，0.15 因子，丝滑不卡顿）
         hrp.CFrame = hrp.CFrame:Lerp(targetCFrame, 0.15)
     end)
 end
@@ -269,32 +310,59 @@ SellGroup:AddButton({
 -- ========== 跑到终点 ==========
 local WaveGroup = Tabs.Main:AddRightGroupbox("跑到终点")
 
-WaveGroup:AddButton({
-    Text = '自动跑回家一次',
-    Func = function()
-        FollowWave()
+local autoHomeV1 = false
+local autoHomeV2 = false
+local toggleV1, toggleV2
+
+toggleV1 = WaveGroup:AddToggle('AutoHomeV1', {
+    Text = '自动回家V1',
+    Default = false,
+    Callback = function(v)
+        autoHomeV1 = v
+        if v and toggleV2 then
+            toggleV2:SetValue(false)
+        end
+        if v then
+            if Handler.Status == "Tsunami" then
+                FollowWave_V1()
+            end
+        else
+            if following then following:Disconnect(); following = nil end
+            setNoClip(false)
+        end
     end
 })
 
-local collecting = false
-if Handler.StatusChanged then
-    Handler.StatusChanged:Connect(function()
-        if Handler.Status == "Tsunami" and collecting then
-            FollowWave()
-        end
-    end)
-end
-WaveGroup:AddToggle('AutoCollectWave', {
-    Text = '自动跑到终点',
+toggleV2 = WaveGroup:AddToggle('AutoHomeV2', {
+    Text = '自动回家V2',
     Default = false,
     Callback = function(v)
-        collecting = v
-        if not v and following then
-            following:Disconnect()
-            following = nil
+        autoHomeV2 = v
+        if v and toggleV1 then
+            toggleV1:SetValue(false)
+        end
+        if v then
+            if Handler.Status == "Tsunami" then
+                FollowWave_V2()
+            end
+        else
+            if following then following:Disconnect(); following = nil end
+            setNoClip(false)
         end
     end
 })
+
+if Handler.StatusChanged then
+    Handler.StatusChanged:Connect(function()
+        if Handler.Status == "Tsunami" then
+            if autoHomeV1 then
+                FollowWave_V1()
+            elseif autoHomeV2 then
+                FollowWave_V2()
+            end
+        end
+    end)
+end
 
 -- ========== 奖励 ==========
 local BonusGroup = Tabs.Main:AddLeftGroupbox("奖励")
