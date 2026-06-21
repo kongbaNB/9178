@@ -1805,14 +1805,43 @@ MainLeft:AddToggle("Freeze",{ Text="冻结怪物", Default=false, Callback=funct
 	toggleFreeze(v) Notify("冻结怪物: "..(v and "开启" or "关闭"))
 end})
 MainLeft:AddToggle("AnySell",{ Text="随处出售", Default=false, Callback=function(v)
+	anySellEnabled = v
 	if v then
 		pcall(function()
 			if LocalPlayer.Character and LocalPlayer.Character.PrimaryPart then
 				TEvent.FireRemote("PlayerInElevator", true, LocalPlayer.Character.PrimaryPart.CFrame.Position, TEvent.UnixTimeMillis())
 			end
 		end)
-		Notify("随处出售已开启")
+		-- 角色重生/换层时自动补发
+		if anySellCharConn then anySellCharConn:Disconnect() end
+		anySellCharConn = LocalPlayer.CharacterAdded:Connect(function()
+			task.wait(0.5)
+			if anySellEnabled then
+				pcall(function()
+					if LocalPlayer.Character and LocalPlayer.Character.PrimaryPart then
+						TEvent.FireRemote("PlayerInElevator", true, LocalPlayer.Character.PrimaryPart.CFrame.Position, TEvent.UnixTimeMillis())
+					end
+				end)
+			end
+		end)
+		-- 每3秒后台自动补发，防止状态过期
+		task.spawn(function()
+			while anySellEnabled do
+				task.wait(3)
+				if not anySellEnabled then break end
+				pcall(function()
+					if LocalPlayer.Character and LocalPlayer.Character.PrimaryPart then
+						TEvent.FireRemote("PlayerInElevator", true, LocalPlayer.Character.PrimaryPart.CFrame.Position, TEvent.UnixTimeMillis())
+					end
+				end)
+			end
+		end)
+		Notify("随处出售已开启（自动保持）")
 	else
+		if anySellCharConn then
+			anySellCharConn:Disconnect()
+			anySellCharConn = nil
+		end
 		Notify("随处出售已关闭")
 	end
 end})
