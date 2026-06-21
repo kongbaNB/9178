@@ -42,24 +42,30 @@ if not success then
 end
 
 local Network
-local area
-local waves
 local success2, err2 = pcall(function()
     Network = rep["Shared"]["Packages"]["Network"]
-    area = workspace.Areas.KickReady
-    waves = workspace.Waves
 end)
 if not success2 then
     Network = {}
-    area = nil
-    waves = nil
-    warn("游戏对象获取失败: " .. tostring(err2))
+    warn("Network 获取失败: " .. tostring(err2))
 end
 
+local area
+pcall(function()
+    area = workspace:FindFirstChild("Areas") and workspace.Areas:FindFirstChild("KickReady")
+end)
+
+local waves
+pcall(function()
+    waves = workspace:FindFirstChild("Waves")
+end)
+
 local function _kick(strength)
-    if Network and Network["rev_KickEvent"] then
-        Network["rev_KickEvent"]:FireServer(strength or 1)
-    end
+    pcall(function()
+        if Network and Network["rev_KickEvent"] then
+            Network["rev_KickEvent"]:FireServer(strength or 1)
+        end
+    end)
 end
 
 local following
@@ -316,7 +322,6 @@ if SaveManager then
     SaveManager:BuildConfigSection(Tabs.Settings)
 end
 
--- ========== 踢击 ==========
 local KickGroup = Tabs.Main:AddLeftGroupbox("踢击")
 
 KickGroup:AddButton({
@@ -347,7 +352,6 @@ KickGroup:AddToggle('AutoKick', {
     end
 })
 
--- ========== 锻炼 ==========
 local ExerciseGroup = Tabs.Main:AddLeftGroupbox("锻炼")
 
 ExerciseGroup:AddButton({
@@ -386,7 +390,6 @@ ExerciseGroup:AddToggle('AutoTaviMishkal', {
     end
 })
 
--- ========== 出售 ==========
 local SellGroup = Tabs.Main:AddRightGroupbox("出售")
 
 SellGroup:AddButton({
@@ -398,7 +401,6 @@ SellGroup:AddButton({
     end
 })
 
--- ========== 跑到终点 ==========
 local WaveGroup = Tabs.Main:AddRightGroupbox("跑到终点")
 
 local autoHomeV1 = false
@@ -455,7 +457,6 @@ if Handler.StatusChanged then
     end)
 end
 
--- ========== 奖励 ==========
 local BonusGroup = Tabs.Main:AddLeftGroupbox("奖励")
 local WeightBonus
 BonusGroup:AddToggle('AutoBonus', {
@@ -476,8 +477,26 @@ BonusGroup:AddToggle('AutoBonus', {
     end
 })
 
--- ========== 杂项 ==========
 local MiscGroup = Tabs.Main:AddRightGroupbox("杂项")
+
+local autoJump = false
+MiscGroup:AddToggle('AutoJump', {
+    Text = '自动跳跃',
+    Default = false,
+    Callback = function(v)
+        autoJump = v
+        if not v then return end
+        spawn(function()
+            while wait(0.3) and autoJump do
+                local humanoid = lp.Character and lp.Character:FindFirstChild("Humanoid")
+                if humanoid and humanoid.FloorMaterial ~= Enum.Material.Air then
+                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                end
+            end
+        end)
+    end
+})
+
 MiscGroup:AddToggle('AutoRebirth', {
     Text = '自动转生',
     Default = false,
