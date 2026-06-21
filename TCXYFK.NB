@@ -68,14 +68,26 @@ local function FollowWave()
     if following then following:Disconnect() end
     local hrp = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
+
     following = rs.RenderStepped:Connect(function()
         if not Handler.Status or Handler.Status ~= "Tsunami" then
             if following then following:Disconnect(); following = nil end
             return
         end
-        local wave = waves:FindFirstChildWhichIsA("Model") and waves:FindFirstChildWhichIsA("Model"):FindFirstChildWhichIsA("Part")
+        local waveModel = waves:FindFirstChildWhichIsA("Model")
+        if not waveModel then return end
+        local wave = waveModel:FindFirstChildWhichIsA("Part")
         if not wave then return end
-        hrp.CFrame = CFrame.new(wave.Position + Vector3.new(80, 0, 0), wave.Position)
+
+        local wavePos = wave.Position
+        local currentPos = hrp.Position
+
+        -- 距离改为 400（更远），Y 轴保持人物当前高度（不上下抖动），Z 轴跟随波浪
+        local targetPos = Vector3.new(wavePos.X + 400, currentPos.Y, wavePos.Z)
+        local targetCFrame = CFrame.new(targetPos)
+
+        -- 平滑移动（Lerp 插值，0.15 因子，丝滑不卡顿）
+        hrp.CFrame = hrp.CFrame:Lerp(targetCFrame, 0.15)
     end)
 end
 
