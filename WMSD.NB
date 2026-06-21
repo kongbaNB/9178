@@ -534,11 +534,14 @@ local function createItemEsp(item)
 	local yPos = 0
 	local lineH = 0.33
 
+	local rawName = nameLbl.Text
+	local displayName = translatedTexts[rawName] or rawName
+
 	local txtName = Instance.new("TextLabel")
 	txtName.Size = UDim2.new(1, 0, lineH, 0)
 	txtName.Position = UDim2.new(0, 0, yPos, 0)
 	txtName.BackgroundTransparency = 1
-	txtName.Text = nameLbl.Text
+	txtName.Text = displayName
 	txtName.TextColor3 = itemColor
 	txtName.TextStrokeTransparency = 0
 	txtName.TextSize = 10
@@ -546,6 +549,16 @@ local function createItemEsp(item)
 	txtName.Visible = itemConfig.Name
 	txtName.Parent = billboard
 	if itemConfig.Name then yPos = yPos + lineH end
+
+	-- 后台异步翻译，不阻塞 ESP 创建
+	if not translatedTexts[rawName] and isEnglish(rawName) then
+		task.spawn(function()
+			local translated = translateText(rawName)
+			if translated and txtName and txtName.Parent then
+				txtName.Text = translated
+			end
+		end)
+	end
 
 	local txtPrice = Instance.new("TextLabel")
 	txtPrice.Size = UDim2.new(1, 0, lineH, 0)
@@ -1304,44 +1317,57 @@ local function startESPWatcher()
 	end)
 end
 
-local killMovingActive = false
-local killMovingConnection
+-- ==================== 困杀怪物（喝茶模式） ====================
+local monsterTrapActive = false
+local monsterTrapConn = nil
+local monsterSpawnCache = {}
 
-local function isNonPlayerCharacter(model)
-	if not model:IsA("Model") then return false end
-	local hum = model:FindFirstChildOfClass("Humanoid")
-	if not hum then return false end
-	return Players:GetPlayerFromCharacter(model) == nil
-end
-
-local function killMovingMonsters()
-	for _, obj in pairs(Workspace:GetDescendants()) do
-		pcall(function()
-			if obj:IsA("BasePart") then
-				local model = obj:FindFirstAncestorOfClass("Model")
-				if model and isNonPlayerCharacter(model) then
-					local hum = model:FindFirstChildOfClass("Humanoid")
-					if hum and hum.Health > 0 then
-						local root = model:FindFirstChild("HumanoidRootPart") or model.PrimaryPart
-						if root and (root.Velocity.Magnitude > 0.5 or hum.MoveDirection.Magnitude > 0.1) then
-							model:Destroy()
-						end
-					end
-				end
+local function trapMonster(model)
+	pcall(function()
+		if model == LocalPlayer.Character then return end
+		if not model:IsA("Model") then return end
+		local root = model:FindFirstChild("HumanoidRootPart") or model.PrimaryPart
+		if root then
+			if not monsterSpawnCache[model.Name] then
+				monsterSpawnCache[model.Name] = root.CFrame
+			else
+				root.CFrame = monsterSpawnCache[model.Name]
+			end
+		end
+		local hum = model:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum.Health = 0
+			hum:ChangeState(Enum.HumanoidStateType.Dead)
+		end
+		task.delay(0.05, function()
+			if model and model.Parent then
+				model:Destroy()
 			end
 		end)
-	end
+	end)
 end
 
-local function toggleKillMoving(state)
-	killMovingActive = state
-	if state then
-		if killMovingConnection then killMovingConnection:Disconnect() end
-		killMovingConnection = RunService.Heartbeat:Connect(killMovingMonsters)
-	else
-		if killMovingConnection then killMovingConnection:Disconnect() killMovingConnection = nil end
+local function startMonsterTrap()
+	monsterTrapActive = true
+	for _, m in pairs(MonstersFolder:GetChildren()) do
+		trapMonster(m)
+	end
+	monsterTrapConn = MonstersFolder.ChildAdded:Connect(function(m)
+		if monsterTrapActive then
+			task.wait(0.03)
+			trapMonster(m)
+		end
+	end)
+end
+
+local function stopMonsterTrap()
+	monsterTrapActive = false
+	if monsterTrapConn then
+		monsterTrapConn:Disconnect()
+		monsterTrapConn = nil
 	end
 end
+-- ==============================================================
 
 local freezeActive = false
 local freezeConnection
@@ -1352,7 +1378,7 @@ local function freezeMonsters()
 		pcall(function()
 			if obj:IsA("BasePart") then
 				local model = obj:FindFirstAncestorOfClass("Model")
-				if model and isNonPlayerCharacter(model) then
+				if model and model ~= LocalPlayer.Character then
 					local hum = model:FindFirstChildOfClass("Humanoid")
 					if hum and hum.Health > 0 then
 						if not originalSpeeds[model] then
@@ -1393,6 +1419,26 @@ local function toggleFreeze(state)
 		unfreezeMonsters()
 	end
 end
+
+-- ==================== 无敌 ====================
+local invincibleEnabled = false
+local invincibleConnection = nil
+
+local function enableInvincible()
+	local character = LocalPlayer.Character
+	if character and character:FindFirstChild("HumanoidRootPart") then
+		local clone = character.HumanoidRootPart:Clone()
+		clone.Parent = character
+	end
+end
+
+local function onCharacterAddedForInvincible(character)
+	task.wait(0.5)
+	if invincibleEnabled then
+		enableInvincible()
+	end
+end
+-- =============================================
 
 local function findNearestElevator(pos)
 	local nearest, minDist = nil, math.huge
@@ -1752,11 +1798,38 @@ end, DoubleClick=false })
 MainLeft:AddToggle("AutoTranslate",{ Text="自动翻译界面", Default=false, Callback=function(v)
 	if v then startAutoTranslate() Notify("自动翻译已开启") else stopAutoTranslate() Notify("自动翻译已关闭") end
 end})
-MainLeft:AddToggle("KillMoving",{ Text="杀死移动怪物", Default=false, Callback=function(v)
-	toggleKillMoving(v) Notify("杀死移动怪物: "..(v and "开启" or "关闭"))
+MainLeft:AddToggle("MonsterTrap",{ Text="困杀怪物（喝茶模式）", Default=false, Callback=function(v)
+	if v then startMonsterTrap() Notify("困杀怪物已开启：出生点循环去世") else stopMonsterTrap() Notify("困杀怪物已关闭") end
 end})
 MainLeft:AddToggle("Freeze",{ Text="冻结怪物", Default=false, Callback=function(v)
 	toggleFreeze(v) Notify("冻结怪物: "..(v and "开启" or "关闭"))
+end})
+MainLeft:AddToggle("AnySell",{ Text="随处出售", Default=false, Callback=function(v)
+	if v then
+		pcall(function()
+			if LocalPlayer.Character and LocalPlayer.Character.PrimaryPart then
+				TEvent.FireRemote("PlayerInElevator", true, LocalPlayer.Character.PrimaryPart.CFrame.Position, TEvent.UnixTimeMillis())
+			end
+		end)
+		Notify("随处出售已开启")
+	else
+		Notify("随处出售已关闭")
+	end
+end})
+MainLeft:AddToggle("Invincible",{ Text="无敌", Default=false, Callback=function(v)
+	invincibleEnabled = v
+	if v then
+		enableInvincible()
+		if invincibleConnection then invincibleConnection:Disconnect() end
+		invincibleConnection = LocalPlayer.CharacterAdded:Connect(onCharacterAddedForInvincible)
+		Notify("无敌已开启")
+	else
+		if invincibleConnection then
+			invincibleConnection:Disconnect()
+			invincibleConnection = nil
+		end
+		Notify("无敌已关闭")
+	end
 end})
 MainLeft:AddButton({ Text="一键开启所有容器", Func=function()
 	ForceOpenAllContainersOnce() Notify("已尝试开启所有容器")
