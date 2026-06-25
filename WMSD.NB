@@ -960,7 +960,7 @@ local function getMonsterName(model)
 	elseif model:FindFirstChild("LeLower_Leg") and model:FindFirstChild("HumanoidRootPart") then
 		return "行走食物"
 	elseif model:FindFirstChild("Waist1") and model:FindFirstChild("AnimSaves") then
-		return "遗忘者"
+		return "被遗忘者"
 	elseif model:FindFirstChild("Bubble") and model:FindFirstChild("Mouth") then
 		return "鳄鱼"
 	elseif model:FindFirstChild("Tail") and model:FindFirstChild("WB2") then
