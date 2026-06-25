@@ -550,7 +550,7 @@ local function createItemEsp(item)
 	txtName.Parent = billboard
 	if itemConfig.Name then yPos = yPos + lineH end
 
-	-- 后台异步翻译，不阻塞 ESP 创建
+	
 	if not translatedTexts[rawName] and isEnglish(rawName) then
 		task.spawn(function()
 			local translated = translateText(rawName)
@@ -1317,7 +1317,6 @@ local function startESPWatcher()
 	end)
 end
 
--- ==================== 困杀怪物（喝茶模式） ====================
 local monsterTrapActive = false
 local monsterTrapConn = nil
 local monsterSpawnCache = {}
@@ -1367,7 +1366,6 @@ local function stopMonsterTrap()
 		monsterTrapConn = nil
 	end
 end
--- ==============================================================
 
 local freezeActive = false
 local freezeConnection
@@ -1420,7 +1418,6 @@ local function toggleFreeze(state)
 	end
 end
 
--- ==================== 无敌 ====================
 local invincibleEnabled = false
 local invincibleConnection = nil
 
@@ -1438,7 +1435,6 @@ local function onCharacterAddedForInvincible(character)
 		enableInvincible()
 	end
 end
--- =============================================
 
 local function findNearestElevator(pos)
 	local nearest, minDist = nil, math.huge
@@ -1812,7 +1808,7 @@ MainLeft:AddToggle("AnySell",{ Text="随处出售", Default=false, Callback=func
 				TEvent.FireRemote("PlayerInElevator", true, LocalPlayer.Character.PrimaryPart.CFrame.Position, TEvent.UnixTimeMillis())
 			end
 		end)
-		-- 角色重生/换层时自动补发
+		
 		if anySellCharConn then anySellCharConn:Disconnect() end
 		anySellCharConn = LocalPlayer.CharacterAdded:Connect(function()
 			task.wait(0.5)
@@ -1824,7 +1820,7 @@ MainLeft:AddToggle("AnySell",{ Text="随处出售", Default=false, Callback=func
 				end)
 			end
 		end)
-		-- 每3秒后台自动补发，防止状态过期
+		
 		task.spawn(function()
 			while anySellEnabled do
 				task.wait(3)
@@ -1845,19 +1841,19 @@ MainLeft:AddToggle("AnySell",{ Text="随处出售", Default=false, Callback=func
 		Notify("随处出售已关闭")
 	end
 end})
-MainLeft:AddToggle("Invincible",{ Text="无敌", Default=false, Callback=function(v)
+MainLeft:AddToggle("Invincible",{ Text="无敌（多人无法使用）", Default=false, Callback=function(v)
 	invincibleEnabled = v
 	if v then
 		enableInvincible()
 		if invincibleConnection then invincibleConnection:Disconnect() end
 		invincibleConnection = LocalPlayer.CharacterAdded:Connect(onCharacterAddedForInvincible)
-		Notify("无敌已开启")
+		Notify("无敌（多人无法使用）已开启")
 	else
 		if invincibleConnection then
 			invincibleConnection:Disconnect()
 			invincibleConnection = nil
 		end
-		Notify("无敌已关闭")
+		Notify("无敌（多人无法使用）已关闭")
 	end
 end})
 MainLeft:AddButton({ Text="一键开启所有容器", Func=function()
