@@ -12,22 +12,14 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-if not table.clone then
-    table.clone = function(t)
-        local nt = {}
-        for k,v in pairs(t) do nt[k] = v end
-        return nt
-    end
-end
-
 Library.ShowToggleFrameInKeybinds = true 
 Library.ShowCustomCursor = true
 Library.NotifySide = "Right"
 
 local Window = Library:CreateWindow({
-    Title = '🇨🇳 被遗弃｜大司马脚本🔥🔥',
+    Title = '被遗弃脚本',
     Footer = "V1.0",
-    Icon = 106397684977541,
+    Icon = 131153193945220,
     Center = true,
     AutoShow = true,
     Resizable = true,
@@ -44,7 +36,6 @@ local Tabs = {
 }
 
 local _env = getgenv and getgenv() or {}
-local _hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
 
 local KillerSurvival = Tabs.Main:AddLeftGroupbox("调节功能")
 
@@ -64,6 +55,7 @@ end)
 
 KillerSurvival:AddToggle("NS",{
     Text = "去除前摇 后摇 缓慢动作",
+    Default = false,
     Callback = function(v)
         _env.NoStun = v
     end
@@ -85,6 +77,7 @@ _env.SpeedBoostValue = 1
 
 KillerSurvival:AddToggle("SB",{
     Text = "启用速度",
+    Default = false,
     Callback = function(v)
         _env.SpeedBoost = v
         while _env.SpeedBoost do
@@ -100,11 +93,11 @@ KillerSurvival:AddToggle('MyToggle', {
     Default = false,
     Tooltip = '显示聊天框',
     Callback = function(state)
-    if state then
-    game.TextChatService.ChatWindowConfiguration.Enabled = true
-    else
-    game.TextChatService.ChatWindowConfiguration.Enabled = false    
-    end
+        if state then
+            game.TextChatService.ChatWindowConfiguration.Enabled = true
+        else
+            game.TextChatService.ChatWindowConfiguration.Enabled = false    
+        end
     end
 })
 
@@ -184,19 +177,15 @@ ZZ:AddToggle('医疗包传送并拾取', {
     Text = '医疗包传送并互动',
     Default = false,
     Tooltip = '自动将医疗包传送到自己位置并互动',
-    
     Callback = function(state)
         autoTeleportMedkitEnabled = state
         
         if autoTeleportMedkitEnabled then
             teleportMedkitThread = task.spawn(function()
                 while autoTeleportMedkitEnabled and task.wait(0.5) do
-                  
                     local character = game.Players.LocalPlayer.Character
                     if character and character:FindFirstChild("HumanoidRootPart") then
                         local humanoidRootPart = character.HumanoidRootPart
-                        
-                      
                         local medkit = workspace:FindFirstChild("Map", true)
                         if medkit then
                             medkit = medkit:FindFirstChild("Ingame", true)
@@ -205,10 +194,7 @@ ZZ:AddToggle('医疗包传送并拾取', {
                                 if medkit then
                                     local itemRoot = medkit:FindFirstChild("ItemRoot", true)
                                     if itemRoot then
-                                       
                                         itemRoot.CFrame = humanoidRootPart.CFrame + humanoidRootPart.CFrame.LookVector * 3
-                                        
-                                       
                                         local prompt = itemRoot:FindFirstChild("ProximityPrompt", true)
                                         if prompt then
                                             fireproximityprompt(prompt)
@@ -231,7 +217,6 @@ ZZ:AddToggle('可乐传送并拾取', {
     Text = '可乐传送并互动',
     Default = false,
     Tooltip = '自动将可乐传送到自己位置并互动',
-    
     Callback = function(state)
         autoTeleportColaEnabled = state
         
@@ -241,7 +226,6 @@ ZZ:AddToggle('可乐传送并拾取', {
                     local character = game.Players.LocalPlayer.Character
                     if character and character:FindFirstChild("HumanoidRootPart") then
                         local humanoidRootPart = character.HumanoidRootPart
-                        
                         local cola = workspace:FindFirstChild("Map", true)
                         if cola then
                             cola = cola:FindFirstChild("Ingame", true)
@@ -251,7 +235,6 @@ ZZ:AddToggle('可乐传送并拾取', {
                                     local itemRoot = cola:FindFirstChild("ItemRoot", true)
                                     if itemRoot then
                                         itemRoot.CFrame = humanoidRootPart.CFrame + humanoidRootPart.CFrame.LookVector * 3
-                                        
                                         local prompt = itemRoot:FindFirstChild("ProximityPrompt", true)
                                         if prompt then
                                             fireproximityprompt(prompt)
@@ -274,7 +257,6 @@ ZZ:AddToggle('自动拾取医疗包', {
     Text = '自动互动医疗包',
     Default = false,
     Tooltip = '自动与医疗包互动',
-    
     Callback = function(state)
         autoMedkitEnabled = state
         
@@ -310,7 +292,6 @@ ZZ:AddToggle('自动拾取可乐', {
     Text = '自动互动可乐',
     Default = false,
     Tooltip = '自动与可乐互动',
-    
     Callback = function(state)
         autoColaEnabled = state
         
@@ -357,6 +338,7 @@ _G.FovValue = 70
 
 Camera:AddToggle("应用范围",{
     Text = "应用",
+    Default = false,
     Callback = function(v)
         _env.FOV = v
         game:GetService("RunService").RenderStepped:Connect(function()
@@ -532,7 +514,6 @@ PZ:AddToggle("AEP", {
     Text = "自动吃披萨(追踪)",
     Default = false,
     Tooltip = "当生命值低于设定值时自动吸引附近的披萨",
-    
     Callback = function(enabled)
         _G.AutoEatPizza = enabled
         pizzaAttractionActive = enabled
@@ -545,7 +526,7 @@ PZ:AddToggle("AEP", {
         if enabled then
             local lastCheck = 0
             pizzaConnection = RunService.Stepped:Connect(function(_, deltaTime)
-                lastCheck += deltaTime
+                lastCheck = lastCheck + deltaTime
                 
                 if lastCheck < 0.3 then return end
                 lastCheck = 0
@@ -602,7 +583,6 @@ PZ:AddToggle("ATP", {
     Text = "自动吃披萨(传送)",
     Default = false,
     Tooltip = "当生命值低于设定值时自动将最近的披萨传送到玩家",
-    
     Callback = function(enabled)
         _G.AutoTeleportPizza = enabled
         
@@ -614,7 +594,7 @@ PZ:AddToggle("ATP", {
         if enabled then
             local lastCheck = 0
             pizzaTPConnection = RunService.Stepped:Connect(function(_, deltaTime)
-                lastCheck += deltaTime
+                lastCheck = lastCheck + deltaTime
                 
                 if lastCheck < 0.3 then return end
                 lastCheck = 0
@@ -680,7 +660,6 @@ PZ:AddSlider("HealthThreshold", {
     Max = 130,
     Rounding = 0,
     Tooltip = "当生命值低于设置生命值吃披萨",
-    
     Callback = function(value)
         _G.HealthEatPizza = value
     end
@@ -723,6 +702,7 @@ _G.AutoGeneratorDelay = 1.5
 
 KillerSurvival:AddToggle("AutoFix", {
     Text = "自动修发电机(远程)",
+    Default = false,
     Callback = function(enabled)
         local debounce = {}
         local generatorFolder = game.Workspace.Map.Ingame.Map
@@ -753,6 +733,7 @@ KillerSurvival:AddToggle("AutoFix", {
 
 KillerSurvival:AddToggle("AutoFixTP", {
     Text = "自动修发电机(传送)",
+    Default = false,
     Callback = function(enabled)
         local debounce = {}
         local generatorFolder = game.Workspace.Map.Ingame.Map
@@ -787,10 +768,6 @@ KillerSurvival:AddToggle("AutoFixTP", {
 })
 
 local ZZ = Tabs.Main:AddRightGroupbox('自动格挡')
-
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 
 local config = {
     BlockDistance = 15,
@@ -964,55 +941,60 @@ ZZ:AddSlider("PredictAmount", {
     end
 })
 
-local Visual = Tabs.Esp:AddRightGroupbox("高亮绘制")
+local EspGroup1 = Tabs.Esp:AddRightGroupbox("高亮绘制")
 local LibESP = loadstring(game:HttpGet("https://raw.githubusercontent.com/ImamGV/Script/main/ESP"))()
 
-Visual:AddToggle("SE",{
-Text = "幸存者绘制",
-Callback = function(v)
-if v then
-for _, v in ipairs(workspace.Players:GetDescendants()) do
-if v:IsA("Model") and v.Parent.Name == "Survivors" and not v:FindFirstChild("Survival_ESP") then
-LibESP:AddESP(v, "", Color3.fromRGB(0, 191, 255), 14, "Survival_ESP")
-end
-end
-SurvivalESP = workspace.Players.DescendantAdded:Connect(function(v)
-if v:IsA("Model") and v.Parent.Name == "Survivors" and not v:FindFirstChild("Survival_ESP") then
-LibESP:AddESP(v, "", Color3.fromRGB(0, 191, 255), 14, "Survival_ESP")
-end
-end)
-else
-SurvivalESP:Disconnect()
-LibESP:Delete("Survival_ESP")
-end
-end})
-Visual:AddToggle("KE",{
-Text = "杀手绘制",
-Callback = function(v)
-if v then
-for _, v in ipairs(workspace.Players:GetDescendants()) do
-if v:IsA("Model") and v.Parent.Name == "Killers" and not v:FindFirstChild("Killer_ESP") then
-LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 0), 14, "Killers_ESP")
-elseif v:IsA("Model") and v.Parent.Name == "Killers" and not v:FindFirstChild("Killer_ESP") then
-LibESP:AddESP(v.HumanoidRootPart, "Killer", Color3.fromRGB(255, 0, 0), 14, "Killers_ESP")
-end
-end
-KillersESP = workspace.Players.DescendantAdded:Connect(function(v)
-if v:IsA("Model") and v.Parent.Name == "Killers" and not v:FindFirstChild("Killers_ESP") then
-LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 0), 14, "Killers_ESP")
-elseif v:IsA("Model") and v.Parent.Name == "Killers" and not v:FindFirstChild("Killer_ESP") then
-LibESP:AddESP(v.HumanoidRootPart, "Killer", Color3.fromRGB(255, 0, 0), 14, "Killers_ESP")
-end
-end)
-else
-KillersESP:Disconnect()
-LibESP:Delete("Killers_ESP")
-end
-end})
+EspGroup1:AddToggle("SE",{
+    Text = "幸存者绘制",
+    Default = false,
+    Callback = function(v)
+        if v then
+            for _, v in ipairs(workspace.Players:GetDescendants()) do
+                if v:IsA("Model") and v.Parent.Name == "Survivors" and not v:FindFirstChild("Survival_ESP") then
+                    LibESP:AddESP(v, "", Color3.fromRGB(0, 191, 255), 14, "Survival_ESP")
+                end
+            end
+            SurvivalESP = workspace.Players.DescendantAdded:Connect(function(v)
+                if v:IsA("Model") and v.Parent.Name == "Survivors" and not v:FindFirstChild("Survival_ESP") then
+                    LibESP:AddESP(v, "", Color3.fromRGB(0, 191, 255), 14, "Survival_ESP")
+                end
+            end)
+        else
+            SurvivalESP:Disconnect()
+            LibESP:Delete("Survival_ESP")
+        end
+    end
+})
 
-local Visual = Tabs.Esp:AddRightGroupbox("2D方框")
+EspGroup1:AddToggle("KE",{
+    Text = "杀手绘制",
+    Default = false,
+    Callback = function(v)
+        if v then
+            for _, v in ipairs(workspace.Players:GetDescendants()) do
+                if v:IsA("Model") and v.Parent.Name == "Killers" and not v:FindFirstChild("Killer_ESP") then
+                    LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 0), 14, "Killers_ESP")
+                elseif v:IsA("Model") and v.Parent.Name == "Killers" and not v:FindFirstChild("Killer_ESP") then
+                    LibESP:AddESP(v.HumanoidRootPart, "Killer", Color3.fromRGB(255, 0, 0), 14, "Killers_ESP")
+                end
+            end
+            KillersESP = workspace.Players.DescendantAdded:Connect(function(v)
+                if v:IsA("Model") and v.Parent.Name == "Killers" and not v:FindFirstChild("Killers_ESP") then
+                    LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 0), 14, "Killers_ESP")
+                elseif v:IsA("Model") and v.Parent.Name == "Killers" and not v:FindFirstChild("Killer_ESP") then
+                    LibESP:AddESP(v.HumanoidRootPart, "Killer", Color3.fromRGB(255, 0, 0), 14, "Killers_ESP")
+                end
+            end)
+        else
+            KillersESP:Disconnect()
+            LibESP:Delete("Killers_ESP")
+        end
+    end
+})
 
-Visual:AddToggle("SE", {
+local EspGroup2 = Tabs.Esp:AddRightGroupbox("2D方框")
+
+EspGroup2:AddToggle("SE", {
     Text = "绘制幸存者方框",
     Default = false,
     Callback = function(v)
@@ -1084,7 +1066,7 @@ Visual:AddToggle("SE", {
     end
 })
 
-Visual:AddToggle("KE", {
+EspGroup2:AddToggle("KE", {
     Text = "绘制杀手方框",
     Default = false,
     Callback = function(v)
@@ -1156,9 +1138,9 @@ Visual:AddToggle("KE", {
     end
 })
 
-local Visual = Tabs.Esp:AddRightGroupbox("渲染绘制")
+local EspGroup3 = Tabs.Esp:AddRightGroupbox("渲染绘制")
 
-Visual:AddToggle("DistanceESP", {
+EspGroup3:AddToggle("DistanceESP", {
     Text = "距离绘制",
     Default = false,
     Callback = function(v)
@@ -1227,7 +1209,7 @@ Visual:AddToggle("DistanceESP", {
     end
 })
 
-Visual:AddToggle("TopTracers", {
+EspGroup3:AddToggle("TopTracers", {
     Text = "天线绘制",
     Default = false,
     Callback = function(v)
@@ -1293,7 +1275,7 @@ Visual:AddToggle("TopTracers", {
     end
 })
 
-Visual:AddToggle("HealthBars", {
+EspGroup3:AddToggle("HealthBars", {
     Text = "血量绘制",
     Default = false,
     Callback = function(v)
@@ -1419,7 +1401,7 @@ Visual:AddToggle("HealthBars", {
     end
 })
 
-Visual:AddToggle("SkeletonESP", {
+EspGroup3:AddToggle("SkeletonESP", {
     Text = "骨骼绘制",
     Default = false,
     Callback = function(v)
@@ -1550,7 +1532,7 @@ Visual:AddToggle("SkeletonESP", {
     end
 })
 
-Visual:AddToggle("BoxESP", {
+EspGroup3:AddToggle("BoxESP", {
     Text = "方框绘制",
     Default = false,
     Callback = function(v)
@@ -1671,34 +1653,35 @@ Visual:AddToggle("BoxESP", {
     end
 })
 
-local Visual = Tabs.Esp:AddLeftGroupbox("绘制功能")
-local LibESP = loadstring(game:HttpGet("https://raw.githubusercontent.com/ImamGV/Script/main/ESP"))()
+local EspGroup4 = Tabs.Esp:AddLeftGroupbox("绘制功能")
 
-Visual:AddToggle("EKE",{
-Text = "杀手机器人绘制",
-Callback = function(v)
-if v then
-for _, v in ipairs(workspace:GetDescendants()) do
-if v:IsA("Model") and v.Name == "PizzaDeliveryRig" or v.Name == "Bunny" or v.Name == "Mafiaso1" or v.Name == "Mafiaso2" or v.Name == "Mafiaso3" then
-LibESP:AddESP(v, "披萨送货员", Color3.fromRGB(255, 52, 179), 14, "Other_ESP")
-elseif v:IsA("Model") and v.Name == "1x1x1x1Zombie" then
-LibESP:AddESP(v, "1x1x1x1 (僵尸)", Color3.fromRGB(224, 102, 255), 14, "Other_ESP")
-end
-end
-OtherESP = workspace.DescendantAdded:Connect(function(v)
-if v:IsA("Model") and v.Name == "PizzaDeliveryRig" or v.Name == "Bunny" or v.Name == "Mafiaso1" or v.Name == "Mafiaso2" or v.Name == "Mafiaso3" then
-LibESP:AddESP(v, "披萨送货员", Color3.fromRGB(255, 52, 179), 14, "Other_ESP")
-elseif v:IsA("Model") and v.Name == "1x1x1x1Zombie" then
-LibESP:AddESP(v, "1x1x1x1 (僵尸)", Color3.fromRGB(224, 102, 255), 14, "Other_ESP")
-end
-end)
-else
-OtherESP:Disconnect()
-LibESP:Delete("Other_ESP")
-end
-end})
+EspGroup4:AddToggle("EKE",{
+    Text = "杀手机器人绘制",
+    Default = false,
+    Callback = function(v)
+        if v then
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("Model") and v.Name == "PizzaDeliveryRig" or v.Name == "Bunny" or v.Name == "Mafiaso1" or v.Name == "Mafiaso2" or v.Name == "Mafiaso3" then
+                    LibESP:AddESP(v, "披萨送货员", Color3.fromRGB(255, 52, 179), 14, "Other_ESP")
+                elseif v:IsA("Model") and v.Name == "1x1x1x1Zombie" then
+                    LibESP:AddESP(v, "1x1x1x1 (僵尸)", Color3.fromRGB(224, 102, 255), 14, "Other_ESP")
+                end
+            end
+            OtherESP = workspace.DescendantAdded:Connect(function(v)
+                if v:IsA("Model") and v.Name == "PizzaDeliveryRig" or v.Name == "Bunny" or v.Name == "Mafiaso1" or v.Name == "Mafiaso2" or v.Name == "Mafiaso3" then
+                    LibESP:AddESP(v, "披萨送货员", Color3.fromRGB(255, 52, 179), 14, "Other_ESP")
+                elseif v:IsA("Model") and v.Name == "1x1x1x1Zombie" then
+                    LibESP:AddESP(v, "1x1x1x1 (僵尸)", Color3.fromRGB(224, 102, 255), 14, "Other_ESP")
+                end
+            end)
+        else
+            OtherESP:Disconnect()
+            LibESP:Delete("Other_ESP")
+        end
+    end
+})
 
-Visual:AddToggle("GeneratorESP", {
+EspGroup4:AddToggle("GeneratorESP", {
     Text = "绘制电机",
     Default = false,
     Callback = function(enabled)
@@ -1894,63 +1877,71 @@ Visual:AddToggle("GeneratorESP", {
     end
 })
 
-Visual:AddToggle("ST",{
-Text = "三角炸弹绘制",
-Callback = function(v)
-if v then
-for _, v in ipairs(workspace:GetDescendants()) do
-if v:IsA("Model") and v.Name == "SubspaceTripmine" and not v:FindFirstChild("SubspaceTripmine_ESP") then
-LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 255), 14, "SubspaceTripmine_ESP")
-end
-end
-SubspaceTripmineESP = workspace.DescendantAdded:Connect(function(v)
-if v:IsA("Model") and v.Name == "SubspaceTripmine" and not v:FindFirstChild("SubspaceTripmine_ESP") then
-LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 255), 14, "SubspaceTripmine_ESP")
-end
-end)
-else
-SubspaceTripmineESP:Disconnect()
-LibESP:Delete("SubspaceTripmine_ESP")
-end
-end})
-Visual:AddToggle("ME",{
-Text = "医疗箱绘制",
-Callback = function(v)
-if v then
-for _, v in ipairs(workspace:GetDescendants()) do
-if v:IsA("Model") and v.Name == "Medkit" and not v:FindFirstChild("Medkit_ESP") then
-LibESP:AddESP(v, "Medkit", Color3.fromRGB(187, 255, 255), 14, "Medkit_ESP")
-end
-end
-MedkitESP = workspace.DescendantAdded:Connect(function(v)
-if v:IsA("Model") and v.Name == "Medkit" and not v:FindFirstChild("Medkit_ESP") then
-LibESP:AddESP(v, "Medkit", Color3.fromRGB(187, 255, 255), 14, "Medkit_ESP")
-end
-end)
-else
-Medkit:Disconnect()
-LibESP:Delete("Medkit_ESP")
-end
-end})
-Visual:AddToggle("BCE",{
-Text = "可乐绘制",
-Callback = function(v)
-if v then
-for _, v in ipairs(workspace:GetDescendants()) do
-if v:IsA("Model") and v.Name == "BloxyCola" and not v:FindFirstChild("BloxyCola_ESP") then
-LibESP:AddESP(v, "Bloxy Cola", Color3.fromRGB(131, 111, 255), 14, "BloxyCola_ESP")
-end
-end
-ColaESP = workspace.DescendantAdded:Connect(function(v)
-if v:IsA("Model") and v.Name == "BloxyCola" and not v:FindFirstChild("BloxyCola_ESP") then
-LibESP:AddESP(v, "Bloxy Cola", Color3.fromRGB(131, 111, 255), 14, "BloxyCola_ESP")
-end
-end)
-else
-ColaESP:Disconnect()
-LibESP:Delete("BloxyCola_ESP")
-end
-end})
+EspGroup4:AddToggle("ST",{
+    Text = "三角炸弹绘制",
+    Default = false,
+    Callback = function(v)
+        if v then
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("Model") and v.Name == "SubspaceTripmine" and not v:FindFirstChild("SubspaceTripmine_ESP") then
+                    LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 255), 14, "SubspaceTripmine_ESP")
+                end
+            end
+            SubspaceTripmineESP = workspace.DescendantAdded:Connect(function(v)
+                if v:IsA("Model") and v.Name == "SubspaceTripmine" and not v:FindFirstChild("SubspaceTripmine_ESP") then
+                    LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 255), 14, "SubspaceTripmine_ESP")
+                end
+            end)
+        else
+            SubspaceTripmineESP:Disconnect()
+            LibESP:Delete("SubspaceTripmine_ESP")
+        end
+    end
+})
+
+EspGroup4:AddToggle("ME",{
+    Text = "医疗箱绘制",
+    Default = false,
+    Callback = function(v)
+        if v then
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("Model") and v.Name == "Medkit" and not v:FindFirstChild("Medkit_ESP") then
+                    LibESP:AddESP(v, "Medkit", Color3.fromRGB(187, 255, 255), 14, "Medkit_ESP")
+                end
+            end
+            MedkitESP = workspace.DescendantAdded:Connect(function(v)
+                if v:IsA("Model") and v.Name == "Medkit" and not v:FindFirstChild("Medkit_ESP") then
+                    LibESP:AddESP(v, "Medkit", Color3.fromRGB(187, 255, 255), 14, "Medkit_ESP")
+                end
+            end)
+        else
+            Medkit:Disconnect()
+            LibESP:Delete("Medkit_ESP")
+        end
+    end
+})
+
+EspGroup4:AddToggle("BCE",{
+    Text = "可乐绘制",
+    Default = false,
+    Callback = function(v)
+        if v then
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("Model") and v.Name == "BloxyCola" and not v:FindFirstChild("BloxyCola_ESP") then
+                    LibESP:AddESP(v, "Bloxy Cola", Color3.fromRGB(131, 111, 255), 14, "BloxyCola_ESP")
+                end
+            end
+            ColaESP = workspace.DescendantAdded:Connect(function(v)
+                if v:IsA("Model") and v.Name == "BloxyCola" and not v:FindFirstChild("BloxyCola_ESP") then
+                    LibESP:AddESP(v, "Bloxy Cola", Color3.fromRGB(131, 111, 255), 14, "BloxyCola_ESP")
+                end
+            end)
+        else
+            ColaESP:Disconnect()
+            LibESP:Delete("BloxyCola_ESP")
+        end
+    end
+})
 
 local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("调试功能")
 
