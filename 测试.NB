@@ -1517,8 +1517,9 @@ local function createCopyButton(parent, groupLabel, code, posX, posY)
     return btn 
 end 
 
-createCopyButton(page1.frame, "QQ群", "1106203175", 10, startY) 
-createCopyButton(page1.frame, "QQ", "3999698324", 10, startY + 45) 
+createCopyButton(page1.frame, "作者QQ", "3999698324", 10, startY)
+createCopyButton(page1.frame, "群1", "1106203175", 10, startY + 45)
+createCopyButton(page1.frame, "群2", "1001577641", 10, startY + 90)
 page1:UpdateCanvas() 
 
 local page2 = window:AddPage("主要") 
