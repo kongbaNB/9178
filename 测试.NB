@@ -1,2008 +1,2052 @@
-local repo = 'https://raw.githubusercontent.com/deividcomsono/Obsidian/main/'
+local player = game:GetService("Players").LocalPlayer 
+local plrId = player.UserId 
+local filename = "script_count_" .. plrId .. ".txt" 
+local count = 0 
+if pcall(function() return readfile(filename) end) then 
+    local data = readfile(filename) 
+    count = tonumber(data) or 0 
+end 
+count = count + 1 
+pcall(function() writefile(filename, tostring(count)) end) 
 
-local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
-local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
-local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
-local Options = Library.Options
-local Toggles = Library.Toggles
+local Player = player 
+local TweenService = game:GetService("TweenService") 
+local HttpService = game:GetService("HttpService") 
+local Players = game:GetService("Players") 
+local RunService = game:GetService("RunService") 
+local UserInputService = game:GetService("UserInputService") 
+local CoreGui = game:GetService("CoreGui") 
+local LocalPlayer = Players.LocalPlayer 
+local Camera = workspace.CurrentCamera 
+local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/恐脚本.UI"))() 
 
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+game:GetService("StarterGui"):SetCore("SendNotification",{ 
+    Title = "恐脚本--通用", 
+    Text = "作者：恐拜大帝\nQQ：3999698324\n感谢ROB支持", 
+    Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150" 
+}) 
 
-Library.ShowToggleFrameInKeybinds = true 
-Library.ShowCustomCursor = true
-Library.NotifySide = "Right"
+local jumpFloatActive = false 
+local jumpFloatGui = nil 
+local jumpFloatBtn = nil 
+local jumpPanel = nil 
+local jumpHeight = 60 
+local espEnabled = false 
 
-local Window = Library:CreateWindow({
-    Title = '被遗弃脚本',
-    Footer = "V1.0",
-    Icon = 131153193945220,
-    Center = true,
-    AutoShow = true,
-    Resizable = true,
-    ShowCustomCursor = true,
-    NotifySide = "Right",
-    TabPadding = 8,
-    MenuFadeTime = 0
-})
+local function enableESP(player) 
+    if player == LocalPlayer then return end 
+    local char = player.Character 
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end 
+    if not char:FindFirstChild("EspHighlight") then 
+        local highlight = Instance.new("Highlight") 
+        highlight.Name = "EspHighlight" 
+        highlight.Parent = char 
+        highlight.FillTransparency = 1 
+        highlight.OutlineColor = Color3.new(1, 0, 0) 
+        highlight.OutlineTransparency = 0 
+        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop 
+    end 
+end 
 
-local Tabs = {
-    Main = Window:AddTab('快捷功能区','house'),
-    Esp = Window:AddTab('绘制区','eye'),
-    ["UI Settings"] = Window:AddTab('UI调试', 'settings')
-}
+local function disableESP(player) 
+    local char = player.Character 
+    if char and char:FindFirstChild("EspHighlight") then 
+        char.EspHighlight:Destroy() 
+    end 
+end 
 
-local _env = getgenv and getgenv() or {}
+RunService.RenderStepped:Connect(function() 
+    if not espEnabled then return end 
+    for _, player in ipairs(Players:GetPlayers()) do 
+        enableESP(player) 
+    end 
+end) 
 
-local KillerSurvival = Tabs.Main:AddLeftGroupbox("调节功能")
+Players.PlayerAdded:Connect(function(player) 
+    player.CharacterAdded:Connect(function(char) 
+        char:WaitForChild("HumanoidRootPart") 
+        if espEnabled then enableESP(player) end 
+    end) 
+end) 
 
-game.Players.LocalPlayer.Character.Humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-    if _env.NoStun == true and game.Players.LocalPlayer.Character.Humanoid.WalkSpeed < 16 then
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
-    end
-end)
+Players.PlayerRemoving:Connect(function(player) 
+    disableESP(player) 
+end) 
 
-game.Players.LocalPlayer.CharacterAdded:Connect(function()
-    game.Players.LocalPlayer.Character.Humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-        if _env.NoStun == true and game.Players.LocalPlayer.Character.Humanoid.WalkSpeed < 16 then
-            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
-        end
-    end)
-end)
+local InfiniteJumpEnabled = false 
+local NoclipEnabled = false 
+local NightVisionEnabled = false 
+local AntiPushEnabled = false 
+local AutoTranslateEnabled = false 
+local SmoothFollowEnabled = false 
+local FollowNearestEnabled = false 
+local AimbotEnabled = false 
+local AimbotRadius = math.floor(Camera.ViewportSize.Y / 3) 
+local LockViewEnabled = false 
+local CrosshairEnabled = false 
+local CrosshairSpinEnabled = false 
+local translateLoop = nil 
+local translatedTexts = {} 
+local speedAntiPull = nil 
+local SpinEnabled = false 
+local SpinSpeed = 360 
+local spinConnection = nil 
+local antiAFKEnabled = false 
+local antiAFKConnection = nil 
+local UIButtons = {} 
+local WQAntiFlingEnabled = false 
+local WQAntiFlingConnection = nil 
 
-KillerSurvival:AddToggle("NS",{
-    Text = "去除前摇 后摇 缓慢动作",
-    Default = false,
-    Callback = function(v)
-        _env.NoStun = v
-    end
-})
+local function startWQAntiFling() 
+    if WQAntiFlingConnection then WQAntiFlingConnection:Disconnect() end 
+    WQAntiFlingConnection = RunService.Heartbeat:Connect(function() 
+        local char = LocalPlayer.Character 
+        if not char then return end 
+        for _, part in ipairs(char:GetDescendants()) do 
+            if part:IsA("BasePart") then 
+                if part.Velocity.Magnitude > 500 or part.AssemblyLinearVelocity.Magnitude > 500 then 
+                    part.Velocity = Vector3.zero 
+                    part.AssemblyLinearVelocity = Vector3.zero 
+                    part.RotVelocity = Vector3.zero 
+                    part.AssemblyAngularVelocity = Vector3.zero 
+                    part.CFrame = CFrame.new(part.Position + Vector3.new(0, 0.01, 0)) 
+                end 
+                if part.RotVelocity.Magnitude > 50 then 
+                    part.RotVelocity = Vector3.zero 
+                    part.AssemblyAngularVelocity = Vector3.zero 
+                end 
+            end 
+        end 
+    end) 
+end 
 
-KillerSurvival:AddDivider()
+local function stopWQAntiFling() 
+    if WQAntiFlingConnection then WQAntiFlingConnection:Disconnect() 
+        WQAntiFlingConnection = nil 
+    end 
+end 
 
-KillerSurvival:AddSlider("SB",{
-    Text = "速度调节",
-    Min = 0, Max = 3,
-    Default = 1, Compact = true,
-    Rounding = 1,
-    Callback = function(v)
-        _env.SpeedBoostValue = v
-    end
-})
+local function startSpin() 
+    if spinConnection then spinConnection:Disconnect() end 
+    spinConnection = RunService.Heartbeat:Connect(function(dt) 
+        if not SpinEnabled then return end 
+        local char = LocalPlayer.Character 
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end 
+        local root = char.HumanoidRootPart 
+        local currentCF = root.CFrame 
+        local newCF = currentCF * CFrame.Angles(0, math.rad(SpinSpeed * dt), 0) 
+        root.CFrame = newCF 
+    end) 
+end 
 
-_env.SpeedBoostValue = 1
+local function stopSpin() 
+    SpinEnabled = false 
+    if spinConnection then spinConnection:Disconnect() 
+        spinConnection = nil 
+    end 
+end 
 
-KillerSurvival:AddToggle("SB",{
-    Text = "启用速度",
-    Default = false,
-    Callback = function(v)
-        _env.SpeedBoost = v
-        while _env.SpeedBoost do
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame += game.Players.LocalPlayer.Character.Humanoid.MoveDirection * _env.SpeedBoostValue
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CanCollide = true
-            task.wait()
-        end
-    end
-})
+local function startAntiAFK() 
+    if antiAFKConnection then antiAFKConnection:Disconnect() end 
+    antiAFKConnection = LocalPlayer.Idled:Connect(function() 
+        local vu = game:GetService("VirtualUser") 
+        vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame) 
+        wait(1) 
+        vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame) 
+    end) 
+end 
 
-KillerSurvival:AddToggle('MyToggle', {
-    Text = '显示聊天框丨需要每局开一次',
-    Default = false,
-    Tooltip = '显示聊天框',
-    Callback = function(state)
-        if state then
-            game.TextChatService.ChatWindowConfiguration.Enabled = true
-        else
-            game.TextChatService.ChatWindowConfiguration.Enabled = false    
-        end
-    end
-})
+local function stopAntiAFK() 
+    if antiAFKConnection then antiAFKConnection:Disconnect() 
+        antiAFKConnection = nil 
+    end 
+end 
 
-local MainTabbox = Tabs.Main:AddRightTabbox()
-local Lighting = MainTabbox:AddTab("亮度调节")
+local AimbotCircle = Instance.new("Frame") 
+AimbotCircle.Name = "AimbotCircle" 
+AimbotCircle.Parent = CoreGui 
+AimbotCircle.Size = UDim2.new(0, AimbotRadius*2, 0, AimbotRadius*2) 
+AimbotCircle.Position = UDim2.new(0.5, -AimbotRadius, 0.5, -AimbotRadius) 
+AimbotCircle.BackgroundTransparency = 1 
+AimbotCircle.BorderSizePixel = 0 
+AimbotCircle.ZIndex = 100 
+local circleStroke = Instance.new("UIStroke") 
+circleStroke.Color = Color3.new(1,1,1) 
+circleStroke.Thickness = 2 
+circleStroke.LineJoinMode = Enum.LineJoinMode.Round 
+circleStroke.Parent = AimbotCircle 
+local circleCorner = Instance.new("UICorner") 
+circleCorner.CornerRadius = UDim.new(1,0) 
+circleCorner.Parent = AimbotCircle 
 
-Lighting:AddSlider("B",{
-    Text = "亮度数值",
-    Min = 0,
-    Default = 0,
-    Max = 3,
-    Rounding = 1,
-    Compact = true,
-    Callback = function(v)
-        _env.Brightness = v
-    end
-})
+local function getHumanoid() 
+    local char = LocalPlayer.Character 
+    if char then return char:FindFirstChild("Humanoid") end 
+end 
 
-Lighting:AddToggle("无阴影",{
-    Text = "无阴影",
-    Default = false,
-    Callback = function(v)
-        _env.GlobalShadows = v
-    end
-})
+UserInputService.JumpRequest:Connect(function() 
+    if InfiniteJumpEnabled then 
+        local char = LocalPlayer.Character 
+        if char then 
+            local HRP = char:FindFirstChild("HumanoidRootPart") 
+            if HRP then 
+                HRP.Velocity = Vector3.new(HRP.Velocity.X, 50, HRP.Velocity.Z) 
+            end 
+        end 
+    end 
+end) 
 
-Lighting:AddToggle("除雾",{
-    Text = "除雾",
-    Default = false,
-    Callback = function(v)
-        _env.NoFog = v
-    end
-})
+local noclipConnection 
+local lastGroundY = 0 
 
-Lighting:AddDivider()
+local function startNoclip() 
+    if noclipConnection then noclipConnection:Disconnect() end 
+    noclipConnection = RunService.Stepped:Connect(function() 
+        if not NoclipEnabled then return end 
+        local char = LocalPlayer.Character 
+        if not char then return end 
+        local root = char:FindFirstChild("HumanoidRootPart") 
+        if not root then return end 
+        local hum = char:FindFirstChildOfClass("Humanoid") 
+        if hum and hum.FloorMaterial ~= Enum.Material.Air then 
+            lastGroundY = root.Position.Y 
+        end 
+        root.CanCollide = false 
+        for _, v in ipairs(char:GetDescendants()) do 
+            if v:IsA("BasePart") and v.CanCollide then 
+                v.CanCollide = false 
+            end 
+        end 
+        if lastGroundY ~= 0 and root.Position.Y < lastGroundY - 5 then 
+            root.CFrame = CFrame.new(root.CFrame.X, lastGroundY, root.CFrame.Z) 
+            if hum then hum:ChangeState(Enum.HumanoidStateType.Landed) end 
+        end 
+    end) 
+end 
 
-Lighting:AddToggle("启用功能",{
-    Text = "启用",
-    Default = false,
-    Callback = function(v)
-        _env.Fullbright = v
-        game:GetService("RunService").RenderStepped:Connect(function()
-            if not game.Lighting:GetAttribute("FogStart") then 
-                game.Lighting:SetAttribute("FogStart", game.Lighting.FogStart) 
-            end
-            if not game.Lighting:GetAttribute("FogEnd") then 
-                game.Lighting:SetAttribute("FogEnd", game.Lighting.FogEnd) 
-            end
-            game.Lighting.FogStart = _env.NoFog and 0 or game.Lighting:GetAttribute("FogStart")
-            game.Lighting.FogEnd = _env.NoFog and math.huge or game.Lighting:GetAttribute("FogEnd")
-            
-            local fog = game.Lighting:FindFirstChildOfClass("Atmosphere")
-            if fog then
-                if not fog:GetAttribute("Density") then 
-                    fog:SetAttribute("Density", fog.Density) 
-                end
-                fog.Density = _env.NoFog and 0 or fog:GetAttribute("Density")
-            end
-            
-            if _env.Fullbright then
-                game.Lighting.OutdoorAmbient = Color3.new(1,1,1)
-                game.Lighting.Brightness = _env.Brightness or 0
-                game.Lighting.GlobalShadows = not _env.GlobalShadows
-            else
-                game.Lighting.OutdoorAmbient = Color3.fromRGB(55,55,55)
-                game.Lighting.Brightness = 0
-                game.Lighting.GlobalShadows = true
-            end
+local function stopNoclip() 
+    if noclipConnection then noclipConnection:Disconnect() 
+        noclipConnection = nil 
+    end 
+    local char = LocalPlayer.Character 
+    if char then 
+        local root = char:FindFirstChild("HumanoidRootPart") 
+        if root then root.CanCollide = true end 
+        for _, v in ipairs(char:GetDescendants()) do 
+            if v:IsA("BasePart") and not v.CanCollide then 
+                v.CanCollide = true 
+            end 
+        end 
+    end 
+end 
+
+RunService.Stepped:Connect(function() 
+    if AntiPushEnabled then 
+        local char = LocalPlayer.Character 
+        if char then 
+            local root = char:FindFirstChild("HumanoidRootPart") 
+            if root then root.CanCollide = false end 
+        end 
+    end 
+end) 
+
+local followTarget = nil 
+local followConnection = nil 
+local followRange = 5 
+
+local function startFollow(targetPlayer) 
+    if followConnection then followConnection:Disconnect() end 
+    followTarget = targetPlayer 
+    followConnection = RunService.Heartbeat:Connect(function() 
+        if not followTarget or not followTarget:IsDescendantOf(Players) or not followTarget.Character or not followTarget.Character:FindFirstChild("HumanoidRootPart") then 
+            followConnection:Disconnect() 
+            followConnection = nil 
+            followTarget = nil 
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "跟随", Text = "目标已消失，跟随停止", Duration = 3}) 
+            return 
+        end 
+        local myChar = LocalPlayer.Character 
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end 
+        local myRoot = myChar.HumanoidRootPart 
+        local myHum = myChar:FindFirstChildOfClass("Humanoid") 
+        if not myHum then return end 
+        local targetRoot = followTarget.Character.HumanoidRootPart 
+        local dist = (targetRoot.Position - myRoot.Position).Magnitude 
+        if dist > followRange then 
+            myHum:MoveTo(targetRoot.Position) 
+        else 
+            myHum:MoveTo(myRoot.Position) 
+        end 
+    end) 
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "跟随", Text = "开始跟随 " .. targetPlayer.Name, Duration = 3}) 
+end 
+
+local function stopFollow() 
+    if followConnection then followConnection:Disconnect() 
+        followConnection = nil 
+    end 
+    followTarget = nil 
+    local myChar = LocalPlayer.Character 
+    if myChar then 
+        local myHum = myChar:FindFirstChildOfClass("Humanoid") 
+        if myHum then 
+            myHum:MoveTo(myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or myChar:GetPivot().Position) 
+        end 
+    end 
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "跟随", Text = "已停止跟随", Duration = 3}) 
+end 
+
+RunService:BindToRenderStep("LockView", Enum.RenderPriority.Camera.Value + 1, function() 
+    if not LockViewEnabled then return end 
+    local char = LocalPlayer.Character 
+    if not char then return end 
+    local root = char:FindFirstChild("HumanoidRootPart") 
+    if not root then return end 
+    local camDir = Camera.CFrame.LookVector 
+    local flatDir = Vector3.new(camDir.X, 0, camDir.Z) 
+    if flatDir.Magnitude > 0.01 then 
+        root.CFrame = CFrame.new(root.Position, root.Position + flatDir) 
+    end 
+end) 
+
+RunService.RenderStepped:Connect(function() 
+    if not AimbotEnabled then AimbotCircle.Visible = false return end 
+    AimbotCircle.Visible = true 
+    AimbotCircle.Size = UDim2.new(0, AimbotRadius*2, 0, AimbotRadius*2) 
+    AimbotCircle.Position = UDim2.new(0.5, -AimbotRadius, 0.5, -AimbotRadius) 
+    local camPos = Camera.CFrame.Position 
+    local closestDist = math.huge 
+    local closestPlayer = nil 
+    for _, p in ipairs(Players:GetPlayers()) do 
+        if p == LocalPlayer then continue end 
+        local char = p.Character 
+        if char and char:FindFirstChild("HumanoidRootPart") then 
+            local targetPos = char.HumanoidRootPart.Position 
+            local screenPos, onScreen = Camera:WorldToScreenPoint(targetPos) 
+            if onScreen then 
+                local distFromCenter = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude 
+                if distFromCenter <= AimbotRadius then 
+                    local realDist = (targetPos - camPos).Magnitude 
+                    if realDist < closestDist then 
+                        closestDist = realDist 
+                        closestPlayer = p 
+                    end 
+                end 
+            end 
+        end 
+    end 
+    if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then 
+        local targetPos = closestPlayer.Character.HumanoidRootPart.Position 
+        local dir = (targetPos - camPos).Unit 
+        Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(camPos, camPos + dir), 0.2) 
+    end 
+end) 
+
+local CrosshairGui = nil 
+local CrosshairFrame = nil 
+
+local function createCrosshair() 
+    if CrosshairGui then return end 
+    CrosshairGui = Instance.new("ScreenGui") 
+    CrosshairGui.Name = "CrosshairGui" 
+    CrosshairGui.Parent = LocalPlayer.PlayerGui 
+    CrosshairGui.ResetOnSpawn = false 
+    CrosshairGui.IgnoreGuiInset = true 
+    CrosshairFrame = Instance.new("Frame") 
+    CrosshairFrame.Name = "Crosshair" 
+    CrosshairFrame.Parent = CrosshairGui 
+    CrosshairFrame.Size = UDim2.new(0, 30, 0, 30) 
+    CrosshairFrame.Position = UDim2.new(0.5, -15, 0.5, -15) 
+    CrosshairFrame.BackgroundTransparency = 1 
+    CrosshairFrame.Visible = false 
+    local hLine = Instance.new("Frame") 
+    hLine.Parent = CrosshairFrame 
+    hLine.Size = UDim2.new(1, 0, 0, 2) 
+    hLine.Position = UDim2.new(0, 0, 0.5, -1) 
+    hLine.BackgroundColor3 = Color3.new(1,1,1) 
+    hLine.BorderSizePixel = 0 
+    local vLine = Instance.new("Frame") 
+    vLine.Parent = CrosshairFrame 
+    vLine.Size = UDim2.new(0, 2, 1, 0) 
+    vLine.Position = UDim2.new(0.5, -1, 0, 0) 
+    vLine.BackgroundColor3 = Color3.new(1,1,1) 
+    vLine.BorderSizePixel = 0 
+    local dot = Instance.new("Frame") 
+    dot.Parent = CrosshairFrame 
+    dot.Size = UDim2.new(0, 6, 0, 6) 
+    dot.Position = UDim2.new(0.5, -3, 0.5, -3) 
+    dot.BackgroundColor3 = Color3.new(1,1,1) 
+    dot.BorderSizePixel = 0 
+    local dotCorner = Instance.new("UICorner") 
+    dotCorner.CornerRadius = UDim.new(1,0) 
+    dotCorner.Parent = dot 
+end 
+
+RunService.Heartbeat:Connect(function() 
+    if not CrosshairEnabled then 
+        if CrosshairFrame then CrosshairFrame.Visible = false end 
+        return 
+    end 
+    if not CrosshairGui then createCrosshair() end 
+    if CrosshairSpinEnabled then 
+        CrosshairFrame.Rotation = (CrosshairFrame.Rotation + 1) % 360 
+    else 
+        CrosshairFrame.Rotation = 0 
+    end 
+    CrosshairFrame.Visible = true 
+end) 
+
+local isStealing = false 
+local function stealAllItems() 
+    if isStealing then return 0 end 
+    isStealing = true 
+    local count = 0 
+    local myBackpack = LocalPlayer:FindFirstChild("Backpack") 
+    if not myBackpack then 
+        myBackpack = Instance.new("Backpack") 
+        myBackpack.Parent = LocalPlayer 
+    end 
+    for _, targetPlayer in ipairs(Players:GetPlayers()) do 
+        if targetPlayer == LocalPlayer or not targetPlayer.Character then continue end 
+        local itemContainers = { 
+            targetPlayer:FindFirstChild("Backpack"), 
+            targetPlayer:FindFirstChild("Inventory"), 
+            targetPlayer:FindFirstChild("Storage"), 
+            targetPlayer:FindFirstChild("Bag"), 
+            targetPlayer.Character:FindFirstChild("Backpack") 
+        } 
+        for _, container in ipairs(itemContainers) do 
+            if not container then continue end 
+            for _, item in ipairs(container:GetChildren()) do 
+                if item:IsA("Tool") or item:IsA("Model") or item:IsA("Part") or item:IsA("Accessory") then 
+                    local success = pcall(function() 
+                        item.Parent = myBackpack 
+                    end) 
+                    if success then 
+                        count = count + 1; task.wait(0.1) 
+                    end 
+                end 
+            end 
+        end 
+    end 
+    isStealing = false 
+    return count 
+end 
+
+local function beautifyStats() 
+    local leaderstats = LocalPlayer:FindFirstChild("leaderstats") 
+    if leaderstats then 
+        for _, stat in ipairs(leaderstats:GetChildren()) do 
+            if stat:IsA("IntValue") or stat:IsA("NumberValue") then 
+                stat.Value = 999 
+            end 
+        end 
+    end 
+    local stats = LocalPlayer:FindFirstChild("Stats") or LocalPlayer:FindFirstChild("stats") 
+    if stats then 
+        for _, v in ipairs(stats:GetChildren()) do 
+            if v:IsA("IntValue") or v:IsA("NumberValue") then 
+                v.Value = 999 
+            end 
+        end 
+    end 
+end 
+
+local function isEnglish(text) 
+    if not text or text == "" then return false end 
+    local englishCount = 0 
+    local totalCount = 0 
+    for char in text:gmatch(".") do 
+        local byte = string.byte(char) 
+        if byte then 
+            totalCount = totalCount + 1 
+            if (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122) then 
+                englishCount = englishCount + 1 
+            end 
+        end 
+    end 
+    if totalCount == 0 then return false end 
+    return (englishCount / totalCount) > 0.5 
+end 
+
+local function translateText(text) 
+    if not text or text == "" or #text < 2 then return nil end 
+    if translatedTexts[text] then return translatedTexts[text] end 
+    local success, result = pcall(function() 
+        local url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=" .. HttpService:UrlEncode(text) 
+        local response = game:HttpGet(url) 
+        local decoded = HttpService:JSONDecode(response) 
+        if decoded and decoded[1] and decoded[1][1] and decoded[1][1][1] then 
+            return decoded[1][1][1] 
+        end 
+        return nil 
+    end) 
+    if success and result then translatedTexts[text] = result; return result end 
+    return nil 
+end 
+
+local function processTextObject(obj) 
+    if not AutoTranslateEnabled then return end 
+    if not obj:IsA("TextLabel") and not obj:IsA("TextButton") and not obj:IsA("TextBox") then return end 
+    local originalText = obj.Text 
+    if not originalText or originalText == "" then return end 
+    if not isEnglish(originalText) then return end 
+    local translated = translateText(originalText) 
+    if translated and translated ~= originalText then 
+        obj.Text = translated 
+    end 
+end 
+
+local function scanAndTranslate(container, maxCount) 
+    local c = 0 
+    for _, obj in ipairs(container:GetDescendants()) do 
+        if c >= maxCount then break end 
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then 
+            if isEnglish(obj.Text) then 
+                processTextObject(obj); c = c + 1 
+            end 
+        end 
+    end 
+end 
+
+local function startAutoTranslate() 
+    if translateLoop then return end 
+    translateLoop = true 
+    task.spawn(function() 
+        while translateLoop and AutoTranslateEnabled do 
+            local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui") 
+            if PlayerGui then scanAndTranslate(PlayerGui, 5) end 
+            pcall(function() 
+                for _, gui in ipairs(CoreGui:GetChildren()) do 
+                    if gui:IsA("ScreenGui") then 
+                        scanAndTranslate(gui, 5) 
+                    end 
+                end 
+            end) 
+            task.wait(0.1) 
+        end 
+    end) 
+end 
+
+local function stopAutoTranslate() 
+    translateLoop = false 
+end 
+
+local function teleportToPlayer(p) 
+    if p and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then 
+        local myChar = LocalPlayer.Character 
+        if myChar and myChar:FindFirstChild("HumanoidRootPart") then 
+            myChar.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, 3) 
+        end 
+    end 
+end 
+
+local function getNearestPlayer() 
+    local nearest = nil 
+    local minDist = math.huge 
+    local myPos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position 
+    if not myPos then return nil end 
+    for _, p in ipairs(Players:GetPlayers()) do 
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then 
+            local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude 
+            if dist < minDist then 
+                minDist = dist 
+                nearest = p 
+            end 
+        end 
+    end 
+    return nearest 
+end 
+
+local function powerfulFling(targetPlayer) 
+    if not targetPlayer or not targetPlayer.Character then 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "提示", Text = "目标玩家无效", Duration = 3}) 
+        return 
+    end 
+    local char = LocalPlayer.Character 
+    local hum = char and char:FindFirstChildOfClass("Humanoid") 
+    local root = hum and hum.RootPart 
+    local tChar = targetPlayer.Character 
+    local tHum = tChar:FindFirstChildOfClass("Humanoid") 
+    local tRoot = tHum and tHum.RootPart 
+    local tHead = tChar:FindFirstChild("Head") 
+    local acc = tChar:FindFirstChildOfClass("Accessory") 
+    local handle = acc and acc:FindFirstChild("Handle") 
+    if not char or not hum or not root then 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "提示", Text = "你的角色无效", Duration = 3}) 
+        return 
+    end 
+    if root.Velocity.Magnitude < 50 then 
+        getgenv().OldPos = root.CFrame 
+    end 
+    if not getgenv().FPDH then 
+        getgenv().FPDH = Workspace.FallenPartsDestroyHeight 
+    end 
+    if tHead then 
+        Workspace.CurrentCamera.CameraSubject = tHead 
+    elseif not tHead and handle then 
+        Workspace.CurrentCamera.CameraSubject = handle 
+    elseif tHum and tRoot then 
+        Workspace.CurrentCamera.CameraSubject = tHum 
+    end 
+    if not tChar:FindFirstChildWhichIsA("BasePart") then 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "提示", Text = "目标没有有效部位", Duration = 3}) 
+        return 
+    end 
+    local FPos = function(bp, pos, ang) 
+        root.CFrame = CFrame.new(bp.Position) * pos * ang 
+        char:SetPrimaryPartCFrame(CFrame.new(bp.Position) * pos * ang) 
+        root.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7) 
+        root.RotVelocity = Vector3.new(9e8, 9e8, 9e8) 
+    end 
+    local SFBasePart = function(bp) 
+        local timeout = tick() + 2 
+        local angle = 0 
+        repeat 
+            if root and tHum then 
+                if bp.Velocity.Magnitude < 50 then 
+                    angle = angle + 100 
+                    FPos(bp, CFrame.new(0, 1.5, 0) + tHum.MoveDirection * bp.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(angle), 0, 0)) 
+                    task.wait() 
+                    FPos(bp, CFrame.new(0, -1.5, 0) + tHum.MoveDirection * bp.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(angle), 0, 0)) 
+                    task.wait() 
+                    FPos(bp, CFrame.new(2.25, 1.5, -2.25) + tHum.MoveDirection * bp.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(angle), 0, 0)) 
+                    task.wait() 
+                    FPos(bp, CFrame.new(-2.25, -1.5, 2.25) + tHum.MoveDirection * bp.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(angle), 0, 0)) 
+                    task.wait() 
+                    FPos(bp, CFrame.new(0, 1.5, 0) + tHum.MoveDirection, CFrame.Angles(math.rad(angle), 0, 0)) 
+                    task.wait() 
+                    FPos(bp, CFrame.new(0, -1.5, 0) + tHum.MoveDirection, CFrame.Angles(math.rad(angle), 0, 0)) 
+                    task.wait() 
+                else 
+                    FPos(bp, CFrame.new(0, 1.5, tHum.WalkSpeed), CFrame.Angles(math.rad(90), 0, 0)) 
+                    task.wait() 
+                    FPos(bp, CFrame.new(0, -1.5, -tHum.WalkSpeed), CFrame.Angles(0, 0, 0)) 
+                    task.wait() 
+                    FPos(bp, CFrame.new(0, 1.5, tHum.WalkSpeed), CFrame.Angles(math.rad(90), 0, 0)) 
+                    task.wait() 
+                    FPos(bp, CFrame.new(0, 1.5, tRoot.Velocity.Magnitude / 1.25), CFrame.Angles(math.rad(90), 0, 0)) 
+                    task.wait() 
+                    FPos(bp, CFrame.new(0, -1.5, -tRoot.Velocity.Magnitude / 1.25), CFrame.Angles(0, 0, 0)) 
+                    task.wait() 
+                    FPos(bp, CFrame.new(0, 1.5, tRoot.Velocity.Magnitude / 1.25), CFrame.Angles(math.rad(90), 0, 0)) 
+                    task.wait() 
+                    FPos(bp, CFrame.new(0, -1.5, 0), CFrame.Angles(math.rad(90), 0, 0)) 
+                    task.wait() 
+                    FPos(bp, CFrame.new(0, -1.5, 0), CFrame.Angles(0, 0, 0)) 
+                    task.wait() 
+                    FPos(bp, CFrame.new(0, -1.5, 0), CFrame.Angles(math.rad(-90), 0, 0)) 
+                    task.wait() 
+                    FPos(bp, CFrame.new(0, -1.5, 0), CFrame.Angles(0, 0, 0)) 
+                    task.wait() 
+                end 
+            else 
+                break 
+            end 
+        until bp.Velocity.Magnitude > 500 or bp.Parent ~= targetPlayer.Character or targetPlayer.Parent ~= Players or targetPlayer.Character ~= tChar or (tHum and tHum.Sit) or hum.Health <= 0 or tick() > timeout 
+    end 
+    Workspace.FallenPartsDestroyHeight = 0 / 0 
+    local bv = Instance.new("BodyVelocity") 
+    bv.Name = "EpixVel" 
+    bv.Parent = root 
+    bv.Velocity = Vector3.new(9e8, 9e8, 9e8) 
+    bv.MaxForce = Vector3.new(1 / 0, 1 / 0, 1 / 0) 
+    hum:SetStateEnabled(Enum.HumanoidStateType.Seated, false) 
+    if tRoot and tHead then 
+        if (tRoot.CFrame.p - tHead.CFrame.p).Magnitude > 5 then 
+            SFBasePart(tHead) 
+        else 
+            SFBasePart(tRoot) 
+        end 
+    elseif tRoot and not tHead then 
+        SFBasePart(tRoot) 
+    elseif not tRoot and tHead then 
+        SFBasePart(tHead) 
+    elseif not tRoot and not tHead and acc and handle then 
+        SFBasePart(handle) 
+    else 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "提示", Text = "找不到合适的甩飞部位", Duration = 3}) 
+        bv:Destroy() 
+        return 
+    end 
+    bv:Destroy() 
+    hum:SetStateEnabled(Enum.HumanoidStateType.Seated, true) 
+    Workspace.CurrentCamera.CameraSubject = hum 
+    repeat 
+        root.CFrame = getgenv().OldPos * CFrame.new(0, 0.5, 0) 
+        char:SetPrimaryPartCFrame(getgenv().OldPos * CFrame.new(0, 0.5, 0)) 
+        hum:ChangeState("GettingUp") 
+        for _, x in pairs(char:GetChildren()) do 
+            if x:IsA("BasePart") then 
+                x.Velocity = Vector3.new() 
+                x.RotVelocity = Vector3.new() 
+            end 
+        end 
+        task.wait() 
+    until (root.Position - getgenv().OldPos.p).Magnitude < 25 
+    Workspace.FallenPartsDestroyHeight = getgenv().FPDH 
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "甩飞完成", Text = "已完成对 " .. targetPlayer.Name .. " 的甩飞", Duration = 3}) 
+end 
+
+local function showPlayerSelect() 
+    local selectGui = Instance.new("ScreenGui") 
+    selectGui.Name = "PlayerSelect" 
+    selectGui.Parent = LocalPlayer.PlayerGui 
+    selectGui.IgnoreGuiInset = true 
+    selectGui.ResetOnSpawn = false 
+    local bg = Instance.new("Frame") 
+    bg.Parent = selectGui 
+    bg.Size = UDim2.new(0, 200, 0, 250) 
+    bg.Position = UDim2.new(0.5, -100, 0.5, -125) 
+    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30) 
+    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg 
+    local title = Instance.new("TextLabel") 
+    title.Parent = bg 
+    title.Size = UDim2.new(1, 0, 0, 30) 
+    title.BackgroundTransparency = 1 
+    title.Text = "选择玩家" 
+    title.TextColor3 = Color3.new(1,1,1) 
+    title.Font = Enum.Font.SourceSansBold 
+    title.TextSize = 16 
+    local scrollFrame = Instance.new("ScrollingFrame") 
+    scrollFrame.Parent = bg 
+    scrollFrame.Size = UDim2.new(1, -10, 1, -40) 
+    scrollFrame.Position = UDim2.new(0, 5, 0, 35) 
+    scrollFrame.BackgroundTransparency = 1 
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0) 
+    scrollFrame.ScrollBarThickness = 4 
+    local playersList = Players:GetPlayers() 
+    local y = 0 
+    for _, p in ipairs(playersList) do 
+        if p ~= LocalPlayer then 
+            local btn = Instance.new("TextButton") 
+            btn.Parent = scrollFrame 
+            btn.Size = UDim2.new(1, -10, 0, 30) 
+            btn.Position = UDim2.new(0, 5, 0, y) 
+            btn.Text = p.Name 
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50) 
+            btn.TextColor3 = Color3.new(1,1,1) 
+            btn.Font = Enum.Font.SourceSans 
+            btn.TextSize = 14 
+            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = btn 
+            btn.MouseButton1Click:Connect(function() 
+                teleportToPlayer(p); selectGui:Destroy() 
+            end) 
+            y = y + 35 
+        end 
+    end 
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, y) 
+    local closeBtn = Instance.new("TextButton") 
+    closeBtn.Parent = bg 
+    closeBtn.Size = UDim2.new(0, 30, 0, 20) 
+    closeBtn.Position = UDim2.new(1, -35, 0, 5) 
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) 
+    closeBtn.Text = "X" 
+    closeBtn.TextColor3 = Color3.new(1,1,1) 
+    closeBtn.Font = Enum.Font.SourceSansBold 
+    closeBtn.TextSize = 14 
+    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn 
+    closeBtn.MouseButton1Click:Connect(function() selectGui:Destroy() end) 
+end 
+
+local function startSpeedAntiPull(speed) 
+    if speedAntiPull then speedAntiPull:Disconnect() end 
+    speedAntiPull = RunService.Heartbeat:Connect(function() 
+        local hum = getHumanoid() 
+        if hum then 
+            if hum.WalkSpeed ~= speed then hum.WalkSpeed = speed end 
+        end 
+    end) 
+end 
+
+local function stopSpeedAntiPull() 
+    if speedAntiPull then speedAntiPull:Disconnect(); speedAntiPull = nil end 
+end 
+
+local flyUIVisible = false 
+local screenGui = nil 
+local toggleButton = nil 
+local brakeButton = nil 
+local active = false 
+local braking = false 
+local rotConn, flyConn, animTrack 
+local bodyVelocity 
+
+local function getCharacter() 
+    return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() 
+end 
+
+local function getRoot() 
+    return getCharacter():WaitForChild("HumanoidRootPart") 
+end 
+
+local function getHum() 
+    return getCharacter():FindFirstChildWhichIsA("Humanoid") 
+end 
+
+local function setTPWalk(state) 
+    if syn or getgenv then 
+        pcall(function() setfflag("tpwalk", state and "1" or "0") end) 
+    end 
+end 
+
+local function playFlyAnimation() 
+    local hum = getHum() 
+    if hum then 
+        local anim = Instance.new("Animation") 
+        anim.AnimationId = "rbxassetid://282574440" 
+        animTrack = hum:LoadAnimation(anim) 
+        animTrack.Looped = true 
+        animTrack:Play() 
+    end 
+end 
+
+local function playBrakeAnimation() 
+    local hum = getHum() 
+    if hum then 
+        local anim = Instance.new("Animation") 
+        anim.AnimationId = "rbxassetid://69427277" 
+        animTrack = hum:LoadAnimation(anim) 
+        animTrack.Looped = true 
+        animTrack:Play() 
+    end 
+end 
+
+local function stopAnimation() 
+    if animTrack then animTrack:Stop() 
+        animTrack = nil 
+    end 
+end 
+
+local function startFlying() 
+    local root = getRoot() 
+    bodyVelocity = Instance.new("BodyVelocity") 
+    bodyVelocity.Velocity = Vector3.zero 
+    bodyVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9) 
+    bodyVelocity.P = 1250 
+    bodyVelocity.Parent = root 
+    flyConn = RunService.RenderStepped:Connect(function() 
+        if not braking then 
+            local camLook = Camera.CFrame.LookVector 
+            bodyVelocity.Velocity = camLook * 50 
+        else 
+            bodyVelocity.Velocity = Vector3.zero 
+        end 
+    end) 
+end 
+
+local function stopFlying() 
+    if flyConn then flyConn:Disconnect() 
+        flyConn = nil 
+    end 
+    if bodyVelocity then bodyVelocity:Destroy() 
+        bodyVelocity = nil 
+    end 
+end 
+
+local function startRotation() 
+    rotConn = RunService.RenderStepped:Connect(function() 
+        local root = getRoot() 
+        if root then 
+            root.CFrame = CFrame.new(root.Position, root.Position + Camera.CFrame.LookVector) 
+        end 
+    end) 
+end 
+
+local function stopRotation() 
+    if rotConn then rotConn:Disconnect() 
+        rotConn = nil 
+    end 
+end 
+
+local function activate() 
+    active = true 
+    braking = false 
+    setTPWalk(true) 
+    playFlyAnimation() 
+    startFlying() 
+    startRotation() 
+    if brakeButton then brakeButton.Visible = true end 
+end 
+
+local function deactivate() 
+    active = false 
+    stopAnimation() 
+    stopFlying() 
+    stopRotation() 
+    setTPWalk(false) 
+    if brakeButton then brakeButton.Visible = false end 
+end 
+
+local function toggleBrake() 
+    braking = not braking 
+    stopAnimation() 
+    if braking then playBrakeAnimation() else playFlyAnimation() end 
+end 
+
+local function createFlyUI() 
+    if screenGui then return end 
+    local PlayerGui = LocalPlayer:WaitForChild("PlayerGui") 
+    screenGui = Instance.new("ScreenGui") 
+    screenGui.Name = "DeltaControlGui" 
+    screenGui.ResetOnSpawn = false 
+    screenGui.IgnoreGuiInset = true 
+    screenGui.Parent = PlayerGui 
+    toggleButton = Instance.new("ImageButton") 
+    toggleButton.Name = "FlyToggle" 
+    toggleButton.Size = UDim2.new(0, 100, 0, 100) 
+    toggleButton.Position = UDim2.new(0.5, -50, 0.5, -50) 
+    toggleButton.Image = "rbxassetid://76316158972959" 
+    toggleButton.BackgroundTransparency = 1 
+    toggleButton.Draggable = true 
+    toggleButton.Active = true 
+    toggleButton.Visible = false 
+    toggleButton.Parent = screenGui 
+    brakeButton = Instance.new("ImageButton") 
+    brakeButton.Name = "BrakeButton" 
+    brakeButton.Size = UDim2.new(0, 80, 0, 80) 
+    brakeButton.Position = UDim2.new(0.5, -40, 0.5, 60) 
+    brakeButton.Image = "rbxassetid://132411019634629" 
+    brakeButton.BackgroundTransparency = 1 
+    brakeButton.Visible = false 
+    brakeButton.Active = true 
+    brakeButton.Parent = screenGui 
+    toggleButton.MouseButton1Click:Connect(function() 
+        if active then deactivate() else activate() end 
+    end) 
+    brakeButton.MouseButton1Click:Connect(toggleBrake) 
+end 
+
+LocalPlayer.CharacterAdded:Connect(function() 
+    if active then 
+        task.wait(1) 
+        activate() 
+        if braking then toggleBrake() end 
+    end 
+end) 
+
+local function showFlyUI() 
+    createFlyUI() 
+    if toggleButton then toggleButton.Visible = true end 
+    flyUIVisible = true 
+end 
+
+local function hideFlyUI() 
+    if active then deactivate() end 
+    if toggleButton then toggleButton.Visible = false end 
+    if brakeButton then brakeButton.Visible = false end 
+    flyUIVisible = false 
+end 
+
+local function loadLuGuan() 
+    local player = game:GetService("Players").LocalPlayer 
+    local ToolName = "撸管（r15）" 
+    local function cleanupOldTool() 
+        if player:FindFirstChild("Backpack") then 
+            local oldTool = player.Backpack:FindFirstChild(ToolName) 
+            if oldTool then oldTool:Destroy() end 
+        end 
+        if player.Character then 
+            local oldTool = player.Character:FindFirstChild(ToolName) 
+            if oldTool then oldTool:Destroy() end 
+        end 
+        if workspace:FindFirstChild("animationContainer") then 
+            workspace.animationContainer:Destroy() 
+        end 
+    end 
+    local function giveTool() 
+        cleanupOldTool() 
+        local character = player.Character or player.CharacterAdded:Wait() 
+        local humanoid = character:WaitForChild("Humanoid") 
+        local backpack = player:WaitForChild("Backpack") 
+        local function getCharacterModel() 
+            return humanoid.RigType == Enum.HumanoidRigType.R15 and "R15" or "R6" 
+        end 
+        local animationObject = Instance.new("Animation") 
+        animationObject.Name = "animationContainer" 
+        animationObject.Parent = workspace 
+        if getCharacterModel() == "R15" then 
+            animationObject.AnimationId = "rbxassetid://698251653" 
+        else 
+            animationObject.AnimationId = "rbxassetid://72042024" 
+        end 
+        local toolObject = Instance.new("Tool") 
+        toolObject.Name = ToolName 
+        toolObject.RequiresHandle = false 
+        toolObject.Parent = backpack 
+        local isActive = false 
+        local currentAnimationTrack = nil 
+        toolObject.Equipped:Connect(function() 
+            local char = player.Character 
+            local hum = char and char:FindFirstChild("Humanoid") 
+            local animator = hum and (hum:FindFirstChildOfClass("Animator") or hum:WaitForChild("Animator")) 
+            if not animator then return end 
+            isActive = true 
+            while isActive do 
+                if not currentAnimationTrack then 
+                    currentAnimationTrack = animator:LoadAnimation(animationObject) 
+                end 
+                currentAnimationTrack:Play() 
+                currentAnimationTrack:AdjustSpeed(0.7) 
+                currentAnimationTrack.TimePosition = 0.6 
+                task.wait(0.1) 
+                while isActive and currentAnimationTrack and currentAnimationTrack.TimePosition < 0.7 do 
+                    task.wait(0.05) 
+                end 
+                if currentAnimationTrack then 
+                    currentAnimationTrack:Stop() 
+                    currentAnimationTrack:Destroy() 
+                    currentAnimationTrack = nil 
+                end 
+            end 
+        end) 
+        toolObject.Unequipped:Connect(function() 
+            isActive = false 
+            if currentAnimationTrack then 
+                currentAnimationTrack:Stop() 
+                currentAnimationTrack:Destroy() 
+                currentAnimationTrack = nil 
+            end 
+        end) 
+        humanoid.Died:Connect(function() 
+            isActive = false 
+            if currentAnimationTrack then 
+                currentAnimationTrack:Stop() 
+                currentAnimationTrack:Destroy() 
+                currentAnimationTrack = nil 
+            end 
+        end) 
+    end 
+    giveTool() 
+    if _G.AutoToolConnection then _G.AutoToolConnection:Disconnect() end 
+    _G.AutoToolConnection = player.CharacterAdded:Connect(function(newCharacter) 
+        player:WaitForChild("Backpack") 
+        task.wait(0.5) 
+        giveTool() 
+    end) 
+end 
+
+local harassEnabled = false 
+local harassTarget = nil 
+local harassConnection = nil 
+local harassSpeed = 5 
+local lastSwitchTime = 0 
+local isBehind = true 
+
+local function startHarass() 
+    if harassConnection then harassConnection:Disconnect() end 
+    lastSwitchTime = tick() 
+    isBehind = true 
+    harassConnection = RunService.Heartbeat:Connect(function() 
+        if not harassEnabled or not harassTarget or not harassTarget.Character then return end 
+        local myChar = LocalPlayer.Character 
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end 
+        local targetRoot = harassTarget.Character:FindFirstChild("HumanoidRootPart") 
+        if not targetRoot then return end 
+        local switchInterval = 1 / math.max(harassSpeed, 0.1) 
+        local myRoot = myChar.HumanoidRootPart 
+        local targetPos = targetRoot.Position 
+        local targetLook = targetRoot.CFrame.LookVector 
+        local behindPos = targetPos + targetLook * -2.5 
+        local onTargetPos = targetPos 
+        local now = tick() 
+        if now - lastSwitchTime >= switchInterval then 
+            lastSwitchTime = now 
+            isBehind = not isBehind 
+        end 
+        if isBehind then 
+            myRoot.CFrame = CFrame.new(behindPos, behindPos + targetLook) 
+        else 
+            myRoot.CFrame = CFrame.new(onTargetPos, onTargetPos + targetLook) 
+        end 
+    end) 
+end 
+
+local function stopHarass() 
+    harassEnabled = false 
+    harassTarget = nil 
+    if harassConnection then harassConnection:Disconnect() 
+        harassConnection = nil 
+    end 
+    if UIButtons.harassBtn then UIButtons.harassBtn.Text = "操人" end 
+    if UIButtons.harassNearestBtn then UIButtons.harassNearestBtn.Text = "操最近的人" end 
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "操人", Text = "已停止操人", Duration = 2}) 
+end 
+
+local smoothFollowConnection = nil 
+local smoothFollowTarget = nil 
+
+local function stopSmoothFollow() 
+    if smoothFollowConnection then smoothFollowConnection:Disconnect() 
+        smoothFollowConnection = nil 
+    end 
+    smoothFollowTarget = nil 
+    if UIButtons.smoothFollowSelectBtn then UIButtons.smoothFollowSelectBtn.Text = "平滑跟随选定人" end 
+    if UIButtons.smoothFollowNearestBtn then UIButtons.smoothFollowNearestBtn.Text = "平滑跟随最近的人" end 
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "平滑跟随", Text = "已停止平滑跟随", Duration = 3}) 
+end 
+
+local function startSmoothFollow(targetPlayer) 
+    if smoothFollowConnection then smoothFollowConnection:Disconnect() end 
+    smoothFollowTarget = targetPlayer 
+    smoothFollowConnection = RunService.Heartbeat:Connect(function(dt) 
+        if not smoothFollowTarget or not smoothFollowTarget:IsDescendantOf(Players) or not smoothFollowTarget.Character or not smoothFollowTarget.Character:FindFirstChild("HumanoidRootPart") then 
+            stopSmoothFollow() 
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "平滑跟随", Text = "目标已消失，跟随停止", Duration = 3}) 
+            return 
+        end 
+        local myChar = LocalPlayer.Character 
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end 
+        local myRoot = myChar.HumanoidRootPart 
+        local targetRoot = smoothFollowTarget.Character.HumanoidRootPart 
+        local targetPos = targetRoot.Position 
+        local myPos = myRoot.Position 
+        local dist = (targetPos - myPos).Magnitude 
+        if dist > 4 then 
+            local direction = (targetPos - myPos).Unit 
+            local speed = math.min(dist * 2, 50) 
+            local newPos = myPos + direction * speed * dt 
+            myRoot.CFrame = CFrame.new(newPos, targetPos) 
+        end 
+    end) 
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "平滑跟随", Text = "开始平滑跟随 " .. targetPlayer.Name, Duration = 3}) 
+end 
+
+local function showSmoothFollowSelect() 
+    if smoothFollowConnection then return end 
+    local selectGui = Instance.new("ScreenGui") 
+    selectGui.Name = "SmoothFollowSelect" 
+    selectGui.Parent = LocalPlayer.PlayerGui 
+    selectGui.IgnoreGuiInset = true 
+    selectGui.ResetOnSpawn = false 
+    local bg = Instance.new("Frame") 
+    bg.Parent = selectGui 
+    bg.Size = UDim2.new(0, 200, 0, 250) 
+    bg.Position = UDim2.new(0.5, -100, 0.5, -125) 
+    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30) 
+    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg 
+    local title = Instance.new("TextLabel") 
+    title.Parent = bg 
+    title.Size = UDim2.new(1, 0, 0, 30) 
+    title.BackgroundTransparency = 1 
+    title.Text = "选择跟随目标" 
+    title.TextColor3 = Color3.new(1,1,1) 
+    title.Font = Enum.Font.SourceSansBold 
+    title.TextSize = 16 
+    local scrollFrame = Instance.new("ScrollingFrame") 
+    scrollFrame.Parent = bg 
+    scrollFrame.Size = UDim2.new(1, -10, 1, -40) 
+    scrollFrame.Position = UDim2.new(0, 5, 0, 35) 
+    scrollFrame.BackgroundTransparency = 1 
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0) 
+    scrollFrame.ScrollBarThickness = 4 
+    local playersList = Players:GetPlayers() 
+    local y = 0 
+    for _, p in ipairs(playersList) do 
+        if p ~= LocalPlayer then 
+            local btn = Instance.new("TextButton") 
+            btn.Parent = scrollFrame 
+            btn.Size = UDim2.new(1, -10, 0, 30) 
+            btn.Position = UDim2.new(0, 5, 0, y) 
+            btn.Text = p.Name 
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50) 
+            btn.TextColor3 = Color3.new(1,1,1) 
+            btn.Font = Enum.Font.SourceSans 
+            btn.TextSize = 14 
+            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = btn 
+            btn.MouseButton1Click:Connect(function() 
+                startSmoothFollow(p) 
+                if UIButtons.smoothFollowSelectBtn then UIButtons.smoothFollowSelectBtn.Text = "停止平滑跟随" end 
+                selectGui:Destroy() 
+            end) 
+            y = y + 35 
+        end 
+    end 
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, y) 
+    local closeBtn = Instance.new("TextButton") 
+    closeBtn.Parent = bg 
+    closeBtn.Size = UDim2.new(0, 30, 0, 20) 
+    closeBtn.Position = UDim2.new(1, -35, 0, 5) 
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) 
+    closeBtn.Text = "X" 
+    closeBtn.TextColor3 = Color3.new(1,1,1) 
+    closeBtn.Font = Enum.Font.SourceSansBold 
+    closeBtn.TextSize = 14 
+    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn 
+    closeBtn.MouseButton1Click:Connect(function() selectGui:Destroy() end) 
+end 
+
+local function showHarassSelect() 
+    if harassEnabled then return end 
+    local selectGui = Instance.new("ScreenGui") 
+    selectGui.Name = "HarassSelect" 
+    selectGui.Parent = LocalPlayer.PlayerGui 
+    selectGui.IgnoreGuiInset = true 
+    selectGui.ResetOnSpawn = false 
+    local bg = Instance.new("Frame") 
+    bg.Parent = selectGui 
+    bg.Size = UDim2.new(0, 220, 0, 300) 
+    bg.Position = UDim2.new(0.5, -110, 0.5, -150) 
+    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30) 
+    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg 
+    local title = Instance.new("TextLabel") 
+    title.Parent = bg 
+    title.Size = UDim2.new(1, 0, 0, 30) 
+    title.BackgroundTransparency = 1 
+    title.Text = "选择操人目标" 
+    title.TextColor3 = Color3.new(1,1,1) 
+    title.Font = Enum.Font.SourceSansBold 
+    title.TextSize = 16 
+    local scrollFrame = Instance.new("ScrollingFrame") 
+    scrollFrame.Parent = bg 
+    scrollFrame.Size = UDim2.new(1, -10, 1, -80) 
+    scrollFrame.Position = UDim2.new(0, 5, 0, 35) 
+    scrollFrame.BackgroundTransparency = 1 
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0) 
+    scrollFrame.ScrollBarThickness = 4 
+    local playersList = Players:GetPlayers() 
+    local y = 0 
+    for _, p in ipairs(playersList) do 
+        if p ~= LocalPlayer then 
+            local btn = Instance.new("TextButton") 
+            btn.Parent = scrollFrame 
+            btn.Size = UDim2.new(1, -10, 0, 30) 
+            btn.Position = UDim2.new(0, 5, 0, y) 
+            btn.Text = p.Name 
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50) 
+            btn.TextColor3 = Color3.new(1,1,1) 
+            btn.Font = Enum.Font.SourceSans 
+            btn.TextSize = 14 
+            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = btn 
+            btn.MouseButton1Click:Connect(function() 
+                harassTarget = p 
+                harassEnabled = true 
+                startHarass() 
+                selectGui:Destroy() 
+                if UIButtons.harassBtn then UIButtons.harassBtn.Text = "停止操人" end 
+                game:GetService("StarterGui"):SetCore("SendNotification", { 
+                    Title = "操人", 
+                    Text = "开始疯狂操 " .. p.Name .. "！", 
+                    Duration = 3 
+                }) 
+            end) 
+            y = y + 35 
+        end 
+    end 
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, y) 
+    local cancelBtn = Instance.new("TextButton") 
+    cancelBtn.Parent = bg 
+    cancelBtn.Size = UDim2.new(1, -20, 0, 30) 
+    cancelBtn.Position = UDim2.new(0, 10, 1, -40) 
+    cancelBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) 
+    cancelBtn.Text = "取消操人" 
+    cancelBtn.TextColor3 = Color3.new(1,1,1) 
+    cancelBtn.Font = Enum.Font.SourceSansBold 
+    cancelBtn.TextSize = 14 
+    local cancelCorner = Instance.new("UICorner"); cancelCorner.CornerRadius = UDim.new(0, 6); cancelCorner.Parent = cancelBtn 
+    cancelBtn.MouseButton1Click:Connect(function() 
+        stopHarass() 
+        selectGui:Destroy() 
+        game:GetService("StarterGui"):SetCore("SendNotification", { 
+            Title = "操人", 
+            Text = "已取消操人", 
+            Duration = 2 
+        }) 
+    end) 
+    local closeBtn = Instance.new("TextButton") 
+    closeBtn.Parent = bg 
+    closeBtn.Size = UDim2.new(0, 30, 0, 20) 
+    closeBtn.Position = UDim2.new(1, -35, 0, 5) 
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) 
+    closeBtn.Text = "X" 
+    closeBtn.TextColor3 = Color3.new(1,1,1) 
+    closeBtn.Font = Enum.Font.SourceSansBold 
+    closeBtn.TextSize = 14 
+    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn 
+    closeBtn.MouseButton1Click:Connect(function() selectGui:Destroy() end) 
+end 
+
+local function createJumpFloat() 
+    if jumpFloatGui then jumpFloatGui:Destroy() end 
+    jumpFloatGui = Instance.new("ScreenGui", CoreGui) 
+    jumpFloatGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling 
+    jumpFloatBtn = Instance.new("TextButton", jumpFloatGui) 
+    jumpFloatBtn.Size = UDim2.new(0,60,0,60) 
+    jumpFloatBtn.Position = UDim2.new(1,-80,1,-80) 
+    jumpFloatBtn.BackgroundColor3 = Color3.new(0,0.5,1) 
+    jumpFloatBtn.Text = "↑" 
+    jumpFloatBtn.TextColor3 = Color3.new(1,1,1) 
+    jumpFloatBtn.TextSize = 40 
+    jumpFloatBtn.Font = Enum.Font.SourceSansBold 
+    Instance.new("UICorner", jumpFloatBtn).CornerRadius = UDim.new(1,0) 
+    local gearBtn = Instance.new("TextButton", jumpFloatGui) 
+    gearBtn.Size = UDim2.new(0,24,0,24) 
+    gearBtn.Position = UDim2.new(1,-86,1,-86) 
+    gearBtn.BackgroundColor3 = Color3.new(0.2,0.2,0.2) 
+    gearBtn.Text = "⚙" 
+    gearBtn.TextColor3 = Color3.new(1,1,1) 
+    gearBtn.TextSize = 18 
+    gearBtn.Font = Enum.Font.SourceSansBold 
+    Instance.new("UICorner", gearBtn).CornerRadius = UDim.new(1,0) 
+    jumpPanel = Instance.new("Frame", jumpFloatGui) 
+    jumpPanel.Size = UDim2.new(0,220,0,140) 
+    jumpPanel.Position = UDim2.new(1,-240,1,-160) 
+    jumpPanel.BackgroundColor3 = Color3.fromRGB(30,30,30) 
+    jumpPanel.Visible = false 
+    Instance.new("UICorner", jumpPanel).CornerRadius = UDim.new(0,8) 
+    local closeBtn = Instance.new("TextButton", jumpPanel) 
+    closeBtn.Size = UDim2.new(0,20,0,20) 
+    closeBtn.Position = UDim2.new(1,-25,0,5) 
+    closeBtn.BackgroundColor3 = Color3.new(0.8,0.2,0.2) 
+    closeBtn.Text = "X" 
+    closeBtn.TextColor3 = Color3.new(1,1,1) 
+    closeBtn.Font = Enum.Font.SourceSansBold 
+    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(1,0) 
+    closeBtn.MouseButton1Click:Connect(function() jumpPanel.Visible = false end) 
+    local heightLabel = Instance.new("TextLabel", jumpPanel) 
+    heightLabel.Size = UDim2.new(1,-30,0,30) 
+    heightLabel.Position = UDim2.new(0,10,0,5) 
+    heightLabel.BackgroundTransparency = 1 
+    heightLabel.Text = "跳跃高度：" .. jumpHeight 
+    heightLabel.TextColor3 = Color3.new(1,1,1) 
+    heightLabel.Font = Enum.Font.SourceSansBold 
+    local inputBox = Instance.new("TextBox", jumpPanel) 
+    inputBox.Size = UDim2.new(0.6,0,0,30) 
+    inputBox.Position = UDim2.new(0.2,0,0,50) 
+    inputBox.BackgroundColor3 = Color3.new(0.2,0.2,0.2) 
+    inputBox.Text = tostring(jumpHeight) 
+    inputBox.TextColor3 = Color3.new(1,1,1) 
+    inputBox.Font = Enum.Font.SourceSansBold 
+    Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0,6) 
+    local confirmBtn = Instance.new("TextButton", jumpPanel) 
+    confirmBtn.Size = UDim2.new(0.4,0,0,30) 
+    confirmBtn.Position = UDim2.new(0.1,0,0,90) 
+    confirmBtn.BackgroundColor3 = Color3.new(0,0.6,0) 
+    confirmBtn.Text = "确认" 
+    confirmBtn.TextColor3 = Color3.new(1,1,1) 
+    confirmBtn.Font = Enum.Font.SourceSansBold 
+    Instance.new("UICorner", confirmBtn).CornerRadius = UDim.new(0,6) 
+    confirmBtn.MouseButton1Click:Connect(function() 
+        local num = tonumber(inputBox.Text) 
+        if num and num >= 16 and num <= 100 then 
+            jumpHeight = num 
+            heightLabel.Text = "跳跃高度：" .. jumpHeight 
+        end 
+    end) 
+    local resetBtn = Instance.new("TextButton", jumpPanel) 
+    resetBtn.Size = UDim2.new(0.4,0,0,30) 
+    resetBtn.Position = UDim2.new(0.5,0,0,90) 
+    resetBtn.BackgroundColor3 = Color3.new(0.8,0.4,0) 
+    resetBtn.Text = "默认" 
+    resetBtn.TextColor3 = Color3.new(1,1,1) 
+    resetBtn.Font = Enum.Font.SourceSansBold 
+    Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0,6) 
+    resetBtn.MouseButton1Click:Connect(function() 
+        jumpHeight = 60 
+        inputBox.Text = "60" 
+        heightLabel.Text = "跳跃高度：" .. jumpHeight 
+    end) 
+    gearBtn.MouseButton1Click:Connect(function() 
+        jumpPanel.Visible = not jumpPanel.Visible 
+    end) 
+    local function performJump() 
+        if not jumpFloatActive then return end 
+        local char = LocalPlayer.Character 
+        if not char then return end 
+        local hrp = char:FindFirstChild("HumanoidRootPart") 
+        local hum = char:FindFirstChildOfClass("Humanoid") 
+        if hrp and hum and hum.Health > 0 and hum.FloorMaterial ~= Enum.Material.Air then 
+            hrp.Velocity = Vector3.new(hrp.Velocity.X, jumpHeight, hrp.Velocity.Z) 
+        end 
+    end 
+    jumpFloatBtn.MouseButton1Click:Connect(performJump) 
+end 
+
+local function destroyJumpFloat() 
+    if jumpFloatGui then 
+        jumpFloatGui:Destroy() 
+        jumpFloatGui = nil 
+        jumpPanel = nil 
+        jumpFloatBtn = nil 
+    end 
+end 
+
+local serversFile = "servers_" .. plrId .. ".json" 
+local savedServers = {} 
+
+local function loadSavedServers() 
+    local success, data = pcall(function() return readfile(serversFile) end) 
+    if success and data then 
+        local decoded = HttpService:JSONDecode(data) 
+        if decoded then 
+            savedServers = {} 
+            for _, item in ipairs(decoded) do 
+                if type(item) == "string" then 
+                    table.insert(savedServers, {id = item, name = item}) 
+                elseif type(item) == "table" and item.id then 
+                    table.insert(savedServers, {id = item.id, name = item.name or item.id}) 
+                end 
+            end 
+        end 
+    end 
+    local seen = {} 
+    local unique = {} 
+    for _, entry in ipairs(savedServers) do 
+        if not seen[entry.id] then 
+            seen[entry.id] = true 
+            table.insert(unique, entry) 
+        end 
+    end 
+    savedServers = unique 
+end 
+
+local function saveServers() 
+    pcall(function() writefile(serversFile, HttpService:JSONEncode(savedServers)) end) 
+end 
+
+local function addServerId(id, name) 
+    if not id or id == "" then return end 
+    for _, entry in ipairs(savedServers) do 
+        if entry.id == id then 
+            if name and name ~= entry.name then entry.name = name saveServers() end 
+            return 
+        end 
+    end 
+    table.insert(savedServers, {id = id, name = name or id}) 
+    saveServers() 
+end 
+
+local function removeServerId(id) 
+    local newList = {} 
+    for _, entry in ipairs(savedServers) do 
+        if entry.id ~= id then table.insert(newList, entry) end 
+    end 
+    savedServers = newList 
+    saveServers() 
+end 
+
+local function renameServerId(id, newName) 
+    if not newName or newName == "" then return end 
+    for _, entry in ipairs(savedServers) do 
+        if entry.id == id then 
+            entry.name = newName 
+            saveServers() 
+            return true 
+        end 
+    end 
+    return false 
+end 
+
+loadSavedServers() 
+
+local window = UILib:CreateWindow({ 
+    Title = "恐脚本--通用" .. string.rep(" ", 6) .. "您已执行 " .. count .. " 次，谢谢您的支持！", 
+    ToggleText = "打开菜单", 
+    ToggleTextClose = "关闭菜单", 
+}) 
+
+local function copyToClipboard(text, label) 
+    local success = pcall(function() 
+        if setclipboard then setclipboard(text) 
+        elseif game:GetService("ClipboardService") then game:GetService("ClipboardService"):SetClipboard(text) 
+        else error("无法访问剪贴板") end 
+    end) 
+    game:GetService("StarterGui"):SetCore("SendNotification", { 
+        Title = label or "提示", 
+        Text = success and ("已复制: " .. text) or ("复制失败，请手动复制：" .. text), 
+        Duration = 3, 
+    }) 
+end 
+
+local page1 = window:AddPage("通知") 
+local info = Instance.new("TextLabel") 
+info.Parent = page1.frame 
+info.Size = UDim2.new(1, -20, 0, 60) 
+info.Position = UDim2.new(0, 10, 0, 10) 
+info.BackgroundColor3 = Color3.fromRGB(40, 40, 40) 
+info.Text = "通用脚本\n创作者：恐拜大帝\n感谢ROB支持" 
+info.TextColor3 = Color3.new(1, 1, 1) 
+info.TextWrapped = true 
+info.Font = Enum.Font.SourceSans 
+info.TextSize = 16 
+info.TextXAlignment = Enum.TextXAlignment.Center 
+info.TextYAlignment = Enum.TextYAlignment.Center 
+local infoCorner = Instance.new("UICorner") 
+infoCorner.CornerRadius = UDim.new(0, 6) 
+infoCorner.Parent = info 
+local startY = info.Position.Y.Offset + info.Size.Y.Offset + 15 
+local blackColor = Color3.fromRGB(35, 35, 35) 
+
+local function createCopyButton(parent, groupLabel, code, posX, posY) 
+    local label = Instance.new("TextLabel") 
+    label.Parent = parent 
+    label.Size = UDim2.new(0, 40, 0, 18) 
+    label.Position = UDim2.new(0, posX, 0, posY - 20) 
+    label.BackgroundTransparency = 1 
+    label.Text = groupLabel 
+    label.TextColor3 = Color3.fromRGB(200, 200, 200) 
+    label.TextSize = 13 
+    label.Font = Enum.Font.SourceSansBold 
+    label.TextXAlignment = Enum.TextXAlignment.Left 
+    local btn = Instance.new("TextButton") 
+    btn.Parent = parent 
+    btn.Size = UDim2.new(0, 150, 0, 30) 
+    btn.Position = UDim2.new(0, posX, 0, posY) 
+    btn.BackgroundColor3 = blackColor 
+    btn.Text = code 
+    btn.TextColor3 = Color3.new(1, 1, 1) 
+    btn.TextSize = 16 
+    btn.Font = Enum.Font.SourceSansBold 
+    btn.AutoButtonColor = false 
+    local btnCorner = Instance.new("UICorner") 
+    btnCorner.CornerRadius = UDim.new(0, 6) 
+    btnCorner.Parent = btn 
+    local hint = Instance.new("TextLabel") 
+    hint.Parent = parent 
+    hint.Size = UDim2.new(0, 70, 0, 30) 
+    hint.Position = UDim2.new(0, posX + 160, 0, posY) 
+    hint.BackgroundTransparency = 1 
+    hint.Text = "点击复制" 
+    hint.TextColor3 = Color3.fromRGB(200, 200, 200) 
+    hint.TextSize = 14 
+    hint.Font = Enum.Font.SourceSans 
+    hint.TextXAlignment = Enum.TextXAlignment.Left 
+    btn.MouseButton1Click:Connect(function() 
+        copyToClipboard(code, groupLabel) 
+    end) 
+    return btn 
+end 
+
+createCopyButton(page1.frame, "QQ群", "1106203175", 10, startY) 
+createCopyButton(page1.frame, "QQ", "3999698324", 10, startY + 45) 
+page1:UpdateCanvas() 
+
+local page2 = window:AddPage("主要") 
+page2:AddToggle({ 
+    Text = "透视", 
+    Default = false, 
+    Callback = function(state) 
+        espEnabled = state 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "透视", Text = state and "已打开" or "已关闭", Duration = 3}) 
+        if state then 
+            for _, p in ipairs(Players:GetPlayers()) do enableESP(p) end 
+        else 
+            for _, p in ipairs(Players:GetPlayers()) do disableESP(p) end 
+        end 
+    end 
+}) 
+page2:AddButton({ 
+    Text = "飞行", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "飞行脚本", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/fly.lua"))() end) 
+    end 
+}) 
+page2:AddToggle({ 
+    Text = "无限跳", 
+    Default = false, 
+    Callback = function(state) 
+        InfiniteJumpEnabled = state 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "无限跳", Text = state and "已开启" or "已关闭", Duration = 3}) 
+    end 
+}) 
+page2:AddButton({ 
+    Text = "建造方块", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "建造方块", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://pastebin.com/raw/Zt4kkQG9"))() end) 
+    end 
+}) 
+page2:AddToggle({ 
+    Text = "穿墙", 
+    Default = false, 
+    Callback = function(state) 
+        NoclipEnabled = state 
+        if state then startNoclip() else stopNoclip() end 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "穿墙", Text = state and "已开启" or "已关闭", Duration = 3}) 
+    end 
+}) 
+page2:AddSlider({ 
+    Text = "修改移速", 
+    Min = 5, 
+    Max = 1000, 
+    Default = 16, 
+    Callback = function(val) 
+        local hum = getHumanoid() 
+        if hum then hum.WalkSpeed = val end 
+        startSpeedAntiPull(val) 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "修改移速", Text = "移速已设置为：" .. tostring(val), Duration = 3}) 
+    end 
+}) 
+page2:AddToggle({ 
+    Text = "夜视", 
+    Default = false, 
+    Callback = function(state) 
+        NightVisionEnabled = state 
+        local Lighting = game:GetService("Lighting") 
+        if NightVisionEnabled then 
+            Lighting.Ambient = Color3.new(1, 1, 1); Lighting.ColorShift_Bottom = Color3.new(1, 1, 1); Lighting.ColorShift_Top = Color3.new(1, 1, 1) 
+            Lighting.FogEnd = 100000; Lighting.FogStart = 100000; Lighting.Brightness = 1; Lighting.GlobalShadows = false; Lighting.OutdoorAmbient = Color3.new(1, 1, 1); Lighting.ClockTime = 12 
+        else 
+            Lighting.Ambient = Color3.new(0, 0, 0); Lighting.ColorShift_Bottom = Color3.new(0, 0, 0); Lighting.ColorShift_Top = Color3.new(0, 0, 0) 
+            Lighting.FogEnd = 1000; Lighting.FogStart = 0; Lighting.Brightness = 1; Lighting.GlobalShadows = true; Lighting.OutdoorAmbient = Color3.new(0.7, 0.7, 0.7) 
+        end 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "夜视", Text = state and "已开启" or "已关闭", Duration = 3}) 
+    end 
+}) 
+page2:AddButton({ 
+    Text = "偷取道具", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "偷取道具", Text = "正在偷取道具中...", Duration = 5}) 
+        task.spawn(function() 
+            local cnt = stealAllItems() 
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "偷取完成", Text = "共偷取 " .. tostring(cnt) .. " 个道具", Duration = 3}) 
+        end) 
+    end 
+}) 
+page2:AddToggle({ 
+    Text = "解锁跳跃", 
+    Default = false, 
+    Callback = function(state) 
+        jumpFloatActive = state 
+        if state then createJumpFloat() else destroyJumpFloat() end 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "解锁跳跃", Text = state and "已显示跳跃按钮" or "已隐藏跳跃按钮", Duration = 3}) 
+    end 
+}) 
+page2:AddButton({ 
+    Text = "甩飞全部人", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "甩飞", Text = "开始甩飞所有玩家...", Duration = 3}) 
+        task.spawn(function() 
+            local count = 0 
+            for _, p in ipairs(Players:GetPlayers()) do 
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then 
+                    powerfulFling(p) 
+                    count = count + 1 
+                    task.wait(0.5) 
+                end 
+            end 
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "甩飞完成", Text = "共甩飞 " .. tostring(count) .. " 个玩家", Duration = 3}) 
+        end) 
+    end 
+}) 
+page2:AddButton({ 
+    Text = "甩飞最近的人", 
+    Callback = function() 
+        local nearest = nil 
+        local minDist = math.huge 
+        local myPos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position 
+        if not myPos then 
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "甩飞", Text = "你的角色未加载", Duration = 3}) 
+            return 
+        end 
+        for _, p in ipairs(Players:GetPlayers()) do 
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then 
+                local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude 
+                if dist < minDist then 
+                    minDist = dist; nearest = p 
+                end 
+            end 
+        end 
+        if nearest then 
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "甩飞", Text = "正在甩飞 " .. nearest.Name, Duration = 3}) 
+            task.spawn(function() powerfulFling(nearest) end) 
+        else 
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "甩飞", Text = "未找到其他玩家", Duration = 3}) 
+        end 
+    end 
+}) 
+page2:AddPlayerSelector({ 
+    Text = "甩飞选定玩家", 
+    Callback = function(player) 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "甩飞", Text = "正在甩飞 " .. player.Name, Duration = 3}) 
+        task.spawn(function() powerfulFling(player) end) 
+    end 
+}) 
+
+local page3 = window:AddPage("次要") 
+page3:AddToggle({ 
+    Text = "自动翻译", 
+    Default = false, 
+    Callback = function(state) 
+        AutoTranslateEnabled = state 
+        if state then startAutoTranslate() else stopAutoTranslate() end 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自动翻译", Text = state and "已开启" or "已关闭", Duration = 3}) 
+    end 
+}) 
+page3:AddButton({ 
+    Text = "传送最近玩家", 
+    Callback = function() 
+        local nearest = nil 
+        local minDist = math.huge 
+        local myPos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position 
+        if not myPos then return end 
+        for _, p in ipairs(Players:GetPlayers()) do 
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then 
+                local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude 
+                if dist < minDist then 
+                    minDist = dist; nearest = p 
+                end 
+            end 
+        end 
+        if nearest and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then 
+            LocalPlayer.Character.HumanoidRootPart.CFrame = nearest.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, 3) 
+        end 
+    end 
+}) 
+page3:AddToggle({ 
+    Text = "防甩飞", 
+    Default = false, 
+    Callback = function(state) 
+        AntiPushEnabled = state 
+        if not state then 
+            local char = LocalPlayer.Character 
+            if char then local root = char:FindFirstChild("HumanoidRootPart"); if root then root.CanCollide = true end end 
+        end 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "防甩飞", Text = state and "已开启" or "已关闭", Duration = 3}) 
+    end 
+}) 
+page3:AddPlayerSelector({ 
+    Text = "选定玩家跟随", 
+    Callback = function(player) startFollow(player) end 
+}) 
+page3:AddButton({ 
+    Text = "停止跟随", 
+    Callback = function() stopFollow() end 
+}) 
+page3:AddCoordPanel({ 
+    Text = "实时坐标", 
+    Title = "实时坐标", 
+    GetPosition = function() 
+        local char = LocalPlayer.Character 
+        if char and char:FindFirstChild("HumanoidRootPart") then return char.HumanoidRootPart.Position end 
+        return nil 
+    end, 
+    OnTeleport = function(x, y, z) 
+        local char = LocalPlayer.Character 
+        if char and char:FindFirstChild("HumanoidRootPart") then 
+            char.HumanoidRootPart.CFrame = CFrame.new(x, y, z) 
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送成功", Text = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3}) 
+        else 
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = "角色未加载", Duration = 3}) 
+        end 
+    end, 
+    OnCopy = function(text) copyToClipboard(text, "坐标") end, 
+    OnError = function(msg) 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = msg, Duration = 3}) 
+    end 
+}) 
+page3:AddPlayerSelector({ 
+    Text = "选人传送", 
+    Callback = function(p) teleportToPlayer(p) end 
+}) 
+page3:AddAimbotPanel({ 
+    Text = "自瞄半径", 
+    Title = "自瞄半径", 
+    Default = math.floor(Camera.ViewportSize.Y / 3), 
+    Min = 50, 
+    Max = math.floor(Camera.ViewportSize.Y * 0.8), 
+    OnChange = function(r) AimbotRadius = r end 
+}) 
+page3:AddToggle({ 
+    Text = "自瞄", 
+    Default = false, 
+    Callback = function(state) 
+        AimbotEnabled = state 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = state and "已开启，请在面板中调整半径" or "已关闭", Duration = 3}) 
+    end 
+}) 
+page3:AddToggle({ 
+    Text = "锁定视角", 
+    Default = false, 
+    Callback = function(state) 
+        LockViewEnabled = state 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "锁定视角", Text = state and "已开启" or "已关闭", Duration = 3}) 
+    end 
+}) 
+local smoothFollowSelectBtn = page3:AddButton({ 
+    Text = "平滑跟随选定人", 
+    Callback = function() 
+        if smoothFollowConnection then stopSmoothFollow() else showSmoothFollowSelect() end 
+    end 
+}) 
+UIButtons.smoothFollowSelectBtn = smoothFollowSelectBtn 
+local smoothFollowNearestBtn = page3:AddButton({ 
+    Text = "平滑跟随最近的人", 
+    Callback = function() 
+        if smoothFollowConnection then stopSmoothFollow() else 
+            local nearest = getNearestPlayer() 
+            if nearest then 
+                startSmoothFollow(nearest) 
+                smoothFollowNearestBtn.Text = "停止平滑跟随" 
+            else 
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "平滑跟随", Text = "未找到其他玩家", Duration = 3}) 
+            end 
+        end 
+    end 
+}) 
+UIButtons.smoothFollowNearestBtn = smoothFollowNearestBtn 
+page3:AddButton({ 
+    Text = "撸管", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "撸管", Text = "正在生成工具...", Duration = 3}) 
+        task.spawn(function() loadLuGuan() end) 
+    end 
+}) 
+page3:AddToggle({ 
+    Text = "飞行控制", 
+    Default = false, 
+    Callback = function(state) 
+        if state then showFlyUI() else hideFlyUI() end 
+    end 
+}) 
+local harassBtn = page3:AddButton({ 
+    Text = "操人", 
+    Callback = function() 
+        if harassEnabled then stopHarass() else showHarassSelect() end 
+    end 
+}) 
+UIButtons.harassBtn = harassBtn 
+local harassNearestBtn = page3:AddButton({ 
+    Text = "操最近的人", 
+    Callback = function() 
+        if harassEnabled then stopHarass() else 
+            local nearest = getNearestPlayer() 
+            if nearest then 
+                harassTarget = nearest 
+                harassEnabled = true 
+                startHarass() 
+                harassNearestBtn.Text = "停止操人" 
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "操人", Text = "开始疯狂操 " .. nearest.Name .. "！", Duration = 3}) 
+            else 
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "操人", Text = "未找到其他玩家", Duration = 3}) 
+            end 
+        end 
+    end 
+}) 
+UIButtons.harassNearestBtn = harassNearestBtn 
+page3:AddToggle({ 
+    Text = "原地旋转", 
+    Default = false, 
+    Callback = function(state) 
+        SpinEnabled = state 
+        if state then startSpin() else stopSpin() end 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "原地旋转", Text = state and "已开启" or "已关闭", Duration = 3}) 
+    end 
+}) 
+page3:AddHarassSpeedPanel({ 
+    Text = "操人速度", 
+    Title = "操人速度 (次/秒)", 
+    Default = 5, 
+    Min = 1, 
+    Max = 20, 
+    OnChange = function(speed) harassSpeed = speed end 
+}) 
+page3:AddSpinSpeedPanel({ 
+    Text = "旋转速度", 
+    Title = "旋转速度 (度/秒)", 
+    Default = 360, 
+    Min = 1, 
+    Max = 10000, 
+    OnChange = function(speed) SpinSpeed = speed end 
+}) 
+
+local page4 = window:AddPage("杂项") 
+page4:AddToggle({ 
+    Text = "WQ防甩飞", 
+    Default = false, 
+    Callback = function(state) 
+        WQAntiFlingEnabled = state 
+        if state then startWQAntiFling() else stopWQAntiFling() end 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "WQ防甩飞", Text = state and "已开启" or "已关闭", Duration = 3}) 
+    end 
+}) 
+page4:AddButton({ 
+    Text = "显示时间", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "显示时间", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://pastebin.com/raw/0zKLyd4W"))() end) 
+    end 
+}) 
+page4:AddButton({ 
+    Text = "美化包排行榜第一", 
+    Callback = function() 
+        beautifyStats() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "美化包", Text = "数值已修改为999（若游戏支持）", Duration = 3}) 
+    end 
+}) 
+page4:AddToggle({ 
+    Text = "准星", 
+    Default = false, 
+    Callback = function(state) 
+        CrosshairEnabled = state 
+        CrosshairFrame.Visible = CrosshairEnabled 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "准星", Text = state and "已显示" or "已隐藏", Duration = 3}) 
+    end 
+}) 
+page4:AddToggle({ 
+    Text = "准星旋转", 
+    Default = false, 
+    Callback = function(state) 
+        CrosshairSpinEnabled = state 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "准星旋转", Text = state and "已开启" or "已关闭", Duration = 3}) 
+    end 
+}) 
+page4:AddToggle({ 
+    Text = "反挂机踢出", 
+    Default = false, 
+    Callback = function(state) 
+        antiAFKEnabled = state 
+        if state then startAntiAFK() else stopAntiAFK() end 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "反挂机踢出", Text = state and "已开启" or "已关闭", Duration = 3}) 
+    end 
+}) 
+page4:AddInstanceIdPanel({ 
+    Text = "获取实例ID", 
+    Title = "实例 ID (JobId)", 
+    OnCopy = function(id) 
+        pcall(function() setclipboard(id) end) 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "实例ID", Text = "已复制: " .. id, Duration = 3}) 
+    end, 
+    OnSave = function(id) 
+        local defaultName = "服务器 " .. (#savedServers + 1) 
+        addServerId(id, defaultName) 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "保存服务器", Text = "已保存当前服务器到列表", Duration = 3}) 
+    end 
+}) 
+page4:AddPlaceIdPanel({ 
+    Text = "获取数字ID", 
+    Title = "数字 ID (PlaceId)", 
+    OnCopy = function(id) 
+        pcall(function() setclipboard(id) end) 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "数字ID", Text = "已复制: " .. id, Duration = 3}) 
+    end 
+}) 
+page4:AddTeleportServerPanel({ 
+    Text = "传送指定服务器", 
+    Title = "传送指定服务器", 
+    OnTeleport = function(jobId) 
+        pcall(function() game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, jobId) end) 
+    end, 
+    OnError = function(msg) 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = msg, Duration = 3}) 
+    end 
+}) 
+page4:AddSavedServersPanel({ 
+    Text = "已保存的服务器", 
+    Title = "已保存的服务器", 
+    Servers = savedServers, 
+    OnTeleport = function(id) 
+        pcall(function() game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, id) end) 
+    end, 
+    OnSave = function(id, name) addServerId(id, name) end, 
+    OnRename = function(id, name) return renameServerId(id, name) end, 
+    OnDelete = function(id) removeServerId(id) end 
+}) 
+
+local page5 = window:AddPage("支持服务器") 
+page5:AddButton({ 
+    Text = "破坏者谜团2", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "破坏者谜团2", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/PHZMT.NB"))() end) 
+    end 
+}) 
+page5:AddButton({ 
+    Text = "吃吃世界", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "吃吃世界", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/CCSJ.NB"))() end) 
+    end 
+}) 
+page5:AddButton({ 
+    Text = "在超市生活一周", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "在超市生活一周", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCSSHYZ.NB"))() end) 
+    end 
+}) 
+page5:AddButton({ 
+    Text = "亡命速递", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "亡命速递", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/WMSD.NB"))() end) 
+    end 
+}) 
+page5:AddButton({ 
+    Text = "巨剑骑士", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "巨剑骑士", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/JJQS.NB"))() end) 
+    end 
+}) 
+page5:AddButton({ 
+    Text = "doors", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "doors", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/DOORS.NB"))() end) 
+    end 
+}) 
+page5:AddButton({ 
+    Text = "盲射", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "盲射", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MS.NB"))() end) 
+    end 
+}) 
+page5:AddButton({ 
+    Text = "找到按钮", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "找到按钮", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZDNN.NB"))() end) 
+    end 
+}) 
+page5:AddButton({ 
+    Text = "墨水游戏", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "墨水游戏", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MSYS.NB"))() end) 
+    end 
+}) 
+page5:AddButton({ 
+    Text = "力量传奇", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "力量传奇", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/LLCC.NB"))() end) 
+    end 
+}) 
+page5:AddButton({ 
+    Text = "踢出幸运方块", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "踢出幸运方块", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/TCXYFK.NB"))() end) 
+    end 
+}) 
+page5:AddButton({ 
+    Text = "森林中的99夜", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "森林中的99夜", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SLZD99Y.NB"))() end) 
+    end 
+}) 
+page5:AddButton({ 
+    Text = "键盘速度逃脱", 
+    Callback = function() 
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "键盘速度逃脱", Text = "正在加载中...", Duration = 5}) 
+        task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/JPSDTT.NB"))() end) 
+    end 
+}) 
+-- 新增被遗弃按钮
+page5:AddButton({
+    Text = "被遗弃",
+    Callback = function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "被遗弃",
+            Text = "正在加载被遗弃脚本...",
+            Duration = 5
+        })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/BYC.NB"))()
         end)
     end
-    
 })
-
-local ZZ = Tabs.Main:AddRightGroupbox('自动拾取物品')
-
-ZZ:AddToggle('医疗包传送并拾取', {
-    Text = '医疗包传送并互动',
-    Default = false,
-    Tooltip = '自动将医疗包传送到自己位置并互动',
-    Callback = function(state)
-        autoTeleportMedkitEnabled = state
-        
-        if autoTeleportMedkitEnabled then
-            teleportMedkitThread = task.spawn(function()
-                while autoTeleportMedkitEnabled and task.wait(0.5) do
-                    local character = game.Players.LocalPlayer.Character
-                    if character and character:FindFirstChild("HumanoidRootPart") then
-                        local humanoidRootPart = character.HumanoidRootPart
-                        local medkit = workspace:FindFirstChild("Map", true)
-                        if medkit then
-                            medkit = medkit:FindFirstChild("Ingame", true)
-                            if medkit then
-                                medkit = medkit:FindFirstChild("Medkit", true)
-                                if medkit then
-                                    local itemRoot = medkit:FindFirstChild("ItemRoot", true)
-                                    if itemRoot then
-                                        itemRoot.CFrame = humanoidRootPart.CFrame + humanoidRootPart.CFrame.LookVector * 3
-                                        local prompt = itemRoot:FindFirstChild("ProximityPrompt", true)
-                                        if prompt then
-                                            fireproximityprompt(prompt)
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end)
-        elseif teleportMedkitThread then
-            task.cancel(teleportMedkitThread)
-            teleportMedkitThread = nil
-        end
-    end
-})
-
-ZZ:AddToggle('可乐传送并拾取', {
-    Text = '可乐传送并互动',
-    Default = false,
-    Tooltip = '自动将可乐传送到自己位置并互动',
-    Callback = function(state)
-        autoTeleportColaEnabled = state
-        
-        if autoTeleportColaEnabled then
-            teleportColaThread = task.spawn(function()
-                while autoTeleportColaEnabled and task.wait(0.5) do
-                    local character = game.Players.LocalPlayer.Character
-                    if character and character:FindFirstChild("HumanoidRootPart") then
-                        local humanoidRootPart = character.HumanoidRootPart
-                        local cola = workspace:FindFirstChild("Map", true)
-                        if cola then
-                            cola = cola:FindFirstChild("Ingame", true)
-                            if cola then
-                                cola = cola:FindFirstChild("BloxyCola", true)
-                                if cola then
-                                    local itemRoot = cola:FindFirstChild("ItemRoot", true)
-                                    if itemRoot then
-                                        itemRoot.CFrame = humanoidRootPart.CFrame + humanoidRootPart.CFrame.LookVector * 3
-                                        local prompt = itemRoot:FindFirstChild("ProximityPrompt", true)
-                                        if prompt then
-                                            fireproximityprompt(prompt)
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end)
-        elseif teleportColaThread then
-            task.cancel(teleportColaThread)
-            teleportColaThread = nil
-        end
-    end
-})
-
-ZZ:AddToggle('自动拾取医疗包', {
-    Text = '自动互动医疗包',
-    Default = false,
-    Tooltip = '自动与医疗包互动',
-    Callback = function(state)
-        autoMedkitEnabled = state
-        
-        if autoMedkitEnabled then
-            medkitThread = task.spawn(function()
-                while autoMedkitEnabled and task.wait(0.5) do
-                    local medkit = workspace:FindFirstChild("Map", true)
-                    if medkit then
-                        medkit = medkit:FindFirstChild("Ingame", true)
-                        if medkit then
-                            medkit = medkit:FindFirstChild("Medkit", true)
-                            if medkit then
-                                local itemRoot = medkit:FindFirstChild("ItemRoot", true)
-                                if itemRoot then
-                                    local prompt = itemRoot:FindFirstChild("ProximityPrompt", true)
-                                    if prompt then
-                                        fireproximityprompt(prompt)
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end)
-        elseif medkitThread then
-            task.cancel(medkitThread)
-            medkitThread = nil
-        end
-    end
-})
-
-ZZ:AddToggle('自动拾取可乐', {
-    Text = '自动互动可乐',
-    Default = false,
-    Tooltip = '自动与可乐互动',
-    Callback = function(state)
-        autoColaEnabled = state
-        
-        if autoColaEnabled then
-            colaThread = task.spawn(function()
-                while autoColaEnabled and task.wait(0.5) do
-                    local cola = workspace:FindFirstChild("Map", true)
-                    if cola then
-                        cola = cola:FindFirstChild("Ingame", true)
-                        if cola then
-                            cola = cola:FindFirstChild("BloxyCola", true)
-                            if cola then
-                                local itemRoot = cola:FindFirstChild("ItemRoot", true)
-                                if itemRoot then
-                                    local prompt = itemRoot:FindFirstChild("ProximityPrompt", true)
-                                    if prompt then
-                                        fireproximityprompt(prompt)
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end)
-        elseif colaThread then
-            task.cancel(colaThread)
-            colaThread = nil
-        end
-    end
-})
-
-local Camera = MainTabbox:AddTab("视野")
-Camera:AddSlider("视野范围",{
-    Text = "调节范围",
-    Min = 70,Default = 70,
-    Max = 120,Rounding = 1,
-    Compact = true,
-    Callback = function(v)
-        _env.FovValue = v
-    end
-})
-
-_G.FovValue = 70
-
-Camera:AddToggle("应用范围",{
-    Text = "应用",
-    Default = false,
-    Callback = function(v)
-        _env.FOV = v
-        game:GetService("RunService").RenderStepped:Connect(function()
-            if _env.FOV then
-                workspace.Camera.FieldOfView = _env.FovValue
-            end
-        end)
-    end
-})
-
-local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local MVP = Tabs.Main:AddLeftGroupbox("体力功能")
-
-local StaminaSettings = {
-    MaxStamina = 100,
-    StaminaGain = 25,
-    StaminaLoss = 10,
-    SprintSpeed = 28,
-    InfiniteGain = 9999
-}
-
-local SettingToggles = {
-    MaxStamina = true,
-    StaminaGain = true,
-    StaminaLoss = true,
-    SprintSpeed = true
-}
-
-local SprintingModule = ReplicatedStorage:WaitForChild("Systems"):WaitForChild("Character"):WaitForChild("Game"):WaitForChild("Sprinting")
-local GetModule = function() return require(SprintingModule) end
-
-task.spawn(function()
-    while true do
-        local m = GetModule()
-        for key, value in pairs(StaminaSettings) do
-            if SettingToggles[key] then
-                m[key] = value
-            end
-        end
-        task.wait(0.5)
-    end
-end)
-
-local bai = {Spr = false}
-local connection
-
-MVP:AddToggle('MyToggle', {
-    Text = '无限体力',
-    Default = false,
-    Tooltip = '体力',
-    Callback = function(state)
-        bai.Spr = state
-        local Sprinting = GetModule()
-
-        if state then
-            Sprinting.StaminaLoss = 0
-            Sprinting.StaminaGain = StaminaSettings.InfiniteGain or 9999
-
-            if connection then connection:Disconnect() end
-            connection = RunService.Heartbeat:Connect(function()
-                if not bai.Spr then return end
-                Sprinting.StaminaLoss = 0
-                Sprinting.StaminaGain = StaminaSettings.InfiniteGain or 9999
-            end)
-        else
-            Sprinting.StaminaLoss = StaminaSettings.StaminaLoss or 10
-            Sprinting.StaminaGain = StaminaSettings.StaminaGain or 25
-
-            if connection then
-                connection:Disconnect()
-                connection = nil
-            end
-        end
-    end
-})
-
-MVP:AddToggle('MaxStaminaToggle', {
-    Text = '启用体力大小调节',
-    Default = true,
-    Callback = function(Value)
-        SettingToggles.MaxStamina = Value
-    end
-})
-
-MVP:AddToggle('StaminaGainToggle', {
-    Text = '启用体力恢复调节',
-    Default = true,
-    Callback = function(Value)
-        SettingToggles.StaminaGain = Value
-    end
-})
-
-MVP:AddToggle('StaminaLossToggle', {
-    Text = '启用体力消耗调节',
-    Default = true,
-    Callback = function(Value)
-        SettingToggles.StaminaLoss = Value
-    end
-})
-
-MVP:AddToggle('SprintSpeedToggle', {
-    Text = '启用奔跑速度调节',
-    Default = true,
-    Callback = function(Value)
-        SettingToggles.SprintSpeed = Value
-    end
-})
-
-MVP:AddSlider('InfStaminaGainSlider', {
-    Text = '无限体力恢复速度',
-    Default = 9999,
-    Min = 0,
-    Max = 50000,
-    Rounding = 0,
-    Callback = function(Value)
-        StaminaSettings.InfiniteGain = Value
-    end
-})
-
-MVP:AddSlider('MySlider1', {
-    Text = '体力大小',
-    Default = 100,
-    Min = 0,
-    Max = 99999,
-    Rounding = 0,
-    Callback = function(Value)
-        StaminaSettings.MaxStamina = Value
-    end
-})
-
-MVP:AddSlider('MySlider2', {
-    Text = '体力恢复',
-    Default = 25,
-    Min = 0,
-    Max = 250,
-    Rounding = 0,
-    Callback = function(Value)
-        StaminaSettings.StaminaGain = Value
-    end
-})
-
-MVP:AddSlider('MySlider3', {
-    Text = '体力消耗',
-    Default = 10,
-    Min = 0,
-    Max = 100,
-    Rounding = 0,
-    Callback = function(Value)
-        StaminaSettings.StaminaLoss = Value
-    end
-})
-
-MVP:AddSlider('MySlider4', {
-    Text = '奔跑速度',
-    Default = 28,
-    Min = 0,
-    Max = 200,
-    Rounding = 0,
-    Callback = function(Value)
-        StaminaSettings.SprintSpeed = Value
-    end
-})
-
-local PZ = Tabs.Main:AddLeftGroupbox("披萨功能")
-
-local pizzaConnection = nil
-local pizzaTPConnection = nil
-local pizzaAttractionActive = false
-
-PZ:AddToggle("AEP", {
-    Text = "自动吃披萨(追踪)",
-    Default = false,
-    Tooltip = "当生命值低于设定值时自动吸引附近的披萨",
-    Callback = function(enabled)
-        _G.AutoEatPizza = enabled
-        pizzaAttractionActive = enabled
-        
-        if pizzaConnection then
-            pizzaConnection:Disconnect()
-            pizzaConnection = nil
-        end
-        
-        if enabled then
-            local lastCheck = 0
-            pizzaConnection = RunService.Stepped:Connect(function(_, deltaTime)
-                lastCheck = lastCheck + deltaTime
-                
-                if lastCheck < 0.3 then return end
-                lastCheck = 0
-                
-                local player = Players.LocalPlayer
-                local character = player.Character
-                
-                if not character or not character:FindFirstChild("Humanoid") or not character:FindFirstChild("HumanoidRootPart") then
-                    return
-                end
-                
-                local humanoid = character.Humanoid
-                local rootPart = character.HumanoidRootPart
-                
-                if _G.HealthEatPizza and humanoid.Health >= _G.HealthEatPizza then
-                    return
-                end
-                
-                local pizzaFolder = workspace:FindFirstChild("Pizzas") or workspace.Map
-                if not pizzaFolder then return end
-                
-                local closestPizza, closestDistance = nil, math.huge
-                for _, pizza in ipairs(pizzaFolder:GetDescendants()) do
-                    if pizza:IsA("BasePart") and pizza.Name == "Pizza" then
-                        local distance = (rootPart.Position - pizza.Position).Magnitude
-                        if distance < closestDistance then
-                            closestPizza = pizza
-                            closestDistance = distance
-                        end
-                    end
-                end
-                
-                if closestPizza then
-                    closestPizza.CFrame = closestPizza.CFrame:Lerp(
-                        rootPart.CFrame * CFrame.new(0, 0, -2),
-                        0.5
-                    )
-                    
-                    if not closestPizza:FindFirstChild("AttractEffect") then
-                        local effect = Instance.new("ParticleEmitter")
-                        effect.Name = "AttractEffect"
-                        effect.Texture = "rbxassetid://242487987"
-                        effect.LightEmission = 0.8
-                        effect.Size = NumberSequence.new(0.5)
-                        effect.Parent = closestPizza
-                    end
-                end
-            end)
-        end
-    end
-})
-
-PZ:AddToggle("ATP", {
-    Text = "自动吃披萨(传送)",
-    Default = false,
-    Tooltip = "当生命值低于设定值时自动将最近的披萨传送到玩家",
-    Callback = function(enabled)
-        _G.AutoTeleportPizza = enabled
-        
-        if pizzaTPConnection then
-            pizzaTPConnection:Disconnect()
-            pizzaTPConnection = nil
-        end
-        
-        if enabled then
-            local lastCheck = 0
-            pizzaTPConnection = RunService.Stepped:Connect(function(_, deltaTime)
-                lastCheck = lastCheck + deltaTime
-                
-                if lastCheck < 0.3 then return end
-                lastCheck = 0
-                
-                local player = Players.LocalPlayer
-                local character = player.Character
-                
-                if not character or not character:FindFirstChild("Humanoid") or not character:FindFirstChild("HumanoidRootPart") then
-                    return
-                end
-                
-                local humanoid = character.Humanoid
-                local rootPart = character.HumanoidRootPart
-                
-                if _G.HealthEatPizza and humanoid.Health >= _G.HealthEatPizza then
-                    return
-                end
-                
-                local pizzaFolder = workspace:FindFirstChild("Pizzas") or workspace.Map
-                if not pizzaFolder then return end
-                
-                local closestPizza, closestDistance = nil, math.huge
-                for _, pizza in ipairs(pizzaFolder:GetDescendants()) do
-                    if pizza:IsA("BasePart") and pizza.Name == "Pizza" then
-                        local distance = (rootPart.Position - pizza.Position).Magnitude
-                        if distance < closestDistance then
-                            closestPizza = pizza
-                            closestDistance = distance
-                        end
-                    end
-                end
-                
-                if closestPizza then
-                    closestPizza.CFrame = rootPart.CFrame * CFrame.new(0, 0, -2)
-                    
-                    if not closestPizza:FindFirstChild("TeleportEffect") then
-                        local effect = Instance.new("ParticleEmitter")
-                        effect.Name = "TeleportEffect"
-                        effect.Texture = "rbxassetid://242487987"
-                        effect.LightEmission = 0.8
-                        effect.Size = NumberSequence.new(0.5)
-                        effect.Lifetime = NumberRange.new(0.5)
-                        effect.Parent = closestPizza
-                        
-                        delay(1, function()
-                            if effect and effect.Parent then
-                                effect:Destroy()
-                            end
-                        end)
-                    end
-                end
-            end)
-        end
-    end
-})
-
-PZ:AddDivider()  
-
-PZ:AddSlider("HealthThreshold", {
-    Text = "生命值设置",
-    Default = 50,
-    Min = 10,
-    Max = 130,
-    Rounding = 0,
-    Tooltip = "当生命值低于设置生命值吃披萨",
-    Callback = function(value)
-        _G.HealthEatPizza = value
-    end
-})
-
-PZ:AddDivider()  
-
-PZ:AddButton("InstantAttract", {
-    Text = "将披萨TP在脚下",
-    Func = function()
-        local player = Players.LocalPlayer
-        local character = player.Character
-        if character and character:FindFirstChild("HumanoidRootPart") then
-            local rootPart = character.HumanoidRootPart
-            for _, pizza in ipairs(workspace:GetDescendants()) do
-                if pizza:IsA("BasePart") and pizza.Name == "Pizza" then
-                    pizza.CFrame = rootPart.CFrame
-                    break
-                end
-            end
-        end
-    end
-})
-
-local KillerSurvival = Tabs.Main:AddLeftGroupbox("自动修机")
-
-KillerSurvival:AddSlider("GeneratorDelay", {
-    Text = "修机间隔",
-    Min = 1.5,
-    Max = 12,
-    Default = 1.5,
-    Compact = true,
-    Rounding = 1,
-    Callback = function(v)
-        _G.AutoGeneratorDelay = v
-    end
-})
-
-_G.AutoGeneratorDelay = 1.5
-
-KillerSurvival:AddToggle("AutoFix", {
-    Text = "自动修发电机(远程)",
-    Default = false,
-    Callback = function(enabled)
-        local debounce = {}
-        local generatorFolder = game.Workspace.Map.Ingame.Map
-        
-        while enabled do
-            task.wait()
-            
-            for _, generator in pairs(generatorFolder:GetChildren()) do
-                if generator.Name == "Generator" then
-                    if not debounce[generator] then
-                        local remotes = generator:FindFirstChild("Remotes")
-                        local re = remotes and remotes:FindFirstChild("RE")
-                        
-                        if re then
-                            debounce[generator] = true
-                            re:FireServer()
-                            
-                            task.delay(_G.AutoGeneratorDelay or 1.5, function()
-                                debounce[generator] = nil
-                            end)
-                        end
-                    end
-                end
-            end
-        end
-    end
-})
-
-KillerSurvival:AddToggle("AutoFixTP", {
-    Text = "自动修发电机(传送)",
-    Default = false,
-    Callback = function(enabled)
-        local debounce = {}
-        local generatorFolder = game.Workspace.Map.Ingame.Map
-        
-        while enabled do
-            task.wait()
-            
-            for _, generator in pairs(generatorFolder:GetChildren()) do
-                if generator.Name == "Generator" then
-                    if not debounce[generator] then
-                        local remotes = generator:FindFirstChild("Remotes")
-                        local re = remotes and remotes:FindFirstChild("RE")
-                        
-                        if re then
-                            debounce[generator] = true
-                            local player = Players.LocalPlayer
-                            local character = player.Character
-                            if character and character:FindFirstChild("HumanoidRootPart") then
-                                character.HumanoidRootPart.CFrame = generator.Main.CFrame + Vector3.new(0, 3, 0)
-                            end
-                            re:FireServer()
-                            
-                            task.delay(_G.AutoGeneratorDelay or 1.5, function()
-                                debounce[generator] = nil
-                            end)
-                        end
-                    end
-                end
-            end
-        end
-    end
-})
-
-local ZZ = Tabs.Main:AddRightGroupbox('自动格挡')
-
-local config = {
-    BlockDistance = 15,
-    ScanInterval = 0.05,
-    BlockCooldown = 0.5,
-    DebugMode = true,
-    AutoAdjustDistance = true,
-    PredictEnabled = true,
-    PredictDistance = 17,
-    BasePredictAmount = 2,
-    TargetSoundIds = {
-        "rbxassetid://102228729296384",
-        "rbxassetid://140242176732868",
-        "rbxassetid://12222216",
-        "rbxassetid://86174610237192",
-        "rbxassetid://101199185291628",
-        "rbxassetid://95079963655241",
-        "rbxassetid://112809109188560"
-    }
-}
-
-local LocalPlayer = Players.LocalPlayer
-local RemoteEvent = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Network"):WaitForChild("RemoteEvent")
-local lastBlockTime = 0
-local combatConnection = nil
-
-local function HasTargetSound(character)
-    if not character then return false end
-    
-    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-    if humanoidRootPart then
-        for _, child in ipairs(humanoidRootPart:GetDescendants()) do
-            if child:IsA("Sound") then
-                for _, targetId in ipairs(config.TargetSoundIds) do
-                    if child.SoundId == targetId then
-                        if config.DebugMode then
-                            print("Audio detected:", humanoidRootPart:GetFullName(), "ID:", child.SoundId)
-                        end
-                        return true
-                    end
-                end
-            end
-        end
-    end
-    
-    for _, sound in ipairs(character:GetDescendants()) do
-        if sound:IsA("Sound") then
-            for _, targetId in ipairs(config.TargetSoundIds) do
-                if sound.SoundId == targetId then
-                    if config.DebugMode then
-                        print("Audio detected:", sound:GetFullName(), "ID:", sound.SoundId)
-                    end
-                    return true
-                end
-            end
-        end
-    end
-    
-    return false
-end
-
-local function GetKillersInRange()
-    local killers = {}
-    local killersFolder = workspace:FindFirstChild("Killers") or workspace:FindFirstChild("Players"):FindFirstChild("Killers")
-    if not killersFolder then return killers end
-    
-    local myCharacter = LocalPlayer.Character
-    if not myCharacter or not myCharacter:FindFirstChild("HumanoidRootPart") then return killers end
-    
-    local myPos = myCharacter.HumanoidRootPart.Position
-    
-    for _, killer in ipairs(killersFolder:GetChildren()) do
-        if killer:FindFirstChild("HumanoidRootPart") then
-            local distance = (killer.HumanoidRootPart.Position - myPos).Magnitude
-            local checkDistance = config.BlockDistance
-            if config.PredictEnabled then
-                checkDistance = checkDistance + config.BasePredictAmount
-            end
-            if distance <= checkDistance then
-                table.insert(killers, killer)
-            end
-        end
-    end
-    
-    return killers
-end
-
-local function PerformBlock()
-    if os.clock() - lastBlockTime >= config.BlockCooldown then
-        RemoteEvent:FireServer("UseActorAbility", "Block")
-        lastBlockTime = os.clock()
-        if config.DebugMode then
-            print("Block performed at:", os.clock())
-        end
-    end
-end
-
-local function CombatLoop()
-    local killers = GetKillersInRange()
-    
-    for _, killer in ipairs(killers) do
-        if HasTargetSound(killer) then
-            PerformBlock()
-            break
-        end
-    end
-end
-
-local function Initialize()
-    if not LocalPlayer.Character then
-        LocalPlayer.CharacterAdded:Wait()
-    end
-
-    print("Block system initialized")
-    print(string.format("当前设置: 基础距离 %.1fm | 预判距离 %.1fm | 总距离 %.1fm", 
-        config.BlockDistance, config.BasePredictAmount, config.BlockDistance + config.BasePredictAmount))
-end
-
-ZZ:AddToggle("AutoBlock", {
-    Text = "自动格挡",
-    Default = false,
-    Callback = function(enabled)
-        if enabled then
-            Initialize()
-            combatConnection = RunService.Stepped:Connect(CombatLoop)
-            print(string.format("[Auto Block] OK | 当前距离:%.1fm (总距离:%.1fm)", 
-                config.BlockDistance, config.BlockDistance + (config.PredictEnabled and config.BasePredictAmount or 0)))
-        else
-            if combatConnection then
-                combatConnection:Disconnect()
-                combatConnection = nil
-            end
-            print("[智能格挡] 已停用")
-        end
-    end
-})
-
-ZZ:AddToggle("PredictEnabled", {
-    Text = "预判系统开关",
-    Default = true,
-    Callback = function(enabled)
-        config.PredictEnabled = enabled
-        print(enabled and "[预判系统] 已启用" or "[预判系统] 已禁用")
-        print(string.format("当前总距离: %.1fm", config.BlockDistance + (enabled and config.BasePredictAmount or 0)))
-    end
-})
-
-ZZ:AddSlider("BaseDistance", {
-    Text = "基础格挡距离",
-    Default = 10,
-    Min = 0,
-    Max = 20,
-    Rounding = 1,
-    Callback = function(value)
-        config.BlockDistance = value
-        print(string.format("[基础距离] 已更新: %.1fm (总距离: %.1fm)", 
-            value, value + (config.PredictEnabled and config.BasePredictAmount or 0)))
-    end
-})
-
-ZZ:AddSlider("PredictAmount", {
-    Text = "预判距离调节",
-    Default = 2,
-    Min = 0,
-    Max = 5,
-    Rounding = 1,
-    Callback = function(value)
-        config.BasePredictAmount = value
-        print(string.format("[预判距离] 已更新: %.1fm (总距离: %.1fm)", 
-            value, config.BlockDistance + (config.PredictEnabled and value or 0)))
-    end
-})
-
-local EspGroup1 = Tabs.Esp:AddRightGroupbox("高亮绘制")
-local LibESP = loadstring(game:HttpGet("https://raw.githubusercontent.com/ImamGV/Script/main/ESP"))()
-
-EspGroup1:AddToggle("SE",{
-    Text = "幸存者绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            for _, v in ipairs(workspace.Players:GetDescendants()) do
-                if v:IsA("Model") and v.Parent.Name == "Survivors" and not v:FindFirstChild("Survival_ESP") then
-                    LibESP:AddESP(v, "", Color3.fromRGB(0, 191, 255), 14, "Survival_ESP")
-                end
-            end
-            SurvivalESP = workspace.Players.DescendantAdded:Connect(function(v)
-                if v:IsA("Model") and v.Parent.Name == "Survivors" and not v:FindFirstChild("Survival_ESP") then
-                    LibESP:AddESP(v, "", Color3.fromRGB(0, 191, 255), 14, "Survival_ESP")
-                end
-            end)
-        else
-            SurvivalESP:Disconnect()
-            LibESP:Delete("Survival_ESP")
-        end
-    end
-})
-
-EspGroup1:AddToggle("KE",{
-    Text = "杀手绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            for _, v in ipairs(workspace.Players:GetDescendants()) do
-                if v:IsA("Model") and v.Parent.Name == "Killers" and not v:FindFirstChild("Killer_ESP") then
-                    LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 0), 14, "Killers_ESP")
-                elseif v:IsA("Model") and v.Parent.Name == "Killers" and not v:FindFirstChild("Killer_ESP") then
-                    LibESP:AddESP(v.HumanoidRootPart, "Killer", Color3.fromRGB(255, 0, 0), 14, "Killers_ESP")
-                end
-            end
-            KillersESP = workspace.Players.DescendantAdded:Connect(function(v)
-                if v:IsA("Model") and v.Parent.Name == "Killers" and not v:FindFirstChild("Killers_ESP") then
-                    LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 0), 14, "Killers_ESP")
-                elseif v:IsA("Model") and v.Parent.Name == "Killers" and not v:FindFirstChild("Killer_ESP") then
-                    LibESP:AddESP(v.HumanoidRootPart, "Killer", Color3.fromRGB(255, 0, 0), 14, "Killers_ESP")
-                end
-            end)
-        else
-            KillersESP:Disconnect()
-            LibESP:Delete("Killers_ESP")
-        end
-    end
-})
-
-local EspGroup2 = Tabs.Esp:AddRightGroupbox("2D方框")
-
-EspGroup2:AddToggle("SE", {
-    Text = "绘制幸存者方框",
-    Default = false,
-    Callback = function(v)
-        if v then
-            local a = workspace:WaitForChild("Players")
-            local c = a:WaitForChild("Survivors")
-            local d = game:GetService("RunService")
-            local e = game:GetService("Players").LocalPlayer
-            
-            local function f(g, h)
-                if not g:IsA("Model") then return end
-                if g == e.Character then return end
-                local i = g:FindFirstChild("HumanoidRootPart")
-                if not i then return end
-                if i:FindFirstChild("playeresp") then return end
-                
-                local j = Instance.new("BillboardGui")
-                j.Name = "playeresp"
-                j.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-                j.Active = true
-                j.AlwaysOnTop = true
-                j.LightInfluence = 1.000
-                j.Size = UDim2.new(3, 0, 5, 0)
-                j.Adornee = i
-                j.Parent = i
-                
-                local k = Instance.new("Frame")
-                k.Name = "playershow"
-                k.BackgroundColor3 = Color3.fromRGB(255, 25, 25)
-                k.BackgroundTransparency = 1
-                k.Size = UDim2.new(1, 0, 1, 0)
-                k.Parent = j
-                
-                local l = Instance.new("UIStroke")
-                l.Color = h
-                l.Thickness = 2
-                l.Transparency = 0.2
-                l.Parent = k
-            end
-            
-            SurvivorESPConnection = d.RenderStepped:Connect(function()
-                for m, o in ipairs(c:GetChildren()) do
-                    f(o, Color3.fromRGB(0, 255, 0))
-                end
-            end)
-            
-            SurvivorAddedConnection = c.ChildAdded:Connect(function(o)
-                f(o, Color3.fromRGB(0, 255, 0))
-            end)
-        else
-            if SurvivorESPConnection then
-                SurvivorESPConnection:Disconnect()
-            end
-            if SurvivorAddedConnection then
-                SurvivorAddedConnection:Disconnect()
-            end
-            
-            local a = workspace:WaitForChild("Players")
-            local c = a:WaitForChild("Survivors")
-            for _, o in ipairs(c:GetChildren()) do
-                if o:IsA("Model") then
-                    local i = o:FindFirstChild("HumanoidRootPart")
-                    if i and i:FindFirstChild("playeresp") then
-                        i.playeresp:Destroy()
-                    end
-                end
-            end
-        end
-    end
-})
-
-EspGroup2:AddToggle("KE", {
-    Text = "绘制杀手方框",
-    Default = false,
-    Callback = function(v)
-        if v then
-            local a = workspace:WaitForChild("Players")
-            local b = a:WaitForChild("Killers")
-            local d = game:GetService("RunService")
-            local e = game:GetService("Players").LocalPlayer
-            
-            local function f(g, h)
-                if not g:IsA("Model") then return end
-                if g == e.Character then return end
-                local i = g:FindFirstChild("HumanoidRootPart")
-                if not i then return end
-                if i:FindFirstChild("playeresp") then return end
-                
-                local j = Instance.new("BillboardGui")
-                j.Name = "playeresp"
-                j.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-                j.Active = true
-                j.AlwaysOnTop = true
-                j.LightInfluence = 1.000
-                j.Size = UDim2.new(3, 0, 5, 0)
-                j.Adornee = i
-                j.Parent = i
-                
-                local k = Instance.new("Frame")
-                k.Name = "playershow"
-                k.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                k.BackgroundTransparency = 1
-                k.Size = UDim2.new(1, 0, 1, 0)
-                k.Parent = j
-                
-                local l = Instance.new("UIStroke")
-                l.Color = h
-                l.Thickness = 2
-                l.Transparency = 0.2
-                l.Parent = k
-            end
-            
-            KillerESPConnection = d.RenderStepped:Connect(function()
-                for m, o in ipairs(b:GetChildren()) do
-                    f(o, Color3.fromRGB(255, 0, 0))
-                end
-            end)
-            
-            KillerAddedConnection = b.ChildAdded:Connect(function(o)
-                f(o, Color3.fromRGB(255, 0, 0))
-            end)
-        else
-            if KillerESPConnection then
-                KillerESPConnection:Disconnect()
-            end
-            if KillerAddedConnection then
-                KillerAddedConnection:Disconnect()
-            end
-            
-            local a = workspace:WaitForChild("Players")
-            local b = a:WaitForChild("Killers")
-            for _, o in ipairs(b:GetChildren()) do
-                if o:IsA("Model") then
-                    local i = o:FindFirstChild("HumanoidRootPart")
-                    if i and i:FindFirstChild("playeresp") then
-                        i.playeresp:Destroy()
-                    end
-                end
-            end
-        end
-    end
-})
-
-local EspGroup3 = Tabs.Esp:AddRightGroupbox("渲染绘制")
-
-EspGroup3:AddToggle("DistanceESP", {
-    Text = "距离绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            local players = game:GetService("Players")
-            local run_service = game:GetService("RunService")
-            local local_player = players.LocalPlayer
-            local camera = workspace.CurrentCamera
-
-            if getgenv().cyberline_distance_esp then
-                for _, text in pairs(getgenv().cyberline_distance_esp) do
-                    pcall(function() text:Remove() end)
-                end
-            end
-
-            getgenv().cyberline_distance_esp = {}
-
-            local function create_distance_label()
-                local text = Drawing.new("Text")
-                text.Size = 12
-                text.Center = true
-                text.Outline = true
-                text.Font = 2
-                text.Color = Color3.fromRGB(255, 255, 255)
-                text.Visible = false
-                return text
-            end
-
-            getgenv().distanceESPConnection = run_service.RenderStepped:Connect(function()
-                for _, player in ipairs(players:GetPlayers()) do
-                    if player ~= local_player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                        local root = player.Character.HumanoidRootPart
-                        local screen_pos, on_screen = camera:WorldToViewportPoint(root.Position - Vector3.new(0, 2.8, 0))
-
-                        if not getgenv().cyberline_distance_esp[player] then
-                            getgenv().cyberline_distance_esp[player] = create_distance_label()
-                        end
-
-                        local text = getgenv().cyberline_distance_esp[player]
-
-                        if on_screen then
-                            local distance = math.floor((root.Position - camera.CFrame.Position).Magnitude)
-                            text.Position = Vector2.new(screen_pos.X, screen_pos.Y)
-                            text.Text = tostring(distance) .. "m"
-                            text.Visible = true
-                        else
-                            text.Visible = false
-                        end
-                    elseif getgenv().cyberline_distance_esp[player] then
-                        getgenv().cyberline_distance_esp[player].Visible = false
-                    end
-                end
-            end)
-        else
-            if getgenv().distanceESPConnection then
-                getgenv().distanceESPConnection:Disconnect()
-            end
-
-            if getgenv().cyberline_distance_esp then
-                for _, text in pairs(getgenv().cyberline_distance_esp) do
-                    pcall(function() text:Remove() end)
-                end
-                getgenv().cyberline_distance_esp = nil
-            end
-        end
-    end
-})
-
-EspGroup3:AddToggle("TopTracers", {
-    Text = "天线绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            local players = game:GetService("Players")
-            local run_service = game:GetService("RunService")
-            local local_player = players.LocalPlayer
-            local camera = workspace.CurrentCamera
-
-            if getgenv().cyberline_tracers then
-                for _, line in pairs(getgenv().cyberline_tracers) do
-                    pcall(function() line:Remove() end)
-                end
-            end
-
-            getgenv().cyberline_tracers = {}
-
-            local function create_tracer()
-                local line = Drawing.new("Line")
-                line.Color = Color3.fromRGB(255, 255, 255)
-                line.Thickness = 1
-                line.Transparency = 1
-                line.Visible = false
-                return line
-            end
-
-            getgenv().tracerConnection = run_service.RenderStepped:Connect(function()
-                for _, player in ipairs(players:GetPlayers()) do
-                    if player ~= local_player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                        local root_part = player.Character.HumanoidRootPart
-                        local screen_pos, on_screen = camera:WorldToViewportPoint(root_part.Position)
-
-                        if not getgenv().cyberline_tracers[player] then
-                            getgenv().cyberline_tracers[player] = create_tracer()
-                        end
-
-                        local tracer = getgenv().cyberline_tracers[player]
-
-                        if on_screen then
-                            tracer.From = Vector2.new(camera.ViewportSize.X / 2, 0)
-                            tracer.To = Vector2.new(screen_pos.X, screen_pos.Y)
-                            tracer.Visible = true
-                        else
-                            tracer.Visible = false
-                        end
-                    elseif getgenv().cyberline_tracers[player] then
-                        getgenv().cyberline_tracers[player].Visible = false
-                    end
-                end
-            end)
-        else
-            if getgenv().tracerConnection then
-                getgenv().tracerConnection:Disconnect()
-            end
-
-            if getgenv().cyberline_tracers then
-                for _, line in pairs(getgenv().cyberline_tracers) do
-                    pcall(function() line:Remove() end)
-                end
-                getgenv().cyberline_tracers = nil
-            end
-        end
-    end
-})
-
-EspGroup3:AddToggle("HealthBars", {
-    Text = "血量绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            local players = game:GetService("Players")
-            local run_service = game:GetService("RunService")
-            local local_player = players.LocalPlayer
-            local camera = workspace.CurrentCamera
-
-            if getgenv().cyberline_health_bars then
-                for _, data in pairs(getgenv().cyberline_health_bars) do
-                    pcall(function() data.bar:Remove() end)
-                    pcall(function() data.outline:Remove() end)
-                end
-            end
-
-            getgenv().cyberline_health_bars = {}
-
-            local function create_bar()
-                local outline = Drawing.new("Square")
-                outline.Color = Color3.new(0, 0, 0)
-                outline.Filled = true
-                outline.Transparency = 1
-                outline.Visible = false
-
-                local bar = Drawing.new("Square")
-                bar.Color = Color3.fromRGB(0, 255, 0)
-                bar.Filled = true
-                bar.Transparency = 1
-                bar.Visible = false
-
-                return { bar = bar, outline = outline }
-            end
-
-            local function get_bounds(character)
-                local min = Vector3.new(math.huge, math.huge, math.huge)
-                local max = Vector3.new(-math.huge, -math.huge, -math.huge)
-                for _, part in character:GetChildren() do
-                    if part:IsA("BasePart") then
-                        local pos = part.Position
-                        min = Vector3.new(math.min(min.X, pos.X), math.min(min.Y, pos.Y), math.min(min.Z, pos.Z))
-                        max = Vector3.new(math.max(max.X, pos.X), math.max(max.Y, pos.Y), math.max(max.Z, pos.Z))
-                    end
-                end
-                return min, max
-            end
-
-            getgenv().healthBarConnection = run_service.RenderStepped:Connect(function()
-                for _, player in ipairs(players:GetPlayers()) do
-                    if player ~= local_player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                        local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
-                        if humanoid then
-                            local min, max = get_bounds(player.Character)
-                            local points = {
-                                Vector3.new(min.X, min.Y, min.Z),
-                                Vector3.new(min.X, max.Y, min.Z),
-                                Vector3.new(max.X, min.Y, min.Z),
-                                Vector3.new(max.X, max.Y, min.Z),
-                                Vector3.new(min.X, min.Y, max.Z),
-                                Vector3.new(min.X, max.Y, max.Z),
-                                Vector3.new(max.X, min.Y, max.Z),
-                                Vector3.new(max.X, max.Y, max.Z),
-                            }
-
-                            local min2d = Vector2.new(math.huge, math.huge)
-                            local max2d = Vector2.new(-math.huge, -math.huge)
-                            local visible = false
-
-                            for _, point in ipairs(points) do
-                                local screen, on_screen = camera:WorldToViewportPoint(point)
-                                if on_screen then
-                                    visible = true
-                                    local pos2d = Vector2.new(screen.X, screen.Y)
-                                    min2d = Vector2.new(math.min(min2d.X, pos2d.X), math.min(min2d.Y, pos2d.Y))
-                                    max2d = Vector2.new(math.max(max2d.X, pos2d.X), math.max(max2d.Y, pos2d.Y))
-                                end
-                            end
-
-                            if not getgenv().cyberline_health_bars[player] then
-                                getgenv().cyberline_health_bars[player] = create_bar()
-                            end
-
-                            local bar = getgenv().cyberline_health_bars[player].bar
-                            local outline = getgenv().cyberline_health_bars[player].outline
-
-                            if visible then
-                                local height = max2d.Y - min2d.Y
-                                local ratio = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
-                                local bar_height = height * ratio
-
-                                bar.Size = Vector2.new(2, bar_height)
-                                bar.Position = Vector2.new(min2d.X - 5, max2d.Y - bar_height)
-                                bar.Visible = true
-                                bar.Color = Color3.fromRGB(255 * (1 - ratio), 255 * ratio, 0)
-
-                                outline.Size = Vector2.new(4, height + 2)
-                                outline.Position = Vector2.new(min2d.X - 6, min2d.Y - 1)
-                                outline.Visible = true
-                            else
-                                bar.Visible = false
-                                outline.Visible = false
-                            end
-                        end
-                    elseif getgenv().cyberline_health_bars[player] then
-                        getgenv().cyberline_health_bars[player].bar.Visible = false
-                        getgenv().cyberline_health_bars[player].outline.Visible = false
-                    end
-                end
-            end)
-        else
-            if getgenv().healthBarConnection then
-                getgenv().healthBarConnection:Disconnect()
-            end
-
-            if getgenv().cyberline_health_bars then
-                for _, data in pairs(getgenv().cyberline_health_bars) do
-                    pcall(function() data.bar:Remove() end)
-                    pcall(function() data.outline:Remove() end)
-                end
-                getgenv().cyberline_health_bars = nil
-            end
-        end
-    end
-})
-
-EspGroup3:AddToggle("SkeletonESP", {
-    Text = "骨骼绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            local players = game:GetService("Players")
-            local run_service = game:GetService("RunService")
-            local camera = workspace.CurrentCamera
-            local local_player = players.LocalPlayer
-
-            if getgenv().cyberline_skeleton then
-                for _, parts in pairs(getgenv().cyberline_skeleton) do
-                    for _, line in pairs(parts) do
-                        pcall(function() line:Remove() end)
-                    end
-                end
-            end
-
-            getgenv().cyberline_skeleton = {}
-
-            local function create_line()
-                local line = Drawing.new("Line")
-                line.Color = Color3.new(1, 1, 1)
-                line.Thickness = 1
-                line.Transparency = 1
-                line.Visible = false
-                return line
-            end
-
-            local function create_skeleton()
-                return {
-                    head = create_line(),
-                    torso = create_line(),
-                    left_arm = create_line(),
-                    right_arm = create_line(),
-                    left_leg = create_line(),
-                    right_leg = create_line()
-                }
-            end
-
-            getgenv().skeletonConnection = run_service.RenderStepped:Connect(function()
-                for _, player in ipairs(players:GetPlayers()) do
-                    if player ~= local_player and player.Character then
-                        local char = player.Character
-                        local parts = {
-                            head = char:FindFirstChild("Head"),
-                            upper = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso"),
-                            lower = char:FindFirstChild("LowerTorso") or char:FindFirstChild("HumanoidRootPart"),
-                            left_arm = char:FindFirstChild("LeftUpperArm") or char:FindFirstChild("Left Arm"),
-                            right_arm = char:FindFirstChild("RightUpperArm") or char:FindFirstChild("Right Arm"),
-                            left_leg = char:FindFirstChild("LeftUpperLeg") or char:FindFirstChild("Left Leg"),
-                            right_leg = char:FindFirstChild("RightUpperLeg") or char:FindFirstChild("Right Leg"),
-                        }
-
-                        if not getgenv().cyberline_skeleton[player] then
-                            getgenv().cyberline_skeleton[player] = create_skeleton()
-                        end
-
-                        local skeleton = getgenv().cyberline_skeleton[player]
-
-                        local function to_screen(part)
-                            local pos, on_screen = camera:WorldToViewportPoint(part.Position)
-                            return Vector2.new(pos.X, pos.Y), on_screen
-                        end
-
-                        local all_visible = true
-                        for _, part in pairs(parts) do
-                            if not part then
-                                all_visible = false
-                            end
-                        end
-
-                        if all_visible then
-                            local head_pos, head_on = to_screen(parts.head)
-                            local upper_pos, upper_on = to_screen(parts.upper)
-                            local lower_pos, lower_on = to_screen(parts.lower)
-                            local larm_pos, larm_on = to_screen(parts.left_arm)
-                            local rarm_pos, rarm_on = to_screen(parts.right_arm)
-                            local lleg_pos, lleg_on = to_screen(parts.left_leg)
-                            local rleg_pos, rleg_on = to_screen(parts.right_leg)
-
-                            skeleton.head.From = head_pos
-                            skeleton.head.To = upper_pos
-
-                            skeleton.torso.From = upper_pos
-                            skeleton.torso.To = lower_pos
-
-                            skeleton.left_arm.From = upper_pos
-                            skeleton.left_arm.To = larm_pos
-
-                            skeleton.right_arm.From = upper_pos
-                            skeleton.right_arm.To = rarm_pos
-
-                            skeleton.left_leg.From = lower_pos
-                            skeleton.left_leg.To = lleg_pos
-
-                            skeleton.right_leg.From = lower_pos
-                            skeleton.right_leg.To = rleg_pos
-
-                            for _, line in pairs(skeleton) do
-                                line.Visible = true
-                            end
-                        else
-                            for _, line in pairs(skeleton) do
-                                line.Visible = false
-                            end
-                        end
-                    elseif getgenv().cyberline_skeleton[player] then
-                        for _, line in pairs(getgenv().cyberline_skeleton[player]) do
-                            line.Visible = false
-                        end
-                    end
-                end
-            end)
-        else
-            if getgenv().skeletonConnection then
-                getgenv().skeletonConnection:Disconnect()
-            end
-
-            if getgenv().cyberline_skeleton then
-                for _, parts in pairs(getgenv().cyberline_skeleton) do
-                    for _, line in pairs(parts) do
-                        pcall(function() line:Remove() end)
-                    end
-                end
-                getgenv().cyberline_skeleton = nil
-            end
-        end
-    end
-})
-
-EspGroup3:AddToggle("BoxESP", {
-    Text = "方框绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            local players = game:GetService("Players")
-            local run_service = game:GetService("RunService")
-            local local_player = players.LocalPlayer
-            local camera = workspace.CurrentCamera
-
-            if getgenv().cyberline_esp_boxes then
-                for _, data in pairs(getgenv().cyberline_esp_boxes) do
-                    pcall(function() data.box:Remove() end)
-                    pcall(function() data.outline:Remove() end)
-                end
-            end
-
-            getgenv().cyberline_esp_boxes = {}
-
-            local function create_box()
-                local outline = Drawing.new("Square")
-                outline.Color = Color3.new(0, 0, 0)
-                outline.Thickness = 1
-                outline.Filled = false
-                outline.Transparency = 1
-                outline.Visible = false
-
-                local box = Drawing.new("Square")
-                box.Color = Color3.fromRGB(255, 255, 255)
-                box.Thickness = 1
-                box.Filled = false
-                box.Transparency = 1
-                box.Visible = false
-
-                return { box = box, outline = outline }
-            end
-
-            local function get_bounds(character)
-                local min = Vector3.new(math.huge, math.huge, math.huge)
-                local max = Vector3.new(-math.huge, -math.huge, -math.huge)
-                for _, part in character:GetChildren() do
-                    if part:IsA("BasePart") then
-                        local pos = part.Position
-                        min = Vector3.new(math.min(min.X, pos.X), math.min(min.Y, pos.Y), math.min(min.Z, pos.Z))
-                        max = Vector3.new(math.max(max.X, pos.X), math.max(max.Y, pos.Y), math.max(max.Z, pos.Z))
-                    end
-                end
-                return min, max
-            end
-
-            getgenv().boxESPConnection = run_service.RenderStepped:Connect(function()
-                for _, player in ipairs(players:GetPlayers()) do
-                    if player ~= local_player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                        local min, max = get_bounds(player.Character)
-                        local points = {
-                            Vector3.new(min.X, min.Y, min.Z),
-                            Vector3.new(min.X, max.Y, min.Z),
-                            Vector3.new(max.X, min.Y, min.Z),
-                            Vector3.new(max.X, max.Y, min.Z),
-                            Vector3.new(min.X, min.Y, max.Z),
-                            Vector3.new(min.X, max.Y, max.Z),
-                            Vector3.new(max.X, min.Y, max.Z),
-                            Vector3.new(max.X, max.Y, max.Z),
-                        }
-
-                        local min2d = Vector2.new(math.huge, math.huge)
-                        local max2d = Vector2.new(-math.huge, -math.huge)
-                        local visible = false
-
-                        for _, point in ipairs(points) do
-                            local screen, on_screen = camera:WorldToViewportPoint(point)
-                            if on_screen then
-                                visible = true
-                                local pos2d = Vector2.new(screen.X, screen.Y)
-                                min2d = Vector2.new(math.min(min2d.X, pos2d.X), math.min(min2d.Y, pos2d.Y))
-                                max2d = Vector2.new(math.max(max2d.X, pos2d.X), math.max(max2d.Y, pos2d.Y))
-                            end
-                        end
-
-                        if not getgenv().cyberline_esp_boxes[player] then
-                            getgenv().cyberline_esp_boxes[player] = create_box()
-                        end
-
-                        local box = getgenv().cyberline_esp_boxes[player].box
-                        local outline = getgenv().cyberline_esp_boxes[player].outline
-
-                        if visible then
-                            local size = max2d - min2d
-                            box.Position = min2d
-                            box.Size = size
-                            box.Visible = true
-
-                            outline.Position = min2d - Vector2.new(1, 1)
-                            outline.Size = size + Vector2.new(2, 2)
-                            outline.Visible = true
-                        else
-                            box.Visible = false
-                            outline.Visible = false
-                        end
-                    elseif getgenv().cyberline_esp_boxes[player] then
-                        getgenv().cyberline_esp_boxes[player].box.Visible = false
-                        getgenv().cyberline_esp_boxes[player].outline.Visible = false
-                    end
-                end
-            end)
-        else
-            if getgenv().boxESPConnection then
-                getgenv().boxESPConnection:Disconnect()
-            end
-
-            if getgenv().cyberline_esp_boxes then
-                for _, data in pairs(getgenv().cyberline_esp_boxes) do
-                    pcall(function() data.box:Remove() end)
-                    pcall(function() data.outline:Remove() end)
-                end
-                getgenv().cyberline_esp_boxes = nil
-            end
-        end
-    end
-})
-
-local EspGroup4 = Tabs.Esp:AddLeftGroupbox("绘制功能")
-
-EspGroup4:AddToggle("EKE",{
-    Text = "杀手机器人绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("Model") and v.Name == "PizzaDeliveryRig" or v.Name == "Bunny" or v.Name == "Mafiaso1" or v.Name == "Mafiaso2" or v.Name == "Mafiaso3" then
-                    LibESP:AddESP(v, "披萨送货员", Color3.fromRGB(255, 52, 179), 14, "Other_ESP")
-                elseif v:IsA("Model") and v.Name == "1x1x1x1Zombie" then
-                    LibESP:AddESP(v, "1x1x1x1 (僵尸)", Color3.fromRGB(224, 102, 255), 14, "Other_ESP")
-                end
-            end
-            OtherESP = workspace.DescendantAdded:Connect(function(v)
-                if v:IsA("Model") and v.Name == "PizzaDeliveryRig" or v.Name == "Bunny" or v.Name == "Mafiaso1" or v.Name == "Mafiaso2" or v.Name == "Mafiaso3" then
-                    LibESP:AddESP(v, "披萨送货员", Color3.fromRGB(255, 52, 179), 14, "Other_ESP")
-                elseif v:IsA("Model") and v.Name == "1x1x1x1Zombie" then
-                    LibESP:AddESP(v, "1x1x1x1 (僵尸)", Color3.fromRGB(224, 102, 255), 14, "Other_ESP")
-                end
-            end)
-        else
-            OtherESP:Disconnect()
-            LibESP:Delete("Other_ESP")
-        end
-    end
-})
-
-EspGroup4:AddToggle("GeneratorESP", {
-    Text = "绘制电机",
-    Default = false,
-    Callback = function(enabled)
-        local generatorData = {}
-        
-        if enabled then
-            local scanInterval = 0.5 
-            local lastScanTime = 0
-            
-            local distanceSettings = {
-                MinDistance = 5,
-                MaxDistance = 100,
-                MinScale = 0.8,
-                MaxScale = 1.5,
-                MinTextSize = 8,
-                MaxTextSize = 10
-            }
-            
-            local function updateGeneratorESP(gen, data)
-                if not gen or not gen:FindFirstChild("Main") then return end
-                
-                local character = game:GetService("Players").LocalPlayer.Character
-                local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
-                
-                if gen:FindFirstChild("Progress") then
-                    local progress = gen.Progress.Value
-                    if progress >= 99 then
-                        if data.billboard then data.billboard:Destroy() end
-                        if data.distanceBillboard then data.distanceBillboard:Destroy() end
-                        if data.highlight then data.highlight:Destroy() end
-                        generatorData[gen] = nil
-                        return
-                    end
-                    
-                    if data.textLabel then
-                        data.textLabel.Text = string.format("电机进度: %d%%", progress)
-                    end
-                    
-                    if humanoidRootPart and data.distanceLabel then
-                        local distance = (gen.Main.Position - humanoidRootPart.Position).Magnitude
-                        data.distanceLabel.Text = string.format("距离: %d米", math.floor(distance))
-                        
-                        local distanceRatio = math.clamp(
-                            (distance - distanceSettings.MinDistance) / 
-                            (distanceSettings.MaxDistance - distanceSettings.MinDistance),
-                            0, 1
-                        )
-                        
-                        local scale = distanceSettings.MinScale + 
-                            distanceRatio * (distanceSettings.MaxScale - distanceSettings.MinScale)
-                        
-                        local textSize = distanceSettings.MinTextSize + 
-                            distanceRatio * (distanceSettings.MaxTextSize - distanceSettings.MinTextSize)
-                        
-                        if data.billboard then data.billboard.Size = UDim2.new(4 * scale, 0, 1 * scale, 0) end
-                        if data.distanceBillboard then data.distanceBillboard.Size = UDim2.new(4 * scale, 0, 1 * scale, 0) end
-                        if data.textLabel then data.textLabel.TextSize = textSize end
-                        if data.distanceLabel then data.distanceLabel.TextSize = textSize end
-                        
-                        local transparency = math.clamp((distance - 50) / 100, 0, 0.4)
-                        if data.textLabel then data.textLabel.TextTransparency = transparency end
-                        if data.distanceLabel then data.distanceLabel.TextTransparency = transparency end
-                        if data.highlight then data.highlight.FillTransparency = 0.85 + (transparency * 0.5) end
-                    end
-                end
-            end
-            
-            local function createGeneratorESP(gen)
-                if not gen or not gen:FindFirstChild("Main") or generatorData[gen] then return end
-                
-                local billboard = Instance.new("BillboardGui")
-                billboard.Name = "GeneratorESP"
-                billboard.Size = UDim2.new(4, 0, 1, 0)
-                billboard.StudsOffset = Vector3.new(0, 2.5, 0)
-                billboard.Adornee = gen.Main
-                billboard.Parent = gen.Main
-                billboard.AlwaysOnTop = true
-                
-                local textLabel = Instance.new("TextLabel")
-                textLabel.Size = UDim2.new(1, 0, 0.5, 0)
-                textLabel.BackgroundTransparency = 1
-                textLabel.TextScaled = false
-                textLabel.Text = "电机加载中..."
-                textLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
-                textLabel.Font = Enum.Font.Arcade
-                textLabel.TextStrokeTransparency = 0
-                textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-                textLabel.TextSize = 8
-                textLabel.Parent = billboard
-                
-                local distanceBillboard = Instance.new("BillboardGui")
-                distanceBillboard.Name = "GeneratorDistanceESP"
-                distanceBillboard.Size = UDim2.new(4, 0, 1, 0)
-                distanceBillboard.StudsOffset = Vector3.new(0, 3.5, 0)
-                distanceBillboard.Adornee = gen.Main
-                distanceBillboard.Parent = gen.Main
-                distanceBillboard.AlwaysOnTop = true
-                
-                local distanceLabel = Instance.new("TextLabel")
-                distanceLabel.Size = UDim2.new(1, 0, 0.5, 0)
-                distanceLabel.BackgroundTransparency = 1
-                distanceLabel.TextScaled = false
-                distanceLabel.Text = "计算距离中..."
-                distanceLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
-                distanceLabel.Font = Enum.Font.Arcade
-                distanceLabel.TextStrokeTransparency = 0
-                distanceLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-                distanceLabel.TextSize = 8
-                distanceLabel.Parent = distanceBillboard
-                
-                local highlight = Instance.new("Highlight")
-                highlight.Name = "GeneratorHighlight"
-                highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                highlight.Enabled = true
-                highlight.OutlineColor = Color3.fromRGB(0, 255, 255)
-                highlight.FillColor = Color3.fromRGB(0, 255, 255)
-                highlight.FillTransparency = 0.9
-                highlight.OutlineTransparency = 0
-                highlight.Parent = gen
-                
-                generatorData[gen] = {
-                    billboard = billboard,
-                    distanceBillboard = distanceBillboard,
-                    textLabel = textLabel,
-                    distanceLabel = distanceLabel,
-                    highlight = highlight
-                }
-                
-                gen.Destroying:Connect(function()
-                    if generatorData[gen] then
-                        if generatorData[gen].billboard then generatorData[gen].billboard:Destroy() end
-                        if generatorData[gen].distanceBillboard then generatorData[gen].distanceBillboard:Destroy() end
-                        if generatorData[gen].highlight then generatorData[gen].highlight:Destroy() end
-                        generatorData[gen] = nil
-                    end
-                end)
-            end
-            
-            local function scanGenerators()
-                for _, gen in pairs(workspace:GetDescendants()) do
-                    if gen:IsA("Model") and gen:FindFirstChild("Main") and gen.Name == "Generator" then
-                        createGeneratorESP(gen)
-                    end
-                end
-            end
-            
-            local mainConnection = workspace.DescendantAdded:Connect(function(v)
-                if v:IsA("Model") and v:FindFirstChild("Main") and v.Name == "Generator" then
-                    createGeneratorESP(v)
-                end
-            end)
-            
-            local heartbeatConnection = game:GetService("RunService").Heartbeat:Connect(function(deltaTime)
-                lastScanTime = lastScanTime + deltaTime
-                if lastScanTime >= scanInterval then
-                    lastScanTime = 0
-                    scanGenerators()
-                end
-                
-                for gen, data in pairs(generatorData) do
-                    if gen and gen.Parent then
-                        updateGeneratorESP(gen, data)
-                    else
-                        if data.billboard then data.billboard:Destroy() end
-                        if data.distanceBillboard then data.distanceBillboard:Destroy() end
-                        if data.highlight then data.highlight:Destroy() end
-                        generatorData[gen] = nil
-                    end
-                end
-            end)
-            
-            generatorData.connections = {
-                main = mainConnection,
-                heartbeat = heartbeatConnection
-            }
-        else
-            if generatorData.connections then
-                for _, connection in pairs(generatorData.connections) do
-                    if connection then
-                        connection:Disconnect()
-                    end
-                end
-            end
-            
-            for gen, data in pairs(generatorData) do
-                if type(data) == "table" then
-                    if data.billboard then data.billboard:Destroy() end
-                    if data.distanceBillboard then data.distanceBillboard:Destroy() end
-                    if data.highlight then data.highlight:Destroy() end
-                end
-            end
-        end
-    end
-})
-
-EspGroup4:AddToggle("ST",{
-    Text = "三角炸弹绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("Model") and v.Name == "SubspaceTripmine" and not v:FindFirstChild("SubspaceTripmine_ESP") then
-                    LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 255), 14, "SubspaceTripmine_ESP")
-                end
-            end
-            SubspaceTripmineESP = workspace.DescendantAdded:Connect(function(v)
-                if v:IsA("Model") and v.Name == "SubspaceTripmine" and not v:FindFirstChild("SubspaceTripmine_ESP") then
-                    LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 255), 14, "SubspaceTripmine_ESP")
-                end
-            end)
-        else
-            SubspaceTripmineESP:Disconnect()
-            LibESP:Delete("SubspaceTripmine_ESP")
-        end
-    end
-})
-
-EspGroup4:AddToggle("ME",{
-    Text = "医疗箱绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("Model") and v.Name == "Medkit" and not v:FindFirstChild("Medkit_ESP") then
-                    LibESP:AddESP(v, "Medkit", Color3.fromRGB(187, 255, 255), 14, "Medkit_ESP")
-                end
-            end
-            MedkitESP = workspace.DescendantAdded:Connect(function(v)
-                if v:IsA("Model") and v.Name == "Medkit" and not v:FindFirstChild("Medkit_ESP") then
-                    LibESP:AddESP(v, "Medkit", Color3.fromRGB(187, 255, 255), 14, "Medkit_ESP")
-                end
-            end)
-        else
-            Medkit:Disconnect()
-            LibESP:Delete("Medkit_ESP")
-        end
-    end
-})
-
-EspGroup4:AddToggle("BCE",{
-    Text = "可乐绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("Model") and v.Name == "BloxyCola" and not v:FindFirstChild("BloxyCola_ESP") then
-                    LibESP:AddESP(v, "Bloxy Cola", Color3.fromRGB(131, 111, 255), 14, "BloxyCola_ESP")
-                end
-            end
-            ColaESP = workspace.DescendantAdded:Connect(function(v)
-                if v:IsA("Model") and v.Name == "BloxyCola" and not v:FindFirstChild("BloxyCola_ESP") then
-                    LibESP:AddESP(v, "Bloxy Cola", Color3.fromRGB(131, 111, 255), 14, "BloxyCola_ESP")
-                end
-            end)
-        else
-            ColaESP:Disconnect()
-            LibESP:Delete("BloxyCola_ESP")
-        end
-    end
-})
-
-local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("调试功能")
-
-MenuGroup:AddToggle("KeybindMenuOpen", {
-    Default = Library.KeybindFrame.Visible,
-    Text = "快捷菜单",
-    Callback = function(value)
-        Library.KeybindFrame.Visible = value
-    end,
-})
-
-MenuGroup:AddToggle("ShowCustomCursor", {
-    Text = "自定义光标",
-    Default = true,
-    Callback = function(Value)
-        Library.ShowCustomCursor = Value
-    end,
-})
-
-MenuGroup:AddDropdown("NotificationSide", {
-    Values = { "左", "右" },
-    Default = "右",
-    Text = "通知位置",
-    Callback = function(Value)
-        Library:SetNotifySide(Value)
-    end,
-})
-
-MenuGroup:AddDropdown("DPIDropdown", {
-    Values = { "25%", "50%", "75%", "100%", "125%", "150%", "175%", "200%" },
-    Default = "100%",
-    Text = "UI大小",
-    Callback = function(Value)
-        Value = Value:gsub("%%", "")
-        local DPI = tonumber(Value)
-        Library:SetDPIScale(DPI)
-    end,
-})
-
-MenuGroup:AddDivider()  
-MenuGroup:AddLabel("Menu bind")  
-    :AddKeyPicker("MenuKeybind", { 
-        Default = "RightShift",  
-        NoUI = true,            
-        Text = "Menu keybind"    
-    })
-
-MenuGroup:AddButton("删除UI", function()
-    Library:Unload()  
-end)
-
-ThemeManager:SetLibrary(Library)  
-SaveManager:SetLibrary(Library)   
-SaveManager:IgnoreThemeSettings() 
-
-SaveManager:SetIgnoreIndexes({ "MenuKeybind" })  
-ThemeManager:SetFolder("MyScriptHub")            
-SaveManager:SetFolder("MyScriptHub/specific-game")  
-SaveManager:SetSubFolder("specific-place")       
-SaveManager:BuildConfigSection(Tabs["UI Settings"])  
-
-ThemeManager:ApplyToTab(Tabs["UI Settings"])
-
-SaveManager:LoadAutoloadConfig()
