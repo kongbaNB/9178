@@ -1,0 +1,66 @@
+local function httpGet(url)
+    local s, r = pcall(function()
+        if game and game.HttpGet then
+            return game:HttpGet(url)
+        elseif syn and syn.request then
+            local res = syn.request({Url = url, Method = "GET"})
+            return res.Body
+        elseif http and http.request then
+            local res = http.request({Url = url, Method = "GET"})
+            return res.Body
+        elseif request then
+            local res = request({Url = url, Method = "GET"})
+            return res.Body
+        else
+            error("No HTTP method available")
+        end
+    end)
+    if not s then
+        warn("HttpGet failed: " .. tostring(r))
+        return nil
+    end
+    return r
+end
+
+local wmsd = httpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/WMSD.NB")
+if wmsd then
+    local s, e = pcall(function() loadstring(wmsd)() end)
+    if not s then warn("WMSD error: " .. tostring(e)) end
+end
+
+local scripts = {
+    [142823291] = "PHZMT.NB",
+    [89469502395769] = "TCXYFK.NB",
+    [18687417158] = "BYC.NB",
+    [95082159892680] = "JPSDTT.NB",
+    [103593441753340] = "ZDNN.NB",
+    [16480898254] = "CCSJ.NB",
+    [126509999114328] = "SLZD99Y.NB",
+    [79546208627805] = "SLZD99Y.NB",
+    [6839171747] = "DOORS.NB",
+    [6516141723] = "DOORS.NB",
+    [12986400307] = "JJQS.NB",
+    [3623096087] = "LLCC.NB",
+    [118614517739521] = "MS.NB",
+    [127380660530951] = "ZCSSHYZ.NB",
+    [121418861436763] = "ZCSSHYZ.NB",
+    [119099244949868] = "MSYS.NB",
+    [99567941238278] = "MSYS.NB",
+    [125009265613167] = "MSYS.NB",
+}
+
+local currentId = game.PlaceId
+local scriptName = scripts[currentId]
+
+if scriptName then
+    local url = "https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/" .. scriptName
+    local code = httpGet(url)
+    if code then
+        local s, e = pcall(function() loadstring(code)() end)
+        if not s then warn("Script error [" .. scriptName .. "]: " .. tostring(e)) end
+    else
+        warn("Failed to download: " .. scriptName)
+    end
+else
+    warn("No script for PlaceId: " .. tostring(currentId))
+end
