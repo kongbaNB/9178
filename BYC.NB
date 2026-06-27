@@ -1,1892 +1,572 @@
 local repo = 'https://raw.githubusercontent.com/deividcomsono/Obsidian/main/'
-local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
-local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
-local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
+local function safeLoad(url)
+    local success, result = pcall(function() return loadstring(game:HttpGet(url))() end)
+    if not success then warn("加载失败: " .. url) return nil end
+    return result
+end
+
+local Library = safeLoad(repo .. 'Library.lua')
+local ThemeManager = safeLoad(repo .. 'addons/ThemeManager.lua')
+local SaveManager = safeLoad(repo .. 'addons/SaveManager.lua')
+
+if not Library then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "错误",
+        Text = "UI 库加载失败，请检查网络或脚本资源",
+        Duration = 5,
+    })
+    return
+end
+
 local Options = Library.Options
 local Toggles = Library.Toggles
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Lighting = game:GetService("Lighting")
-if not table.clone then
-    table.clone = function(t)
-        local nt = {}
-        for k,v in pairs(t) do nt[k] = v end
-        return nt
-    end
-end
-Library.ShowToggleFrameInKeybinds = true 
-Library.ShowCustomCursor = true
-Library.NotifySide = "Right"
+local player = Players.LocalPlayer
+
+Library.AccentColor = Color3.fromRGB(0, 170, 255)
+Library.MainColor = Color3.fromRGB(25, 25, 25)
+Library.BackgroundColor = Color3.fromRGB(20, 20, 20)
+Library.OutlineColor = Color3.fromRGB(40, 40, 40)
+
 local Window = Library:CreateWindow({
-    Title = '🇨🇳 被遗弃脚本｜恐拜大帝🔥🔥',
-    Footer = "作者：恐拜大帝（恐惧的恐，膜拜的拜，大王的大，帝王的帝）",
-    Icon = 106397684977541,
-    Center = true,
-    AutoShow = true,
-    Resizable = true,
-    ShowCustomCursor = true,
+    Title = "被遗弃",
+    Footer = "By 恐拜大帝",
+    Icon = 131153193945220,
     NotifySide = "Right",
-    TabPadding = 8,
-    MenuFadeTime = 0
+    ShowCustomCursor = true,
 })
+
+Library:Notify("被遗弃 - 创作者：恐拜大帝", 5)
+
 local Tabs = {
-    Info = Window:AddTab('公告', 'user'),
-    Player = Window:AddTab('玩家功能', 'user'),
-    AutoLoot = Window:AddTab('自动拾取', 'box'),
-    Aimbot = Window:AddTab('自瞄功能', 'crosshair'),
-    ESP = Window:AddTab('绘制功能', 'eye'),
-    Notify = Window:AddTab('通知提示', 'bell'),
-    Emotes = Window:AddTab('动作表情', 'smile'),
-    Anti = Window:AddTab('反效果', 'shield'),
-    Stamina = Window:AddTab('体力披萨', 'battery'),
-    Tripmine = Window:AddTab('塔夫炸弹', 'bomb'),
-    Block = Window:AddTab('自动格挡', 'sword'),
-    Repair = Window:AddTab('自动修机', 'wrench'),
-    UISettings = Window:AddTab('UI设置', 'settings')
+    Notice = Window:AddTab("公告", "info"),
+    Main = Window:AddTab("功能", "info"),
+    ESP = Window:AddTab("透视", "info"),
+    Settings = Window:AddTab("设置", "settings"),
 }
-local _env = getgenv and getgenv() or {}
-local LocalPlayer = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
-local InfoGroup = Tabs.Info:AddRightGroupbox('恐拜大帝 - 被遗弃脚本')
-InfoGroup:AddLabel("作者：恐拜大帝")
-InfoGroup:AddLabel("恐惧的恐，膜拜的拜，大王的大，帝王的帝")
-InfoGroup:AddLabel("版本：V1.0 整合版")
-local PlayerMain = Tabs.Player:AddLeftGroupbox("移动功能")
-_env.NoStun = false
-game.Players.LocalPlayer.Character.Humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-    if _env.NoStun == true and game.Players.LocalPlayer.Character.Humanoid.WalkSpeed < 16 then
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
-    end
-end)
-game.Players.LocalPlayer.CharacterAdded:Connect(function()
-    game.Players.LocalPlayer.Character.Humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-        if _env.NoStun == true and game.Players.LocalPlayer.Character.Humanoid.WalkSpeed < 16 then
-            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
-        end
-    end)
-end)
-PlayerMain:AddToggle("NoStun",{
-    Text = "去除前摇/后摇/缓慢动作",
+
+local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者消息")
+NoticeGroup:AddLabel('恐拜大帝将持续更新此脚本')
+NoticeGroup:AddLabel('创作者：恐拜大帝')
+
+local AutoGroup = Tabs.Main:AddLeftGroupbox("自动功能")
+
+local autoFixConn = nil
+AutoGroup:AddToggle('AutoFix', {
+    Text = '自动修机',
     Default = false,
-    Callback = function(v)
-        _env.NoStun = v
-    end
-})
-_env.SpeedBoostValue = 1
-_env.SpeedBoost = false
-PlayerMain:AddSlider("SpeedSlider",{
-    Text = "速度倍率",
-    Min = 0, Max = 3,
-    Default = 1, Compact = true,
-    Rounding = 1,
-    Callback = function(v)
-        _env.SpeedBoostValue = v
-    end
-})
-PlayerMain:AddToggle("SpeedToggle",{
-    Text = "启用速度加速",
-    Default = false,
-    Callback = function(v)
-        _env.SpeedBoost = v
-        while _env.SpeedBoost do
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                LocalPlayer.Character.HumanoidRootPart.CFrame += LocalPlayer.Character.Humanoid.MoveDirection * _env.SpeedBoostValue
-                LocalPlayer.Character.HumanoidRootPart.CanCollide = true
-            end
-            task.wait()
-        end
-    end
-})
-local desiredWalkSpeed = 16
-PlayerMain:AddSlider("WalkSpeedSlider",{
-    Text = "移动速度",
-    Min = 16, Max = 200,
-    Default = 16, Compact = true,
-    Rounding = 0,
-    Callback = function(v)
-        desiredWalkSpeed = v
-        local char = LocalPlayer.Character
-        if char then
-            local humanoid = char:FindFirstChild("Humanoid")
-            if humanoid then humanoid.WalkSpeed = v end
-        end
-    end
-})
-task.spawn(function()
-    while true do
-        task.wait(0.1)
-        local char = LocalPlayer.Character
-        if char then
-            local humanoid = char:FindFirstChild("Humanoid")
-            if humanoid and humanoid.WalkSpeed ~= desiredWalkSpeed then
-                humanoid.WalkSpeed = desiredWalkSpeed
-            end
-        end
-    end
-end)
-local PlayerVisual = Tabs.Player:AddRightGroupbox("视觉功能")
-PlayerVisual:AddToggle('ShowChat', {
-    Text = '显示聊天框（需每局开一次）',
-    Default = false,
-    Callback = function(state)
-        if state then
-            game.TextChatService.ChatWindowConfiguration.Enabled = true
-        else
-            game.TextChatService.ChatWindowConfiguration.Enabled = false
-        end
-    end
-})
-_env.FOV = false
-_env.FovValue = 70
-PlayerVisual:AddSlider("FovSlider",{
-    Text = "视野范围",
-    Min = 70, Default = 70,
-    Max = 120, Rounding = 1,
-    Compact = true,
-    Callback = function(v)
-        _env.FovValue = v
-    end
-})
-PlayerVisual:AddToggle("FovToggle",{
-    Text = "应用视野修改",
-    Default = false,
-    Callback = function(v)
-        _env.FOV = v
-        game:GetService("RunService").RenderStepped:Connect(function()
-            if _env.FOV then
-                Camera.FieldOfView = _env.FovValue
-            end
-        end)
-    end
-})
-local LightTabbox = Tabs.Player:AddLeftTabbox("环境设置")
-local LightingTab = LightTabbox:AddTab("亮度")
-_env.Brightness = 0
-_env.GlobalShadows = false
-_env.NoFog = false
-_env.Fullbright = false
-LightingTab:AddSlider("BrightnessSlider",{
-    Text = "亮度数值",
-    Min = 0, Default = 0,
-    Max = 3, Rounding = 1,
-    Compact = true,
-    Callback = function(v)
-        _env.Brightness = v
-    end
-})
-LightingTab:AddToggle("NoShadows",{
-    Text = "无阴影",
-    Default = false,
-    Callback = function(v)
-        _env.GlobalShadows = v
-    end
-})
-LightingTab:AddToggle("NoFogToggle",{
-    Text = "除雾",
-    Default = false,
-    Callback = function(v)
-        _env.NoFog = v
-    end
-})
-LightingTab:AddDivider()
-LightingTab:AddToggle("FullbrightToggle",{
-    Text = "启用全亮",
-    Default = false,
-    Callback = function(v)
-        _env.Fullbright = v
-        game:GetService("RunService").RenderStepped:Connect(function()
-            if not Lighting:GetAttribute("FogStart") then 
-                Lighting:SetAttribute("FogStart", Lighting.FogStart) 
-            end
-            if not Lighting:GetAttribute("FogEnd") then 
-                Lighting:SetAttribute("FogEnd", Lighting.FogEnd) 
-            end
-            Lighting.FogStart = _env.NoFog and 0 or Lighting:GetAttribute("FogStart")
-            Lighting.FogEnd = _env.NoFog and math.huge or Lighting:GetAttribute("FogEnd")
-            local fog = Lighting:FindFirstChildOfClass("Atmosphere")
-            if fog then
-                if not fog:GetAttribute("Density") then 
-                    fog:SetAttribute("Density", fog.Density) 
-                end
-                fog.Density = _env.NoFog and 0 or fog:GetAttribute("Density")
-            end
-            if _env.Fullbright then
-                Lighting.OutdoorAmbient = Color3.new(1,1,1)
-                Lighting.Brightness = _env.Brightness or 0
-                Lighting.GlobalShadows = not _env.GlobalShadows
-            else
-                Lighting.OutdoorAmbient = Color3.fromRGB(55,55,55)
-                Lighting.Brightness = 0
-                Lighting.GlobalShadows = true
-            end
-        end)
-    end
-})
-local AutoLootMain = Tabs.AutoLoot:AddLeftGroupbox('医疗包自动拾取')
-local autoTeleportMedkitEnabled = false
-local teleportMedkitThread = nil
-AutoLootMain:AddToggle('TeleportMedkit', {
-    Text = '医疗包传送并互动',
-    Default = false,
-    Tooltip = '自动将医疗包传送到自己位置并互动',
-    Callback = function(state)
-        autoTeleportMedkitEnabled = state
-        if autoTeleportMedkitEnabled then
-            teleportMedkitThread = task.spawn(function()
-                while autoTeleportMedkitEnabled and task.wait(0.5) do
-                    local character = LocalPlayer.Character
-                    if character and character:FindFirstChild("HumanoidRootPart") then
-                        local humanoidRootPart = character.HumanoidRootPart
-                        local medkit = workspace:FindFirstChild("Map", true)
-                        if medkit then
-                            medkit = medkit:FindFirstChild("Ingame", true)
-                            if medkit then
-                                medkit = medkit:FindFirstChild("Medkit", true)
-                                if medkit then
-                                    local itemRoot = medkit:FindFirstChild("ItemRoot", true)
-                                    if itemRoot then
-                                        itemRoot.CFrame = humanoidRootPart.CFrame + humanoidRootPart.CFrame.LookVector * 3
-                                        local prompt = itemRoot:FindFirstChild("ProximityPrompt", true)
-                                        if prompt then
-                                            fireproximityprompt(prompt)
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end)
-        elseif teleportMedkitThread then
-            task.cancel(teleportMedkitThread)
-            teleportMedkitThread = nil
-        end
-    end
-})
-AutoLootMain:AddToggle('AutoMedkit', {
-    Text = '自动互动医疗包',
-    Default = false,
-    Tooltip = '自动与医疗包互动',
-    Callback = function(state)
-        local autoMedkitEnabled = state
-        local medkitThread = nil
-        if autoMedkitEnabled then
-            medkitThread = task.spawn(function()
-                while autoMedkitEnabled and task.wait(0.5) do
-                    local medkit = workspace:FindFirstChild("Map", true)
-                    if medkit then
-                        medkit = medkit:FindFirstChild("Ingame", true)
-                        if medkit then
-                            medkit = medkit:FindFirstChild("Medkit", true)
-                            if medkit then
-                                local itemRoot = medkit:FindFirstChild("ItemRoot", true)
-                                if itemRoot then
-                                    local prompt = itemRoot:FindFirstChild("ProximityPrompt", true)
-                                    if prompt then
-                                        fireproximityprompt(prompt)
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end)
-        elseif medkitThread then
-            task.cancel(medkitThread)
-        end
-    end
-})
-local AutoLootCola = Tabs.AutoLoot:AddRightGroupbox('可乐自动拾取')
-local autoTeleportColaEnabled = false
-local teleportColaThread = nil
-AutoLootCola:AddToggle('TeleportCola', {
-    Text = '可乐传送并互动',
-    Default = false,
-    Tooltip = '自动将可乐传送到自己位置并互动',
-    Callback = function(state)
-        autoTeleportColaEnabled = state
-        if autoTeleportColaEnabled then
-            teleportColaThread = task.spawn(function()
-                while autoTeleportColaEnabled and task.wait(0.5) do
-                    local character = LocalPlayer.Character
-                    if character and character:FindFirstChild("HumanoidRootPart") then
-                        local humanoidRootPart = character.HumanoidRootPart
-                        local cola = workspace:FindFirstChild("Map", true)
-                        if cola then
-                            cola = cola:FindFirstChild("Ingame", true)
-                            if cola then
-                                cola = cola:FindFirstChild("BloxyCola", true)
-                                if cola then
-                                    local itemRoot = cola:FindFirstChild("ItemRoot", true)
-                                    if itemRoot then
-                                        itemRoot.CFrame = humanoidRootPart.CFrame + humanoidRootPart.CFrame.LookVector * 3
-                                        local prompt = itemRoot:FindFirstChild("ProximityPrompt", true)
-                                        if prompt then
-                                            fireproximityprompt(prompt)
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end)
-        elseif teleportColaThread then
-            task.cancel(teleportColaThread)
-            teleportColaThread = nil
-        end
-    end
-})
-AutoLootCola:AddToggle('AutoCola', {
-    Text = '自动互动可乐',
-    Default = false,
-    Tooltip = '自动与可乐互动',
-    Callback = function(state)
-        local autoColaEnabled = state
-        local colaThread = nil
-        if autoColaEnabled then
-            colaThread = task.spawn(function()
-                while autoColaEnabled and task.wait(0.5) do
-                    local cola = workspace:FindFirstChild("Map", true)
-                    if cola then
-                        cola = cola:FindFirstChild("Ingame", true)
-                        if cola then
-                            cola = cola:FindFirstChild("BloxyCola", true)
-                            if cola then
-                                local itemRoot = cola:FindFirstChild("ItemRoot", true)
-                                if itemRoot then
-                                    local prompt = itemRoot:FindFirstChild("ProximityPrompt", true)
-                                    if prompt then
-                                        fireproximityprompt(prompt)
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end)
-        elseif colaThread then
-            task.cancel(colaThread)
-        end
-    end
-})
-local AimSurvivor = Tabs.Aimbot:AddLeftGroupbox("幸存者自瞄")
-local aimSettings = {
-    distance = 100,
-    fov = 100,
-    size = 10,
-    noWall = false,
-    rainbowMode = true 
-}
-local aimbotData = {
-    FOVring = nil,
-    connections = {}
-}
-AimSurvivor:AddSlider('AimDistance', {
-    Text = '自瞄距离',
-    Default = 100,
-    Min = 0,
-    Max = 1000,
-    Rounding = 0,
-    Compact = true,
+    Tooltip = '打开电机就自动修',
     Callback = function(Value)
-        aimSettings.distance = Value
+        if Value then
+            autoFixConn = RunService.Heartbeat:Connect(function()
+                local map = Workspace:FindFirstChild("Map")
+                if not map then return end
+                local ingame = map:FindFirstChild("Ingame")
+                if not ingame then return end
+                local mapFolder = ingame:FindFirstChild("Map")
+                if not mapFolder then return end
+                for _, gen in pairs(mapFolder:GetChildren()) do
+                    if gen.Name == "Generator" then
+                        local remotes = gen:FindFirstChild("Remotes")
+                        local re = remotes and remotes:FindFirstChild("RE")
+                        if re then
+                            pcall(function() re:FireServer() end)
+                        end
+                    end
+                end
+            end)
+        else
+            if autoFixConn then autoFixConn:Disconnect() autoFixConn = nil end
+        end
     end
 })
-AimSurvivor:AddSlider('FOVSize', {
-    Text = '圈圈大小',
-    Default = 100,
-    Min = 0,
-    Max = 1000,
-    Rounding = 0,
-    Compact = true,
+
+local autoFixTPConn = nil
+AutoGroup:AddToggle('AutoFixTP', {
+    Text = '自动修机2（传送）',
+    Default = false,
+    Tooltip = '传送到发电机修',
     Callback = function(Value)
-        aimSettings.fov = Value
+        if Value then
+            autoFixTPConn = RunService.Heartbeat:Connect(function()
+                local char = player.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+                local hrp = char.HumanoidRootPart
+                local map = Workspace:FindFirstChild("Map")
+                if not map then return end
+                local ingame = map:FindFirstChild("Ingame")
+                if not ingame then return end
+                local mapFolder = ingame:FindFirstChild("Map")
+                if not mapFolder then return end
+                local nearest = nil
+                local minDist = math.huge
+                for _, gen in pairs(mapFolder:GetChildren()) do
+                    if gen.Name == "Generator" and gen:FindFirstChild("Main") then
+                        local dist = (gen.Main.Position - hrp.Position).Magnitude
+                        if dist < minDist then
+                            minDist = dist
+                            nearest = gen
+                        end
+                    end
+                end
+                if nearest and nearest:FindFirstChild("Main") then
+                    hrp.CFrame = CFrame.new(nearest.Main.Position + Vector3.new(0, 3, 0))
+                    local remotes = nearest:FindFirstChild("Remotes")
+                    local re = remotes and remotes:FindFirstChild("RE")
+                    if re then
+                        pcall(function() re:FireServer() end)
+                    end
+                end
+            end)
+        else
+            if autoFixTPConn then autoFixTPConn:Disconnect() autoFixTPConn = nil end
+        end
     end
 })
-AimSurvivor:AddToggle('NoWallToggle', {
-    Text = '掩体检测',
+
+local blockConn = nil
+local lastBlock = 0
+AutoGroup:AddToggle('AutoBlock', {
+    Text = '自动格挡',
     Default = false,
-    Tooltip = '自瞄',
-    Callback = function(state)
-        aimSettings.noWall = state
-    end
-})
-AimSurvivor:AddDropdown('ColorSelector', {
-    Values = {'Red', 'Green', 'Blue', 'White', 'Yellow', 'Cyan', 'Magenta', 'Rainbow'},
-    Default = 8,
-    Multi = false,
-    Text = '选择颜色',
-    Tooltip = '用于自瞄圈圈的颜色',
+    Tooltip = '自动格挡杀手攻击',
     Callback = function(Value)
-        local colorMap = {
-            Red = Color3.fromRGB(255, 0, 0),
-            Green = Color3.fromRGB(0, 255, 0),
-            Blue = Color3.fromRGB(0, 0, 255),
-            White = Color3.fromRGB(255, 255, 255),
-            Yellow = Color3.fromRGB(255, 255, 0),
-            Cyan = Color3.fromRGB(0, 255, 255),
-            Magenta = Color3.fromRGB(255, 0, 255)
-        }
-        if Value == 'Rainbow' then
-            aimSettings.rainbowMode = true
-        else
-            aimSettings.rainbowMode = false
-            if aimbotData.FOVring then
-                aimbotData.FOVring.Color = colorMap[Value] or Color3.fromRGB(231, 231, 236)
-            end
-        end
-    end
-})
-local bai = {}
-bai.Aim = false
-local aimConnection
-local SpySurvivor = AimSurvivor:AddToggle("AimbotToggle", {
-    Text = "自瞄幸存者",
-    Default = false,
-    Callback = function(state)
-        bai.Aim = state
-        local RaycastParams = RaycastParams.new()
-        RaycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-        local function cleanup()
-            if aimbotData.FOVring then
-                aimbotData.FOVring:Remove()
-                aimbotData.FOVring = nil
-            end
-            if aimConnection then
-                aimConnection:Disconnect()
-                aimConnection = nil
-            end
-        end
-        if state then
-            if not aimbotData.FOVring then
-                aimbotData.FOVring = Drawing.new("Circle")
-                aimbotData.FOVring.Visible = true
-                aimbotData.FOVring.Thickness = 2
-                aimbotData.FOVring.Filled = false
-                aimbotData.FOVring.Color = Color3.fromHSV(0, 1, 1)
-            end
-            aimConnection = RunService.RenderStepped:Connect(function()
-                aimbotData.FOVring.Radius = aimSettings.fov
-                aimbotData.FOVring.Position = Camera.ViewportSize / 2
-                local survivorsFolder = workspace.Players:FindFirstChild("Survivors")
-                local target = nil
-                local closestDist = math.huge
-                local mousePos = Camera.ViewportSize / 2
-                if survivorsFolder then
-                    for _, survivorModel in pairs(survivorsFolder:GetChildren()) do
-                        if survivorModel == LocalPlayer.Character then continue end
-                        local hrp = survivorModel:FindFirstChild("HumanoidRootPart")
-                        if hrp then
-                            local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-                            local distance = (Camera.CFrame.Position - hrp.Position).Magnitude
-                            if onScreen and distance <= aimSettings.distance then
-                                if aimSettings.noWall then
-                                    RaycastParams.FilterDescendantsInstances = {LocalPlayer.Character, workspace.Players}
-                                    local result = workspace:Raycast(Camera.CFrame.Position, hrp.Position - Camera.CFrame.Position, RaycastParams)
-                                    if result and not result.Instance:IsDescendantOf(survivorModel) then continue end
-                                end
-                                local screenDist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-                                if screenDist < closestDist and screenDist <= aimSettings.fov then
-                                    closestDist = screenDist
-                                    target = hrp
-                                end
+        if Value then
+            local RemoteEvent = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Network"):WaitForChild("RemoteEvent")
+            blockConn = RunService.Stepped:Connect(function()
+                local killersFolder = Workspace:FindFirstChild("Players") and Workspace.Players:FindFirstChild("Killers")
+                if not killersFolder then return end
+                local char = player.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+                local myPos = char.HumanoidRootPart.Position
+                for _, killer in ipairs(killersFolder:GetChildren()) do
+                    if killer:FindFirstChild("HumanoidRootPart") then
+                        local dist = (killer.HumanoidRootPart.Position - myPos).Magnitude
+                        if dist <= 15 then
+                            if tick() - lastBlock >= 0.5 then
+                                pcall(function() RemoteEvent:FireServer("UseActorAbility", "Block") end)
+                                lastBlock = tick()
                             end
                         end
                     end
                 end
-                if target then
-                    local lookVector = (target.Position - Camera.CFrame.Position).Unit
-                    Camera.CFrame = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + lookVector)
-                end
-                if aimSettings.rainbowMode and aimbotData.FOVring then
-                    local hue = (tick() * 0.2) % 1
-                    aimbotData.FOVring.Color = Color3.fromHSV(hue, 1, 1)
-                end
-            end)
-            aimbotData.connections.keyEvent = UserInputService.InputBegan:Connect(function(input)
-                if input.KeyCode == Enum.KeyCode.Delete then
-                    bai.Aim = false
-                    SpySurvivor:SetValue(false)
-                    cleanup()
-                end
             end)
         else
-            cleanup()
+            if blockConn then blockConn:Disconnect() blockConn = nil end
         end
     end
-}):AddKeyPicker("AimKeyPickerSurvivor", {
-    Text = "自瞄幸存者",
-    Default = "E",
-    Mode = "Toggle",
-    SyncToggleState = true,
 })
-local AimKiller = Tabs.Aimbot:AddRightGroupbox("杀手自瞄")
-local aimSettingsKiller = {
-    distance = 100,
-    fov = 100,
-    size = 10,
-    noWall = false,
-    rainbowMode = true 
-}
-local aimbotDataKiller = {
-    FOVring = nil,
-    connections = {}
-}
-AimKiller:AddSlider('AimDistanceKiller', {
-    Text = '自瞄距离',
-    Default = 100,
-    Min = 0,
-    Max = 1000,
-    Rounding = 0,
-    Compact = false,
+
+local autoItemConn = nil
+AutoGroup:AddToggle('AutoItem', {
+    Text = '自动捡道具',
+    Default = false,
+    Tooltip = '自动传送并拾取医疗包和可乐',
     Callback = function(Value)
-        aimSettingsKiller.distance = Value
+        if Value then
+            autoItemConn = RunService.Heartbeat:Connect(function()
+                local char = player.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+                local hrp = char.HumanoidRootPart
+                local map = Workspace:FindFirstChild("Map")
+                if not map then return end
+                local ingame = map:FindFirstChild("Ingame")
+                if not ingame then return end
+                local function pickup(name)
+                    local item = ingame:FindFirstChild(name)
+                    if item then
+                        local itemRoot = item:FindFirstChild("ItemRoot")
+                        if itemRoot then
+                            itemRoot.CFrame = hrp.CFrame + hrp.CFrame.LookVector * 3
+                            local prompt = itemRoot:FindFirstChildOfClass("ProximityPrompt")
+                            if prompt then
+                                pcall(function() fireproximityprompt(prompt) end)
+                            end
+                        end
+                    end
+                end
+                pickup("Medkit")
+                pickup("BloxyCola")
+            end)
+        else
+            if autoItemConn then autoItemConn:Disconnect() autoItemConn = nil end
+        end
     end
 })
-AimKiller:AddSlider('FOVSizeKiller', {
-    Text = '圈圈大小',
-    Default = 100,
-    Min = 0,
-    Max = 1000,
-    Rounding = 0,
-    Compact = false,
+
+local autoPizzaConn = nil
+AutoGroup:AddToggle('AutoPizza', {
+    Text = '自动吃披萨',
+    Default = false,
+    Tooltip = '生命值低于50时自动吃披萨',
     Callback = function(Value)
-        aimSettingsKiller.fov = Value
+        if Value then
+            autoPizzaConn = RunService.Heartbeat:Connect(function()
+                local char = player.Character
+                if not char or not char:FindFirstChild("Humanoid") or not char:FindFirstChild("HumanoidRootPart") then return end
+                local humanoid = char.Humanoid
+                if humanoid.Health >= 50 then return end
+                local hrp = char.HumanoidRootPart
+                local pizzaFolder = Workspace:FindFirstChild("Pizzas") or (Workspace:FindFirstChild("Map") and Workspace.Map:FindFirstChild("Ingame"))
+                if not pizzaFolder then return end
+                local closest, minDist = nil, math.huge
+                for _, pizza in ipairs(pizzaFolder:GetDescendants()) do
+                    if pizza:IsA("BasePart") and pizza.Name == "Pizza" then
+                        local dist = (pizza.Position - hrp.Position).Magnitude
+                        if dist < minDist then
+                            minDist = dist
+                            closest = pizza
+                        end
+                    end
+                end
+                if closest then
+                    closest.CFrame = hrp.CFrame * CFrame.new(0, 0, -2)
+                end
+            end)
+        else
+            if autoPizzaConn then autoPizzaConn:Disconnect() autoPizzaConn = nil end
+        end
     end
 })
-AimKiller:AddToggle('NoWallToggleKiller', {
-    Text = '掩体检测',
+
+local BoostGroup = Tabs.Main:AddRightGroupbox("角色增强")
+
+local staminaConn = nil
+BoostGroup:AddToggle('InfiniteStamina', {
+    Text = '无限体力',
     Default = false,
-    Tooltip = '自瞄',
-    Callback = function(state)
-        aimSettingsKiller.noWall = state
-    end
-})
-AimKiller:AddDropdown('ColorSelectorKiller', {
-    Values = {'Red', 'Green', 'Blue', 'White', 'Yellow', 'Cyan', 'Magenta', 'Rainbow'},
-    Default = 8,
-    Multi = false,
-    Text = '选择颜色',
-    Tooltip = '用于自瞄圈圈的颜色',
+    Tooltip = '体力不会消耗',
     Callback = function(Value)
-        local colorMap = {
-            Red = Color3.fromRGB(255, 0, 0),
-            Green = Color3.fromRGB(0, 255, 0),
-            Blue = Color3.fromRGB(0, 0, 255),
-            White = Color3.fromRGB(255, 255, 255),
-            Yellow = Color3.fromRGB(255, 255, 0),
-            Cyan = Color3.fromRGB(0, 255, 255),
-            Magenta = Color3.fromRGB(255, 0, 255)
-        }
-        if Value == 'Rainbow' then
-            aimSettingsKiller.rainbowMode = true
+        local sprintingModule = ReplicatedStorage:WaitForChild("Systems"):WaitForChild("Character"):WaitForChild("Game"):WaitForChild("Sprinting")
+        local function getModule()
+            local success, mod = pcall(function() return require(sprintingModule) end)
+            if success then return mod end
+            return nil
+        end
+        if Value then
+            staminaConn = RunService.Heartbeat:Connect(function()
+                local m = getModule()
+                if m then
+                    m.StaminaLoss = 0
+                    m.StaminaGain = 9999
+                end
+            end)
         else
-            aimSettingsKiller.rainbowMode = false
-            if aimbotDataKiller.FOVring then
-                aimbotDataKiller.FOVring.Color = colorMap[Value] or Color3.fromRGB(231, 231, 236)
+            if staminaConn then staminaConn:Disconnect() staminaConn = nil end
+            local m = getModule()
+            if m then
+                m.StaminaLoss = 10
+                m.StaminaGain = 25
             end
         end
     end
 })
-local baiKiller = {}
-baiKiller.Aim = false
-local aimConnectionKiller
-local SpyKiller = AimKiller:AddToggle("AimbotToggleKiller", {
-    Text = "自瞄杀手",
-    Default = false,
-    Callback = function(state)
-        baiKiller.Aim = state
-        local RaycastParams = RaycastParams.new()
-        RaycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-        local function cleanup()
-            if aimbotDataKiller.FOVring then
-                aimbotDataKiller.FOVring:Remove()
-                aimbotDataKiller.FOVring = nil
-            end
-            if aimConnectionKiller then
-                aimConnectionKiller:Disconnect()
-                aimConnectionKiller = nil
-            end
+
+local ESPGroup = Tabs.ESP:AddLeftGroupbox("玩家透视")
+
+local killerAddedConn = nil
+
+local function addKillerESP(killer)
+    if not killer:IsA("Model") then return end
+    if killer:FindFirstChild("KillerESP_Highlight") then return end
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "KillerESP_Highlight"
+    highlight.FillColor = Color3.new(1, 0, 0)
+    highlight.OutlineColor = Color3.new(1, 0, 0)
+    highlight.FillTransparency = 0.7
+    highlight.OutlineTransparency = 0.1
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = killer
+    local head = killer:FindFirstChild("Head")
+    if head then
+        local bill = Instance.new("BillboardGui")
+        bill.Name = "KillerESP_Billboard"
+        bill.Adornee = head
+        bill.AlwaysOnTop = true
+        bill.Size = UDim2.new(0, 40, 0, 15)
+        bill.StudsOffset = Vector3.new(0, 2, 0)
+        bill.MaxDistance = 99999
+        bill.Parent = head
+        local text = Instance.new("TextLabel")
+        text.Size = UDim2.new(1, 0, 1, 0)
+        text.BackgroundTransparency = 1
+        text.Text = "杀手"
+        text.TextColor3 = Color3.new(1, 0, 0)
+        text.TextScaled = true
+        text.TextSize = 12
+        text.Parent = bill
+    end
+end
+
+local function clearKillerESP()
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("Highlight") and v.Name == "KillerESP_Highlight" then
+            v:Destroy()
         end
-        if state then
-            if not aimbotDataKiller.FOVring then
-                aimbotDataKiller.FOVring = Drawing.new("Circle")
-                aimbotDataKiller.FOVring.Visible = true
-                aimbotDataKiller.FOVring.Thickness = 2
-                aimbotDataKiller.FOVring.Filled = false
-                aimbotDataKiller.FOVring.Color = Color3.fromHSV(0, 1, 1)
+        if v:IsA("BillboardGui") and v.Name == "KillerESP_Billboard" then
+            v:Destroy()
+        end
+    end
+end
+
+ESPGroup:AddToggle('KillerESP', {
+    Text = '透视杀手',
+    Default = false,
+    Tooltip = '高亮显示杀手',
+    Callback = function(Value)
+        if Value then
+            local killersFolder = Workspace:FindFirstChild("Players") and Workspace.Players:FindFirstChild("Killers")
+            if killersFolder then
+                for _, v in pairs(killersFolder:GetDescendants()) do
+                    if v:IsA("Model") then addKillerESP(v) end
+                end
             end
-            aimConnectionKiller = RunService.RenderStepped:Connect(function()
-                aimbotDataKiller.FOVring.Radius = aimSettingsKiller.fov
-                aimbotDataKiller.FOVring.Position = Camera.ViewportSize / 2
-                local killersFolder = workspace.Players:FindFirstChild("Killers")
-                local target = nil
-                local closestDist = math.huge
-                local mousePos = Camera.ViewportSize / 2
-                if killersFolder then
-                    for _, killerModel in pairs(killersFolder:GetChildren()) do
-                        local hrp = killerModel:FindFirstChild("HumanoidRootPart")
-                        if hrp then
-                            local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-                            local distance = (Camera.CFrame.Position - hrp.Position).Magnitude
-                            if onScreen and distance <= aimSettingsKiller.distance then
-                                if aimSettingsKiller.noWall then
-                                    RaycastParams.FilterDescendantsInstances = {LocalPlayer.Character, workspace.Players}
-                                    local result = workspace:Raycast(Camera.CFrame.Position, hrp.Position - Camera.CFrame.Position, RaycastParams)
-                                    if result and not result.Instance:IsDescendantOf(killerModel) then continue end
-                                end
-                                local screenDist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-                                if screenDist < closestDist and screenDist <= aimSettingsKiller.fov then
-                                    closestDist = screenDist
-                                    target = hrp
-                                end
-                            end
-                        end
+            killerAddedConn = Workspace.DescendantAdded:Connect(function(v)
+                task.wait(0.1)
+                if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") then
+                    local killersFolder = Workspace:FindFirstChild("Players") and Workspace.Players:FindFirstChild("Killers")
+                    if killersFolder and v:IsDescendantOf(killersFolder) then
+                        addKillerESP(v)
                     end
-                end
-                if target then
-                    local lookVector = (target.Position - Camera.CFrame.Position).Unit
-                    Camera.CFrame = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + lookVector)
-                end
-                if aimSettingsKiller.rainbowMode and aimbotDataKiller.FOVring then
-                    local hue = (tick() * 0.2) % 1
-                    aimbotDataKiller.FOVring.Color = Color3.fromHSV(hue, 1, 1)
-                end
-            end)
-            aimbotDataKiller.connections.keyEvent = UserInputService.InputBegan:Connect(function(input)
-                if input.KeyCode == Enum.KeyCode.Delete then
-                    baiKiller.Aim = false
-                    SpyKiller:SetValue(false)
-                    cleanup()
                 end
             end)
         else
-            cleanup()
+            clearKillerESP()
+            if killerAddedConn then killerAddedConn:Disconnect() killerAddedConn = nil end
         end
     end
-}):AddKeyPicker("AimKeyPickerKiller", {
-    Text = "自瞄杀手",
-    Default = "Q",
-    Mode = "Toggle",
-    SyncToggleState = true,
 })
-local AimCharacter = Tabs.Aimbot:AddLeftGroupbox("角色专属自瞄")
-local aimbot1x1 = false
-local aimbot1x1loop = nil
-local function aimbot1x1x1x1(state)
-    local aimbot1x1sounds = {"rbxassetid://79782181585087", "rbxassetid://128711903717226"}
-    aimbot1x1 = state
-    if LocalPlayer.Character.Name ~= "1x1x1x1" and state then
-        Library:Notify("你的角色不是1x4，无法生效", nil, 4590657391)
-        return 
+
+local survivorAddedConn = nil
+
+local function addSurvivorESP(survivor)
+    if not survivor:IsA("Model") then return end
+    if survivor:FindFirstChild("SurvivorESP_Highlight") then return end
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "SurvivorESP_Highlight"
+    highlight.FillColor = Color3.new(0, 1, 1)
+    highlight.OutlineColor = Color3.new(0, 1, 1)
+    highlight.FillTransparency = 0.7
+    highlight.OutlineTransparency = 0.1
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = survivor
+    local head = survivor:FindFirstChild("Head")
+    if head then
+        local bill = Instance.new("BillboardGui")
+        bill.Name = "SurvivorESP_Billboard"
+        bill.Adornee = head
+        bill.AlwaysOnTop = true
+        bill.Size = UDim2.new(0, 40, 0, 15)
+        bill.StudsOffset = Vector3.new(0, 2, 0)
+        bill.MaxDistance = 99999
+        bill.Parent = head
+        local text = Instance.new("TextLabel")
+        text.Size = UDim2.new(1, 0, 1, 0)
+        text.BackgroundTransparency = 1
+        text.Text = "幸存者"
+        text.TextColor3 = Color3.new(0, 1, 1)
+        text.TextScaled = true
+        text.TextSize = 12
+        text.Parent = bill
     end
-    if state then
-        aimbot1x1loop = LocalPlayer.Character.HumanoidRootPart.ChildAdded:Connect(function(child)
-            if not aimbot1x1 then return end
-            for _, v in pairs(aimbot1x1sounds) do
-                if child.Name == v then
-                    local survivors = {}
-                    for _, player in pairs(Players:GetPlayers()) do
-                        if player ~= LocalPlayer then
-                            local character = player.Character
-                            if character and character:FindFirstChild("HumanoidRootPart") then
-                                table.insert(survivors, character)
-                            end
-                        end
-                    end
-                    local nearestSurvivor = nil
-                    local shortestDistance = math.huge  
-                    for _, survivor in pairs(survivors) do
-                        local survivorHRP = survivor.HumanoidRootPart
-                        local playerHRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if playerHRP then
-                            local distance = (survivorHRP.Position - playerHRP.Position).Magnitude
-                            if distance < shortestDistance then
-                                shortestDistance = distance
-                                nearestSurvivor = survivor
-                            end
-                        end
-                    end
-                    if nearestSurvivor then
-                        local nearestHRP = nearestSurvivor.HumanoidRootPart
-                        local playerHRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if playerHRP then
-                            local num = 1
-                            local maxIterations = 100 
-                            while num <= maxIterations do
-                                task.wait(0.01)
-                                num = num + 1
-                                Camera.CFrame = CFrame.new(Camera.CFrame.Position, nearestHRP.Position)
-                                playerHRP.CFrame = CFrame.lookAt(playerHRP.Position, Vector3.new(nearestHRP.Position.X, nearestHRP.Position.Y, nearestHRP.Position.Z))
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-    else
-        if aimbot1x1loop then
-            aimbot1x1loop:Disconnect()
-            aimbot1x1loop = nil
+end
+
+local function clearSurvivorESP()
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("Highlight") and v.Name == "SurvivorESP_Highlight" then
+            v:Destroy()
+        end
+        if v:IsA("BillboardGui") and v.Name == "SurvivorESP_Billboard" then
+            v:Destroy()
         end
     end
 end
-AimCharacter:AddToggle('Aim1x4', {Text = '1x4自瞄', Default = false, Tooltip = '自瞄', Callback = aimbot1x1x1x1})
-local cool = false
-local coolloop = nil
-local function coolAimbot(state)
-    local coolsounds = {"rbxassetid://111033845010938", "rbxassetid://106484876889079"}
-    cool = state
-    if LocalPlayer.Character.Name ~= "c00lkidd" and state then
-        Library:Notify("你的角色不是c00lkidd，无法生效", nil, 4590657391)
-        return 
-    end
-    if state then
-        coolloop = LocalPlayer.Character.HumanoidRootPart.ChildAdded:Connect(function(child)
-            if not cool then return end
-            for _, v in pairs(coolsounds) do
-                if child.Name == v then
-                    local survivors = {}
-                    for _, player in pairs(Players:GetPlayers()) do
-                        if player ~= LocalPlayer then
-                            local character = player.Character
-                            if character and character:FindFirstChild("HumanoidRootPart") then
-                                table.insert(survivors, character)
-                            end
-                        end
-                    end
-                    local nearestSurvivor = nil
-                    local shortestDistance = math.huge  
-                    for _, survivor in pairs(survivors) do
-                        local survivorHRP = survivor.HumanoidRootPart
-                        local playerHRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if playerHRP then
-                            local distance = (survivorHRP.Position - playerHRP.Position).Magnitude
-                            if distance < shortestDistance then
-                                shortestDistance = distance
-                                nearestSurvivor = survivor
-                            end
-                        end
-                    end
-                    if nearestSurvivor then
-                        local nearestHRP = nearestSurvivor.HumanoidRootPart
-                        local playerHRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if playerHRP then
-                            local num = 1
-                            local maxIterations = 100 
-                            if child.Name == "rbxassetid://79782181585087" then
-                                maxIterations = 220  
-                            end
-                            while num <= maxIterations do
-                                task.wait(0.01)
-                                num = num + 1
-                                Camera.CFrame = CFrame.new(Camera.CFrame.Position, nearestHRP.Position)
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-    else
-        if coolloop then
-            coolloop:Disconnect()
-            coolloop = nil
-        end
-    end
-end
-AimCharacter:AddToggle('AimCool', {Text = '酷小孩自瞄', Default = false, Tooltip = '自瞄', Callback = coolAimbot})
-local TWOTIME = false
-local TWOloop = nil
-local function TWOAimbot(state)
-    local TWOsounds = {"rbxassetid://86710781315432", "rbxassetid://99820161736138"}
-    TWOTIME = state
-    if LocalPlayer.Character.Name ~= "TwoTime" and state then
-        Library:Notify("你的角色不是Two Time，无法生效", nil, 4590657391)
-        return 
-    end
-    if state then
-        TWOloop = LocalPlayer.Character.HumanoidRootPart.ChildAdded:Connect(function(child)
-            if not TWOTIME then return end
-            for _, v in pairs(TWOsounds) do
-                if child.Name == v then
-                    local survivors = {}
-                    for _, player in pairs(Players:GetPlayers()) do
-                        if player ~= LocalPlayer then
-                            local character = player.Character
-                            if character and character:FindFirstChild("HumanoidRootPart") then
-                                table.insert(survivors, character)
-                            end
-                        end
-                    end
-                    local nearestSurvivor = nil
-                    local shortestDistance = math.huge  
-                    for _, survivor in pairs(survivors) do
-                        local survivorHRP = survivor.HumanoidRootPart
-                        local playerHRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if playerHRP then
-                            local distance = (survivorHRP.Position - playerHRP.Position).Magnitude
-                            if distance < shortestDistance then
-                                shortestDistance = distance
-                                nearestSurvivor = survivor
-                            end
-                        end
-                    end
-                    if nearestSurvivor then
-                        local nearestHRP = nearestSurvivor.HumanoidRootPart
-                        local playerHRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if playerHRP then
-                            local num = 1
-                            local maxIterations = 100 
-                            if child.Name == "rbxassetid://79782181585087" then
-                                maxIterations = 220  
-                            end
-                            while num <= maxIterations do
-                                task.wait(0.01)
-                                num = num + 1
-                                Camera.CFrame = CFrame.new(Camera.CFrame.Position, nearestHRP.Position)
-                                playerHRP.CFrame = CFrame.lookAt(playerHRP.Position, Vector3.new(nearestHRP.Position.X, nearestHRP.Position.Y, nearestHRP.Position.Z))  
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-    else
-        if TWOloop then
-            TWOloop:Disconnect()
-            TWOloop = nil
-        end
-    end
-end
-AimCharacter:AddToggle('AimTwoTime', {Text = '两次自瞄', Default = false, Tooltip = '自瞄', Callback = TWOAimbot})
-local johnaim = false
-local johnloop = nil
-local function johnaimbot(state)
-    local johnaimbotsounds = {"rbxassetid://109525294317144"}
-    johnaim = state
-    if LocalPlayer.Character.Name ~= "JohnDoe" and state then
-        Library:Notify("角色不对，无法生效", nil, 4590657391)
-        return 
-    end
-    if state then
-        johnloop = LocalPlayer.Character.HumanoidRootPart.ChildAdded:Connect(function(child)
-            if not johnaim then return end
-            for _, v in pairs(johnaimbotsounds) do
-                if child.Name == v then
-                    local survivors = {}
-                    for _, player in pairs(Players:GetPlayers()) do
-                        if player ~= LocalPlayer then
-                            local character = player.Character
-                            if character and character:FindFirstChild("HumanoidRootPart") then
-                                table.insert(survivors, character)
-                            end
-                        end
-                    end
-                    local nearestSurvivor = nil
-                    local shortestDistance = math.huge  
-                    for _, survivor in pairs(survivors) do
-                        local survivorHRP = survivor.HumanoidRootPart
-                        local playerHRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if playerHRP then
-                            local distance = (survivorHRP.Position - playerHRP.Position).Magnitude
-                            if distance < shortestDistance then
-                                shortestDistance = distance
-                                nearestSurvivor = survivor
-                            end
-                        end
-                    end
-                    if nearestSurvivor then
-                        local nearestHRP = nearestSurvivor.HumanoidRootPart
-                        local playerHRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        local maxIterations = 330
-                        if playerHRP then
-                            local num = 1
-                            while num <= maxIterations do
-                                task.wait(0.01)
-                                num = num + 1
-                                Camera.CFrame = CFrame.new(Camera.CFrame.Position, nearestHRP.Position)
-                                playerHRP.CFrame = CFrame.lookAt(playerHRP.Position, Vector3.new(nearestHRP.Position.X, nearestHRP.Position.Y, nearestHRP.Position.Z))
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-    else
-        if johnloop then
-            johnloop:Disconnect()
-            johnloop = nil
-        end
-    end
-end
-AimCharacter:AddToggle('AimJohn', {Text = '约翰自瞄', Default = false, Tooltip = '自瞄', Callback = johnaimbot})
-local jasonaim = false
-local jasonaimbotloop = nil
-local function jasonaimbot(state)
-    local jasonaimbotsounds = {"rbxassetid://112809109188560", "rbxassetid://102228729296384"}
-    jasonaim = state
-    if LocalPlayer.Character.Name ~= "Jason" and state then
-        Library:Notify("角色不对，无法生效", nil, 4590657391)
-        return 
-    end
-    if state then
-        jasonaimbotloop = LocalPlayer.Character.HumanoidRootPart.ChildAdded:Connect(function(child)
-            if not jasonaim then return end
-            for _, v in pairs(jasonaimbotsounds) do
-                if child.Name == v then
-                    local survivors = {}
-                    for _, player in pairs(Players:GetPlayers()) do
-                        if player ~= LocalPlayer then
-                            local character = player.Character
-                            if character and character:FindFirstChild("HumanoidRootPart") then
-                                table.insert(survivors, character)
-                            end
-                        end
-                    end
-                    local nearestSurvivor = nil
-                    local shortestDistance = math.huge  
-                    for _, survivor in pairs(survivors) do
-                        local survivorHRP = survivor.HumanoidRootPart
-                        local playerHRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if playerHRP then
-                            local distance = (survivorHRP.Position - playerHRP.Position).Magnitude
-                            if distance < shortestDistance then
-                                shortestDistance = distance
-                                nearestSurvivor = survivor
-                            end
-                        end
-                    end
-                    if nearestSurvivor then
-                        local nearestHRP = nearestSurvivor.HumanoidRootPart
-                        local playerHRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        local maxIterations = 70
-                        if playerHRP then
-                            local num = 1
-                            while num <= maxIterations do
-                                task.wait(0.01)
-                                num = num + 1
-                                playerHRP.CFrame = CFrame.lookAt(playerHRP.Position, Vector3.new(nearestHRP.Position.X, nearestHRP.Position.Y, nearestHRP.Position.Z))
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-    else
-        if jasonaimbotloop then
-            jasonaimbotloop:Disconnect()
-            jasonaimbotloop = nil
-        end
-    end
-end
-AimCharacter:AddToggle('AimJason', {Text = '杰森自瞄', Default = false, Tooltip = '自瞄', Callback = jasonaimbot})
-local CA = false
-local CAbotConnection = nil
-local function chanceAimbot(state)
-    CA = state
-    if state then
-        if Players.LocalPlayer.Character.Name ~= "Chance" then
-            Library:Notify("你用的角色好像不是机会,无法生效", nil, 4590657391)
-            return
-        end
-        local RemoteEvent = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Network"):WaitForChild("RemoteEvent")
-        CAbotConnection = RemoteEvent.OnClientEvent:Connect(function(...)
-            local args = {...}
-            if args[1] == "UseActorAbility" and args[2] == "Shoot" then 
-                local killerContainer = workspace.Players:FindFirstChild("Killers")
-                if killerContainer then 
-                    local killer = killerContainer:FindFirstChildOfClass("Model")
-                    if killer and killer:FindFirstChild("HumanoidRootPart") then 
-                        local killerHRP = killer.HumanoidRootPart
-                        local playerHRP = Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if playerHRP then 
-                            local TMP = 0.35
-                            local AMD = 2
-                            local endTime = tick() + AMD
-                            while tick() < endTime do
-                                RunService.RenderStepped:Wait()
-                                local predictedTarget = killerHRP.Position + (killerHRP.Velocity * TMP)
-                                Players.LocalPlayer.Character.HumanoidRootPart.CFrame = killerHRP.CFrame + Vector3.new(0, 0, -2)
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-    else
-        if CAbotConnection then
-            CAbotConnection:Disconnect()
-            CAbotConnection = nil
-        end
-    end
-end
-AimCharacter:AddToggle('AimChance', {Text = '机会自瞄', Default = false, Tooltip = '自瞄', Callback = chanceAimbot})
-local shedaim = false
-local shedloop = nil
-local function shedletskyAimbot(state)
-    shedaim = state
-    if state then
-        if LocalPlayer.Character.Name ~= "Shedletsky" then
-            Library:Notify("你用的角色好像不是谢德利茨基,无法生效", nil, 4590657391)
-            return
-        end
-        shedloop = LocalPlayer.Character.Sword.ChildAdded:Connect(function(child)
-            if not shedaim then return end
-            if child:IsA("Sound") then 
-                local FAN = child.Name
-                if FAN == "rbxassetid://12222225" or FAN == "83851356262523" then 
-                    local killersFolder = workspace.Players:FindFirstChild("Killers")
-                    if killersFolder then 
-                        local killer = killersFolder:FindFirstChildOfClass("Model")
-                        if killer and killer:FindFirstChild("HumanoidRootPart") then 
-                            local killerHRP = killer.HumanoidRootPart
-                            local playerHRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                            if playerHRP then 
-                                local num = 1
-                                local maxIterations = 100
-                                while num <= maxIterations do
-                                    task.wait(0.01)
-                                    num = num + 1
-                                    Camera.CFrame = CFrame.new(Camera.CFrame.Position, killerHRP.Position)
-                                    playerHRP.CFrame = CFrame.lookAt(playerHRP.Position, killerHRP.Position)
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-    else
-        if shedloop then 
-            shedloop:Disconnect()
-            shedloop = nil
-        end
-    end
-end
-AimCharacter:AddToggle('AimShedletsky', {Text = '谢德利茨基自瞄', Default = false, Tooltip = '自瞄', Callback = shedletskyAimbot})
-local LibESP = loadstring(game:HttpGet("https://raw.githubusercontent.com/ImamGV/Script/main/ESP"))()
-local HighlightESP = Tabs.ESP:AddLeftGroupbox("高亮绘制")
-HighlightESP:AddToggle("SurvivorHighlight", {
-    Text = "幸存者高亮",
+
+ESPGroup:AddToggle('SurvivorESP', {
+    Text = '透视幸存者',
     Default = false,
-    Callback = function(v)
-        if v then
-            for _, v in ipairs(workspace.Players:GetDescendants()) do
-                if v:IsA("Model") and v.Parent.Name == "Survivors" and not v:FindFirstChild("Survival_ESP") then
-                    LibESP:AddESP(v, "", Color3.fromRGB(0, 191, 255), 14, "Survival_ESP")
+    Tooltip = '高亮显示幸存者',
+    Callback = function(Value)
+        if Value then
+            local survivorsFolder = Workspace:FindFirstChild("Players") and Workspace.Players:FindFirstChild("Survivors")
+            if survivorsFolder then
+                for _, v in pairs(survivorsFolder:GetDescendants()) do
+                    if v:IsA("Model") then addSurvivorESP(v) end
                 end
             end
-            SurvivalESP = workspace.Players.DescendantAdded:Connect(function(v)
-                if v:IsA("Model") and v.Parent.Name == "Survivors" and not v:FindFirstChild("Survival_ESP") then
-                    LibESP:AddESP(v, "", Color3.fromRGB(0, 191, 255), 14, "Survival_ESP")
+            survivorAddedConn = Workspace.DescendantAdded:Connect(function(v)
+                task.wait(0.1)
+                if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") then
+                    local survivorsFolder = Workspace:FindFirstChild("Players") and Workspace.Players:FindFirstChild("Survivors")
+                    if survivorsFolder and v:IsDescendantOf(survivorsFolder) then
+                        addSurvivorESP(v)
+                    end
                 end
             end)
         else
-            if SurvivalESP then SurvivalESP:Disconnect() end
-            LibESP:Delete("Survival_ESP")
+            clearSurvivorESP()
+            if survivorAddedConn then survivorAddedConn:Disconnect() survivorAddedConn = nil end
         end
     end
 })
-HighlightESP:AddToggle("KillerHighlight", {
-    Text = "杀手高亮",
-    Default = false,
-    Callback = function(v)
-        if v then
-            for _, v in ipairs(workspace.Players:GetDescendants()) do
-                if v:IsA("Model") and v.Parent.Name == "Killers" and not v:FindFirstChild("Killer_ESP") then
-                    LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 0), 14, "Killers_ESP")
-                end
-            end
-            KillersESP = workspace.Players.DescendantAdded:Connect(function(v)
-                if v:IsA("Model") and v.Parent.Name == "Killers" and not v:FindFirstChild("Killers_ESP") then
-                    LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 0), 14, "Killers_ESP")
-                end
-            end)
-        else
-            if KillersESP then KillersESP:Disconnect() end
-            LibESP:Delete("Killers_ESP")
-        end
+
+local ItemESPGroup = Tabs.ESP:AddRightGroupbox("道具透视")
+
+local genAddedConn = nil
+local generatorData = {}
+
+local function createGeneratorESP(gen)
+    if not gen or not gen:FindFirstChild("Main") then return end
+    if generatorData[gen] then return end
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "GeneratorESP"
+    billboard.Size = UDim2.new(4, 0, 1, 0)
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    billboard.Adornee = gen.Main
+    billboard.Parent = gen.Main
+    billboard.AlwaysOnTop = true
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = "电机"
+    textLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
+    textLabel.Font = Enum.Font.Arcade
+    textLabel.TextStrokeTransparency = 0
+    textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    textLabel.TextSize = 14
+    textLabel.Parent = billboard
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "GeneratorESP_Highlight"
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.OutlineColor = Color3.fromRGB(0, 255, 255)
+    highlight.FillColor = Color3.fromRGB(0, 255, 255)
+    highlight.FillTransparency = 0.9
+    highlight.OutlineTransparency = 0
+    highlight.Parent = gen
+    generatorData[gen] = {billboard = billboard, highlight = highlight}
+end
+
+local function clearGeneratorESP()
+    for gen, data in pairs(generatorData) do
+        if data.billboard then data.billboard:Destroy() end
+        if data.highlight then data.highlight:Destroy() end
     end
-})
-local ItemESP = Tabs.ESP:AddRightGroupbox("物品绘制")
-ItemESP:AddToggle("GeneratorESP", {
-    Text = "绘制电机",
+    generatorData = {}
+end
+
+ItemESPGroup:AddToggle('GeneratorESP', {
+    Text = '发电机透视',
     Default = false,
-    Callback = function(enabled)
-        local generatorData = {}
-        if enabled then
-            local scanInterval = 0.5 
-            local lastScanTime = 0
-            local distanceSettings = {MinDistance = 5, MaxDistance = 100, MinScale = 0.8, MaxScale = 1.5, MinTextSize = 8, MaxTextSize = 10}
-            local function updateGeneratorESP(gen, data)
-                if not gen or not gen:FindFirstChild("Main") then return end
-                local character = LocalPlayer.Character
-                local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
-                if gen:FindFirstChild("Progress") then
-                    local progress = gen.Progress.Value
-                    if progress >= 99 then
-                        if data.billboard then data.billboard:Destroy() end
-                        if data.distanceBillboard then data.distanceBillboard:Destroy() end
-                        if data.highlight then data.highlight:Destroy() end
-                        generatorData[gen] = nil
-                        return
-                    end
-                    if data.textLabel then
-                        data.textLabel.Text = string.format("电机进度: %d%%", progress)
-                    end
-                    if humanoidRootPart and data.distanceLabel then
-                        local distance = (gen.Main.Position - humanoidRootPart.Position).Magnitude
-                        data.distanceLabel.Text = string.format("距离: %d米", math.floor(distance))
-                        local distanceRatio = math.clamp((distance - distanceSettings.MinDistance) / (distanceSettings.MaxDistance - distanceSettings.MinDistance), 0, 1)
-                        local scale = distanceSettings.MinScale + distanceRatio * (distanceSettings.MaxScale - distanceSettings.MinScale)
-                        local textSize = distanceSettings.MinTextSize + distanceRatio * (distanceSettings.MaxTextSize - distanceSettings.MinTextSize)
-                        if data.billboard then data.billboard.Size = UDim2.new(4 * scale, 0, 1 * scale, 0) end
-                        if data.distanceBillboard then data.distanceBillboard.Size = UDim2.new(4 * scale, 0, 1 * scale, 0) end
-                        if data.textLabel then data.textLabel.TextSize = textSize end
-                        if data.distanceLabel then data.distanceLabel.TextSize = textSize end
-                        local transparency = math.clamp((distance - 50) / 100, 0, 0.4)
-                        if data.textLabel then data.textLabel.TextTransparency = transparency end
-                        if data.distanceLabel then data.distanceLabel.TextTransparency = transparency end
-                        if data.highlight then data.highlight.FillTransparency = 0.85 + (transparency * 0.5) end
-                    end
+    Tooltip = '显示发电机位置',
+    Callback = function(Value)
+        if Value then
+            for _, gen in pairs(Workspace:GetDescendants()) do
+                if gen:IsA("Model") and gen.Name == "Generator" and gen:FindFirstChild("Main") then
+                    createGeneratorESP(gen)
                 end
             end
-            local function createGeneratorESP(gen)
-                if not gen or not gen:FindFirstChild("Main") or generatorData[gen] then return end
-                local billboard = Instance.new("BillboardGui")
-                billboard.Name = "GeneratorESP"
-                billboard.Size = UDim2.new(4, 0, 1, 0)
-                billboard.StudsOffset = Vector3.new(0, 2.5, 0)
-                billboard.Adornee = gen.Main
-                billboard.Parent = gen.Main
-                billboard.AlwaysOnTop = true
-                local textLabel = Instance.new("TextLabel")
-                textLabel.Size = UDim2.new(1, 0, 0.5, 0)
-                textLabel.BackgroundTransparency = 1
-                textLabel.TextScaled = false
-                textLabel.Text = "电机加载中..."
-                textLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
-                textLabel.Font = Enum.Font.Arcade
-                textLabel.TextStrokeTransparency = 0
-                textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-                textLabel.TextSize = 8
-                textLabel.Parent = billboard
-                local distanceBillboard = Instance.new("BillboardGui")
-                distanceBillboard.Name = "GeneratorDistanceESP"
-                distanceBillboard.Size = UDim2.new(4, 0, 1, 0)
-                distanceBillboard.StudsOffset = Vector3.new(0, 3.5, 0)
-                distanceBillboard.Adornee = gen.Main
-                distanceBillboard.Parent = gen.Main
-                distanceBillboard.AlwaysOnTop = true
-                local distanceLabel = Instance.new("TextLabel")
-                distanceLabel.Size = UDim2.new(1, 0, 0.5, 0)
-                distanceLabel.BackgroundTransparency = 1
-                distanceLabel.TextScaled = false
-                distanceLabel.Text = "计算距离中..."
-                distanceLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
-                distanceLabel.Font = Enum.Font.Arcade
-                distanceLabel.TextStrokeTransparency = 0
-                distanceLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-                distanceLabel.TextSize = 8
-                distanceLabel.Parent = distanceBillboard
-                local highlight = Instance.new("Highlight")
-                highlight.Name = "GeneratorHighlight"
-                highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                highlight.Enabled = true
-                highlight.OutlineColor = Color3.fromRGB(0, 255, 255)
-                highlight.FillColor = Color3.fromRGB(0, 255, 255)
-                highlight.FillTransparency = 0.9
-                highlight.OutlineTransparency = 0
-                highlight.Parent = gen
-                generatorData[gen] = {billboard = billboard, distanceBillboard = distanceBillboard, textLabel = textLabel, distanceLabel = distanceLabel, highlight = highlight}
-                gen.Destroying:Connect(function()
-                    if generatorData[gen] then
-                        if generatorData[gen].billboard then generatorData[gen].billboard:Destroy() end
-                        if generatorData[gen].distanceBillboard then generatorData[gen].distanceBillboard:Destroy() end
-                        if generatorData[gen].highlight then generatorData[gen].highlight:Destroy() end
-                        generatorData[gen] = nil
-                    end
-                end)
-            end
-            local function scanGenerators()
-                for _, gen in pairs(workspace:GetDescendants()) do
-                    if gen:IsA("Model") and gen:FindFirstChild("Main") and gen.Name == "Generator" then
-                        createGeneratorESP(gen)
-                    end
-                end
-            end
-            local mainConnection = workspace.DescendantAdded:Connect(function(v)
-                if v:IsA("Model") and v:FindFirstChild("Main") and v.Name == "Generator" then
+            genAddedConn = Workspace.DescendantAdded:Connect(function(v)
+                if v:IsA("Model") and v.Name == "Generator" and v:FindFirstChild("Main") then
+                    task.wait(0.1)
                     createGeneratorESP(v)
                 end
             end)
-            local heartbeatConnection = RunService.Heartbeat:Connect(function(deltaTime)
-                lastScanTime = lastScanTime + deltaTime
-                if lastScanTime >= scanInterval then
-                    lastScanTime = 0
-                    scanGenerators()
-                end
-                for gen, data in pairs(generatorData) do
-                    if gen and gen.Parent then
-                        updateGeneratorESP(gen, data)
-                    else
-                        if data.billboard then data.billboard:Destroy() end
-                        if data.distanceBillboard then data.distanceBillboard:Destroy() end
-                        if data.highlight then data.highlight:Destroy() end
-                        generatorData[gen] = nil
-                    end
-                end
-            end)
-            generatorData.connections = {main = mainConnection, heartbeat = heartbeatConnection}
         else
-            if generatorData.connections then
-                for _, connection in pairs(generatorData.connections) do
-                    if connection then connection:Disconnect() end
-                end
-            end
-            for gen, data in pairs(generatorData) do
-                if type(data) == "table" then
-                    if data.billboard then data.billboard:Destroy() end
-                    if data.distanceBillboard then data.distanceBillboard:Destroy() end
-                    if data.highlight then data.highlight:Destroy() end
-                end
-            end
+            clearGeneratorESP()
+            if genAddedConn then genAddedConn:Disconnect() genAddedConn = nil end
         end
     end
 })
-ItemESP:AddToggle("TripmineESP", {
-    Text = "三角炸弹绘制",
+
+local itemEspData = {}
+
+local function createItemESP(item, name, color)
+    if not item or not item:FindFirstChild("ItemRoot") then return end
+    if itemEspData[item] then return end
+    local root = item.ItemRoot
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ItemESP"
+    billboard.Size = UDim2.new(3, 0, 1, 0)
+    billboard.StudsOffset = Vector3.new(0, 1.5, 0)
+    billboard.Adornee = root
+    billboard.Parent = root
+    billboard.AlwaysOnTop = true
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = name
+    textLabel.TextColor3 = color
+    textLabel.Font = Enum.Font.Arcade
+    textLabel.TextStrokeTransparency = 0
+    textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    textLabel.TextSize = 14
+    textLabel.Parent = billboard
+    itemEspData[item] = billboard
+end
+
+local function clearItemESP()
+    for item, billboard in pairs(itemEspData) do
+        if billboard then billboard:Destroy() end
+    end
+    itemEspData = {}
+end
+
+ItemESPGroup:AddToggle('ItemESP', {
+    Text = '透视道具',
     Default = false,
-    Callback = function(v)
-        if v then
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("Model") and v.Name == "SubspaceTripmine" and not v:FindFirstChild("SubspaceTripmine_ESP") then
-                    LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 255), 14, "SubspaceTripmine_ESP")
+    Tooltip = '显示医疗包和可乐',
+    Callback = function(Value)
+        if Value then
+            local map = Workspace:FindFirstChild("Map")
+            if map then
+                local ingame = map:FindFirstChild("Ingame")
+                if ingame then
+                    local medkit = ingame:FindFirstChild("Medkit")
+                    if medkit then createItemESP(medkit, "医疗包", Color3.fromRGB(0, 255, 255)) end
+                    local cola = ingame:FindFirstChild("BloxyCola")
+                    if cola then createItemESP(cola, "可乐", Color3.fromRGB(131, 111, 255)) end
                 end
             end
-            SubspaceTripmineESP = workspace.DescendantAdded:Connect(function(v)
-                if v:IsA("Model") and v.Name == "SubspaceTripmine" and not v:FindFirstChild("SubspaceTripmine_ESP") then
-                    LibESP:AddESP(v, "", Color3.fromRGB(255, 0, 255), 14, "SubspaceTripmine_ESP")
-                end
-            end)
         else
-            if SubspaceTripmineESP then SubspaceTripmineESP:Disconnect() end
-            LibESP:Delete("SubspaceTripmine_ESP")
+            clearItemESP()
         end
     end
 })
-ItemESP:AddToggle("MedkitESP", {
-    Text = "医疗箱绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("Model") and v.Name == "Medkit" and not v:FindFirstChild("Medkit_ESP") then
-                    LibESP:AddESP(v, "Medkit", Color3.fromRGB(187, 255, 255), 14, "Medkit_ESP")
-                end
-            end
-            MedkitESP = workspace.DescendantAdded:Connect(function(v)
-                if v:IsA("Model") and v.Name == "Medkit" and not v:FindFirstChild("Medkit_ESP") then
-                    LibESP:AddESP(v, "Medkit", Color3.fromRGB(187, 255, 255), 14, "Medkit_ESP")
-                end
-            end)
-        else
-            if MedkitESP then MedkitESP:Disconnect() end
-            LibESP:Delete("Medkit_ESP")
-        end
-    end
-})
-ItemESP:AddToggle("ColaESP", {
-    Text = "可乐绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("Model") and v.Name == "BloxyCola" and not v:FindFirstChild("BloxyCola_ESP") then
-                    LibESP:AddESP(v, "Bloxy Cola", Color3.fromRGB(131, 111, 255), 14, "BloxyCola_ESP")
-                end
-            end
-            ColaESP = workspace.DescendantAdded:Connect(function(v)
-                if v:IsA("Model") and v.Name == "BloxyCola" and not v:FindFirstChild("BloxyCola_ESP") then
-                    LibESP:AddESP(v, "Bloxy Cola", Color3.fromRGB(131, 111, 255), 14, "BloxyCola_ESP")
-                end
-            end)
-        else
-            if ColaESP then ColaESP:Disconnect() end
-            LibESP:Delete("BloxyCola_ESP")
-        end
-    end
-})
-ItemESP:AddToggle("EntityESP", {
-    Text = "杀手机器人绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("Model") and (v.Name == "PizzaDeliveryRig" or v.Name == "Bunny" or v.Name == "Mafiaso1" or v.Name == "Mafiaso2" or v.Name == "Mafiaso3") then
-                    LibESP:AddESP(v, "披萨送货员", Color3.fromRGB(255, 52, 179), 14, "Other_ESP")
-                elseif v:IsA("Model") and v.Name == "1x1x1x1Zombie" then
-                    LibESP:AddESP(v, "1x1x1x1 (僵尸)", Color3.fromRGB(224, 102, 255), 14, "Other_ESP")
-                end
-            end
-            OtherESP = workspace.DescendantAdded:Connect(function(v)
-                if v:IsA("Model") and (v.Name == "PizzaDeliveryRig" or v.Name == "Bunny" or v.Name == "Mafiaso1" or v.Name == "Mafiaso2" or v.Name == "Mafiaso3") then
-                    LibESP:AddESP(v, "披萨送货员", Color3.fromRGB(255, 52, 179), 14, "Other_ESP")
-                elseif v:IsA("Model") and v.Name == "1x1x1x1Zombie" then
-                    LibESP:AddESP(v, "1x1x1x1 (僵尸)", Color3.fromRGB(224, 102, 255), 14, "Other_ESP")
-                end
-            end)
-        else
-            if OtherESP then OtherESP:Disconnect() end
-            LibESP:Delete("Other_ESP")
-        end
-    end
-})
-local Box2DESP = Tabs.ESP:AddLeftGroupbox("2D方框绘制")
-Box2DESP:AddToggle("SurvivorBox2D", {
-    Text = "绘制幸存者方框",
-    Default = false,
-    Callback = function(v)
-        if v then
-            local a = workspace:WaitForChild("Players")
-            local c = a:WaitForChild("Survivors")
-            local d = RunService
-            local e = Players.LocalPlayer
-            local function f(g, h)
-                if not g:IsA("Model") then return end
-                if g == e.Character then return end
-                local i = g:FindFirstChild("HumanoidRootPart")
-                if not i then return end
-                if i:FindFirstChild("playeresp") then return end
-                local j = Instance.new("BillboardGui")
-                j.Name = "playeresp"
-                j.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-                j.Active = true
-                j.AlwaysOnTop = true
-                j.LightInfluence = 1.000
-                j.Size = UDim2.new(3, 0, 5, 0)
-                j.Adornee = i
-                j.Parent = i
-                local k = Instance.new("Frame")
-                k.Name = "playershow"
-                k.BackgroundColor3 = Color3.fromRGB(255, 25, 25)
-                k.BackgroundTransparency = 1
-                k.Size = UDim2.new(1, 0, 1, 0)
-                k.Parent = j
-                local l = Instance.new("UIStroke")
-                l.Color = h
-                l.Thickness = 2
-                l.Transparency = 0.2
-                l.Parent = k
-            end
-            SurvivorESPConnection = d.RenderStepped:Connect(function()
-                for m, o in ipairs(c:GetChildren()) do
-                    f(o, Color3.fromRGB(0, 255, 0))
-                end
-            end)
-            SurvivorAddedConnection = c.ChildAdded:Connect(function(o)
-                f(o, Color3.fromRGB(0, 255, 0))
-            end)
-        else
-            if SurvivorESPConnection then SurvivorESPConnection:Disconnect() end
-            if SurvivorAddedConnection then SurvivorAddedConnection:Disconnect() end
-            local a = workspace:WaitForChild("Players")
-            local c = a:WaitForChild("Survivors")
-            for _, o in ipairs(c:GetChildren()) do
-                if o:IsA("Model") then
-                    local i = o:FindFirstChild("HumanoidRootPart")
-                    if i and i:FindFirstChild("playeresp") then
-                        i.playeresp:Destroy()
-                    end
-                end
-            end
-        end
-    end
-})
-Box2DESP:AddToggle("KillerBox2D", {
-    Text = "绘制杀手方框",
-    Default = false,
-    Callback = function(v)
-        if v then
-            local a = workspace:WaitForChild("Players")
-            local b = a:WaitForChild("Killers")
-            local d = RunService
-            local e = Players.LocalPlayer
-            local function f(g, h)
-                if not g:IsA("Model") then return end
-                if g == e.Character then return end
-                local i = g:FindFirstChild("HumanoidRootPart")
-                if not i then return end
-                if i:FindFirstChild("playeresp") then return end
-                local j = Instance.new("BillboardGui")
-                j.Name = "playeresp"
-                j.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-                j.Active = true
-                j.AlwaysOnTop = true
-                j.LightInfluence = 1.000
-                j.Size = UDim2.new(3, 0, 5, 0)
-                j.Adornee = i
-                j.Parent = i
-                local k = Instance.new("Frame")
-                k.Name = "playershow"
-                k.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                k.BackgroundTransparency = 1
-                k.Size = UDim2.new(1, 0, 1, 0)
-                k.Parent = j
-                local l = Instance.new("UIStroke")
-                l.Color = h
-                l.Thickness = 2
-                l.Transparency = 0.2
-                l.Parent = k
-            end
-            KillerESPConnection = d.RenderStepped:Connect(function()
-                for m, o in ipairs(b:GetChildren()) do
-                    f(o, Color3.fromRGB(255, 0, 0))
-                end
-            end)
-            KillerAddedConnection = b.ChildAdded:Connect(function(o)
-                f(o, Color3.fromRGB(255, 0, 0))
-            end)
-        else
-            if KillerESPConnection then KillerESPConnection:Disconnect() end
-            if KillerAddedConnection then KillerAddedConnection:Disconnect() end
-            local a = workspace:WaitForChild("Players")
-            local b = a:WaitForChild("Killers")
-            for _, o in ipairs(b:GetChildren()) do
-                if o:IsA("Model") then
-                    local i = o:FindFirstChild("HumanoidRootPart")
-                    if i and i:FindFirstChild("playeresp") then
-                        i.playeresp:Destroy()
-                    end
-                end
-            end
-        end
-    end
-})
-local RenderESP = Tabs.ESP:AddRightGroupbox("渲染绘制")
-RenderESP:AddToggle("DistanceESP", {
-    Text = "距离绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            local players = game:GetService("Players")
-            local run_service = game:GetService("RunService")
-            local local_player = players.LocalPlayer
-            local camera = workspace.CurrentCamera
-            if getgenv().cyberline_distance_esp then
-                for _, text in pairs(getgenv().cyberline_distance_esp) do
-                    pcall(function() text:Remove() end)
-                end
-            end
-            getgenv().cyberline_distance_esp = {}
-            local function create_distance_label()
-                local text = Drawing.new("Text")
-                text.Size = 12
-                text.Center = true
-                text.Outline = true
-                text.Font = 2
-                text.Color = Color3.fromRGB(255, 255, 255)
-                text.Visible = false
-                return text
-            end
-            getgenv().distanceESPConnection = run_service.RenderStepped:Connect(function()
-                for _, player in ipairs(players:GetPlayers()) do
-                    if player ~= local_player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                        local root = player.Character.HumanoidRootPart
-                        local screen_pos, on_screen = camera:WorldToViewportPoint(root.Position - Vector3.new(0, 2.8, 0))
-                        if not getgenv().cyberline_distance_esp[player] then
-                            getgenv().cyberline_distance_esp[player] = create_distance_label()
-                        end
-                        local text = getgenv().cyberline_distance_esp[player]
-                        if on_screen then
-                            local distance = math.floor((root.Position - camera.CFrame.Position).Magnitude)
-                            text.Position = Vector2.new(screen_pos.X, screen_pos.Y)
-                            text.Text = tostring(distance) .. "m"
-                            text.Visible = true
-                        else
-                            text.Visible = false
-                        end
-                    elseif getgenv().cyberline_distance_esp[player] then
-                        getgenv().cyberline_distance_esp[player].Visible = false
-                    end
-                end
-            end)
-        else
-            if getgenv().distanceESPConnection then
-                getgenv().distanceESPConnection:Disconnect()
-            end
-            if getgenv().cyberline_distance_esp then
-                for _, text in pairs(getgenv().cyberline_distance_esp) do
-                    pcall(function() text:Remove() end)
-                end
-                getgenv().cyberline_distance_esp = nil
-            end
-        end
-    end
-})
-RenderESP:AddToggle("TopTracers", {
-    Text = "天线绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            local players = game:GetService("Players")
-            local run_service = game:GetService("RunService")
-            local local_player = players.LocalPlayer
-            local camera = workspace.CurrentCamera
-            if getgenv().cyberline_tracers then
-                for _, line in pairs(getgenv().cyberline_tracers) do
-                    pcall(function() line:Remove() end)
-                end
-            end
-            getgenv().cyberline_tracers = {}
-            local function create_tracer()
-                local line = Drawing.new("Line")
-                line.Color = Color3.fromRGB(255, 255, 255)
-                line.Thickness = 1
-                line.Transparency = 1
-                line.Visible = false
-                return line
-            end
-            getgenv().tracerConnection = run_service.RenderStepped:Connect(function()
-                for _, player in ipairs(players:GetPlayers()) do
-                    if player ~= local_player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                        local root_part = player.Character.HumanoidRootPart
-                        local screen_pos, on_screen = camera:WorldToViewportPoint(root_part.Position)
-                        if not getgenv().cyberline_tracers[player] then
-                            getgenv().cyberline_tracers[player] = create_tracer()
-                        end
-                        local tracer = getgenv().cyberline_tracers[player]
-                        if on_screen then
-                            tracer.From = Vector2.new(camera.ViewportSize.X / 2, 0)
-                            tracer.To = Vector2.new(screen_pos.X, screen_pos.Y)
-                            tracer.Visible = true
-                        else
-                            tracer.Visible = false
-                        end
-                    elseif getgenv().cyberline_tracers[player] then
-                        getgenv().cyberline_tracers[player].Visible = false
-                    end
-                end
-            end)
-        else
-            if getgenv().tracerConnection then
-                getgenv().tracerConnection:Disconnect()
-            end
-            if getgenv().cyberline_tracers then
-                for _, line in pairs(getgenv().cyberline_tracers) do
-                    pcall(function() line:Remove() end)
-                end
-                getgenv().cyberline_tracers = nil
-            end
-        end
-    end
-})
-RenderESP:AddToggle("HealthBars", {
-    Text = "血量绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            local players = game:GetService("Players")
-            local run_service = game:GetService("RunService")
-            local local_player = players.LocalPlayer
-            local camera = workspace.CurrentCamera
-            if getgenv().cyberline_health_bars then
-                for _, data in pairs(getgenv().cyberline_health_bars) do
-                    pcall(function() data.bar:Remove() end)
-                    pcall(function() data.outline:Remove() end)
-                end
-            end
-            getgenv().cyberline_health_bars = {}
-            local function create_bar()
-                local outline = Drawing.new("Square")
-                outline.Color = Color3.new(0, 0, 0)
-                outline.Filled = true
-                outline.Transparency = 1
-                outline.Visible = false
-                local bar = Drawing.new("Square")
-                bar.Color = Color3.fromRGB(0, 255, 0)
-                bar.Filled = true
-                bar.Transparency = 1
-                bar.Visible = false
-                return { bar = bar, outline = outline }
-            end
-            local function get_bounds(character)
-                local min = Vector3.new(math.huge, math.huge, math.huge)
-                local max = Vector3.new(-math.huge, -math.huge, -math.huge)
-                for _, part in character:GetChildren() do
-                    if part:IsA("BasePart") then
-                        local pos = part.Position
-                        min = Vector3.new(math.min(min.X, pos.X), math.min(min.Y, pos.Y), math.min(min.Z, pos.Z))
-                        max = Vector3.new(math.max(max.X, pos.X), math.max(max.Y, pos.Y), math.max(max.Z, pos.Z))
-                    end
-                end
-                return min, max
-            end
-            getgenv().healthBarConnection = run_service.RenderStepped:Connect(function()
-                for _, player in ipairs(players:GetPlayers()) do
-                    if player ~= local_player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                        local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
-                        if humanoid then
-                            local min, max = get_bounds(player.Character)
-                            local points = {
-                                Vector3.new(min.X, min.Y, min.Z), Vector3.new(min.X, max.Y, min.Z),
-                                Vector3.new(max.X, min.Y, min.Z), Vector3.new(max.X, max.Y, min.Z),
-                                Vector3.new(min.X, min.Y, max.Z), Vector3.new(min.X, max.Y, max.Z),
-                                Vector3.new(max.X, min.Y, max.Z), Vector3.new(max.X, max.Y, max.Z),
-                            }
-                            local min2d = Vector2.new(math.huge, math.huge)
-                            local max2d = Vector2.new(-math.huge, -math.huge)
-                            local visible = false
-                            for _, point in ipairs(points) do
-                                local screen, on_screen = camera:WorldToViewportPoint(point)
-                                if on_screen then
-                                    visible = true
-                                    local pos2d = Vector2.new(screen.X, screen.Y)
-                                    min2d = Vector2.new(math.min(min2d.X, pos2d.X), math.min(min2d.Y, pos2d.Y))
-                                    max2d = Vector2.new(math.max(max2d.X, pos2d.X), math.max(max2d.Y, pos2d.Y))
-                                end
-                            end
-                            if not getgenv().cyberline_health_bars[player] then
-                                getgenv().cyberline_health_bars[player] = create_bar()
-                            end
-                            local bar = getgenv().cyberline_health_bars[player].bar
-                            local outline = getgenv().cyberline_health_bars[player].outline
-                            if visible then
-                                local height = max2d.Y - min2d.Y
-                                local ratio = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
-                                local bar_height = height * ratio
-                                bar.Size = Vector2.new(2, bar_height)
-                                bar.Position = Vector2.new(min2d.X - 5, max2d.Y - bar_height)
-                                bar.Visible = true
-                                bar.Color = Color3.fromRGB(255 * (1 - ratio), 255 * ratio, 0)
-                                outline.Size = Vector2.new(4, height + 2)
-                                outline.Position = Vector2.new(min2d.X - 6, min2d.Y - 1)
-                                outline.Visible = true
-                            else
-                                bar.Visible = false
-                                outline.Visible = false
-                            end
-                        end
-                    elseif getgenv().cyberline_health_bars[player] then
-                        getgenv().cyberline_health_bars[player].bar.Visible = false
-                        getgenv().cyberline_health_bars[player].outline.Visible = false
-                    end
-                end
-            end)
-        else
-            if getgenv().healthBarConnection then
-                getgenv().healthBarConnection:Disconnect()
-            end
-            if getgenv().cyberline_health_bars then
-                for _, data in pairs(getgenv().cyberline_health_bars) do
-                    pcall(function() data.bar:Remove() end)
-                    pcall(function() data.outline:Remove() end)
-                end
-                getgenv().cyberline_health_bars = nil
-            end
-        end
-    end
-})
-RenderESP:AddToggle("SkeletonESP", {
-    Text = "骨骼绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            local players = game:GetService("Players")
-            local run_service = game:GetService("RunService")
-            local camera = workspace.CurrentCamera
-            local local_player = players.LocalPlayer
-            if getgenv().cyberline_skeleton then
-                for _, parts in pairs(getgenv().cyberline_skeleton) do
-                    for _, line in pairs(parts) do
-                        pcall(function() line:Remove() end)
-                    end
-                end
-            end
-            getgenv().cyberline_skeleton = {}
-            local function create_line()
-                local line = Drawing.new("Line")
-                line.Color = Color3.new(1, 1, 1)
-                line.Thickness = 1
-                line.Transparency = 1
-                line.Visible = false
-                return line
-            end
-            local function create_skeleton()
-                return {
-                    head = create_line(), torso = create_line(),
-                    left_arm = create_line(), right_arm = create_line(),
-                    left_leg = create_line(), right_leg = create_line()
-                }
-            end
-            getgenv().skeletonConnection = run_service.RenderStepped:Connect(function()
-                for _, player in ipairs(players:GetPlayers()) do
-                    if player ~= local_player and player.Character then
-                        local char = player.Character
-                        local parts = {
-                            head = char:FindFirstChild("Head"),
-                            upper = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso"),
-                            lower = char:FindFirstChild("LowerTorso") or char:FindFirstChild("HumanoidRootPart"),
-                            left_arm = char:FindFirstChild("LeftUpperArm") or char:FindFirstChild("Left Arm"),
-                            right_arm = char:FindFirstChild("RightUpperArm") or char:FindFirstChild("Right Arm"),
-                            left_leg = char:FindFirstChild("LeftUpperLeg") or char:FindFirstChild("Left Leg"),
-                            right_leg = char:FindFirstChild("RightUpperLeg") or char:FindFirstChild("Right Leg"),
-                        }
-                        if not getgenv().cyberline_skeleton[player] then
-                            getgenv().cyberline_skeleton[player] = create_skeleton()
-                        end
-                        local skeleton = getgenv().cyberline_skeleton[player]
-                        local function to_screen(part)
-                            local pos, on_screen = camera:WorldToViewportPoint(part.Position)
-                            return Vector2.new(pos.X, pos.Y), on_screen
-                        end
-                        local all_visible = true
-                        for _, part in pairs(parts) do
-                            if not part then all_visible = false end
-                        end
-                        if all_visible then
-                            local head_pos, _ = to_screen(parts.head)
-                            local upper_pos, _ = to_screen(parts.upper)
-                            local lower_pos, _ = to_screen(parts.lower)
-                            local larm_pos, _ = to_screen(parts.left_arm)
-                            local rarm_pos, _ = to_screen(parts.right_arm)
-                            local lleg_pos, _ = to_screen(parts.left_leg)
-                            local rleg_pos, _ = to_screen(parts.right_leg)
-                            skeleton.head.From = head_pos; skeleton.head.To = upper_pos
-                            skeleton.torso.From = upper_pos; skeleton.torso.To = lower_pos
-                            skeleton.left_arm.From = upper_pos; skeleton.left_arm.To = larm_pos
-                            skeleton.right_arm.From = upper_pos; skeleton.right_arm.To = rarm_pos
-                            skeleton.left_leg.From = lower_pos; skeleton.left_leg.To = lleg_pos
-                            skeleton.right_leg.From = lower_pos; skeleton.right_leg.To = rleg_pos
-                            for _, line in pairs(skeleton) do line.Visible = true end
-                        else
-                            for _, line in pairs(skeleton) do line.Visible = false end
-                        end
-                    elseif getgenv().cyberline_skeleton[player] then
-                        for _, line in pairs(getgenv().cyberline_skeleton[player]) do
-                            line.Visible = false
-                        end
-                    end
-                end
-            end)
-        else
-            if getgenv().skeletonConnection then
-                getgenv().skeletonConnection:Disconnect()
-            end
-            if getgenv().cyberline_skeleton then
-                for _, parts in pairs(getgenv().cyberline_skeleton) do
-                    for _, line in pairs(parts) do
-                        pcall(function() line:Remove() end)
-                    end
-                end
-                getgenv().cyberline_skeleton = nil
-            end
-        end
-    end
-})
-RenderESP:AddToggle("BoxESP", {
-    Text = "方框绘制",
-    Default = false,
-    Callback = function(v)
-        if v then
-            local players = game:GetService("Players")
-            local run_service = game:GetService("RunService")
-            local local_player = players.LocalPlayer
-            local camera = workspace.CurrentCamera
-            if getgenv().cyberline_esp_boxes then
-                for _, data in pairs(getgenv().cyberline_esp_boxes) do
-                    pcall(function() data.box:Remove() end)
-                    pcall(function() data.outline:Remove() end)
-                end
-            end
-            getgenv().cyberline_esp_boxes = {}
-            local function create_box()
-                local outline = Drawing.new("Square")
-                outline.Color = Color3.new(0, 0, 0)
-                outline.Thickness = 1
-                outline.Filled = false
-                outline.Transparency = 1
-                outline.Visible = false
-                local box = Drawing.new("Square")
-                box.Color = Color3.fromRGB(255, 255, 255)
-                box.Thickness = 1
-                box.Filled = false
-                box.Transparency = 1
-                box.Visible = false
-                return { box = box, outline = outline }
-            end
-            local function get_bounds(character)
-                local min = Vector3.new(math.huge, math.huge, math.huge)
-                local max = Vector3.new(-math.huge, -math.huge, -math.huge)
-                for _, part in character:GetChildren() do
-                    if part:IsA("BasePart") then
-                        local pos = part.Position
-                        min = Vector3.new(math.min(min.X, pos.X), math.min(min.Y, pos.Y), math.min(min.Z, pos.Z))
-                        max = Vector3.new(math.max(max.X, pos.X), math.max(max.Y, pos.Y), math.max(max.Z, pos.Z))
-                    end
-                end
-                return min, max
-            end
-            getgenv().boxESPConnection = run_service.RenderStepped:Connect(function()
-                for _, player in ipairs(players:GetPlayers()) do
-                    if player ~= local_player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                        local min, max = get_bounds(player.Character)
-                        local points = {
-                            Vector3.new(min.X, min.Y, min.Z), Vector3.new(min.X, max.Y, min.Z),
-                            Vector3.new(max.X, min.Y, min.Z), Vector3.new(max.X, max.Y, min.Z),
-                            Vector3.new(min.X, min.Y, max.Z), Vector3.new(min.X, max.Y, max.Z),
-                            Vector3.new(max.X, min.Y, max.Z), Vector3.new(max.X, max.Y, max.Z),
-                        }
-                        local min2d = Vector2.new(math.huge, math.huge)
-                        local max2d = Vector2.new(-math.huge, -math.huge)
-                        local visible = false
-                        for _, point in ipairs(points) do
-                            local screen, on_screen = camera:WorldToViewportPoint(point)
-                            if on_screen then
-                                visible = true
-                                local pos2d = Vector2.new(screen.X, screen.Y)
-                                min2d = Vector2.new(math.min(min2d.X, pos2d.X), math.min(min2d.Y, pos2d.Y))
-                                max2d = Vector2.new(math.max(max2d.X, pos2d.X), math.max(max2d.Y, pos2d.Y))
-                            end
-                        end
-                        if not getgenv().cyberline_esp_boxes[player] then
-                            getgenv().cyberline_esp_boxes[player] = create_box()
-                        end
-                        local box = getgenv().cyberline_esp_boxes[player].box
-                        local outline = getgenv().cyberline_esp_boxes[player].outline
-                        if visible then
-                            local size = max2d - min2d
-                            box.Position = min2d
-                            box.Size = size
-                            box.Visible = true
-                            outline.Position = min2d - Vector2.new(1, 1)
-                            outline.Size = size + Vector2.new(2, 2)
-                            outline.Visible = true
-                        else
-                            box.Visible = false
-                            outline.Visible = false
-                        end
-                    elseif getgenv().cyberline_esp_boxes[player] then
-                        getgenv().cyberline_esp_boxes[player].box.Visible = false
-                        getgenv().cyberline_esp_boxes[player].outline.Visible = false
-                    end
-                end
-            end)
-        else
-            if getgenv().boxESPConnection then
-                getgenv().boxESPConnection:Disconnect()
-            end
-            if getgenv().cyberline_esp_boxes then
-                for _, data in pairs(getgenv().cyberline_esp_boxes) do
-                    pcall(function() data.box:Remove() end)
-                    pcall(function() data.outline:Remove() end)
-                end
-                getgenv().cyberline_esp_boxes = nil
-            end
-        end
-    end
-})
+
+local SettingsGroup = Tabs.Settings:AddLeftGroupbox("菜单")
+
+SettingsGroup:AddButton({ Text = '卸载脚本', Func = function()
+    if autoFixConn then autoFixConn:Disconnect() end
+    if autoFixTPConn then autoFixTPConn:Disconnect() end
+    if blockConn then blockConn:Disconnect() end
+    if autoItemConn then autoItemConn:Disconnect() end
+    if autoPizzaConn then autoPizzaConn:Disconnect() end
+    if staminaConn then staminaConn:Disconnect() end
+    if killerAddedConn then killerAddedConn:Disconnect() end
+    if survivorAddedConn then survivorAddedConn:Disconnect() end
+    if genAddedConn then genAddedConn:Disconnect() end
+    clearKillerESP()
+    clearSurvivorESP()
+    clearGeneratorESP()
+    clearItemESP()
+    Library:Unload()
+end })
+
+SettingsGroup:AddLabel('菜单快捷键'):AddKeyPicker('MenuKeybind', { Default = 'RightShift', NoUI = true, Text = 'Menu keybind' })
+Library.ToggleKeybind = Options.MenuKeybind
+
+if ThemeManager then
+    ThemeManager:SetLibrary(Library)
+    ThemeManager:SetFolder("MyScriptTheme")
+    ThemeManager:ApplyToTab(Tabs.Settings)
+end
+
+if SaveManager then
+    SaveManager:SetLibrary(Library)
+    SaveManager:IgnoreThemeSettings()
+    SaveManager:SetFolder("MyScriptConfig")
+    SaveManager:BuildConfigSection(Tabs.Settings)
+end
