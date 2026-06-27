@@ -32,8 +32,8 @@ Library.BackgroundColor = Color3.fromRGB(20, 20, 20)
 Library.OutlineColor = Color3.fromRGB(40, 40, 40)
 
 local Window = Library:CreateWindow({
-    Title = "被遗弃",
-    Footer = "By 恐拜大帝",
+    Title = "被遗弃脚本",
+    Footer = "创作者：恐拜大帝",
     Icon = 131153193945220,
     NotifySide = "Right",
     ShowCustomCursor = true,
@@ -48,7 +48,7 @@ local Tabs = {
     Settings = Window:AddTab("设置", "settings"),
 }
 
-local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者消息")
+local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者")
 NoticeGroup:AddLabel('恐拜大帝将持续更新此脚本')
 NoticeGroup:AddLabel('创作者：恐拜大帝')
 
