@@ -44,10 +44,10 @@ task.spawn(function()
     end
 end)
 
-local function fireDataChange(obj)
+local function fireDataChange(obj, amount)
     pcall(function()
         game:GetService("ReplicatedStorage").CurRemotes.DataChange_Points:FireServer("ClickPoints", {
-            Points = 1,
+            Points = amount or 1,
             Obj = obj
         })
     end)
@@ -61,15 +61,91 @@ local autoRebirth = false
 local autoSwing = false
 local antiAfkEnabled = false
 
+local customHealthTarget = ""
+local customHealthAmount = ""
+local customDamageTarget = ""
+local customDamageAmount = ""
+local customCriticalTarget = ""
+local customCriticalAmount = ""
+local customSpeedTarget = ""
+local customSpeedAmount = ""
+
+local autoAddSpeed = 0.5
+
 local lastAntiAfkTime = 0
-local antiAfkInterval = 1200
+local antiAfkInterval = 1140
+
+local customHealthCurrent = 0
+local customDamageCurrent = 0
+local customCriticalCurrent = 0
+local customSpeedCurrent = 0
 
 task.spawn(function()
     while true do
-        if autoHealth then fireDataChange("GHealth") end
-        if autoDamage then fireDataChange("GDamage") end
-        if autoCritical then fireDataChange("GCriticalHit") end
-        if autoSpeed then fireDataChange("GSpeed") end
+        if autoHealth then 
+            if customHealthTarget ~= "" and customHealthAmount ~= "" then
+                local target = tonumber(customHealthTarget)
+                local amount = tonumber(customHealthAmount)
+                if target and amount and customHealthCurrent < target then
+                    fireDataChange("GHealth", amount)
+                    customHealthCurrent = customHealthCurrent + amount
+                    if customHealthCurrent >= target then
+                        autoHealth = false
+                        Notify("生命值已达到目标值: " .. tostring(target))
+                    end
+                end
+            else
+                fireDataChange("GHealth", 1)
+            end
+        end
+        if autoDamage then 
+            if customDamageTarget ~= "" and customDamageAmount ~= "" then
+                local target = tonumber(customDamageTarget)
+                local amount = tonumber(customDamageAmount)
+                if target and amount and customDamageCurrent < target then
+                    fireDataChange("GDamage", amount)
+                    customDamageCurrent = customDamageCurrent + amount
+                    if customDamageCurrent >= target then
+                        autoDamage = false
+                        Notify("攻击力已达到目标值: " .. tostring(target))
+                    end
+                end
+            else
+                fireDataChange("GDamage", 1)
+            end
+        end
+        if autoCritical then 
+            if customCriticalTarget ~= "" and customCriticalAmount ~= "" then
+                local target = tonumber(customCriticalTarget)
+                local amount = tonumber(customCriticalAmount)
+                if target and amount and customCriticalCurrent < target then
+                    fireDataChange("GCriticalHit", amount)
+                    customCriticalCurrent = customCriticalCurrent + amount
+                    if customCriticalCurrent >= target then
+                        autoCritical = false
+                        Notify("暴击已达到目标值: " .. tostring(target))
+                    end
+                end
+            else
+                fireDataChange("GCriticalHit", 1)
+            end
+        end
+        if autoSpeed then 
+            if customSpeedTarget ~= "" and customSpeedAmount ~= "" then
+                local target = tonumber(customSpeedTarget)
+                local amount = tonumber(customSpeedAmount)
+                if target and amount and customSpeedCurrent < target then
+                    fireDataChange("GSpeed", amount)
+                    customSpeedCurrent = customSpeedCurrent + amount
+                    if customSpeedCurrent >= target then
+                        autoSpeed = false
+                        Notify("移速已达到目标值: " .. tostring(target))
+                    end
+                end
+            else
+                fireDataChange("GSpeed", 1)
+            end
+        end
         if autoRebirth then
             pcall(function()
                 game:GetService("ReplicatedStorage").CurRemotes.DataChange_Rebirth:FireServer("rebirth")
@@ -93,9 +169,10 @@ task.spawn(function()
                 if pet and pet:FindFirstChild("petFol") and pet.petFol:FindFirstChild("A5") then
                     remotes.PetEvent:FireServer("Blood_", pet.petFol.A5)
                 end
+                remotes.MonsterEvent:FireServer("Pslash_")
             end)
         end
-        task.wait(0.5)
+        task.wait(autoAddSpeed)
     end
 end)
 
@@ -557,7 +634,7 @@ local function CreateTeleportToggleButton()
     teleportToggleBtn.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
     teleportToggleBtn.Size = UDim2.new(0, 140, 0, 50)
     teleportToggleBtn.Position = UDim2.new(0.85, 0, 0.5, 0)
-    teleportToggleBtn.Text = "传送菜单"
+    teleportToggleBtn.Text = "传送到指定的地图"
     teleportToggleBtn.TextColor3 = Color3.new(1,1,1)
     teleportToggleBtn.TextSize = 18
     teleportToggleBtn.Font = Enum.Font.ArialBold
@@ -677,12 +754,50 @@ LeftGroup:AddToggle("AutoRebirth", {
     end
 })
 
+LeftGroup:AddSlider("AutoAddSpeed", {
+    Text = "自动增加速度 (秒)",
+    Default = 0.5,
+    Min = 0.1,
+    Max = 5,
+    Rounding = 1,
+    Suffix = " 秒",
+    Callback = function(val)
+        autoAddSpeed = val
+    end
+})
+
 local RightGroup = Tabs.Main:AddRightGroupbox("属性自动化")
+
 RightGroup:AddToggle("AutoHealth", {
     Text = "自动生命",
     Default = false,
     Callback = function(v)
         autoHealth = v
+        if v then
+            customHealthCurrent = 0
+        end
+    end
+})
+
+RightGroup:AddInput("HealthTarget", {
+    Text = "生命目标值 (留空=默认+1)",
+    Default = "",
+    Numeric = true,
+    Finished = true,
+    Placeholder = "输入目标值...",
+    Callback = function(val)
+        customHealthTarget = val
+    end
+})
+
+RightGroup:AddInput("HealthAmount", {
+    Text = "生命每次增加值 (留空=默认+1)",
+    Default = "",
+    Numeric = true,
+    Finished = true,
+    Placeholder = "输入每次增加量...",
+    Callback = function(val)
+        customHealthAmount = val
     end
 })
 
@@ -691,6 +806,31 @@ RightGroup:AddToggle("AutoDamage", {
     Default = false,
     Callback = function(v)
         autoDamage = v
+        if v then
+            customDamageCurrent = 0
+        end
+    end
+})
+
+RightGroup:AddInput("DamageTarget", {
+    Text = "攻击目标值 (留空=默认+1)",
+    Default = "",
+    Numeric = true,
+    Finished = true,
+    Placeholder = "输入目标值...",
+    Callback = function(val)
+        customDamageTarget = val
+    end
+})
+
+RightGroup:AddInput("DamageAmount", {
+    Text = "攻击每次增加值 (留空=默认+1)",
+    Default = "",
+    Numeric = true,
+    Finished = true,
+    Placeholder = "输入每次增加量...",
+    Callback = function(val)
+        customDamageAmount = val
     end
 })
 
@@ -699,6 +839,31 @@ RightGroup:AddToggle("AutoCritical", {
     Default = false,
     Callback = function(v)
         autoCritical = v
+        if v then
+            customCriticalCurrent = 0
+        end
+    end
+})
+
+RightGroup:AddInput("CriticalTarget", {
+    Text = "暴击目标值 (留空=默认+1)",
+    Default = "",
+    Numeric = true,
+    Finished = true,
+    Placeholder = "输入目标值...",
+    Callback = function(val)
+        customCriticalTarget = val
+    end
+})
+
+RightGroup:AddInput("CriticalAmount", {
+    Text = "暴击每次增加值 (留空=默认+1)",
+    Default = "",
+    Numeric = true,
+    Finished = true,
+    Placeholder = "输入每次增加量...",
+    Callback = function(val)
+        customCriticalAmount = val
     end
 })
 
@@ -707,11 +872,36 @@ RightGroup:AddToggle("AutoSpeed", {
     Default = false,
     Callback = function(v)
         autoSpeed = v
+        if v then
+            customSpeedCurrent = 0
+        end
+    end
+})
+
+RightGroup:AddInput("SpeedTarget", {
+    Text = "移速目标值 (留空=默认+1)",
+    Default = "",
+    Numeric = true,
+    Finished = true,
+    Placeholder = "输入目标值...",
+    Callback = function(val)
+        customSpeedTarget = val
+    end
+})
+
+RightGroup:AddInput("SpeedAmount", {
+    Text = "移速每次增加值 (留空=默认+1)",
+    Default = "",
+    Numeric = true,
+    Finished = true,
+    Placeholder = "输入每次增加量...",
+    Callback = function(val)
+        customSpeedAmount = val
     end
 })
 
 RightGroup:AddToggle("AntiAfk", {
-    Text = "防挂机 (20分钟)",
+    Text = "防挂机 (19分钟)",
     Default = false,
     Callback = function(v)
         antiAfkEnabled = v
@@ -728,6 +918,10 @@ RightGroup:AddButton({
         autoDamage = true
         autoCritical = true
         autoSpeed = true
+        customHealthCurrent = 0
+        customDamageCurrent = 0
+        customCriticalCurrent = 0
+        customSpeedCurrent = 0
         Notify("所有功能已启动")
     end,
     DoubleClick = false
