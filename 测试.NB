@@ -1276,14 +1276,18 @@ table.insert(savedServers, {id = sid, name = name or sid})
 saveServers()
 end
 local function removeServerId(id)
-if not id then return false end
+if not id then return end
 local sid = tostring(id)
 local newList = {}
 for _, entry in ipairs(savedServers) do
 if entry.id ~= sid then table.insert(newList, entry) end
 end
 savedServers = newList
-saveServers()
+task.spawn(function()
+pcall(function()
+writefile(serversFile, HttpService:JSONEncode(savedServers))
+end)
+end)
 return true
 end
 local function renameServerId(id, newName)
@@ -1502,7 +1506,14 @@ page3:AddCoordPanel({
 Text = "实时坐标", Title = "实时坐标",
 GetPosition = function()
 local char = LocalPlayer.Character
-if char and char:
+if char and char:FindFirstChild("HumanoidRootPart") then return char.HumanoidRootPart.Position end
+return nil
+end,
+OnTeleport = function(x, y, z)
+local char = LocalPlayer.Character
+if char and char:FindFirstChild("HumanoidRootPart") then
+char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送成功", Text = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3})
 else
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = "角色未加载", Duration = 3})
 end
