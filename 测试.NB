@@ -1276,25 +1276,25 @@ table.insert(savedServers, {id = sid, name = name or sid})
 saveServers()
 end
 local function removeServerId(id)
-if not id then return end
+if not id then return false end
 local sid = tostring(id)
 local newList = {}
 for _, entry in ipairs(savedServers) do
 if entry.id ~= sid then table.insert(newList, entry) end
 end
 savedServers = newList
-task.spawn(function()
-pcall(function()
-writefile(serversFile, HttpService:JSONEncode(savedServers))
-end)
-end)
+saveServers()
 return true
 end
 local function renameServerId(id, newName)
 if not newName or newName == "" then return false end
 local sid = tostring(id)
 for _, entry in ipairs(savedServers) do
-if entry.id == sid then entry.name = newName saveServers() return true end
+if entry.id == sid then
+entry.name = newName
+saveServers()
+return true
+end
 end
 return false
 end
@@ -1502,14 +1502,7 @@ page3:AddCoordPanel({
 Text = "实时坐标", Title = "实时坐标",
 GetPosition = function()
 local char = LocalPlayer.Character
-if char and char:FindFirstChild("HumanoidRootPart") then return char.HumanoidRootPart.Position end
-return nil
-end,
-OnTeleport = function(x, y, z)
-local char = LocalPlayer.Character
-if char and char:FindFirstChild("HumanoidRootPart") then
-char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送成功", Text = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3})
+if char and char:
 else
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = "角色未加载", Duration = 3})
 end
@@ -1647,6 +1640,97 @@ removeServerId(id)
 return true
 end
 })
+page4:AddButton({ Text = "数字ID传送", Callback = function()
+local placeGui = Instance.new("ScreenGui")
+placeGui.Name = "PlaceIdTeleportGui"
+placeGui.Parent = LocalPlayer.PlayerGui
+placeGui.IgnoreGuiInset = true
+placeGui.ResetOnSpawn = false
+local bg = Instance.new("Frame")
+bg.Parent = placeGui
+bg.Size = UDim2.new(0, 320, 0, 200)
+bg.Position = UDim2.new(0.5, -160, 0.5, -100)
+bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+bg.BorderSizePixel = 0
+Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 12)
+local title = Instance.new("TextLabel")
+title.Parent = bg
+title.Size = UDim2.new(1, 0, 0, 35)
+title.Position = UDim2.new(0, 0, 0, 5)
+title.BackgroundTransparency = 1
+title.Text = "数字ID传送 (PlaceId)"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+local descLabel = Instance.new("TextLabel")
+descLabel.Parent = bg
+descLabel.Size = UDim2.new(1, -20, 0, 20)
+descLabel.Position = UDim2.new(0, 10, 0, 40)
+descLabel.BackgroundTransparency = 1
+descLabel.Text = "输入游戏数字ID，传送到对应游戏"
+descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+descLabel.Font = Enum.Font.SourceSans
+descLabel.TextSize = 13
+descLabel.TextXAlignment = Enum.TextXAlignment.Left
+local inputBox = Instance.new("TextBox")
+inputBox.Parent = bg
+inputBox.Size = UDim2.new(1, -20, 0, 35)
+inputBox.Position = UDim2.new(0, 10, 0, 65)
+inputBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+inputBox.PlaceholderText = "例如: 286090429 (兵工厂)"
+inputBox.Text = ""
+inputBox.TextColor3 = Color3.new(1, 1, 1)
+inputBox.Font = Enum.Font.SourceSans
+inputBox.TextSize = 16
+Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0, 6)
+local teleportBtn = Instance.new("TextButton")
+teleportBtn.Parent = bg
+teleportBtn.Size = UDim2.new(0.45, 0, 0, 35)
+teleportBtn.Position = UDim2.new(0.05, 0, 0, 110)
+teleportBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+teleportBtn.Text = "传送"
+teleportBtn.TextColor3 = Color3.new(1, 1, 1)
+teleportBtn.Font = Enum.Font.SourceSansBold
+teleportBtn.TextSize = 16
+Instance.new("UICorner", teleportBtn).CornerRadius = UDim.new(0, 6)
+teleportBtn.MouseButton1Click:Connect(function()
+local placeId = tonumber(inputBox.Text)
+if not placeId then
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = "请输入有效的数字ID", Duration = 3})
+return
+end
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "数字ID传送", Text = "正在传送到 PlaceId: " .. tostring(placeId) .. " ...", Duration = 5})
+pcall(function()
+game:GetService("TeleportService"):Teleport(placeId, LocalPlayer)
+end)
+placeGui:Destroy()
+end)
+local copyCurrentBtn = Instance.new("TextButton")
+copyCurrentBtn.Parent = bg
+copyCurrentBtn.Size = UDim2.new(0.45, 0, 0, 35)
+copyCurrentBtn.Position = UDim2.new(0.5, 0, 0, 110)
+copyCurrentBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+copyCurrentBtn.Text = "复制当前ID"
+copyCurrentBtn.TextColor3 = Color3.new(1, 1, 1)
+copyCurrentBtn.Font = Enum.Font.SourceSansBold
+copyCurrentBtn.TextSize = 16
+Instance.new("UICorner", copyCurrentBtn).CornerRadius = UDim.new(0, 6)
+copyCurrentBtn.MouseButton1Click:Connect(function()
+pcall(function() setclipboard(tostring(game.PlaceId)) end)
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "数字ID", Text = "已复制当前PlaceId: " .. tostring(game.PlaceId), Duration = 3})
+end)
+local closeBtn = Instance.new("TextButton")
+closeBtn.Parent = bg
+closeBtn.Size = UDim2.new(0.9, 0, 0, 30)
+closeBtn.Position = UDim2.new(0.05, 0, 0, 155)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.Text = "关闭"
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.TextSize = 16
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+closeBtn.MouseButton1Click:Connect(function() placeGui:Destroy() end)
+end })
 page4:AddButton({ Text = "自定义踢出", Callback = function()
 local kickGui = Instance.new("ScreenGui")
 kickGui.Name = "CustomKickGui"
