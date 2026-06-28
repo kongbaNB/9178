@@ -1443,6 +1443,9 @@ createCopyButton(page1.frame, "群1", "1106203175", 10, startY + 45)
 createCopyButton(page1.frame, "群2", "1001577641", 10, startY + 90)
 page1:UpdateCanvas()
 local page2 = window:AddPage("主要")
+
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/-/refs/heads/main/祖国人汉化"))() end)
+end })
 page2:AddToggle({ Text = "透视", Default = false, Callback = function(state)
 espEnabled = state
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "透视", Text = state and "已打开" or "已关闭", Duration = 3})
@@ -1514,7 +1517,11 @@ page2:AddButton({ Text = "甩飞最近的人", Callback = function()
 local nearest = nil
 local minDist = math.huge
 local myPos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position
-if not myPos then game:GetService("StarterGui"):SetCore("SendNotification", {Title = "甩飞", Text = "你的角色未加载", Duration = 3}) return end
+if not myPos then game:GetService("StarterGui"):SetCore("SendNotification", {Title = "甩飞", Text = "你的角色未加载", Duration = 3})
+page2:AddButton({ Text = "祖国人汉化", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "祖国人汉化", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/-/refs/heads/main/祖国人汉化"))() end)
+end }) return end
 for _, p in ipairs(Players:GetPlayers()) do
 if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
 local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
@@ -1657,7 +1664,7 @@ task.spawn(function() loadstring(game:HttpGet("https://pastebin.com/raw/0zKLyd4W
 end })
 page4:AddButton({ Text = "美化包排行榜第一", Callback = function()
 beautifyStats()
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "美化包", Text = "数值已修改为999（若游戏支持）", Duration = 3})
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "美化包", Text = "数值已修改为999999999（若游戏支持）", Duration = 3})
 end })
 page4:AddToggle({ Text = "准星", Default = false, Callback = function(state)
 CrosshairEnabled = state
