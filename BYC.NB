@@ -1,13 +1,12 @@
-local repo = 'https://raw.githubusercontent.com/deividcomsono/Obsidian/main/'
 local function safeLoad(url)
     local success, result = pcall(function() return loadstring(game:HttpGet(url))() end)
     if not success then warn("加载失败: " .. url) return nil end
     return result
 end
 
-local Library = safeLoad(repo .. 'Library.lua')
-local ThemeManager = safeLoad(repo .. 'addons/ThemeManager.lua')
-local SaveManager = safeLoad(repo .. 'addons/SaveManager.lua')
+local Library = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/黑曜石主库.ui")
+local ThemeManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/主题管理.ui")
+local SaveManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/配置管理.ui")
 
 if not Library then
     game:GetService("StarterGui"):SetCore("SendNotification", {
