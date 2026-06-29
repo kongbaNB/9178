@@ -1768,7 +1768,7 @@ StarterGui:SetCore("SendNotification",{
 
 local Window = Library:CreateWindow({
 	Title = "亡命速递脚本",
-	Footer = "By 恐拜大帝 | QQ:3999698324",
+	Footer = "恐拜大帝 制作",
 	Icon = 131153193945220,
 	NotifySide = "Right",
 	ShowCustomCursor = true,
@@ -1781,7 +1781,7 @@ local Tabs = {
 	Settings = Window:AddTab("设置","settings"),
 }
 
-local NotifyGroup = Tabs.Notification:AddLeftGroupbox("作者信息")
+local NotifyGroup = Tabs.Notification:AddLeftGroupbox("作者通知")
 NotifyGroup:AddLabel("恐拜大帝 持续更新此脚本")
 NotifyGroup:AddLabel("QQ：3999698324", true)
 
