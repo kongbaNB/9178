@@ -1,7 +1,5 @@
 game:GetService("StarterGui"):SetCore("SendNotification",{ Title = "巨剑骑士脚本", Text = "创作者：恐拜大帝", Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150" })
 
-local repo = 'https://raw.githubusercontent.com/KingScriptAE/No-sirve-nada./refs/heads/main/'
-
 local function safeLoad(url)
     local success, result = pcall(function()
         return loadstring(game:HttpGet(url))()
@@ -13,9 +11,9 @@ local function safeLoad(url)
     return result
 end
 
-local Library = safeLoad(repo .. 'Library.lua')
-local ThemeManager = safeLoad(repo .. 'addons/ThemeManager.lua')
-local SaveManager = safeLoad(repo .. 'addons/SaveManager.lua')
+local Library = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/黑曜石主库.ui")
+local ThemeManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/主题管理.ui")
+local SaveManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/配置管理.ui")
 
 if not Library then
     game:GetService("StarterGui"):SetCore("SendNotification",{
