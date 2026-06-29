@@ -1840,19 +1840,19 @@ MainLeft:AddToggle("AnySell",{ Text="随处出售", Default=false, Callback=func
 		Notify("随处出售已关闭")
 	end
 end})
-MainLeft:AddToggle("Invincible",{ Text="无敌（多人无法使用）", Default=false, Callback=function(v)
+MainLeft:AddToggle("Invincible",{ Text="无敌", Default=false, Callback=function(v)
 	invincibleEnabled = v
 	if v then
 		enableInvincible()
 		if invincibleConnection then invincibleConnection:Disconnect() end
 		invincibleConnection = LocalPlayer.CharacterAdded:Connect(onCharacterAddedForInvincible)
-		Notify("无敌（多人无法使用）已开启")
+		Notify("无敌已开启")
 	else
 		if invincibleConnection then
 			invincibleConnection:Disconnect()
 			invincibleConnection = nil
 		end
-		Notify("无敌（多人无法使用）已关闭")
+		Notify("无敌已关闭")
 	end
 end})
 MainLeft:AddButton({ Text="一键开启所有容器", Func=function()
