@@ -1,4 +1,4 @@
-game:GetService("StarterGui"):SetCore("SendNotification", { Title = "破坏者谜团2脚本", Text = "创作者：恐拜大帝\nQQ: 3999698324", Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150" }) local repo = 'https://raw.githubusercontent.com/KingScriptAE/No-sirve-nada./refs/heads/main/' local function safeLoad(url) local success, result = pcall(function() return loadstring(game:HttpGet(url))() end) if not success then warn("加载失败: " .. url) return nil end return result end local Library = safeLoad(repo .. 'Library.lua') local ThemeManager = safeLoad(repo .. 'addons/ThemeManager.lua') local SaveManager = safeLoad(repo .. 'addons/SaveManager.lua') if not Library then game:GetService("StarterGui"):SetCore("SendNotification", { Title = "错误", Text = "UI 库加载失败，请检查网络或脚本资源", Duration = 5, }) return end
+game:GetService("StarterGui"):SetCore("SendNotification", { Title = "破坏者谜团2脚本", Text = "创作者：恐拜大帝\nQQ: 3999698324", Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150" }) local function safeLoad(url) local success, result = pcall(function() return loadstring(game:HttpGet(url))() end) if not success then warn("加载失败: " .. url) return nil end return result end local Library = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/黑曜石主库.ui") local ThemeManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/主题管理.ui") local SaveManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/配置管理.ui") if not Library then game:GetService("StarterGui"):SetCore("SendNotification", { Title = "错误", Text = "UI 库加载失败，请检查网络或脚本资源", Duration = 5, }) return end
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -516,7 +516,7 @@ MainLeft:AddButton({ Text = '发送身份到聊天', Func = function()
     Notify("已发送")
 end })
 MainLeft:AddButton({ Text = '传送到掉落的枪', Func = teleportToGunDrop })
-MainRight:AddButton({ Text = '追星（锁定杀手视角）', Func = function() if trackLoop then StopTracking() else StartTracking("杀手") end end })
+MainRight:AddButton({ Text = '自瞄（锁定杀手视角）', Func = function() if trackLoop then StopTracking() else StartTracking("杀手") end end })
 MainRight:AddButton({ Text = '自瞄（锁定警长视角）', Func = function() if trackLoop then StopTracking() else StartTracking("警长") end end })
 local TeleLeft = Tabs.Teleport:AddLeftGroupbox("瞬间传送")
 local TeleRight = Tabs.Teleport:AddRightGroupbox("跟随与出生点")
