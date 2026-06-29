@@ -14,14 +14,15 @@ local function Notify(msg, dur)
     else game:GetService("StarterGui"):SetCore("SendNotification", {Title="", Text=msg, Duration=dur}) end
 end
 
-local repo = 'https://raw.githubusercontent.com/KingScriptAE/No-sirve-nada./refs/heads/main/'
 local function safeLoad(url)
     local s, r = pcall(function() return loadstring(game:HttpGet(url))() end)
     if not s then return nil end
     return r
 end
 
-local Library, ThemeManager, SaveManager = safeLoad(repo..'Library.lua'), safeLoad(repo..'addons/ThemeManager.lua'), safeLoad(repo..'addons/SaveManager.lua')
+local Library = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/黑曜石主库.ui")
+local ThemeManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/主题管理.ui")
+local SaveManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/配置管理.ui")
 
 -- 全局变量
 local desiredWalkSpeed = 16
