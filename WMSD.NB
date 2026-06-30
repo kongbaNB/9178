@@ -1767,7 +1767,7 @@ StarterGui:SetCore("SendNotification",{
 })
 
 local Window = Library:CreateWindow({
-	Title = "亡命速递脚本",
+	Title = "亡命速递",
 	Footer = "恐拜大帝 制作",
 	Icon = 131153193945220,
 	NotifySide = "Right",
