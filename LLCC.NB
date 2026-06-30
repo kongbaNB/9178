@@ -23,7 +23,7 @@ local LP = Players.LocalPlayer
 local Camera = WS.CurrentCamera
 
 local Window = Library:CreateWindow({
-    Title = "力量传奇”",
+    Title = "力量传奇",
     Footer = "持续更新中",
     Icon = 131153193945220,
     NotifySide = "Right",
