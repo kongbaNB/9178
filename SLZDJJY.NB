@@ -55,6 +55,8 @@ local SpeedValue = 16
 local NoclipEnabled = false
 local FlySpeed = 1
 local IgnoreMobs = false
+local godModeSpamActive = false
+
 
 local PullConfig = {
     Enabled = false,
@@ -877,8 +879,8 @@ CombatGroup1:AddButton({Text = '显示当前武器', Func = function()
     Library:Notify("当前武器: " .. (tool and tool.Name or "无"), 3)
 end})
 -- 修改：无限血量 -> 无敌（会死）
-CombatGroup1:AddToggle('GodMode', {Text = '无敌（会死）', Default = false, Callback = function(v) GodMode = v end})
-CombatGroup1:AddToggle('IgnoreMobs', {Text = '被怪物无视', Default = false, Callback = function(v) IgnoreMobs = v end})
+CombatGroup1:AddToggle('GodMode', {Text = '无敌（开了死）', Default = false, Callback = function(v) GodMode = v end})
+CombatGroup1:AddToggle('IgnoreMobs', {Text = '上帝模式（不会死）', Default = false, Callback = function(v) IgnoreMobs = v; godModeSpamActive = v end})
 
 local CombatGroup2 = Tabs.Combat:AddRightGroupbox("碰撞盒")
 CombatGroup2:AddToggle('CollisionShow', {Text = '显示碰撞盒', Default = false, Callback = function(v) CollisionBox.Show = v end})
@@ -1312,6 +1314,29 @@ task.spawn(function()
     task.wait(2)
     local _, names = getChildrenList()
     childDropdown:SetValues(names)
+end)
+
+-- 上帝模式附加：DamagePlayer + AnalyticsTimeFirstPerson 循环
+task.spawn(function()
+    while true do
+        if godModeSpamActive then
+            pcall(function()
+                ReplicatedStorage.RemoteEvents.DamagePlayer:FireServer(0/0)
+            end)
+        end
+        task.wait(0.1)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if godModeSpamActive then
+            pcall(function()
+                ReplicatedStorage.RemoteEvents.AnalyticsTimeFirstPerson:FireServer(0, 60)
+            end)
+        end
+        task.wait(1)
+    end
 end)
 
 Library:Notify("已加载", 5)
