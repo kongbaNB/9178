@@ -120,8 +120,8 @@ RunService.RenderStepped:Connect(function(dt)
 end)
 
 local Window = Library:CreateWindow({
-    Title = "速度键盘逃脱脚本",
-    Footer = "By 恐拜大帝",
+    Title = "速度键盘逃脱",
+    Footer = "恐拜大帝 制作",
     Icon = 131153193945220,
     NotifySide = "Right",
     ShowCustomCursor = true,
@@ -227,7 +227,7 @@ PlayerGroup:AddSlider('AutoFarmSpeedSlider', {
 local GameGroup = Tabs.Main:AddRightGroupbox("游戏修改")
 
 GameGroup:AddToggle('AutoWinToggle', {
-    Text = '自动刷胜利',
+    Text = '自动刷胜利（被检测了不要用）',
     Default = false,
     Tooltip = '锁定在胜利坐标，偏离后自动传送回去',
     Callback = function(Value)
