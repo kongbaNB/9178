@@ -23,7 +23,7 @@ if not Library then
 end
 
 local Window = Library:CreateWindow({
-    Title = "变身躲猫猫脚本",
+    Title = "变身躲猫猫",
     Footer = "恐拜大帝 制作",
     Icon = 131153193945220,
     NotifySide = "Right",
