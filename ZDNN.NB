@@ -190,8 +190,8 @@ local function cleanup()
 end
 
 local Window = Library:CreateWindow({
-    Title = "找到按钮脚本",
-    Footer = "By 恐拜大帝",
+    Title = "找到按钮",
+    Footer = "恐拜大帝 制作",
     Icon = 131153193945220,
     NotifySide = "Right",
     ShowCustomCursor = true,
