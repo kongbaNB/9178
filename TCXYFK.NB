@@ -277,7 +277,7 @@ local Window = Library:CreateWindow({
     NotifySide = "Right",
     ShowCustomCursor = true,
 })
-Library:Notify("踢出幸运方块脚本 - 创作者：恐拜大帝", 5)
+Library:Notify("踢出幸运方块 - 创作者：恐拜大帝", 5)
 
 local Tabs = {
     Notice = Window:AddTab("通知", "info"),
