@@ -626,8 +626,8 @@ local function autoFarmLoop()
 end
 
 local Window = Library:CreateWindow({
-    Title = "吃吃世界脚本",
-    Footer = "By 恐拜大帝 | QQ:3999698324",
+    Title = "吃吃世界",
+    Footer = "恐拜大帝 制作",
     Icon = 131153193945220,
     NotifySide = "Right",
     ShowCustomCursor = true,
