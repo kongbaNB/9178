@@ -515,8 +515,8 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 local Window = Library:CreateWindow({
-    Title = "在超市生存一周脚本",
-    Footer = "By 恐拜大帝",
+    Title = "在超市生存一周",
+    Footer = "恐拜大帝 制作",
     Icon = 131153193945220,
     NotifySide = "Right",
     ShowCustomCursor = true,
