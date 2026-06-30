@@ -1,4 +1,4 @@
-game:GetService("StarterGui"):SetCore("SendNotification",{ Title = "doors脚本", Text = "作者：恐拜大帝\nQQ：3999698324\n持续更新中，敬请关注", Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150" })
+game:GetService("StarterGui"):SetCore("SendNotification",{ Title = "doors", Text = "作者：恐拜大帝\nQQ：3999698324\n持续更新中", Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150" })
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -759,8 +759,8 @@ local uiCreated = false
 if Library then
     local success, err = pcall(function()
         local Window = Library:CreateWindow({
-            Title = "doors脚本",
-            Footer = "By 恐拜大帝 | QQ:3999698324",
+            Title = "doors",
+            Footer = "恐拜大帝 制作",
             Icon = 131153193945220,
             NotifySide = "Right",
             ShowCustomCursor = true,
