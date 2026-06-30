@@ -286,8 +286,8 @@ local Tabs = {
 }
 
 local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者信息")
-NoticeGroup:AddLabel('踢出幸运方块脚本')
-NoticeGroup:AddLabel('创作者：恐拜大帝')
+NoticeGroup:AddLabel('踢出幸运方块')
+NoticeGroup:AddLabel('恐拜大帝 制作')
 
 local SettingsGroup = Tabs.Settings:AddLeftGroupbox("菜单")
 SettingsGroup:AddButton({
