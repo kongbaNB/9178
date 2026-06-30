@@ -461,7 +461,7 @@ local function loadFlightScript()
     if ok then Notify("飞行脚本已加载") else Notify("飞行脚本加载失败: "..tostring(err)) end
 end
 
-Window = Library:CreateWindow({ Title = "破坏者谜团2脚本", Footer = "By 恐拜大帝 | QQ:3999698324", Icon = 113517588654522, NotifySide = "Right", ShowCustomCursor = true })
+Window = Library:CreateWindow({ Title = "破坏者谜团2", Footer = "By 恐拜大帝 | QQ:3999698324", Icon = 113517588654522, NotifySide = "Right", ShowCustomCursor = true })
 Notify = function(msg) Library:Notify(msg, 3) end
 local Tabs = { Main = Window:AddTab("主要", "info"), Teleport = Window:AddTab("传送与跟随", "map"), Settings = Window:AddTab("设置", "settings") }
 local selectedTexture = "恐脚本"
