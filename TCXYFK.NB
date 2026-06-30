@@ -271,8 +271,8 @@ end
 
 local Options = Library.Options
 local Window = Library:CreateWindow({
-    Title = "踢出幸运方块脚本",
-    Footer = "恐拜大帝制作",
+    Title = "踢出幸运方块",
+    Footer = "恐拜大帝 制作",
     Icon = 131153193945220,
     NotifySide = "Right",
     ShowCustomCursor = true,
