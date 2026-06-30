@@ -75,7 +75,7 @@ end
 
 -- ==================== 窗口 ====================
 local Window = Library:CreateWindow({
-    Title = "墨水游戏脚本",
+    Title = "墨水游戏",
     Footer = "恐拜大帝 制作",
     Icon = 131153193945220,
     NotifySide = "Right",
