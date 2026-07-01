@@ -24,8 +24,12 @@ end
 
 local wmsd = httpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/WMSD.NB")
 if wmsd then
-    local s, e = pcall(function() loadstring(wmsd)() end)
-    if not s then warn("WMSD error: " .. tostring(e)) end
+    local s, e = pcall(function()
+        loadstring(wmsd)()
+    end)
+    if not s then
+        warn("WMSD error: " .. tostring(e))
+    end
 end
 
 local scripts = {
@@ -48,6 +52,7 @@ local scripts = {
     [99567941238278] = "MSYS.NB",
     [125009265613167] = "MSYS.NB",
     [70005410] = "BSDMM.NB",
+    [119822977170203] = "NLBZXYFK.NB",
 }
 
 local currentId = game.PlaceId
@@ -57,8 +62,12 @@ if scriptName then
     local url = "https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/" .. scriptName
     local code = httpGet(url)
     if code then
-        local s, e = pcall(function() loadstring(code)() end)
-        if not s then warn("Script error [" .. scriptName .. "]: " .. tostring(e)) end
+        local s, e = pcall(function()
+            loadstring(code)()
+        end)
+        if not s then
+            warn("Script error [" .. scriptName .. "]: " .. tostring(e))
+        end
     else
         warn("Failed to download: " .. scriptName)
     end
