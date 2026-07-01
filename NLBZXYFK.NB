@@ -121,14 +121,14 @@ local function cultivationLoop()
 end
 
 local Window = Library:CreateWindow({
-    Title = "爆炸幸运方块脚本",
+    Title = "能量爆炸幸运方块",
     Footer = "恐拜大帝 制作",
     Icon = 131153193945220,
     NotifySide = "Right",
     ShowCustomCursor = true,
 })
 
-Library:Notify("爆炸幸运方块脚本 - 创作者：恐拜大帝", 5)
+Library:Notify("爆炸幸运方块 - 创作者：恐拜大帝", 5)
 
 local Tabs = {
     Notice = Window:AddTab("通知", "info"),
