@@ -23,6 +23,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CoreGui = game:GetService("CoreGui")
 local player = Players.LocalPlayer
 
 Library.AccentColor = Color3.fromRGB(0, 170, 255)
@@ -53,6 +54,8 @@ NoticeGroup:AddLabel('创作者：恐拜大帝')
 
 local AutoGroup = Tabs.Main:AddLeftGroupbox("自动功能")
 
+local lastAutoFix = 0
+local lastAutoFixTP = 0
 local autoFixConn = nil
 AutoGroup:AddToggle('AutoFix', {
     Text = '自动修机',
@@ -61,6 +64,8 @@ AutoGroup:AddToggle('AutoFix', {
     Callback = function(Value)
         if Value then
             autoFixConn = RunService.Heartbeat:Connect(function()
+                if tick() - lastAutoFix < 1.2 then return end
+                lastAutoFix = tick()
                 local map = Workspace:FindFirstChild("Map")
                 if not map then return end
                 local ingame = map:FindFirstChild("Ingame")
@@ -91,6 +96,8 @@ AutoGroup:AddToggle('AutoFixTP', {
     Callback = function(Value)
         if Value then
             autoFixTPConn = RunService.Heartbeat:Connect(function()
+                if tick() - lastAutoFixTP < 1.2 then return end
+                lastAutoFixTP = tick()
                 local char = player.Character
                 if not char or not char:FindFirstChild("HumanoidRootPart") then return end
                 local hrp = char.HumanoidRootPart
@@ -262,6 +269,122 @@ BoostGroup:AddToggle('InfiniteStamina', {
             end
         end
     end
+})
+
+
+local jumpFloatGui, jumpFloatBtn, jumpPanel, jumpHeight = nil, nil, nil, 24
+local jumpEnabled = false
+
+local function createJumpFloat()
+	if jumpFloatGui then jumpFloatGui:Destroy() end
+	jumpFloatGui = Instance.new("ScreenGui", CoreGui)
+	jumpFloatGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	jumpFloatBtn = Instance.new("TextButton", jumpFloatGui)
+	jumpFloatBtn.Size = UDim2.new(0,60,0,60)
+	jumpFloatBtn.Position = UDim2.new(1,-80,1,-80)
+	jumpFloatBtn.BackgroundColor3 = Color3.new(0,0.5,1)
+	jumpFloatBtn.Text = "↑"
+	jumpFloatBtn.TextColor3 = Color3.new(1,1,1)
+	jumpFloatBtn.TextSize = 40
+	jumpFloatBtn.Font = Enum.Font.SourceSansBold
+	Instance.new("UICorner", jumpFloatBtn).CornerRadius = UDim.new(1,0)
+	local gearBtn = Instance.new("TextButton", jumpFloatGui)
+	gearBtn.Size = UDim2.new(0,24,0,24)
+	gearBtn.Position = UDim2.new(1,-86,1,-86)
+	gearBtn.BackgroundColor3 = Color3.new(0.2,0.2,0.2)
+	gearBtn.Text = "⚙"
+	gearBtn.TextColor3 = Color3.new(1,1,1)
+	gearBtn.TextSize = 18
+	gearBtn.Font = Enum.Font.SourceSansBold
+	Instance.new("UICorner", gearBtn).CornerRadius = UDim.new(1,0)
+	jumpPanel = Instance.new("Frame", jumpFloatGui)
+	jumpPanel.Size = UDim2.new(0,220,0,140)
+	jumpPanel.Position = UDim2.new(1,-240,1,-160)
+	jumpPanel.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	jumpPanel.Visible = false
+	Instance.new("UICorner", jumpPanel).CornerRadius = UDim.new(0,8)
+	local closeBtn = Instance.new("TextButton", jumpPanel)
+	closeBtn.Size = UDim2.new(0,20,0,20)
+	closeBtn.Position = UDim2.new(1,-25,0,5)
+	closeBtn.BackgroundColor3 = Color3.new(0.8,0.2,0.2)
+	closeBtn.Text = "X"
+	closeBtn.TextColor3 = Color3.new(1,1,1)
+	closeBtn.Font = Enum.Font.SourceSansBold
+	Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(1,0)
+	closeBtn.MouseButton1Click:Connect(function() jumpPanel.Visible = false end)
+	local heightLabel = Instance.new("TextLabel", jumpPanel)
+	heightLabel.Size = UDim2.new(1,-30,0,30)
+	heightLabel.Position = UDim2.new(0,10,0,5)
+	heightLabel.BackgroundTransparency = 1
+	heightLabel.Text = "跳跃高度：" .. jumpHeight
+	heightLabel.TextColor3 = Color3.new(1,1,1)
+	heightLabel.Font = Enum.Font.SourceSansBold
+	local inputBox = Instance.new("TextBox", jumpPanel)
+	inputBox.Size = UDim2.new(0.6,0,0,30)
+	inputBox.Position = UDim2.new(0.2,0,0,50)
+	inputBox.BackgroundColor3 = Color3.new(0.2,0.2,0.2)
+	inputBox.Text = tostring(jumpHeight)
+	inputBox.TextColor3 = Color3.new(1,1,1)
+	inputBox.Font = Enum.Font.SourceSansBold
+	Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0,6)
+	local confirmBtn = Instance.new("TextButton", jumpPanel)
+	confirmBtn.Size = UDim2.new(0.4,0,0,30)
+	confirmBtn.Position = UDim2.new(0.1,0,0,90)
+	confirmBtn.BackgroundColor3 = Color3.new(0,0.6,0)
+	confirmBtn.Text = "确认"
+	confirmBtn.TextColor3 = Color3.new(1,1,1)
+	confirmBtn.Font = Enum.Font.SourceSansBold
+	Instance.new("UICorner", confirmBtn).CornerRadius = UDim.new(0,6)
+	confirmBtn.MouseButton1Click:Connect(function()
+		local num = tonumber(inputBox.Text)
+		if num and num >= 16 and num <= 100 then
+			jumpHeight = num
+			heightLabel.Text = "跳跃高度：" .. jumpHeight
+		end
+	end)
+	local resetBtn = Instance.new("TextButton", jumpPanel)
+	resetBtn.Size = UDim2.new(0.4,0,0,30)
+	resetBtn.Position = UDim2.new(0.5,0,0,90)
+	resetBtn.BackgroundColor3 = Color3.new(0.8,0.4,0)
+	resetBtn.Text = "默认"
+	resetBtn.TextColor3 = Color3.new(1,1,1)
+	resetBtn.Font = Enum.Font.SourceSansBold
+	Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0,6)
+	resetBtn.MouseButton1Click:Connect(function()
+		jumpHeight = 24
+		inputBox.Text = "24"
+		heightLabel.Text = "跳跃高度：" .. jumpHeight
+	end)
+	gearBtn.MouseButton1Click:Connect(function() jumpPanel.Visible = not jumpPanel.Visible end)
+	local function performJump()
+		if not jumpEnabled then return end
+		local char = player.Character
+		if not char then return end
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hrp and hum and hum.Health > 0 and hum.FloorMaterial ~= Enum.Material.Air then
+			hrp.Velocity = Vector3.new(hrp.Velocity.X, jumpHeight, hrp.Velocity.Z)
+		end
+	end
+	jumpFloatBtn.MouseButton1Click:Connect(performJump)
+end
+
+local function destroyJumpFloat()
+	if jumpFloatGui then jumpFloatGui:Destroy() jumpFloatGui = nil jumpPanel = nil jumpFloatBtn = nil end
+end
+
+BoostGroup:AddToggle('JumpToggle', {
+	Text = '显示跳跃按钮',
+	Default = false,
+	Tooltip = '在屏幕右下角显示跳跃按钮',
+	Callback = function(Value)
+		jumpEnabled = Value
+		if Value then
+			if not jumpFloatGui then createJumpFloat() end
+		else
+			destroyJumpFloat()
+		end
+	end
 })
 
 local ESPGroup = Tabs.ESP:AddLeftGroupbox("玩家透视")
@@ -551,6 +674,7 @@ SettingsGroup:AddButton({ Text = '卸载脚本', Func = function()
     clearSurvivorESP()
     clearGeneratorESP()
     clearItemESP()
+    destroyJumpFloat()
     Library:Unload()
 end })
 
