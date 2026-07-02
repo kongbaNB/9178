@@ -1,0 +1,640 @@
+local function safeLoad(url)
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet(url))()
+    end)
+    if not success then
+        warn("加载失败: " .. url)
+        return nil
+    end
+    return result
+end
+
+local Library = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/黑曜石主库.ui")
+local ThemeManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/主题管理.ui")
+local SaveManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/配置管理.ui")
+
+if not Library then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "错误",
+        Text = "UI 库加载失败，请检查网络或脚本资源",
+        Duration = 5,
+    })
+    return
+end
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
+
+local MeleeSpam = false
+local SwingDelay = 0.05
+local SwingsPerDelay = 2
+
+local ClientMeleeHandler = nil
+local originalHandler = nil
+local currentMeleeTool = nil
+local currentAttackTime = nil
+local currentLookVector = nil
+local swingThread = nil
+
+local AutoAttack = false
+local AutoAttackDelay = 0.05
+local autoAttackThread = nil
+
+local AutoInteract = false
+local autoInteractThread = nil
+
+local BringItems = false
+local BringDelay = 0.1
+local bringThread = nil
+local collectedItems = {}
+local totalItems = 0
+local itemsBrought = 0
+local cachedItems = {}
+local cacheUpdateTime = 0
+
+local InfiniteStamina = false
+local staminaThread = nil
+
+local DoubleJump = false
+local jumpCount = 0
+local lastJumpTime = 0
+
+local WalkSpeed = 16
+local speedThread = nil
+
+local NightVision = false
+local nightVisionThread = nil
+
+local function safeGetMeleeHandler()
+    local success, module = pcall(function()
+        return require(ReplicatedStorage:WaitForChild("Client"):WaitForChild("Game"):WaitForChild("Melee"):WaitForChild("ClientMeleeHandler"))
+    end)
+    if success and module then
+        ClientMeleeHandler = module
+        originalHandler = module._meleeActionHandler
+    end
+end
+safeGetMeleeHandler()
+
+local function Swing()
+    if not currentMeleeTool or not currentAttackTime or not currentLookVector then return end
+    pcall(function()
+        ReplicatedStorage.Shared.Universe.Network.RemoteEvent.SwingMelee:FireServer(
+            currentMeleeTool, currentAttackTime, currentLookVector
+        )
+    end)
+end
+
+if ClientMeleeHandler then
+    ClientMeleeHandler._meleeActionHandler = function(actionName, inputState, inputObject)
+        if MeleeSpam then
+            if inputState == Enum.UserInputState.Begin then
+                local char = LocalPlayer.Character
+                if char then
+                    currentMeleeTool = char:FindFirstChildWhichIsA("Tool")
+                    if currentMeleeTool then
+                        currentAttackTime = workspace:GetServerTimeNow()
+                        local mouse = LocalPlayer:GetMouse()
+                        currentLookVector = (mouse.Hit and mouse.Hit.LookVector) or char:GetPivot().LookVector
+
+                        swingThread = task.spawn(function()
+                            while MeleeSpam and currentMeleeTool do
+                                for i = 1, SwingsPerDelay do
+                                    Swing()
+                                    task.wait(SwingDelay)
+                                end
+                            end
+                        end)
+                    end
+                end
+            elseif inputState == Enum.UserInputState.End then
+                if swingThread then
+                    task.cancel(swingThread)
+                    swingThread = nil
+                end
+            end
+        end
+
+        if not MeleeSpam and originalHandler then
+            return originalHandler(actionName, inputState, inputObject)
+        end
+    end
+end
+
+local modelInstanceNames = {
+    "ModelInstance", "modelinstance", "MODELINSTANCE",
+    "Modelinstance", "modelInstance", "Model_Instance",
+    "model_instance", "MODEL_INSTANCE",
+    "Model Instance", "model instance", "MODEL INSTANCE",
+    "Model-Instance", "model-instance", "MODEL-INSTANCE",
+    "ModelInstance1", "modelinstance1", "MODELINSTANCE1",
+    "ModelInstace", "modelinstace", "MODELINSTACE",
+    "ModelInstanse", "modelinstanse", "MODELINSTANSE",
+    "ModelInstence", "modelinstence", "MODELINSTENCE",
+    "ModelInstancee", "modelinstancee", "MODELINSTANCEE",
+    "ModelInstanec", "modelinstanec", "MODELINSTANEC",
+    "ModelInstanc", "modelinstanc", "MODELINSTANC",
+    "ModelInstancE", "modelInstancE",
+    "ModelIstance", "modelistance", "MODELISTANCE",
+    "ModelIstanse", "modelistanse", "MODELISTANSE",
+    "ModelIstence", "modelistence", "MODELISTENCE",
+    "ModelIstanc", "modelistanc", "MODELISTANC",
+    "ModelIstance", "modelistance", "MODELISTANCE",
+    "ModelInstace", "modelinstace", "MODELINSTACE",
+    "ModelInstanse", "modelinstanse", "MODELINSTANSE",
+    "ModelInstence", "modelinstence", "MODELINSTENCE",
+    "ModelInstanc", "modelinstanc", "MODELINSTANC",
+    "ModelInstancee", "modelinstancee", "MODELINSTANCEE",
+    "ModelInstanec", "modelinstanec", "MODELINSTANEC",
+    "ModelInstancE", "modelInstancE", "MODELINSTANCE",
+    "ModelIstance", "modelistance", "MODELISTANCE",
+    "ModelIstanse", "modelistanse", "MODELISTANSE",
+    "ModelIstence", "modelistence", "MODELISTENCE",
+    "ModelIstanc", "modelistanc", "MODELISTANC",
+    "ModelIstance", "modelistance", "MODELISTANCE",
+    "ModelInstance", "modelinstance", "MODELINSTANCE",
+    "ModelInstace", "modelinstace", "MODELINSTACE",
+    "ModelInstanse", "modelinstanse", "MODELINSTANSE",
+    "ModelInstence", "modelinstence", "MODELINSTENCE",
+    "ModelInstanc", "modelinstanc", "MODELINSTANC",
+    "ModelInstancee", "modelinstancee", "MODELINSTANCEE",
+    "ModelInstanec", "modelinstanec", "MODELINSTANEC",
+    "ModelInstancE", "modelInstancE", "MODELINSTANCE",
+    "ModelIstance", "modelistance", "MODELISTANCE",
+    "ModelIstanse", "modelistanse", "MODELISTANSE",
+    "ModelIstence", "modelistence", "MODELISTENCE",
+    "ModelIstanc", "modelistanc", "MODELISTANC",
+    "ModelIstance", "modelistance", "MODELISTANCE",
+}
+
+local function isModelInstanceName(name)
+    for _, variant in ipairs(modelInstanceNames) do
+        if name == variant then return true end
+    end
+    return false
+end
+
+local function getItemPart(item)
+    if item:IsA("BasePart") then
+        return item
+    end
+    if item:IsA("Model") then
+        if item.PrimaryPart then
+            return item.PrimaryPart
+        end
+        for _, child in ipairs(item:GetDescendants()) do
+            if child:IsA("BasePart") then
+                return child
+            end
+        end
+    end
+    return nil
+end
+
+local function updateItemCache()
+    cachedItems = {}
+    local seen = {}
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if isModelInstanceName(obj.Name) then
+            local item = nil
+            if obj:IsA("Model") or obj:IsA("BasePart") then
+                item = obj
+            elseif obj.Parent and (obj.Parent:IsA("Model") or obj.Parent:IsA("BasePart")) then
+                item = obj.Parent
+            end
+            if item and not seen[item] then
+                seen[item] = true
+                local part = getItemPart(item)
+                if part then
+                    table.insert(cachedItems, { Model = item, Part = part })
+                end
+            end
+        end
+    end
+    cacheUpdateTime = tick()
+end
+
+local function getCachedItems()
+    if tick() - cacheUpdateTime > 3 then
+        updateItemCache()
+    end
+    return cachedItems
+end
+
+local function fireActionable(target)
+    pcall(function()
+        ReplicatedStorage.Shared.Universe.Network.RemoteEvent.Actionable:FireServer(418)
+    end)
+    if target then
+        pcall(function()
+            ReplicatedStorage.Shared.Universe.Network.RemoteEvent.Actionable:FireServer(418, target)
+        end)
+        pcall(function()
+            ReplicatedStorage.Shared.Universe.Network.RemoteEvent.Actionable:FireServer(418, target.Name)
+        end)
+        pcall(function()
+            ReplicatedStorage.Shared.Universe.Network.RemoteEvent.Actionable:FireServer(418, target.Position)
+        end)
+        pcall(function()
+            ReplicatedStorage.Shared.Universe.Network.RemoteEvent.Actionable:FireServer(418, target.CFrame)
+        end)
+    end
+end
+
+local function fireStore(target)
+    pcall(function()
+        ReplicatedStorage.Shared.Universe.Network.RemoteEvent.Store:FireServer(397)
+    end)
+    if target then
+        pcall(function()
+            ReplicatedStorage.Shared.Universe.Network.RemoteEvent.Store:FireServer(397, target)
+        end)
+        pcall(function()
+            ReplicatedStorage.Shared.Universe.Network.RemoteEvent.Store:FireServer(397, target.Name)
+        end)
+        pcall(function()
+            ReplicatedStorage.Shared.Universe.Network.RemoteEvent.Store:FireServer(397, target.Position)
+        end)
+        pcall(function()
+            ReplicatedStorage.Shared.Universe.Network.RemoteEvent.Store:FireServer(397, target.CFrame)
+        end)
+    end
+end
+
+local Window = Library:CreateWindow({
+    Title = "死铁轨",
+    Footer = "恐拜大帝 制作",
+    Icon = 131153193945220,
+    NotifySide = "Right",
+    ShowCustomCursor = true,
+})
+
+Library:Notify("死铁轨 - 创作者：恐拜大帝 | QQ：3999698324", 5)
+
+local Tabs = {
+    Notice = Window:AddTab("通知", "info"),
+    Main = Window:AddTab("功能", "zap"),
+    Settings = Window:AddTab("设置", "settings"),
+}
+
+local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者消息")
+NoticeGroup:AddLabel('恐拜大帝将持续更新此脚本')
+NoticeGroup:AddLabel('创作者：恐拜大帝')
+NoticeGroup:AddLabel('QQ：3999698324')
+
+local MeleeGroup = Tabs.Main:AddLeftGroupbox("近战杀戮")
+MeleeGroup:AddToggle('MeleeSpam', {
+    Text = '极速连砍',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        MeleeSpam = true
+        Library:Notify("近战杀戮已启用", 2)
+    else
+        MeleeSpam = false
+        if swingThread then
+            task.cancel(swingThread)
+            swingThread = nil
+        end
+        Library:Notify("近战杀戮已关闭", 2)
+    end
+end)
+
+MeleeGroup:AddLabel('[使用说明] 长按攻击')
+
+local AutoAttackGroup = Tabs.Main:AddLeftGroupbox("自动攻击")
+AutoAttackGroup:AddToggle('AutoAttack', {
+    Text = '自动攻击',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        AutoAttack = true
+        autoAttackThread = task.spawn(function()
+            while AutoAttack do
+                local char = LocalPlayer.Character
+                if char then
+                    local tool = char:FindFirstChildWhichIsA("Tool")
+                    if tool then
+                        local attackTime = workspace:GetServerTimeNow()
+                        local lookVector = char:GetPivot().LookVector
+                        pcall(function()
+                            ReplicatedStorage.Shared.Universe.Network.RemoteEvent.SwingMelee:FireServer(
+                                tool, attackTime, lookVector
+                            )
+                        end)
+                    end
+                end
+                task.wait(AutoAttackDelay)
+            end
+        end)
+        Library:Notify("自动攻击已启用", 2)
+    else
+        AutoAttack = false
+        if autoAttackThread then
+            task.cancel(autoAttackThread)
+            autoAttackThread = nil
+        end
+        Library:Notify("自动攻击已关闭", 2)
+    end
+end)
+
+AutoAttackGroup:AddSlider('AutoAttackDelay', {
+    Text = '攻击频率',
+    Default = 0.05,
+    Min = 0.001,
+    Max = 0.5,
+    Rounding = 3,
+}):OnChanged(function(value)
+    AutoAttackDelay = value
+end)
+
+local StaminaGroup = Tabs.Main:AddLeftGroupbox("无限体力")
+StaminaGroup:AddToggle('InfiniteStamina', {
+    Text = '无限体力（回拉）',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        InfiniteStamina = true
+        staminaThread = task.spawn(function()
+            while InfiniteStamina do
+                pcall(function()
+                    game:GetService("ReplicatedStorage").Remotes.RequestSprint:FireServer(false)
+                end)
+                task.wait(0.1)
+            end
+        end)
+        Library:Notify("无限体力已启用", 2)
+    else
+        InfiniteStamina = false
+        if staminaThread then
+            task.cancel(staminaThread)
+            staminaThread = nil
+        end
+        pcall(function()
+            game:GetService("ReplicatedStorage").Remotes.RequestSprint:FireServer(true)
+        end)
+        Library:Notify("无限体力已关闭", 2)
+    end
+end)
+
+local JumpGroup = Tabs.Main:AddLeftGroupbox("二段跳")
+JumpGroup:AddToggle('DoubleJump', {
+    Text = '二段跳（不回拉）',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        DoubleJump = true
+        jumpCount = 0
+        lastJumpTime = 0
+        Library:Notify("二段跳已启用", 2)
+    else
+        DoubleJump = false
+        jumpCount = 0
+        Library:Notify("二段跳已关闭", 2)
+    end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if not DoubleJump then return end
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hum or not hrp then return end
+
+    local now = tick()
+    if hum.FloorMaterial ~= Enum.Material.Air then
+        jumpCount = 0
+    end
+
+    if jumpCount < 1 then
+        jumpCount = jumpCount + 1
+        lastJumpTime = now
+    elseif jumpCount == 1 and (now - lastJumpTime) < 1.5 then
+        jumpCount = jumpCount + 1
+        hrp.Velocity = Vector3.new(hrp.Velocity.X, 50, hrp.Velocity.Z)
+    end
+end)
+
+local BringGroup = Tabs.Main:AddRightGroupbox("拉取物品")
+BringGroup:AddToggle('BringItems', {
+    Text = '拉取全图物品（疑似没有用）',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        BringItems = true
+        collectedItems = {}
+        itemsBrought = 0
+        totalItems = 0
+        updateItemCache()
+        totalItems = #cachedItems
+
+        bringThread = task.spawn(function()
+            while BringItems do
+                local char = LocalPlayer.Character
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+                if not root then
+                    task.wait(0.1)
+                    continue
+                end
+
+                local items = getCachedItems()
+                local closest = nil
+                local closestDist = math.huge
+
+                for _, item in ipairs(items) do
+                    if not collectedItems[item.Model] then
+                        local dist = (item.Part.Position - root.Position).Magnitude
+                        if dist < closestDist then
+                            closestDist = dist
+                            closest = item
+                        end
+                    end
+                end
+
+                if closest then
+                    collectedItems[closest.Model] = true
+                    itemsBrought = itemsBrought + 1
+
+                    for i = 1, 2 do
+                        fireStore(closest.Part)
+                        task.wait(0.05)
+                    end
+
+                    if itemsBrought % 10 == 0 then
+                        Library:Notify(itemsBrought .. "/" .. totalItems, 2)
+                    end
+                else
+                    task.wait(0.5)
+                end
+
+                task.wait(BringDelay)
+            end
+        end)
+
+        Library:Notify("拉取全图物品已启用 发现" .. totalItems .. "个", 2)
+    else
+        BringItems = false
+        if bringThread then
+            task.cancel(bringThread)
+            bringThread = nil
+        end
+        Library:Notify("拉取全图物品已关闭", 2)
+    end
+end)
+
+BringGroup:AddSlider('BringDelay', {
+    Text = '拉取速度',
+    Default = 0.1,
+    Min = 0.01,
+    Max = 2,
+    Rounding = 2,
+}):OnChanged(function(value)
+    BringDelay = value
+end)
+
+local InteractGroup = Tabs.Main:AddRightGroupbox("自动交互")
+InteractGroup:AddToggle('AutoInteract', {
+    Text = '自动交互（点购买）',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        AutoInteract = true
+        updateItemCache()
+        autoInteractThread = task.spawn(function()
+            while AutoInteract do
+                local char = LocalPlayer.Character
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+                local target = nil
+                local closestDist = math.huge
+
+                if root then
+                    local items = getCachedItems()
+                    for _, item in ipairs(items) do
+                        local dist = (item.Part.Position - root.Position).Magnitude
+                        if dist < closestDist then
+                            closestDist = dist
+                            target = item.Part
+                        end
+                    end
+                end
+
+                fireActionable(target)
+                task.wait(0.05)
+            end
+        end)
+        Library:Notify("自动交互已启用", 2)
+    else
+        AutoInteract = false
+        if autoInteractThread then
+            task.cancel(autoInteractThread)
+            autoInteractThread = nil
+        end
+        Library:Notify("自动交互已关闭", 2)
+    end
+end)
+
+local ReviveGroup = Tabs.Main:AddRightGroupbox("复活")
+ReviveGroup:AddButton("发起自我复活购买", function()
+    pcall(function()
+        game:GetService("ReplicatedStorage").Remotes.RevivePlayer:FireServer()
+    end)
+    Library:Notify("已发起自我复活购买", 2)
+end)
+
+local SpeedGroup = Tabs.Main:AddRightGroupbox("修改移速")
+SpeedGroup:AddSlider('WalkSpeed', {
+    Text = '移速',
+    Default = 16,
+    Min = 5,
+    Max = 20,
+    Rounding = 0,
+}):OnChanged(function(value)
+    WalkSpeed = value
+    local char = LocalPlayer.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.WalkSpeed = value
+        end
+    end
+    if speedThread then
+        task.cancel(speedThread)
+        speedThread = nil
+    end
+    speedThread = task.spawn(function()
+        while true do
+            local c = LocalPlayer.Character
+            if c then
+                local h = c:FindFirstChildOfClass("Humanoid")
+                if h and h.WalkSpeed ~= WalkSpeed then
+                    h.WalkSpeed = WalkSpeed
+                end
+            end
+            task.wait(0.1)
+        end
+    end)
+    Library:Notify("移速已设置为 " .. value, 2)
+end)
+
+local NightVisionGroup = Tabs.Main:AddRightGroupbox("夜视")
+NightVisionGroup:AddToggle('NightVision', {
+    Text = '夜视',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        NightVision = true
+        nightVisionThread = task.spawn(function()
+            while NightVision do
+                Lighting.Ambient = Color3.new(1, 1, 1)
+                Lighting.ColorShift_Bottom = Color3.new(1, 1, 1)
+                Lighting.ColorShift_Top = Color3.new(1, 1, 1)
+                Lighting.FogEnd = 100000
+                Lighting.FogStart = 100000
+                Lighting.Brightness = 1
+                Lighting.GlobalShadows = false
+                Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+                Lighting.ClockTime = 12
+                task.wait(0.5)
+            end
+        end)
+        Library:Notify("夜视已启用", 2)
+    else
+        NightVision = false
+        if nightVisionThread then
+            task.cancel(nightVisionThread)
+            nightVisionThread = nil
+        end
+        Lighting.Ambient = Color3.new(0, 0, 0)
+        Lighting.ColorShift_Bottom = Color3.new(0, 0, 0)
+        Lighting.ColorShift_Top = Color3.new(0, 0, 0)
+        Lighting.FogEnd = 1000
+        Lighting.FogStart = 0
+        Lighting.Brightness = 1
+        Lighting.GlobalShadows = true
+        Lighting.OutdoorAmbient = Color3.new(0.7, 0.7, 0.7)
+        Library:Notify("夜视已关闭", 2)
+    end
+end)
+
+local UnloadGroup = Tabs.Settings:AddLeftGroupbox("脚本管理")
+UnloadGroup:AddButton("卸载脚本", function()
+    Library:Unload()
+end)
+
+if ThemeManager then
+    ThemeManager:SetLibrary(Library)
+    ThemeManager:SetFolder("DeadRailTheme")
+    ThemeManager:ApplyToTab(Tabs.Settings)
+end
+
+if SaveManager then
+    SaveManager:SetLibrary(Library)
+    SaveManager:IgnoreThemeSettings()
+    SaveManager:SetFolder("DeadRailConfig")
+    SaveManager:BuildConfigSection(Tabs.Settings)
+end
