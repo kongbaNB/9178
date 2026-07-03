@@ -8,22 +8,22 @@ Library.Scheme.DarkColor = Color3.new(0, 0, 0)
 Library.Scheme.WhiteColor = Color3.new(1, 1, 1)
 Library.IsLightTheme = false
 
-local Window = Library:CreateWindow({ Title = "最强战场", Footer = "恐拜大帝 制作", Icon = 131153193945220, NotifySide = "Right", ShowCustomCursor = true, }) Library:Notify({ Title = "最强战场", Description = "创作者：恐拜大帝\nQQ：3999698324\n脚本已加载成功", Time = 5, }) local Tabs = { Notice = Window:AddTab("通知", "info"), Main = Window:AddTab("主要", "info"), Violence = Window:AddTab("暴力", "info"), Hitbox = Window:AddTab("碰撞箱", "info"), Lock = Window:AddTab("锁人", "info"), Emote = Window:AddTab("击杀表情", "info"), Settings = Window:AddTab("设置", "settings"), } local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者消息") NoticeGroup:AddLabel('恐拜大帝将持续更新此脚本') NoticeGroup:AddLabel('创作者：恐拜大帝')
+local Window = Library:CreateWindow({ Title = "最强战场", Footer = "恐拜大帝 制作", Icon = 131153193945220, NotifySide = "Right", ShowCustomCursor = true, }) Library:Notify("最强战场 - 创作者：恐拜大帝\nQQ：3999698324\n脚本已加载成功", 5) local Tabs = { Notice = Window:AddTab("通知", "info"), Main = Window:AddTab("主要", "info"), Violence = Window:AddTab("暴力", "info"), Hitbox = Window:AddTab("碰撞箱", "info"), Lock = Window:AddTab("锁人", "info"), Emote = Window:AddTab("击杀表情", "info"), Settings = Window:AddTab("设置", "settings"), } local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者消息") NoticeGroup:AddLabel('恐拜大帝将持续更新此脚本') NoticeGroup:AddLabel('创作者：恐拜大帝')
 
 local MainLeft = Tabs.Main:AddLeftGroupbox("战斗辅助")
 local MainRight = Tabs.Main:AddRightGroupbox("属性修改")
 local MainLeft2 = Tabs.Main:AddLeftGroupbox("移动与攻击")
 local MainRight2 = Tabs.Main:AddRightGroupbox("特效删除")
 
-MainLeft:AddButton("篡改", function()
+MainLeft:AddButton({ Text = '篡改', Func = function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/dream77239/ubg-script/refs/heads/main/%E6%8B%A6%E6%88%AA.txt"))()
-end)
+end })
 
 local fakeBlockEnabled = false
 local loopRunning = false
-MainLeft:AddToggle("假防", { Default = false, Callback = function(state)
+MainLeft:AddToggle('FakeBlockToggle', { Text = '假防', Default = false, Callback = function(state)
     fakeBlockEnabled = state
-    local BlockRemote = ReplicatedStorage:WaitForChild("Remotes", 5):WaitForChild("Combat", 5):WaitForChild("Block", 5)
+    local BlockRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Combat"):WaitForChild("Block")
     local character = player.Character or player.CharacterAdded:Wait()
     local function enableBlock()
         pcall(function()
@@ -51,11 +51,9 @@ MainLeft:AddToggle("假防", { Default = false, Callback = function(state)
     end
 end })
 
-local defaultCooldown = 0
-pcall(function() defaultCooldown = ReplicatedStorage.Settings.Cooldowns.Dash.Value end)
-MainLeft:AddToggle("侧闪无冷却", { Default = false, Callback = function(state)
-    local dashCooldown = nil
-pcall(function() dashCooldown = ReplicatedStorage.Settings.Cooldowns.Dash end)
+local defaultCooldown = ReplicatedStorage.Settings.Cooldowns.Dash.Value
+MainLeft:AddToggle('NoDashCooldownToggle', { Text = '侧闪无冷却', Default = false, Callback = function(state)
+    local dashCooldown = ReplicatedStorage.Settings.Cooldowns.Dash
     if state then
         dashCooldown.Value = 1
     else
@@ -63,11 +61,9 @@ pcall(function() dashCooldown = ReplicatedStorage.Settings.Cooldowns.Dash end)
     end
 end })
 
-local defaultMeleeCooldown = 0
-pcall(function() defaultMeleeCooldown = ReplicatedStorage.Settings.Cooldowns.Melee.Value end)
-MainLeft:AddToggle("近战无冷却", { Default = false, Callback = function(state)
-    local meleeCooldown = nil
-pcall(function() meleeCooldown = ReplicatedStorage.Settings.Cooldowns.Melee end)
+local defaultMeleeCooldown = ReplicatedStorage.Settings.Cooldowns.Melee.Value
+MainLeft:AddToggle('NoMeleeCooldownToggle', { Text = '近战无冷却', Default = false, Callback = function(state)
+    local meleeCooldown = ReplicatedStorage.Settings.Cooldowns.Melee
     if state then
         meleeCooldown.Value = 1
     else
@@ -75,10 +71,9 @@ pcall(function() meleeCooldown = ReplicatedStorage.Settings.Cooldowns.Melee end)
     end
 end })
 
-local settings = nil
-pcall(function() settings = ReplicatedStorage.Settings end)
+local settings = ReplicatedStorage.Settings
 local defaultAbility = settings.Cooldowns.Ability.Value
-MainLeft:AddToggle("技能无冷却(仅宿傩角色)", { Default = false, Callback = function(state)
+MainLeft:AddToggle('NoAbilityCooldownToggle', { Text = '技能无冷却(仅宿傩角色)', Default = false, Callback = function(state)
     settings.Cooldowns.Ability.Value = state and 1 or defaultAbility
 end })
 
@@ -100,7 +95,7 @@ local function stopEmoteClaim()
         emoteClaimConnection = nil
     end
 end
-MainLeft:AddToggle("自动签到表情", { Default = false, Callback = function(state)
+MainLeft:AddToggle('AutoEmoteClaimToggle', { Text = '自动签到表情', Default = false, Callback = function(state)
     emoteClaimActive = state
     if state then
         startEmoteClaim()
@@ -109,10 +104,9 @@ MainLeft:AddToggle("自动签到表情", { Default = false, Callback = function(
     end
 end })
 
-local noSlowdownsToggle = nil
-pcall(function() noSlowdownsToggle = ReplicatedStorage.Settings.Toggles.NoSlowdowns end)
+local noSlowdownsToggle = ReplicatedStorage.Settings.Toggles.NoSlowdowns
 local defaultNoSlowdowns = false
-MainLeft:AddToggle("无减速效果", { Default = false, Callback = function(state)
+MainLeft:AddToggle('NoSlowdownToggle', { Text = '无减速效果', Default = false, Callback = function(state)
     if state then
         noSlowdownsToggle.Value = true
     else
@@ -121,39 +115,38 @@ MainLeft:AddToggle("无减速效果", { Default = false, Callback = function(sta
 end })
 
 local defaultDisableHitStun = settings.Toggles.DisableHitStun.Value
-MainLeft:AddToggle("取消被攻击硬直", { Default = false, Callback = function(state)
+MainLeft:AddToggle('DisableHitStunToggle', { Text = '取消被攻击硬直', Default = false, Callback = function(state)
     settings.Toggles.DisableHitStun.Value = state
 end })
 
 local defaultDisableIntros = settings.Toggles.DisableIntros.Value
-MainLeft:AddToggle("跳过角色开场动作", { Default = false, Callback = function(state)
+MainLeft:AddToggle('DisableIntrosToggle', { Text = '跳过角色开场动作', Default = false, Callback = function(state)
     settings.Toggles.DisableIntros.Value = state
 end })
 
 local defaultNoStunOnMiss = settings.Toggles.NoStunOnMiss.Value
-MainLeft:AddToggle("普攻无僵直", { Default = false, Callback = function(state)
+MainLeft:AddToggle('NoStunOnMissToggle', { Text = '普攻无僵直', Default = false, Callback = function(state)
     settings.Toggles.NoStunOnMiss.Value = state
 end })
 
 local defaultRagdollTimer = settings.Multipliers.RagdollTimer.Value
-MainLeft:AddToggle("被别人击倒不会变成布娃娃", { Default = false, Callback = function(state)
+MainLeft:AddToggle('NoRagdollToggle', { Text = '被别人击倒不会变成布娃娃', Default = false, Callback = function(state)
     settings.Multipliers.RagdollTimer.Value = state and 0.5 or defaultRagdollTimer
 end })
 
 local defaultUltimateTimer = settings.Multipliers.UltimateTimer.Value
-MainLeft:AddToggle("延长大招时间", { Default = false, Callback = function(state)
+MainLeft:AddToggle('ExtendUltimateToggle', { Text = '延长大招时间', Default = false, Callback = function(state)
     settings.Multipliers.UltimateTimer.Value = state and 100000 or defaultUltimateTimer
 end })
 
 local defaultInstantTransformation = settings.Toggles.InstantTransformation.Value
-MainLeft:AddToggle("秒开大", { Default = false, Callback = function(state)
+MainLeft:AddToggle('InstantUltimateToggle', { Text = '秒开大', Default = false, Callback = function(state)
     settings.Toggles.InstantTransformation.Value = state
 end })
 
-local Ping = nil
-pcall(function() Ping = player:WaitForChild("Info", 5):WaitForChild("Ping", 5) end)
+local Ping = player:WaitForChild("Info"):WaitForChild("Ping")
 local pingLoop = nil
-MainRight:AddToggle("ping乱码", { Default = false, Callback = function(state)
+MainRight:AddToggle('PingSpamToggle', { Text = 'ping乱码', Default = false, Callback = function(state)
     if state then
         pingLoop = task.spawn(function()
             while true do
@@ -175,10 +168,9 @@ MainRight:AddToggle("ping乱码", { Default = false, Callback = function(state)
     end
 end })
 
-local MeleeDamage = nil
-pcall(function() MeleeDamage = ReplicatedStorage:WaitForChild("Settings", 5):WaitForChild("Multipliers", 5):WaitForChild("MeleeDamage", 5) end)
+local MeleeDamage = ReplicatedStorage:WaitForChild("Settings"):WaitForChild("Multipliers"):WaitForChild("MeleeDamage")
 MeleeDamage.Value = 100
-MainRight:AddToggle("一拳倒地", { Default = false, Callback = function(state)
+MainRight:AddToggle('OnePunchDownToggle', { Text = '一拳倒地', Default = false, Callback = function(state)
     if state then
         MeleeDamage.Value = 1000000
     else
@@ -186,21 +178,20 @@ MainRight:AddToggle("一拳倒地", { Default = false, Callback = function(state
     end
 end })
 
-local RagdollPower = nil
-pcall(function() RagdollPower = ReplicatedStorage:WaitForChild("Settings", 5):WaitForChild("Multipliers", 5):WaitForChild("RagdollPower", 5) end)
+local RagdollPower = ReplicatedStorage:WaitForChild("Settings"):WaitForChild("Multipliers"):WaitForChild("RagdollPower")
 local tpConnection = nil
-MainRight:AddToggle("一拳击飞", { Default = false, Callback = function(state)
+MainRight:AddToggle('OnePunchFlyToggle', { Text = '一拳击飞', Default = false, Callback = function(state)
     local maxTeleportDistance = 50
     local lastPosition = nil
     if state then
         RagdollPower.Value = 10000
         local Character = player.Character or player.CharacterAdded:Wait()
-        local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart", 5)
+        local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
         lastPosition = HumanoidRootPart.Position
         tpConnection = RunService.RenderStepped:Connect(function()
             if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
                 Character = player.Character or player.CharacterAdded:Wait()
-                HumanoidRootPart = Character:WaitForChild("HumanoidRootPart", 5)
+                HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
                 lastPosition = HumanoidRootPart.Position
             end
             local currentPos = player.Character.HumanoidRootPart.Position
@@ -220,9 +211,8 @@ MainRight:AddToggle("一拳击飞", { Default = false, Callback = function(state
     end
 end })
 
-local wallCombo = nil
-pcall(function() wallCombo = ReplicatedStorage.Settings.Cooldowns.WallCombo end)
-MainRight:AddToggle("墙打无冷却", { Default = false, Callback = function(state)
+local wallCombo = ReplicatedStorage.Settings.Cooldowns.WallCombo
+MainRight:AddToggle('NoWallComboCooldownToggle', { Text = '墙打无冷却', Default = false, Callback = function(state)
     if state then
         wallCombo.Value = 0
     else
@@ -244,28 +234,24 @@ wall.Material = Enum.Material.SmoothPlastic
 wall.Anchored = true
 wall.CanCollide = true
 wall.CFrame = wall.CFrame or CFrame.new(0,5,0)
-pcall(function()
-    if getconnections then
-        for _, conn in pairs(getconnections(wall.AncestryChanged)) do
-            conn:Disable()
-        end
+if getconnections then
+    for _, conn in pairs(getconnections(wall.AncestryChanged)) do
+        conn:Disable()
     end
-    local mt = getrawmetatable(game)
-    if mt then
-        setreadonly(mt,false)
-        local old = mt.__namecall
-        mt.__namecall = newcclosure(function(self, ...)
-            local method = getnamecallmethod()
-            if self == wall and method == "Destroy" then
-                return
-            end
-            return old(self, ...)
-        end)
-        setreadonly(mt,true)
+end
+local mt = getrawmetatable(game)
+setreadonly(mt,false)
+local old = mt.__namecall
+mt.__namecall = newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    if self == wall and method == "Destroy" then
+        return
     end
+    return old(self, ...)
 end)
+setreadonly(mt,true)
 local followConnection = nil
-MainRight:AddToggle("随处墙打", { Default = false, Callback = function(state)
+MainRight:AddToggle('FollowWallComboToggle', { Text = '随处墙打', Default = false, Callback = function(state)
     if state then
         if not followConnection then
             followConnection = RunService.RenderStepped:Connect(function()
@@ -285,7 +271,7 @@ end })
 
 local originalData = {}
 local skyBackup = nil
-MainRight:AddToggle("防卡", { Default = false, Callback = function(state)
+MainRight:AddToggle('AntiLagToggle', { Text = '防卡', Default = false, Callback = function(state)
     if state then
         originalData = {}
         for _, v in pairs(workspace:GetDescendants()) do
@@ -391,7 +377,7 @@ local function CreateClone(char)
 end
 local function ToggleInvisibility(state)
     local Character = player.Character or player.CharacterAdded:Wait()
-    local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart", 5)
+    local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
     if state then
         originalCFrame = HumanoidRootPart.CFrame
         HumanoidRootPart.CFrame = HumanoidRootPart.CFrame + Vector3.new(0, -50, 0)
@@ -418,13 +404,13 @@ local function ToggleInvisibility(state)
         player.Character = Character
     end
 end
-MainRight:AddToggle("隐身", { Default = false, Callback = function(state)
+MainRight:AddToggle('InvisibilityToggle', { Text = '隐身', Default = false, Callback = function(state)
     ToggleInvisibility(state)
 end })
 
 local CircleParts = {}
 local circleConnection = nil
-MainRight:AddToggle("墙打/杀戮光环范围显示", { Default = false, Callback = function(state)
+MainRight:AddToggle('ShowRangeCircleToggle', { Text = '墙打/杀戮光环范围显示', Default = false, Callback = function(state)
     local function CreateCircle(radius, segments, thickness)
         local parts = {}
         for i = 1, segments do
@@ -489,7 +475,7 @@ MainRight:AddToggle("墙打/杀戮光环范围显示", { Default = false, Callba
     end
 end })
 
-MainRight2:AddButton("删除墙打特效", function()
+MainRight2:AddButton({ Text = '删除墙打特效', Func = function()
     local paths = {
         ReplicatedStorage.Characters.Gon.WallCombo.GonWallCombo.Center,
         ReplicatedStorage.Characters.Gon.WallCombo.GonWallCombo.Explosion,
@@ -507,10 +493,10 @@ MainRight2:AddButton("删除墙打特效", function()
             end
         end
     end
-end)
+end })
 
-MainRight2:AddButton("删除击杀表情特效", function()
-    local KillEmote = ReplicatedStorage:WaitForChild("Cosmetics", 5):WaitForChild("KillEmote", 5)
+MainRight2:AddButton({ Text = '删除击杀表情特效', Func = function()
+    local KillEmote = ReplicatedStorage:WaitForChild("Cosmetics"):WaitForChild("KillEmote")
     local function removeEffects(obj)
         for _, child in ipairs(obj:GetChildren()) do
             if child:IsA("ParticleEmitter") or child:IsA("Trail") or child:IsA("Beam") or child:IsA("Fire") or child:IsA("Smoke") or child:IsA("Sparkles") or child:IsA("Light") then
@@ -521,12 +507,11 @@ MainRight2:AddButton("删除击杀表情特效", function()
         end
     end
     removeEffects(KillEmote)
-end)
+end })
 
-local multiUseCutscenesToggle = nil
-pcall(function() multiUseCutscenesToggle = ReplicatedStorage.Settings.Toggles.MultiUseCutscenes end)
+local multiUseCutscenesToggle = ReplicatedStorage.Settings.Toggles.MultiUseCutscenes
 local defaultMultiUse = false
-MainLeft2:AddToggle("艾斯帕大招技能多次使用(全角色通用)", { Default = false, Callback = function(state)
+MainLeft2:AddToggle('MultiUseCutscenesToggle', { Text = '艾斯帕大招技能多次使用(全角色通用)', Default = false, Callback = function(state)
     if state then
         multiUseCutscenesToggle.Value = true
     else
@@ -567,7 +552,7 @@ local function NOFLY()
 end
 local function sFLY(vfly)
     local char = player.Character or player.CharacterAdded:Wait()
-    local humanoid = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid", 5)
+    local humanoid = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid")
     local root = getRoot(char)
     if not root then return end
     if flyKeyDown then flyKeyDown:Disconnect() end
@@ -609,7 +594,7 @@ local function sFLY(vfly)
         local camera = workspace.CurrentCamera
         local moveVector = Vector3.new(CONTROL.L+CONTROL.R, CONTROL.Q+CONTROL.E, CONTROL.F+CONTROL.B)
         local ok, controlModule = pcall(function()
-            return require(player.PlayerScripts:WaitForChild("PlayerModule", 5):WaitForChild("ControlModule", 5))
+            return require(player.PlayerScripts:WaitForChild("PlayerModule"):WaitForChild("ControlModule"))
         end)
         if ok and controlModule then
             local mv = controlModule:GetMoveVector()
@@ -629,7 +614,7 @@ local function applyFly()
         end
     end)
 end
-MainLeft2:AddToggle("飞行", { Default = false, Callback = function(state)
+MainLeft2:AddToggle('FlyToggle', { Text = '飞行', Default = false, Callback = function(state)
     FLY_TOGGLE_STATE = state
     if state then
         applyFly()
@@ -638,14 +623,14 @@ MainLeft2:AddToggle("飞行", { Default = false, Callback = function(state)
     end
 end })
 
-MainLeft2:AddSlider("飞行速度", { Min = 1, Max = 10, Default = 2, Rounding = 0, Callback = function(value)
+MainLeft2:AddSlider('FlySpeedSlider', { Text = '飞行速度', Default = 2, Min = 1, Max = 10, Rounding = 0, Callback = function(value)
     iyflyspeed = value
     vehicleflyspeed = value
 end })
 
 local tpwalking = false
 local tpwalkSpeed = 100
-MainLeft2:AddToggle("速度", { Default = false, Callback = function(state)
+MainLeft2:AddToggle('SpeedToggle', { Text = '速度', Default = false, Callback = function(state)
     tpwalking = state
     if state then
         spawn(function()
@@ -662,23 +647,23 @@ MainLeft2:AddToggle("速度", { Default = false, Callback = function(state)
     end
 end })
 
-MainLeft2:AddSlider("速度调节", { Min = 0, Max = 250, Default = 100, Rounding = 0, Callback = function(value)
+MainLeft2:AddSlider('SpeedAdjustSlider', { Text = '速度调节', Default = 100, Min = 0, Max = 250, Rounding = 0, Callback = function(value)
     tpwalkSpeed = value
 end })
 
-MainLeft2:AddSlider("冲刺加速(默认值100)", { Min = 0, Max = 1000, Default = 100, Rounding = 0, Callback = function(value)
-    pcall(function() ReplicatedStorage.Settings.Multipliers.DashSpeed.Value = value end)
+MainLeft2:AddSlider('DashSpeedSlider', { Text = '冲刺加速(默认值100)', Default = 100, Min = 0, Max = 1000, Rounding = 0, Callback = function(value)
+    ReplicatedStorage.Settings.Multipliers.DashSpeed.Value = value
 end })
 
-MainLeft2:AddSlider("跳跃增强(默认值100)", { Min = 0, Max = 1000, Default = 100, Rounding = 0, Callback = function(value)
-    pcall(function() ReplicatedStorage.Settings.Multipliers.JumpHeight.Value = value end)
+MainLeft2:AddSlider('JumpHeightSlider', { Text = '跳跃增强(默认值100)', Default = 100, Min = 0, Max = 1000, Rounding = 0, Callback = function(value)
+    ReplicatedStorage.Settings.Multipliers.JumpHeight.Value = value
 end })
 
-MainLeft2:AddSlider("攻击加速(默认值100)", { Min = 0, Max = 1000, Default = 100, Rounding = 0, Callback = function(value)
-    pcall(function() ReplicatedStorage.Settings.Multipliers.MeleeSpeed.Value = value end)
+MainLeft2:AddSlider('MeleeSpeedSlider', { Text = '攻击加速(默认值100)', Default = 100, Min = 0, Max = 1000, Rounding = 0, Callback = function(value)
+    ReplicatedStorage.Settings.Multipliers.MeleeSpeed.Value = value
 end })
 
-pcall(function() local ViolenceLeft = Tabs.Violence:AddLeftGroupbox("暴力功能")
+local ViolenceLeft = Tabs.Violence:AddLeftGroupbox("暴力功能")
 
 local active = false
 local function getLocalPlayerCharacter()
@@ -744,11 +729,11 @@ task.spawn(function()
         end
     end
 end)
-ViolenceLeft:AddToggle("无敌", { Default = false, Callback = function(state)
+ViolenceLeft:AddToggle('GodModeToggle', { Text = '无敌', Default = false, Callback = function(state)
     active = state
 end })
 
-ViolenceLeft:AddButton("卡服", function()
+ViolenceLeft:AddButton({ Text = '卡服', Func = function()
     local active2 = true
     local spawnedTasks = {}
     local function buildCombatArgs()
@@ -811,7 +796,7 @@ ViolenceLeft:AddButton("卡服", function()
             end
         end
     end)
-end)
+end })
 
 local _F = {}
 _F.P = game:GetService("Players")
@@ -840,7 +825,7 @@ _F.Dash = function()
     local char = _F.L.Character or _F.L.CharacterAdded:Wait()
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if hrp then
-        require(_F.RS:WaitForChild("Core", 5)).Library("Remote").Send("Dash", hrp.CFrame, "L", 1)
+        require(_F.RS:WaitForChild("Core")).Library("Remote").Send("Dash", hrp.CFrame, "L", 1)
     end
 end
 _F.HRP = function()
@@ -1009,7 +994,7 @@ _F.Stop = function()
         cam.CameraType = _F.Data.OType
     end
 end
-ViolenceLeft:AddToggle("全图秒杀", { Default = false, Callback = function(state)
+ViolenceLeft:AddToggle('FullMapKillToggle', { Text = '全图秒杀', Default = false, Callback = function(state)
     _F.Cfg.Enabled = state
     if _F.Cfg.Enabled then
         _F.Start()
@@ -1024,14 +1009,10 @@ _F.L.CharacterAdded:Connect(function()
     end
 end)
 
-local Core = nil
-pcall(function() Core = require(ReplicatedStorage:WaitForChild("Core", 5)) end)
-local charValue = nil
-pcall(function() charValue = player:WaitForChild("Data", 5):WaitForChild("Character", 5).Value end)
-local chars = nil
-pcall(function() chars = ReplicatedStorage:WaitForChild("Characters", 5) end)
-local ability = nil
-pcall(function() if chars and charValue then ability = chars:WaitForChild(charValue, 5):WaitForChild("WallCombo", 5) end end)
+local Core = require(ReplicatedStorage:WaitForChild("Core"))
+local charValue = player:WaitForChild("Data"):WaitForChild("Character").Value
+local chars = ReplicatedStorage:WaitForChild("Characters")
+local ability = chars:WaitForChild(charValue):WaitForChild("WallCombo")
 local wallComboCooldown = 0.05
 local lastWallComboTime = 0
 local wallComboKey = Enum.KeyCode.E
@@ -1145,17 +1126,12 @@ local running = false
 local auraConn
 local lastDash = 0
 local lastAttack = 0
-local data = nil
-pcall(function() data = player:WaitForChild("Data", 5) end)
-local charValue2 = nil
-pcall(function() if data then charValue2 = data:WaitForChild("Character", 5) end end)
+local data = player:WaitForChild("Data")
+local charValue2 = data:WaitForChild("Character")
 local localCharacterName = charValue2.Value
-local ability2 = nil
-pcall(function() ability2 = ReplicatedStorage:WaitForChild("Characters", 5):WaitForChild(localCharacterName, 5):WaitForChild("WallCombo", 5) end)
-local AbilitiesRemote = nil
-pcall(function() AbilitiesRemote = ReplicatedStorage:WaitForChild("Remotes", 5):WaitForChild("Abilities", 5):WaitForChild("Ability", 5) end)
-local CombatRemote = nil
-pcall(function() CombatRemote = ReplicatedStorage:WaitForChild("Remotes", 5):WaitForChild("Combat", 5):WaitForChild("Action", 5) end)
+local ability2 = ReplicatedStorage:WaitForChild("Characters"):WaitForChild(localCharacterName):WaitForChild("WallCombo")
+local AbilitiesRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Abilities"):WaitForChild("Ability")
+local CombatRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Combat"):WaitForChild("Action")
 
 local function getLocalRootPart()
     local c = player.Character
@@ -1251,7 +1227,7 @@ local function stopAura()
     if auraConn then auraConn:Disconnect() auraConn = nil end
 end
 
-ViolenceLeft:AddToggle("杀戮光环v1(慢)", { Default = false, Callback = function(state)
+ViolenceLeft:AddToggle('KillAuraV1Toggle', { Text = '杀戮光环v1(慢)', Default = false, Callback = function(state)
     running = state
     if running then
         startAura()
@@ -1352,7 +1328,7 @@ local function KillAura(count)
     end
 end
 
-ViolenceLeft:AddToggle("杀戮光环v2(快)", { Default = false, Callback = function(state)
+ViolenceLeft:AddToggle('KillAuraV2Toggle', { Text = '杀戮光环v2(快)', Default = false, Callback = function(state)
     enabled2 = state
     if enabled2 then
         conn2 = RunService.Heartbeat:Connect(function()
@@ -1367,20 +1343,19 @@ ViolenceLeft:AddToggle("杀戮光环v2(快)", { Default = false, Callback = func
     end
 end })
 
-ViolenceLeft:AddToggle("杀戮光环忽略好友", { Default = false, Callback = function(state)
+ViolenceLeft:AddToggle('KillAuraIgnoreFriendsToggle', { Text = '杀戮光环忽略好友', Default = false, Callback = function(state)
     Configs.IgnoreFriends = state
 end })
 
-ViolenceLeft:AddToggle("墙打秒杀", { Default = false, Callback = function(state)
+ViolenceLeft:AddToggle('WallComboKillToggle', { Text = '墙打秒杀', Default = false, Callback = function(state)
     toggleWallComboFunc(state)
 end })
 
-ViolenceLeft:AddToggle("墙打秒杀忽略好友", { Default = false, Callback = function(state)
+ViolenceLeft:AddToggle('WallComboIgnoreFriendsToggle', { Text = '墙打秒杀忽略好友', Default = false, Callback = function(state)
     ignoreFriends = state
 end })
-end)
 
-pcall(function() local HitboxTab = Tabs.Hitbox:AddLeftGroupbox("碰撞箱扩大")
+local HitboxTab = Tabs.Hitbox:AddLeftGroupbox("碰撞箱扩大")
 pcall(function()
     setthreadidentity(8)
 end)
@@ -1468,9 +1443,7 @@ function S:EnableEnhancer()
     if self.Cache.HitProc then return end
 
     local ok, hit = pcall(function()
-        local _hitModule = nil
-pcall(function() _hitModule = require(LP.PlayerScripts:WaitForChild("Combat", 5):WaitForChild("Hit", 5)) end)
-return _hitModule
+        return require(LP.PlayerScripts:WaitForChild("Combat"):WaitForChild("Hit"))
     end)
     if not ok or not hit.Process then return end
 
@@ -1523,7 +1496,7 @@ function S:StopDashLoop()
     end
 end
 
-HitboxTab:AddToggle("碰撞箱扩大", { Default = false, Callback = function(v)
+HitboxTab:AddToggle('ExpandHitboxToggle', { Text = '碰撞箱扩大', Default = false, Callback = function(v)
     if v then
         S:ToggleHitbox(true)
         S:EnableEnhancer()
@@ -1535,29 +1508,28 @@ HitboxTab:AddToggle("碰撞箱扩大", { Default = false, Callback = function(v)
     end
 end })
 
-HitboxTab:AddInput("碰撞箱X轴", { Default = tostring(S.Cfg.X), Numeric = true, Callback = function(v)
+HitboxTab:AddInput('HitboxXInput', { Text = '碰撞箱X轴', Default = tostring(S.Cfg.X), Numeric = true, Callback = function(v)
     v = tonumber(v)
     if v then
         S.Cfg.X = math.clamp(v, 10, 150)
     end
 end })
 
-HitboxTab:AddInput("碰撞箱Y轴", { Default = tostring(S.Cfg.Y), Numeric = true, Callback = function(v)
+HitboxTab:AddInput('HitboxYInput', { Text = '碰撞箱Y轴', Default = tostring(S.Cfg.Y), Numeric = true, Callback = function(v)
     v = tonumber(v)
     if v then
         S.Cfg.Y = math.clamp(v, 10, 150)
     end
 end })
 
-HitboxTab:AddInput("碰撞箱Z轴", { Default = tostring(S.Cfg.Z), Numeric = true, Callback = function(v)
+HitboxTab:AddInput('HitboxZInput', { Text = '碰撞箱Z轴', Default = tostring(S.Cfg.Z), Numeric = true, Callback = function(v)
     v = tonumber(v)
     if v then
         S.Cfg.Z = math.clamp(v, 10, 150)
     end
 end })
-end)
 
-pcall(function() local LockLeft = Tabs.Lock:AddLeftGroupbox("锁人")
+local LockLeft = Tabs.Lock:AddLeftGroupbox("锁人")
 
 local S2 = {}
 S2.Players = game:GetService("Players")
@@ -1646,7 +1618,7 @@ function S2.toggleConnection()
     end
 end
 
-S2.playerDropdown = LockLeft:AddDropdown("选择目标玩家", {
+S2.playerDropdown = LockLeft:AddDropdown('TargetPlayerDropdown', { Text = '选择目标玩家',
     Values = S2.getPlayerNames(),
     Default = 1,
     Multi = false,
@@ -1655,7 +1627,7 @@ S2.playerDropdown = LockLeft:AddDropdown("选择目标玩家", {
     end
 })
 
-LockLeft:AddButton("刷新玩家列表", function()
+LockLeft:AddButton({ Text = '刷新玩家列表', Func = function()
     S2.selectedTargetName = nil
     local newNames = S2.getPlayerNames()
     if S2.playerDropdown then
@@ -1668,27 +1640,26 @@ LockLeft:AddButton("刷新玩家列表", function()
             S2.playerDropdown:SetValue(nil)
         end
     end
-end)
+end })
 
-LockLeft:AddToggle("锁背", { Default = false, Callback = function(state)
+LockLeft:AddToggle('LockBehindToggle', { Text = '锁背', Default = false, Callback = function(state)
     S2.followEnabled = state
     if state then S2.circleEnabled = false end
     S2.toggleConnection()
 end })
 
-LockLeft:AddToggle("转圈", { Default = false, Callback = function(state)
+LockLeft:AddToggle('CircleLockToggle', { Text = '转圈', Default = false, Callback = function(state)
     S2.circleEnabled = state
     if state then S2.followEnabled = false end
     S2.toggleConnection()
 end })
 
-LockLeft:AddToggle("看着玩家(需要关移位锁)", { Default = false, Callback = function(state)
+LockLeft:AddToggle('LookAtPlayerToggle', { Text = '看着玩家(需要关移位锁)', Default = false, Callback = function(state)
     S2.lookEnabled = state
     S2.toggleConnection()
 end })
-end)
 
-pcall(function() local EmoteLeft = Tabs.Emote:AddLeftGroupbox("击杀表情")
+local EmoteLeft = Tabs.Emote:AddLeftGroupbox("击杀表情")
 
 local T = {}
 T.env = {
@@ -1696,9 +1667,9 @@ T.env = {
     Players = game:GetService("Players"),
 }
 T.env.LocalPlayer = T.env.Players.LocalPlayer
-pcall(function() T.env.core = require(T.env.ReplicatedStorage:WaitForChild("Core", 5)) end)
+T.env.core = require(T.env.ReplicatedStorage:WaitForChild("Core"))
 T.env.Character = T.env.LocalPlayer.Character or T.env.LocalPlayer.CharacterAdded:Wait()
-T.env.HumanoidRootPart = T.env.Character:WaitForChild("HumanoidRootPart", 5)
+T.env.HumanoidRootPart = T.env.Character:WaitForChild("HumanoidRootPart")
 
 T.state = {
     killEmotes = {},
@@ -1722,7 +1693,7 @@ end
 
 function T.useEmote(name)
     local tmp = T.state.tmp
-    tmp.emote = T.env.ReplicatedStorage:WaitForChild("Cosmetics", 5):WaitForChild("KillEmote", 5):FindFirstChild(name)
+    tmp.emote = T.env.ReplicatedStorage:WaitForChild("Cosmetics"):WaitForChild("KillEmote"):FindFirstChild(name)
     tmp.myRoot = T.getRoot(T.env.LocalPlayer.Character)
     if not tmp.emote or not tmp.myRoot then return end
 
@@ -1795,7 +1766,7 @@ function T.updateDropdown(list)
         end)
         T.state.dropdown = nil
     end
-    T.state.dropdown = EmoteLeft:AddDropdown("击杀表情功能(要靠近别人)", {
+    T.state.dropdown = EmoteLeft:AddDropdown('KillEmoteDropdown', { Text = '击杀表情功能(要靠近别人)',
         Values = values,
         Default = 1,
         Multi = false,
@@ -1808,33 +1779,33 @@ function T.updateDropdown(list)
     })
 end
 
-EmoteLeft:AddButton("刷新击杀表情", function()
+EmoteLeft:AddButton({ Text = '刷新击杀表情', Func = function()
     table.clear(T.state.killEmotes)
-    for _, e in pairs(T.env.ReplicatedStorage:WaitForChild("Cosmetics", 5):WaitForChild("KillEmote", 5):GetChildren()) do
+    for _, e in pairs(T.env.ReplicatedStorage:WaitForChild("Cosmetics"):WaitForChild("KillEmote"):GetChildren()) do
         T.state.killEmotes[#T.state.killEmotes + 1] = e.Name
     end
     T.updateDropdown(T.state.killEmotes)
-end)
+end })
 
-for _, e in pairs(T.env.ReplicatedStorage:WaitForChild("Cosmetics", 5):WaitForChild("KillEmote", 5):GetChildren()) do
+for _, e in pairs(T.env.ReplicatedStorage:WaitForChild("Cosmetics"):WaitForChild("KillEmote"):GetChildren()) do
     T.state.killEmotes[#T.state.killEmotes + 1] = e.Name
 end
 
 T.updateDropdown(T.state.killEmotes)
 
-EmoteLeft:AddToggle("击杀表情光环", { Default = false, Callback = function(v)
+EmoteLeft:AddToggle('KillEmoteAuraToggle', { Text = '击杀表情光环', Default = false, Callback = function(v)
     T.state.aura = v
 end })
 
-EmoteLeft:AddSlider("击杀表情光环间隔", { Min = 0.01, Max = 5, Default = 0.5, Rounding = 2, Callback = function(v)
+EmoteLeft:AddSlider('KillEmoteAuraDelaySlider', { Text = '击杀表情光环间隔', Default = 0.5, Min = 0.01, Max = 5, Rounding = 2, Callback = function(v)
     T.state.auraDelay = v
 end })
 
-EmoteLeft:AddToggle("持续发送你选择的表情", { Default = false, Callback = function(v)
+EmoteLeft:AddToggle('SpamEmoteToggle', { Text = '持续发送你选择的表情', Default = false, Callback = function(v)
     T.state.spam = v
 end })
 
-EmoteLeft:AddSlider("调整你选择的表情速度", { Min = 0.01, Max = 5, Default = 0.5, Rounding = 2, Callback = function(v)
+EmoteLeft:AddSlider('SpamEmoteDelaySlider', { Text = '调整你选择的表情速度', Default = 0.5, Min = 0.01, Max = 5, Rounding = 2, Callback = function(v)
     T.state.spamDelay = v
 end })
 
@@ -1853,7 +1824,7 @@ for k in pairs(T.keyMap) do
 end
 table.sort(keyList)
 
-EmoteLeft:AddDropdown("快捷键设置", {
+EmoteLeft:AddDropdown('KeybindDropdown', { Text = '快捷键设置',
     Values = keyList,
     Default = 1,
     Callback = function(v)
@@ -1861,15 +1832,14 @@ EmoteLeft:AddDropdown("快捷键设置", {
     end
 })
 
-EmoteLeft:AddButton("随机用一个击杀表情", function()
+EmoteLeft:AddButton({ Text = '随机用一个击杀表情', Func = function()
     T.useRandom()
-end)
-end)
+end })
 
 local UnloadGroup = Tabs.Settings:AddLeftGroupbox("脚本管理")
-UnloadGroup:AddButton("卸载脚本", function()
+UnloadGroup:AddButton({ Text = '卸载脚本', Func = function()
     Library:Unload()
-end)
+end })
 
 if ThemeManager then
     ThemeManager:SetLibrary(Library)
