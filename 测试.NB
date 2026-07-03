@@ -2547,6 +2547,6 @@ end
 
 Library:Notify({
     Title = "最强战场",
-    Description = "恐拜大帝",
+    Description = "整合版加载成功 | 恐拜大帝",
     Time = 5,
 })
