@@ -22,12 +22,6 @@ if not Library then
     return
 end
 
-Library.Scheme.AccentColor = Color3.fromHex("00ffff")
-Library.Scheme.MainColor = Color3.fromHex("141414")
-Library.Scheme.BackgroundColor = Color3.fromHex("0c0c0c")
-Library.Scheme.OutlineColor = Color3.fromHex("232323")
-Library.Scheme.FontColor = Color3.fromHex("ffffff")
-
 local Options = Library.Options
 local Toggles = Library.Toggles
 
