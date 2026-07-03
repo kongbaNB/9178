@@ -259,7 +259,7 @@ local State = { ConfigName = "default", CurrentConfig = nil }
 
 MainLeft:AddButton({ Text = "篡改", Func = function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/dream77239/ubg-script/refs/heads/main/%E6%8B%A6%E6%88%AA.txt"))()
-end, DoubleClick = false })
+end }))
 
 MainLeft:AddToggle("FakeBlock", { Text = "假防", Default = false, Callback = function(state)
     if state then AddToArrayList("假防") else RemoveFromArrayList("假防") end
@@ -614,7 +614,7 @@ CombatRight:AddButton({ Text = "删除墙打特效", Func = function()
             for _, child in ipairs(obj:GetChildren()) do child:Destroy() end
         end
     end
-end, DoubleClick = false })
+end })
 
 CombatRight:AddButton({ Text = "删除击杀表情特效", Func = function()
     local KillEmote = rs:WaitForChild("Cosmetics"):WaitForChild("KillEmote")
@@ -628,7 +628,7 @@ CombatRight:AddButton({ Text = "删除击杀表情特效", Func = function()
         end
     end
     removeEffects(KillEmote)
-end, DoubleClick = false })
+end }))
 
 MoveLeft:AddToggle("Fly", { Text = "飞行", Default = false, Callback = function(state)
     FLY_TOGGLE_STATE = state
@@ -811,11 +811,11 @@ end })
 
 MoveRight:AddButton({ Text = "设置原位", Func = function()
     TPYW = player.Character.HumanoidRootPart.CFrame
-end, DoubleClick = false })
+end }))
 
 MoveRight:AddButton({ Text = "传送原位", Func = function()
     if TPYW then player.Character.HumanoidRootPart.CFrame = TPYW end
-end, DoubleClick = false })
+end }))
 
 ViolentLeft:AddToggle("GodMode", { Text = "无敌", Default = false, Callback = function(state)
     if state then AddToArrayList("无敌") else RemoveFromArrayList("无敌") end
@@ -924,7 +924,7 @@ ViolentLeft:AddButton({ Text = "卡服", Func = function()
             end
         end
     end)
-end, DoubleClick = false })
+end })
 
 ViolentLeft:AddToggle("KillAuraV1", { Text = "杀戮光环 v1(慢)", Default = false, Callback = function(state)
     if state then AddToArrayList("杀戮光环") else RemoveFromArrayList("杀戮光环") end
@@ -1266,7 +1266,7 @@ ViolentRight:AddButton({ Text = "删除墙打特效", Func = function()
             for _, child in ipairs(obj:GetChildren()) do child:Destroy() end
         end
     end
-end, DoubleClick = false })
+end })
 
 ViolentRight:AddButton({ Text = "删除击杀表情特效", Func = function()
     local KillEmote = rs:WaitForChild("Cosmetics"):WaitForChild("KillEmote")
@@ -1280,7 +1280,7 @@ ViolentRight:AddButton({ Text = "删除击杀表情特效", Func = function()
         end
     end
     removeEffects(KillEmote)
-end, DoubleClick = false })
+end }))
 
 HitboxLeft:AddToggle("HitboxExpand", { Text = "碰撞箱扩大", Default = false, Callback = function(v)
     if v then
@@ -1391,7 +1391,7 @@ LockLeft:AddButton({ Text = "刷新玩家列表", Func = function()
         if p ~= player then table.insert(newNames, p.Name) end
     end
     if Toggles.LockTarget then Toggles.LockTarget:SetValues(newNames) end
-end, DoubleClick = false })
+end })
 
 LockLeft:AddToggle("FollowBack", { Text = "锁背", Default = false, Callback = function(state)
     LockS.followEnabled = state
@@ -1464,7 +1464,7 @@ EmoteLeft:AddButton({ Text = "刷新击杀表情", Func = function()
     T.state.dropdown = EmoteLeft:AddDropdown("KillEmoteSelect", { Text = "击杀表情", Default = 1, Values = T.state.killEmotes, Callback = function(v)
         if v ~= "No emotes found" then T.state.selectedEmote = v T.useEmote(v) end
     end })
-end, DoubleClick = false })
+end })
 
 for _, e in pairs(rs:WaitForChild("Cosmetics"):WaitForChild("KillEmote"):GetChildren()) do
     table.insert(T.state.killEmotes, e.Name)
@@ -1554,7 +1554,7 @@ for k in pairs(keyMap) do table.insert(keyList, k) end
 
 EmoteRight:AddDropdown("Keybind", { Text = "快捷键", Default = 1, Values = keyList, Callback = function(v) T.state.keybind = keyMap[v] end })
 
-EmoteRight:AddButton({ Text = "随机表情", Func = T.useRandom, DoubleClick = false })
+EmoteRight:AddButton({ Text = "随机表情", Func = T.useRandom }))
 
 BattleLeft:AddToggle("NoFaceFriend", { Text = "不朝向好友", Default = false, Callback = function(state) BCXZJHYT = state end })
 
@@ -2426,7 +2426,7 @@ AimLeft:AddButton({ Text = "刷新列表", Func = function()
     end
     getgenvPlayerList = names
     if Toggles.PlayerSelect then Toggles.PlayerSelect:SetValues(names) end
-end, DoubleClick = false })
+end })
 
 AimLeft:AddButton({ Text = "传送到玩家", Func = function()
     if getgenvSelectedPlayer and getgenvSelectedPlayer ~= "" then
@@ -2439,7 +2439,7 @@ AimLeft:AddButton({ Text = "传送到玩家", Func = function()
             end
         end
     end
-end, DoubleClick = false })
+end }))
 
 AimLeft:AddButton({ Text = "拉到身边", Func = function()
     if getgenvSelectedPlayer and getgenvSelectedPlayer ~= "" then
@@ -2450,7 +2450,7 @@ AimLeft:AddButton({ Text = "拉到身边", Func = function()
             if targetRoot then targetRoot.CFrame = hrp.CFrame * CFrame.new(0, 3, 0) end
         end
     end
-end, DoubleClick = false })
+end }))
 
 AimLeft:AddButton({ Text = "切换Bald", Func = function()
     local function tryMethod4(charName)
@@ -2489,7 +2489,7 @@ AimLeft:AddButton({ Text = "切换Bald", Func = function()
         return success
     end
     tryMethod4("Bald")
-end, DoubleClick = false })
+end }))
 
 AimLeft:AddButton({ Text = "切换Hunter", Func = function()
     local function tryMethod4(charName)
@@ -2528,9 +2528,9 @@ AimLeft:AddButton({ Text = "切换Hunter", Func = function()
         return success
     end
     tryMethod4("Hunter")
-end, DoubleClick = false })
+end }))
 
-UnloadGroup:AddButton({ Text = "卸载脚本", Func = function() Library:Unload() end, DoubleClick = false })
+UnloadGroup:AddButton({ Text = "卸载脚本", Func = function() Library:Unload() end }))
 
 if ThemeManager then
     ThemeManager:SetLibrary(Library)
@@ -2547,6 +2547,6 @@ end
 
 Library:Notify({
     Title = "最强战场",
-    Description = "恐拜大帝",
+    Description = "整合版加载成功 | 恐拜大帝",
     Time = 5,
 })
