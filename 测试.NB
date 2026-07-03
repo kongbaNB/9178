@@ -1,4 +1,14 @@
-local function safeLoad(url) local success, result = pcall(function() return loadstring(game:HttpGet(url))() end) if not success then warn("加载失败: " .. url) return nil end return result end local Library = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/黑曜石主库.ui") local ThemeManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/主题管理.ui") local SaveManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/配置管理.ui") if not Library then game:GetService("StarterGui"):SetCore("SendNotification", { Title = "错误", Text = "UI 库加载失败，请检查网络或脚本资源", Duration = 5, }) return end local Options = Library.Options local Toggles = Library.Toggles local Players = game:GetService("Players") local ReplicatedStorage = game:GetService("ReplicatedStorage") local RunService = game:GetService("RunService") local UserInputService = game:GetService("UserInputService") local Workspace = game:GetService("Workspace") local Lighting = game:GetService("Lighting") local HttpService = game:GetService("HttpService") local player = Players.LocalPlayer local Window = Library:CreateWindow({ Title = "最强战场", Footer = "恐拜大帝 制作", Icon = 131153193945220, NotifySide = "Right", ShowCustomCursor = true, }) Library:Notify({ Title = "最强战场", Description = "创作者：恐拜大帝\nQQ：3999698324\n脚本已加载成功", Time = 5, }) local Tabs = { Notice = Window:AddTab("通知", "info"), Main = Window:AddTab("主要", "info"), Violence = Window:AddTab("暴力", "info"), Hitbox = Window:AddTab("碰撞箱", "info"), Lock = Window:AddTab("锁人", "info"), Emote = Window:AddTab("击杀表情", "info"), Settings = Window:AddTab("设置", "settings"), } local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者消息") NoticeGroup:AddLabel('恐拜大帝将持续更新此脚本') NoticeGroup:AddLabel('创作者：恐拜大帝')
+local function safeLoad(url) local success, result = pcall(function() return loadstring(game:HttpGet(url))() end) if not success then warn("加载失败: " .. url) return nil end return result end local Library = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/黑曜石主库.ui") local ThemeManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/主题管理.ui") local SaveManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/配置管理.ui") if not Library then game:GetService("StarterGui"):SetCore("SendNotification", { Title = "错误", Text = "UI 库加载失败，请检查网络或脚本资源", Duration = 5, }) return end local Options = Library.Options local Toggles = Library.Toggles local Players = game:GetService("Players") local ReplicatedStorage = game:GetService("ReplicatedStorage") local RunService = game:GetService("RunService") local UserInputService = game:GetService("UserInputService") local Workspace = game:GetService("Workspace") local Lighting = game:GetService("Lighting") local HttpService = game:GetService("HttpService") local player = Players.LocalPlayer Library.Scheme.FontColor = Color3.fromRGB(255, 255, 255)
+Library.Scheme.MainColor = Color3.fromRGB(20, 20, 20)
+Library.Scheme.AccentColor = Color3.fromRGB(0, 255, 255)
+Library.Scheme.BackgroundColor = Color3.fromRGB(12, 12, 12)
+Library.Scheme.OutlineColor = Color3.fromRGB(35, 35, 35)
+Library.Scheme.RedColor = Color3.fromRGB(255, 50, 50)
+Library.Scheme.DarkColor = Color3.new(0, 0, 0)
+Library.Scheme.WhiteColor = Color3.new(1, 1, 1)
+Library.IsLightTheme = false
+
+local Window = Library:CreateWindow({ Title = "最强战场", Footer = "恐拜大帝 制作", Icon = 131153193945220, NotifySide = "Right", ShowCustomCursor = true, }) Library:Notify({ Title = "最强战场", Description = "创作者：恐拜大帝\nQQ：3999698324\n脚本已加载成功", Time = 5, }) local Tabs = { Notice = Window:AddTab("通知", "info"), Main = Window:AddTab("主要", "info"), Violence = Window:AddTab("暴力", "info"), Hitbox = Window:AddTab("碰撞箱", "info"), Lock = Window:AddTab("锁人", "info"), Emote = Window:AddTab("击杀表情", "info"), Settings = Window:AddTab("设置", "settings"), } local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者消息") NoticeGroup:AddLabel('恐拜大帝将持续更新此脚本') NoticeGroup:AddLabel('创作者：恐拜大帝')
 
 local MainLeft = Tabs.Main:AddLeftGroupbox("战斗辅助")
 local MainRight = Tabs.Main:AddRightGroupbox("属性修改")
@@ -13,7 +23,7 @@ local fakeBlockEnabled = false
 local loopRunning = false
 MainLeft:AddToggle("假防", { Default = false, Callback = function(state)
     fakeBlockEnabled = state
-    local BlockRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Combat"):WaitForChild("Block")
+    local BlockRemote = ReplicatedStorage:WaitForChild("Remotes", 5):WaitForChild("Combat", 5):WaitForChild("Block", 5)
     local character = player.Character or player.CharacterAdded:Wait()
     local function enableBlock()
         pcall(function()
@@ -41,9 +51,11 @@ MainLeft:AddToggle("假防", { Default = false, Callback = function(state)
     end
 end })
 
-local defaultCooldown = ReplicatedStorage.Settings.Cooldowns.Dash.Value
+local defaultCooldown = 0
+pcall(function() defaultCooldown = ReplicatedStorage.Settings.Cooldowns.Dash.Value end)
 MainLeft:AddToggle("侧闪无冷却", { Default = false, Callback = function(state)
-    local dashCooldown = ReplicatedStorage.Settings.Cooldowns.Dash
+    local dashCooldown = nil
+pcall(function() dashCooldown = ReplicatedStorage.Settings.Cooldowns.Dash end)
     if state then
         dashCooldown.Value = 1
     else
@@ -51,9 +63,11 @@ MainLeft:AddToggle("侧闪无冷却", { Default = false, Callback = function(sta
     end
 end })
 
-local defaultMeleeCooldown = ReplicatedStorage.Settings.Cooldowns.Melee.Value
+local defaultMeleeCooldown = 0
+pcall(function() defaultMeleeCooldown = ReplicatedStorage.Settings.Cooldowns.Melee.Value end)
 MainLeft:AddToggle("近战无冷却", { Default = false, Callback = function(state)
-    local meleeCooldown = ReplicatedStorage.Settings.Cooldowns.Melee
+    local meleeCooldown = nil
+pcall(function() meleeCooldown = ReplicatedStorage.Settings.Cooldowns.Melee end)
     if state then
         meleeCooldown.Value = 1
     else
@@ -61,7 +75,8 @@ MainLeft:AddToggle("近战无冷却", { Default = false, Callback = function(sta
     end
 end })
 
-local settings = ReplicatedStorage.Settings
+local settings = nil
+pcall(function() settings = ReplicatedStorage.Settings end)
 local defaultAbility = settings.Cooldowns.Ability.Value
 MainLeft:AddToggle("技能无冷却(仅宿傩角色)", { Default = false, Callback = function(state)
     settings.Cooldowns.Ability.Value = state and 1 or defaultAbility
@@ -94,7 +109,8 @@ MainLeft:AddToggle("自动签到表情", { Default = false, Callback = function(
     end
 end })
 
-local noSlowdownsToggle = ReplicatedStorage.Settings.Toggles.NoSlowdowns
+local noSlowdownsToggle = nil
+pcall(function() noSlowdownsToggle = ReplicatedStorage.Settings.Toggles.NoSlowdowns end)
 local defaultNoSlowdowns = false
 MainLeft:AddToggle("无减速效果", { Default = false, Callback = function(state)
     if state then
@@ -134,7 +150,8 @@ MainLeft:AddToggle("秒开大", { Default = false, Callback = function(state)
     settings.Toggles.InstantTransformation.Value = state
 end })
 
-local Ping = player:WaitForChild("Info"):WaitForChild("Ping")
+local Ping = nil
+pcall(function() Ping = player:WaitForChild("Info", 5):WaitForChild("Ping", 5) end)
 local pingLoop = nil
 MainRight:AddToggle("ping乱码", { Default = false, Callback = function(state)
     if state then
@@ -158,7 +175,8 @@ MainRight:AddToggle("ping乱码", { Default = false, Callback = function(state)
     end
 end })
 
-local MeleeDamage = ReplicatedStorage:WaitForChild("Settings"):WaitForChild("Multipliers"):WaitForChild("MeleeDamage")
+local MeleeDamage = nil
+pcall(function() MeleeDamage = ReplicatedStorage:WaitForChild("Settings", 5):WaitForChild("Multipliers", 5):WaitForChild("MeleeDamage", 5) end)
 MeleeDamage.Value = 100
 MainRight:AddToggle("一拳倒地", { Default = false, Callback = function(state)
     if state then
@@ -168,7 +186,8 @@ MainRight:AddToggle("一拳倒地", { Default = false, Callback = function(state
     end
 end })
 
-local RagdollPower = ReplicatedStorage:WaitForChild("Settings"):WaitForChild("Multipliers"):WaitForChild("RagdollPower")
+local RagdollPower = nil
+pcall(function() RagdollPower = ReplicatedStorage:WaitForChild("Settings", 5):WaitForChild("Multipliers", 5):WaitForChild("RagdollPower", 5) end)
 local tpConnection = nil
 MainRight:AddToggle("一拳击飞", { Default = false, Callback = function(state)
     local maxTeleportDistance = 50
@@ -176,12 +195,12 @@ MainRight:AddToggle("一拳击飞", { Default = false, Callback = function(state
     if state then
         RagdollPower.Value = 10000
         local Character = player.Character or player.CharacterAdded:Wait()
-        local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+        local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart", 5)
         lastPosition = HumanoidRootPart.Position
         tpConnection = RunService.RenderStepped:Connect(function()
             if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
                 Character = player.Character or player.CharacterAdded:Wait()
-                HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+                HumanoidRootPart = Character:WaitForChild("HumanoidRootPart", 5)
                 lastPosition = HumanoidRootPart.Position
             end
             local currentPos = player.Character.HumanoidRootPart.Position
@@ -201,7 +220,8 @@ MainRight:AddToggle("一拳击飞", { Default = false, Callback = function(state
     end
 end })
 
-local wallCombo = ReplicatedStorage.Settings.Cooldowns.WallCombo
+local wallCombo = nil
+pcall(function() wallCombo = ReplicatedStorage.Settings.Cooldowns.WallCombo end)
 MainRight:AddToggle("墙打无冷却", { Default = false, Callback = function(state)
     if state then
         wallCombo.Value = 0
@@ -224,22 +244,26 @@ wall.Material = Enum.Material.SmoothPlastic
 wall.Anchored = true
 wall.CanCollide = true
 wall.CFrame = wall.CFrame or CFrame.new(0,5,0)
-if getconnections then
-    for _, conn in pairs(getconnections(wall.AncestryChanged)) do
-        conn:Disable()
+pcall(function()
+    if getconnections then
+        for _, conn in pairs(getconnections(wall.AncestryChanged)) do
+            conn:Disable()
+        end
     end
-end
-local mt = getrawmetatable(game)
-setreadonly(mt,false)
-local old = mt.__namecall
-mt.__namecall = newcclosure(function(self, ...)
-    local method = getnamecallmethod()
-    if self == wall and method == "Destroy" then
-        return
+    local mt = getrawmetatable(game)
+    if mt then
+        setreadonly(mt,false)
+        local old = mt.__namecall
+        mt.__namecall = newcclosure(function(self, ...)
+            local method = getnamecallmethod()
+            if self == wall and method == "Destroy" then
+                return
+            end
+            return old(self, ...)
+        end)
+        setreadonly(mt,true)
     end
-    return old(self, ...)
 end)
-setreadonly(mt,true)
 local followConnection = nil
 MainRight:AddToggle("随处墙打", { Default = false, Callback = function(state)
     if state then
@@ -367,7 +391,7 @@ local function CreateClone(char)
 end
 local function ToggleInvisibility(state)
     local Character = player.Character or player.CharacterAdded:Wait()
-    local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+    local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart", 5)
     if state then
         originalCFrame = HumanoidRootPart.CFrame
         HumanoidRootPart.CFrame = HumanoidRootPart.CFrame + Vector3.new(0, -50, 0)
@@ -486,7 +510,7 @@ MainRight2:AddButton("删除墙打特效", function()
 end)
 
 MainRight2:AddButton("删除击杀表情特效", function()
-    local KillEmote = ReplicatedStorage:WaitForChild("Cosmetics"):WaitForChild("KillEmote")
+    local KillEmote = ReplicatedStorage:WaitForChild("Cosmetics", 5):WaitForChild("KillEmote", 5)
     local function removeEffects(obj)
         for _, child in ipairs(obj:GetChildren()) do
             if child:IsA("ParticleEmitter") or child:IsA("Trail") or child:IsA("Beam") or child:IsA("Fire") or child:IsA("Smoke") or child:IsA("Sparkles") or child:IsA("Light") then
@@ -499,7 +523,8 @@ MainRight2:AddButton("删除击杀表情特效", function()
     removeEffects(KillEmote)
 end)
 
-local multiUseCutscenesToggle = ReplicatedStorage.Settings.Toggles.MultiUseCutscenes
+local multiUseCutscenesToggle = nil
+pcall(function() multiUseCutscenesToggle = ReplicatedStorage.Settings.Toggles.MultiUseCutscenes end)
 local defaultMultiUse = false
 MainLeft2:AddToggle("艾斯帕大招技能多次使用(全角色通用)", { Default = false, Callback = function(state)
     if state then
@@ -542,7 +567,7 @@ local function NOFLY()
 end
 local function sFLY(vfly)
     local char = player.Character or player.CharacterAdded:Wait()
-    local humanoid = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid")
+    local humanoid = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid", 5)
     local root = getRoot(char)
     if not root then return end
     if flyKeyDown then flyKeyDown:Disconnect() end
@@ -584,7 +609,7 @@ local function sFLY(vfly)
         local camera = workspace.CurrentCamera
         local moveVector = Vector3.new(CONTROL.L+CONTROL.R, CONTROL.Q+CONTROL.E, CONTROL.F+CONTROL.B)
         local ok, controlModule = pcall(function()
-            return require(player.PlayerScripts:WaitForChild("PlayerModule"):WaitForChild("ControlModule"))
+            return require(player.PlayerScripts:WaitForChild("PlayerModule", 5):WaitForChild("ControlModule", 5))
         end)
         if ok and controlModule then
             local mv = controlModule:GetMoveVector()
@@ -642,18 +667,18 @@ MainLeft2:AddSlider("速度调节", { Min = 0, Max = 250, Default = 100, Roundin
 end })
 
 MainLeft2:AddSlider("冲刺加速(默认值100)", { Min = 0, Max = 1000, Default = 100, Rounding = 0, Callback = function(value)
-    ReplicatedStorage.Settings.Multipliers.DashSpeed.Value = value
+    pcall(function() ReplicatedStorage.Settings.Multipliers.DashSpeed.Value = value end)
 end })
 
 MainLeft2:AddSlider("跳跃增强(默认值100)", { Min = 0, Max = 1000, Default = 100, Rounding = 0, Callback = function(value)
-    ReplicatedStorage.Settings.Multipliers.JumpHeight.Value = value
+    pcall(function() ReplicatedStorage.Settings.Multipliers.JumpHeight.Value = value end)
 end })
 
 MainLeft2:AddSlider("攻击加速(默认值100)", { Min = 0, Max = 1000, Default = 100, Rounding = 0, Callback = function(value)
-    ReplicatedStorage.Settings.Multipliers.MeleeSpeed.Value = value
+    pcall(function() ReplicatedStorage.Settings.Multipliers.MeleeSpeed.Value = value end)
 end })
 
-local ViolenceLeft = Tabs.Violence:AddLeftGroupbox("暴力功能")
+pcall(function() local ViolenceLeft = Tabs.Violence:AddLeftGroupbox("暴力功能")
 
 local active = false
 local function getLocalPlayerCharacter()
@@ -815,7 +840,7 @@ _F.Dash = function()
     local char = _F.L.Character or _F.L.CharacterAdded:Wait()
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if hrp then
-        require(_F.RS:WaitForChild("Core")).Library("Remote").Send("Dash", hrp.CFrame, "L", 1)
+        require(_F.RS:WaitForChild("Core", 5)).Library("Remote").Send("Dash", hrp.CFrame, "L", 1)
     end
 end
 _F.HRP = function()
@@ -999,10 +1024,14 @@ _F.L.CharacterAdded:Connect(function()
     end
 end)
 
-local Core = require(ReplicatedStorage:WaitForChild("Core"))
-local charValue = player:WaitForChild("Data"):WaitForChild("Character").Value
-local chars = ReplicatedStorage:WaitForChild("Characters")
-local ability = chars:WaitForChild(charValue):WaitForChild("WallCombo")
+local Core = nil
+pcall(function() Core = require(ReplicatedStorage:WaitForChild("Core", 5)) end)
+local charValue = nil
+pcall(function() charValue = player:WaitForChild("Data", 5):WaitForChild("Character", 5).Value end)
+local chars = nil
+pcall(function() chars = ReplicatedStorage:WaitForChild("Characters", 5) end)
+local ability = nil
+pcall(function() if chars and charValue then ability = chars:WaitForChild(charValue, 5):WaitForChild("WallCombo", 5) end end)
 local wallComboCooldown = 0.05
 local lastWallComboTime = 0
 local wallComboKey = Enum.KeyCode.E
@@ -1116,12 +1145,17 @@ local running = false
 local auraConn
 local lastDash = 0
 local lastAttack = 0
-local data = player:WaitForChild("Data")
-local charValue2 = data:WaitForChild("Character")
+local data = nil
+pcall(function() data = player:WaitForChild("Data", 5) end)
+local charValue2 = nil
+pcall(function() if data then charValue2 = data:WaitForChild("Character", 5) end end)
 local localCharacterName = charValue2.Value
-local ability2 = ReplicatedStorage:WaitForChild("Characters"):WaitForChild(localCharacterName):WaitForChild("WallCombo")
-local AbilitiesRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Abilities"):WaitForChild("Ability")
-local CombatRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Combat"):WaitForChild("Action")
+local ability2 = nil
+pcall(function() ability2 = ReplicatedStorage:WaitForChild("Characters", 5):WaitForChild(localCharacterName, 5):WaitForChild("WallCombo", 5) end)
+local AbilitiesRemote = nil
+pcall(function() AbilitiesRemote = ReplicatedStorage:WaitForChild("Remotes", 5):WaitForChild("Abilities", 5):WaitForChild("Ability", 5) end)
+local CombatRemote = nil
+pcall(function() CombatRemote = ReplicatedStorage:WaitForChild("Remotes", 5):WaitForChild("Combat", 5):WaitForChild("Action", 5) end)
 
 local function getLocalRootPart()
     local c = player.Character
@@ -1344,8 +1378,9 @@ end })
 ViolenceLeft:AddToggle("墙打秒杀忽略好友", { Default = false, Callback = function(state)
     ignoreFriends = state
 end })
+end)
 
-local HitboxTab = Tabs.Hitbox:AddLeftGroupbox("碰撞箱扩大")
+pcall(function() local HitboxTab = Tabs.Hitbox:AddLeftGroupbox("碰撞箱扩大")
 pcall(function()
     setthreadidentity(8)
 end)
@@ -1433,7 +1468,9 @@ function S:EnableEnhancer()
     if self.Cache.HitProc then return end
 
     local ok, hit = pcall(function()
-        return require(LP.PlayerScripts:WaitForChild("Combat"):WaitForChild("Hit"))
+        local _hitModule = nil
+pcall(function() _hitModule = require(LP.PlayerScripts:WaitForChild("Combat", 5):WaitForChild("Hit", 5)) end)
+return _hitModule
     end)
     if not ok or not hit.Process then return end
 
@@ -1518,8 +1555,9 @@ HitboxTab:AddInput("碰撞箱Z轴", { Default = tostring(S.Cfg.Z), Numeric = tru
         S.Cfg.Z = math.clamp(v, 10, 150)
     end
 end })
+end)
 
-local LockLeft = Tabs.Lock:AddLeftGroupbox("锁人")
+pcall(function() local LockLeft = Tabs.Lock:AddLeftGroupbox("锁人")
 
 local S2 = {}
 S2.Players = game:GetService("Players")
@@ -1648,8 +1686,9 @@ LockLeft:AddToggle("看着玩家(需要关移位锁)", { Default = false, Callba
     S2.lookEnabled = state
     S2.toggleConnection()
 end })
+end)
 
-local EmoteLeft = Tabs.Emote:AddLeftGroupbox("击杀表情")
+pcall(function() local EmoteLeft = Tabs.Emote:AddLeftGroupbox("击杀表情")
 
 local T = {}
 T.env = {
@@ -1657,9 +1696,9 @@ T.env = {
     Players = game:GetService("Players"),
 }
 T.env.LocalPlayer = T.env.Players.LocalPlayer
-T.env.core = require(T.env.ReplicatedStorage:WaitForChild("Core"))
+pcall(function() T.env.core = require(T.env.ReplicatedStorage:WaitForChild("Core", 5)) end)
 T.env.Character = T.env.LocalPlayer.Character or T.env.LocalPlayer.CharacterAdded:Wait()
-T.env.HumanoidRootPart = T.env.Character:WaitForChild("HumanoidRootPart")
+T.env.HumanoidRootPart = T.env.Character:WaitForChild("HumanoidRootPart", 5)
 
 T.state = {
     killEmotes = {},
@@ -1683,7 +1722,7 @@ end
 
 function T.useEmote(name)
     local tmp = T.state.tmp
-    tmp.emote = T.env.ReplicatedStorage:WaitForChild("Cosmetics"):WaitForChild("KillEmote"):FindFirstChild(name)
+    tmp.emote = T.env.ReplicatedStorage:WaitForChild("Cosmetics", 5):WaitForChild("KillEmote", 5):FindFirstChild(name)
     tmp.myRoot = T.getRoot(T.env.LocalPlayer.Character)
     if not tmp.emote or not tmp.myRoot then return end
 
@@ -1771,13 +1810,13 @@ end
 
 EmoteLeft:AddButton("刷新击杀表情", function()
     table.clear(T.state.killEmotes)
-    for _, e in pairs(T.env.ReplicatedStorage:WaitForChild("Cosmetics"):WaitForChild("KillEmote"):GetChildren()) do
+    for _, e in pairs(T.env.ReplicatedStorage:WaitForChild("Cosmetics", 5):WaitForChild("KillEmote", 5):GetChildren()) do
         T.state.killEmotes[#T.state.killEmotes + 1] = e.Name
     end
     T.updateDropdown(T.state.killEmotes)
 end)
 
-for _, e in pairs(T.env.ReplicatedStorage:WaitForChild("Cosmetics"):WaitForChild("KillEmote"):GetChildren()) do
+for _, e in pairs(T.env.ReplicatedStorage:WaitForChild("Cosmetics", 5):WaitForChild("KillEmote", 5):GetChildren()) do
     T.state.killEmotes[#T.state.killEmotes + 1] = e.Name
 end
 
@@ -1824,6 +1863,7 @@ EmoteLeft:AddDropdown("快捷键设置", {
 
 EmoteLeft:AddButton("随机用一个击杀表情", function()
     T.useRandom()
+end)
 end)
 
 local UnloadGroup = Tabs.Settings:AddLeftGroupbox("脚本管理")
