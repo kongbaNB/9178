@@ -998,6 +998,7 @@ CombatGroup4:AddToggle('BearTrapToggle', {Text = '自动捕兽夹攻击', Defaul
 local AutoGroup1 = Tabs.Auto:AddLeftGroupbox("砍树与钓鱼")
 AutoGroup1:AddLabel("[使用方式]拿起你要用来砍树的工具")
 AutoGroup1:AddToggle('ChopAuraToggle', {Text = '砍树光环', Default = false, Callback = function(v) ChopAura.Enabled = v end})
+AutoGroup1:AddLabel("[温馨提示]范围开的越大砍树越慢")
 AutoGroup1:AddSlider('ChopAuraRange', {Text = '砍树范围', Default = 30, Min = 5, Max = 500, Rounding = 0, Callback = function(v) ChopAura.Range = v end})
 AutoGroup1:AddSlider('ChopAuraInterval', {Text = '砍树频率(秒)', Default = 0.1, Min = 0.01, Max = 1, Rounding = 2, Callback = function(v) ChopAura.Interval = v end})
 AutoGroup1:AddSlider('ChopAuraDamage', {Text = '伤害倍率', Default = 3, Min = 1, Max = 50, Rounding = 0, Callback = function(v) ChopAura.DamageMulti = v end})
