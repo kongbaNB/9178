@@ -1,4 +1,53 @@
-local function safeLoad(url) local success, result = pcall(function() return loadstring(game:HttpGet(url))() end) if not success then warn("加载失败: " .. url) return nil end return result end local Library = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/黑曜石主库.ui") local ThemeManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/主题管理.ui") local SaveManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/配置管理.ui") if not Library then game:GetService("StarterGui"):SetCore("SendNotification", { Title = "错误", Text = "UI 库加载失败，请检查网络或脚本资源", Duration = 5, }) return end local Options = Library.Options local Toggles = Library.Toggles local Players = game:GetService("Players") local ReplicatedStorage = game:GetService("ReplicatedStorage") local RunService = game:GetService("RunService") local UserInputService = game:GetService("UserInputService") local Workspace = game:GetService("Workspace") local Lighting = game:GetService("Lighting") local HttpService = game:GetService("HttpService") local player = Players.LocalPlayer Library.Scheme.FontColor = Color3.fromRGB(255, 255, 255)
+local function safeLoad(url)
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet(url))()
+    end)
+    if not success then
+        warn("加载失败: " .. url)
+        return nil
+    end
+    return result
+end
+
+local Library = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/黑曜石主库.ui")
+local ThemeManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/主题管理.ui")
+local SaveManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/配置管理.ui")
+
+if not Library then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "错误",
+        Text = "UI 库加载失败，请检查网络或脚本资源",
+        Duration = 5,
+    })
+    return
+end
+
+local Options = Library.Options
+local Toggles = Library.Toggles
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local HttpService = game:GetService("HttpService")
+local player = Players.LocalPlayer
+
+-- 安全获取 ReplicatedStorage 中的对象，带默认值
+local function safeGet(pathArray, default)
+    local obj = ReplicatedStorage
+    for _, name in ipairs(pathArray) do
+        if obj and obj:FindFirstChild(name) then
+            obj = obj[name]
+        else
+            return default
+        end
+    end
+    return obj
+end
+
+Library.Scheme.FontColor = Color3.fromRGB(255, 255, 255)
 Library.Scheme.MainColor = Color3.fromRGB(20, 20, 20)
 Library.Scheme.AccentColor = Color3.fromRGB(0, 255, 255)
 Library.Scheme.BackgroundColor = Color3.fromRGB(12, 12, 12)
@@ -8,7 +57,29 @@ Library.Scheme.DarkColor = Color3.new(0, 0, 0)
 Library.Scheme.WhiteColor = Color3.new(1, 1, 1)
 Library.IsLightTheme = false
 
-local Window = Library:CreateWindow({ Title = "最强战场", Footer = "恐拜大帝 制作", Icon = 131153193945220, NotifySide = "Right", ShowCustomCursor = true, }) Library:Notify("最强战场 - 创作者：恐拜大帝\nQQ：3999698324\n脚本已加载成功", 5) local Tabs = { Notice = Window:AddTab("通知", "info"), Main = Window:AddTab("主要", "info"), Violence = Window:AddTab("暴力", "info"), Hitbox = Window:AddTab("碰撞箱", "info"), Lock = Window:AddTab("锁人", "info"), Emote = Window:AddTab("击杀表情", "info"), Settings = Window:AddTab("设置", "settings"), } local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者消息") NoticeGroup:AddLabel('恐拜大帝将持续更新此脚本') NoticeGroup:AddLabel('创作者：恐拜大帝')
+local Window = Library:CreateWindow({
+    Title = "最强战场",
+    Footer = "恐拜大帝 制作",
+    Icon = 131153193945220,
+    NotifySide = "Right",
+    ShowCustomCursor = true,
+})
+
+Library:Notify("最强战场 - 创作者：恐拜大帝\nQQ：3999698324\n脚本已加载成功", 5)
+
+local Tabs = {
+    Notice = Window:AddTab("通知", "info"),
+    Main = Window:AddTab("主要", "info"),
+    Violence = Window:AddTab("暴力", "info"),
+    Hitbox = Window:AddTab("碰撞箱", "info"),
+    Lock = Window:AddTab("锁人", "info"),
+    Emote = Window:AddTab("击杀表情", "info"),
+    Settings = Window:AddTab("设置", "settings"),
+}
+
+local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者消息")
+NoticeGroup:AddLabel('恐拜大帝将持续更新此脚本')
+NoticeGroup:AddLabel('创作者：恐拜大帝')
 
 local MainLeft = Tabs.Main:AddLeftGroupbox("战斗辅助")
 local MainRight = Tabs.Main:AddRightGroupbox("属性修改")
@@ -23,7 +94,8 @@ local fakeBlockEnabled = false
 local loopRunning = false
 MainLeft:AddToggle('FakeBlockToggle', { Text = '假防', Default = false, Callback = function(state)
     fakeBlockEnabled = state
-    local BlockRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Combat"):WaitForChild("Block")
+    local BlockRemote = safeGet({"Remotes", "Combat", "Block"})
+    if not BlockRemote then return end
     local character = player.Character or player.CharacterAdded:Wait()
     local function enableBlock()
         pcall(function()
@@ -51,38 +123,42 @@ MainLeft:AddToggle('FakeBlockToggle', { Text = '假防', Default = false, Callba
     end
 end })
 
-local defaultCooldown = ReplicatedStorage.Settings.Cooldowns.Dash.Value
+-- 安全获取 Dash 冷却默认值
+local dashCooldownObj = safeGet({"Settings", "Cooldowns", "Dash"})
+local defaultCooldown = dashCooldownObj and dashCooldownObj.Value or 1
 MainLeft:AddToggle('NoDashCooldownToggle', { Text = '侧闪无冷却', Default = false, Callback = function(state)
-    local dashCooldown = ReplicatedStorage.Settings.Cooldowns.Dash
-    if state then
-        dashCooldown.Value = 1
-    else
-        dashCooldown.Value = defaultCooldown
+    local dc = safeGet({"Settings", "Cooldowns", "Dash"})
+    if dc then
+        dc.Value = state and 1 or defaultCooldown
     end
 end })
 
-local defaultMeleeCooldown = ReplicatedStorage.Settings.Cooldowns.Melee.Value
+local meleeCooldownObj = safeGet({"Settings", "Cooldowns", "Melee"})
+local defaultMeleeCooldown = meleeCooldownObj and meleeCooldownObj.Value or 1
 MainLeft:AddToggle('NoMeleeCooldownToggle', { Text = '近战无冷却', Default = false, Callback = function(state)
-    local meleeCooldown = ReplicatedStorage.Settings.Cooldowns.Melee
-    if state then
-        meleeCooldown.Value = 1
-    else
-        meleeCooldown.Value = defaultMeleeCooldown
+    local mc = safeGet({"Settings", "Cooldowns", "Melee"})
+    if mc then
+        mc.Value = state and 1 or defaultMeleeCooldown
     end
 end })
 
-local settings = ReplicatedStorage.Settings
-local defaultAbility = settings.Cooldowns.Ability.Value
+local settings = ReplicatedStorage:FindFirstChild("Settings")
+local abilityCooldown = settings and settings:FindFirstChild("Cooldowns") and settings.Cooldowns:FindFirstChild("Ability")
+local defaultAbility = abilityCooldown and abilityCooldown.Value or 1
 MainLeft:AddToggle('NoAbilityCooldownToggle', { Text = '技能无冷却(仅宿傩角色)', Default = false, Callback = function(state)
-    settings.Cooldowns.Ability.Value = state and 1 or defaultAbility
+    local ac = safeGet({"Settings", "Cooldowns", "Ability"})
+    if ac then
+        ac.Value = state and 1 or defaultAbility
+    end
 end })
 
-local Remotes = ReplicatedStorage.Remotes
-local Combat = Remotes.Combat
-local EmoteClaim = Combat.EmoteClaim
+local Remotes = ReplicatedStorage:FindFirstChild("Remotes")
+local Combat = Remotes and Remotes:FindFirstChild("Combat")
+local EmoteClaim = Combat and Combat:FindFirstChild("EmoteClaim")
 local emoteClaimActive = false
 local emoteClaimConnection = nil
 local function startEmoteClaim()
+    if not EmoteClaim then return end
     emoteClaimConnection = RunService.Heartbeat:Connect(function()
         if emoteClaimActive then
             EmoteClaim:FireServer()
@@ -104,44 +180,56 @@ MainLeft:AddToggle('AutoEmoteClaimToggle', { Text = '自动签到表情', Defaul
     end
 end })
 
-local noSlowdownsToggle = ReplicatedStorage.Settings.Toggles.NoSlowdowns
+local noSlowdownsToggle = safeGet({"Settings", "Toggles", "NoSlowdowns"})
 local defaultNoSlowdowns = false
 MainLeft:AddToggle('NoSlowdownToggle', { Text = '无减速效果', Default = false, Callback = function(state)
-    if state then
-        noSlowdownsToggle.Value = true
-    else
-        noSlowdownsToggle.Value = defaultNoSlowdowns
+    if noSlowdownsToggle then
+        noSlowdownsToggle.Value = state or defaultNoSlowdowns
     end
 end })
 
-local defaultDisableHitStun = settings.Toggles.DisableHitStun.Value
+local disableHitStun = safeGet({"Settings", "Toggles", "DisableHitStun"})
 MainLeft:AddToggle('DisableHitStunToggle', { Text = '取消被攻击硬直', Default = false, Callback = function(state)
-    settings.Toggles.DisableHitStun.Value = state
+    if disableHitStun then
+        disableHitStun.Value = state
+    end
 end })
 
-local defaultDisableIntros = settings.Toggles.DisableIntros.Value
+local disableIntros = safeGet({"Settings", "Toggles", "DisableIntros"})
 MainLeft:AddToggle('DisableIntrosToggle', { Text = '跳过角色开场动作', Default = false, Callback = function(state)
-    settings.Toggles.DisableIntros.Value = state
+    if disableIntros then
+        disableIntros.Value = state
+    end
 end })
 
-local defaultNoStunOnMiss = settings.Toggles.NoStunOnMiss.Value
+local noStunOnMiss = safeGet({"Settings", "Toggles", "NoStunOnMiss"})
 MainLeft:AddToggle('NoStunOnMissToggle', { Text = '普攻无僵直', Default = false, Callback = function(state)
-    settings.Toggles.NoStunOnMiss.Value = state
+    if noStunOnMiss then
+        noStunOnMiss.Value = state
+    end
 end })
 
-local defaultRagdollTimer = settings.Multipliers.RagdollTimer.Value
+local ragdollTimer = safeGet({"Settings", "Multipliers", "RagdollTimer"})
+local defaultRagdollTimer = ragdollTimer and ragdollTimer.Value or 0.5
 MainLeft:AddToggle('NoRagdollToggle', { Text = '被别人击倒不会变成布娃娃', Default = false, Callback = function(state)
-    settings.Multipliers.RagdollTimer.Value = state and 0.5 or defaultRagdollTimer
+    if ragdollTimer then
+        ragdollTimer.Value = state and 0.5 or defaultRagdollTimer
+    end
 end })
 
-local defaultUltimateTimer = settings.Multipliers.UltimateTimer.Value
+local ultimateTimer = safeGet({"Settings", "Multipliers", "UltimateTimer"})
+local defaultUltimateTimer = ultimateTimer and ultimateTimer.Value or 100000
 MainLeft:AddToggle('ExtendUltimateToggle', { Text = '延长大招时间', Default = false, Callback = function(state)
-    settings.Multipliers.UltimateTimer.Value = state and 100000 or defaultUltimateTimer
+    if ultimateTimer then
+        ultimateTimer.Value = state and 100000 or defaultUltimateTimer
+    end
 end })
 
-local defaultInstantTransformation = settings.Toggles.InstantTransformation.Value
+local instantTransformation = safeGet({"Settings", "Toggles", "InstantTransformation"})
 MainLeft:AddToggle('InstantUltimateToggle', { Text = '秒开大', Default = false, Callback = function(state)
-    settings.Toggles.InstantTransformation.Value = state
+    if instantTransformation then
+        instantTransformation.Value = state
+    end
 end })
 
 local Ping = player:WaitForChild("Info"):WaitForChild("Ping")
@@ -168,23 +256,22 @@ MainRight:AddToggle('PingSpamToggle', { Text = 'ping乱码', Default = false, Ca
     end
 end })
 
-local MeleeDamage = ReplicatedStorage:WaitForChild("Settings"):WaitForChild("Multipliers"):WaitForChild("MeleeDamage")
-MeleeDamage.Value = 100
+local MeleeDamage = safeGet({"Settings", "Multipliers", "MeleeDamage"})
+if MeleeDamage then MeleeDamage.Value = 100 end
 MainRight:AddToggle('OnePunchDownToggle', { Text = '一拳倒地', Default = false, Callback = function(state)
-    if state then
-        MeleeDamage.Value = 1000000
-    else
-        MeleeDamage.Value = 100
+    local md = safeGet({"Settings", "Multipliers", "MeleeDamage"})
+    if md then
+        md.Value = state and 1000000 or 100
     end
 end })
 
-local RagdollPower = ReplicatedStorage:WaitForChild("Settings"):WaitForChild("Multipliers"):WaitForChild("RagdollPower")
+local RagdollPower = safeGet({"Settings", "Multipliers", "RagdollPower"})
 local tpConnection = nil
 MainRight:AddToggle('OnePunchFlyToggle', { Text = '一拳击飞', Default = false, Callback = function(state)
     local maxTeleportDistance = 50
     local lastPosition = nil
     if state then
-        RagdollPower.Value = 10000
+        if RagdollPower then RagdollPower.Value = 10000 end
         local Character = player.Character or player.CharacterAdded:Wait()
         local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
         lastPosition = HumanoidRootPart.Position
@@ -203,7 +290,7 @@ MainRight:AddToggle('OnePunchFlyToggle', { Text = '一拳击飞', Default = fals
             end
         end)
     else
-        RagdollPower.Value = 100
+        if RagdollPower then RagdollPower.Value = 100 end
         if tpConnection then
             tpConnection:Disconnect()
             tpConnection = nil
@@ -211,12 +298,10 @@ MainRight:AddToggle('OnePunchFlyToggle', { Text = '一拳击飞', Default = fals
     end
 end })
 
-local wallCombo = ReplicatedStorage.Settings.Cooldowns.WallCombo
+local wallComboObj = safeGet({"Settings", "Cooldowns", "WallCombo"})
 MainRight:AddToggle('NoWallComboCooldownToggle', { Text = '墙打无冷却', Default = false, Callback = function(state)
-    if state then
-        wallCombo.Value = 0
-    else
-        wallCombo.Value = 100
+    if wallComboObj then
+        wallComboObj.Value = state and 0 or 100
     end
 end })
 
@@ -509,13 +594,10 @@ MainRight2:AddButton({ Text = '删除击杀表情特效', Func = function()
     removeEffects(KillEmote)
 end })
 
-local multiUseCutscenesToggle = ReplicatedStorage.Settings.Toggles.MultiUseCutscenes
-local defaultMultiUse = false
+local multiUseCutscenesToggle = safeGet({"Settings", "Toggles", "MultiUseCutscenes"})
 MainLeft2:AddToggle('MultiUseCutscenesToggle', { Text = '艾斯帕大招技能多次使用(全角色通用)', Default = false, Callback = function(state)
-    if state then
-        multiUseCutscenesToggle.Value = true
-    else
-        multiUseCutscenesToggle.Value = defaultMultiUse
+    if multiUseCutscenesToggle then
+        multiUseCutscenesToggle.Value = state
     end
 end })
 
@@ -652,15 +734,18 @@ MainLeft2:AddSlider('SpeedAdjustSlider', { Text = '速度调节', Default = 100,
 end })
 
 MainLeft2:AddSlider('DashSpeedSlider', { Text = '冲刺加速(默认值100)', Default = 100, Min = 0, Max = 1000, Rounding = 0, Callback = function(value)
-    ReplicatedStorage.Settings.Multipliers.DashSpeed.Value = value
+    local dashSpeed = safeGet({"Settings", "Multipliers", "DashSpeed"})
+    if dashSpeed then dashSpeed.Value = value end
 end })
 
 MainLeft2:AddSlider('JumpHeightSlider', { Text = '跳跃增强(默认值100)', Default = 100, Min = 0, Max = 1000, Rounding = 0, Callback = function(value)
-    ReplicatedStorage.Settings.Multipliers.JumpHeight.Value = value
+    local jumpHeight = safeGet({"Settings", "Multipliers", "JumpHeight"})
+    if jumpHeight then jumpHeight.Value = value end
 end })
 
 MainLeft2:AddSlider('MeleeSpeedSlider', { Text = '攻击加速(默认值100)', Default = 100, Min = 0, Max = 1000, Rounding = 0, Callback = function(value)
-    ReplicatedStorage.Settings.Multipliers.MeleeSpeed.Value = value
+    local meleeSpeed = safeGet({"Settings", "Multipliers", "MeleeSpeed"})
+    if meleeSpeed then meleeSpeed.Value = value end
 end })
 
 local ViolenceLeft = Tabs.Violence:AddLeftGroupbox("暴力功能")
@@ -825,7 +910,9 @@ _F.Dash = function()
     local char = _F.L.Character or _F.L.CharacterAdded:Wait()
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if hrp then
-        require(_F.RS:WaitForChild("Core")).Library("Remote").Send("Dash", hrp.CFrame, "L", 1)
+        pcall(function()
+            require(_F.RS:WaitForChild("Core")).Library("Remote").Send("Dash", hrp.CFrame, "L", 1)
+        end)
     end
 end
 _F.HRP = function()
