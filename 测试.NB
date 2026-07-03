@@ -50,11 +50,7 @@ local Window = Library:CreateWindow({
     ShowCustomCursor = true,
 })
 
-Library:Notify({
-    Title = "最强战场",
-    Description = "创作者：恐拜大帝\nQQ：3999698324\n脚本已加载成功",
-    Time = 5,
-})
+Library:Notify('最强战场 - 创作者：恐拜大帝 QQ:3999698324 脚本已加载成功', 5)
 
 local Tabs = {
     Main = Window:AddTab("主要", "home"),
@@ -257,7 +253,7 @@ local CombatRemote = rs:WaitForChild("Remotes"):WaitForChild("Combat"):WaitForCh
 local HttpService = game:GetService("HttpService")
 local State = { ConfigName = "default", CurrentConfig = nil }
 
-MainLeft:AddButton({ Text = "篡改", Func = function()
+MainLeft:AddButton({ Text = '篡改', Func = function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/dream77239/ubg-script/refs/heads/main/%E6%8B%A6%E6%88%AA.txt"))()
 end })
 
@@ -598,7 +594,7 @@ CombatRight:AddToggle("RangeDisplay", { Text = "范围显示", Default = false, 
     end
 end })
 
-CombatRight:AddButton({ Text = "删除墙打特效", Func = function()
+CombatRight:AddButton({ Text = '删除墙打特效', Func = function()
     local paths = {
         rs.Characters.Gon.WallCombo.GonWallCombo.Center,
         rs.Characters.Gon.WallCombo.GonWallCombo.Explosion,
@@ -616,7 +612,7 @@ CombatRight:AddButton({ Text = "删除墙打特效", Func = function()
     end
 end })
 
-CombatRight:AddButton({ Text = "删除击杀表情特效", Func = function()
+CombatRight:AddButton({ Text = '删除击杀表情特效', Func = function()
     local KillEmote = rs:WaitForChild("Cosmetics"):WaitForChild("KillEmote")
     local function removeEffects(obj)
         for _, child in ipairs(obj:GetChildren()) do
@@ -809,11 +805,11 @@ MoveRight:AddDropdown("TeleportLocations", { Text = "固定传送", Default = 1,
     end
 end })
 
-MoveRight:AddButton({ Text = "设置原位", Func = function()
+MoveRight:AddButton({ Text = '设置原位', Func = function()
     TPYW = player.Character.HumanoidRootPart.CFrame
 end })
 
-MoveRight:AddButton({ Text = "传送原位", Func = function()
+MoveRight:AddButton({ Text = '传送原位', Func = function()
     if TPYW then player.Character.HumanoidRootPart.CFrame = TPYW end
 end })
 
@@ -868,7 +864,7 @@ task.spawn(function()
     end
 end)
 
-ViolentLeft:AddButton({ Text = "卡服", Func = function()
+ViolentLeft:AddButton({ Text = '卡服', Func = function()
     local active = true
     local spawnedTasks = {}
     local function buildCombatArgs()
@@ -1250,7 +1246,7 @@ _F.L.CharacterAdded:Connect(function()
     end
 end)
 
-ViolentRight:AddButton({ Text = "删除墙打特效", Func = function()
+ViolentRight:AddButton({ Text = '删除墙打特效', Func = function()
     local paths = {
         rs.Characters.Gon.WallCombo.GonWallCombo.Center,
         rs.Characters.Gon.WallCombo.GonWallCombo.Explosion,
@@ -1268,7 +1264,7 @@ ViolentRight:AddButton({ Text = "删除墙打特效", Func = function()
     end
 end })
 
-ViolentRight:AddButton({ Text = "删除击杀表情特效", Func = function()
+ViolentRight:AddButton({ Text = '删除击杀表情特效', Func = function()
     local KillEmote = rs:WaitForChild("Cosmetics"):WaitForChild("KillEmote")
     local function removeEffects(obj)
         for _, child in ipairs(obj:GetChildren()) do
@@ -1384,7 +1380,7 @@ LockLeft:AddDropdown("LockTarget", { Text = "选择目标玩家", Default = 1, V
     LockS.selectedTargetName = name
 end })
 
-LockLeft:AddButton({ Text = "刷新玩家列表", Func = function()
+LockLeft:AddButton({ Text = '刷新玩家列表', Func = function()
     LockS.selectedTargetName = nil
     local newNames = {}
     for _, p in pairs(Players:GetPlayers()) do
@@ -1455,7 +1451,7 @@ function LockS.toggleConnection()
     end
 end
 
-EmoteLeft:AddButton({ Text = "刷新击杀表情", Func = function()
+EmoteLeft:AddButton({ Text = '刷新击杀表情', Func = function()
     table.clear(T.state.killEmotes)
     for _, e in pairs(rs:WaitForChild("Cosmetics"):WaitForChild("KillEmote"):GetChildren()) do
         table.insert(T.state.killEmotes, e.Name)
@@ -1554,7 +1550,7 @@ for k in pairs(keyMap) do table.insert(keyList, k) end
 
 EmoteRight:AddDropdown("Keybind", { Text = "快捷键", Default = 1, Values = keyList, Callback = function(v) T.state.keybind = keyMap[v] end })
 
-EmoteRight:AddButton({ Text = "随机表情", Func = T.useRandom })
+EmoteRight:AddButton({ Text = '随机表情', Func = function() T.useRandom() end })
 
 BattleLeft:AddToggle("NoFaceFriend", { Text = "不朝向好友", Default = false, Callback = function(state) BCXZJHYT = state end })
 
@@ -2416,7 +2412,7 @@ AimLeft:AddDropdown("PlayerSelect", { Text = "选择玩家", Default = 1, Values
     getgenvSelectedPlayer = option
 end })
 
-AimLeft:AddButton({ Text = "刷新列表", Func = function()
+AimLeft:AddButton({ Text = '刷新列表', Func = function()
     local names = {}
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= player and plr.Character then
@@ -2428,7 +2424,7 @@ AimLeft:AddButton({ Text = "刷新列表", Func = function()
     if Toggles.PlayerSelect then Toggles.PlayerSelect:SetValues(names) end
 end })
 
-AimLeft:AddButton({ Text = "传送到玩家", Func = function()
+AimLeft:AddButton({ Text = '传送到玩家', Func = function()
     if getgenvSelectedPlayer and getgenvSelectedPlayer ~= "" then
         local target = Players:FindFirstChild(getgenvSelectedPlayer)
         if target and target.Character then
@@ -2441,7 +2437,7 @@ AimLeft:AddButton({ Text = "传送到玩家", Func = function()
     end
 end })
 
-AimLeft:AddButton({ Text = "拉到身边", Func = function()
+AimLeft:AddButton({ Text = '拉到身边', Func = function()
     if getgenvSelectedPlayer and getgenvSelectedPlayer ~= "" then
         local target = Players:FindFirstChild(getgenvSelectedPlayer)
         local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -2452,7 +2448,7 @@ AimLeft:AddButton({ Text = "拉到身边", Func = function()
     end
 end })
 
-AimLeft:AddButton({ Text = "切换Bald", Func = function()
+AimLeft:AddButton({ Text = '切换Bald', Func = function()
     local function tryMethod4(charName)
         local success = pcall(function()
             local char = player.Character
@@ -2491,7 +2487,7 @@ AimLeft:AddButton({ Text = "切换Bald", Func = function()
     tryMethod4("Bald")
 end })
 
-AimLeft:AddButton({ Text = "切换Hunter", Func = function()
+AimLeft:AddButton({ Text = '切换Hunter', Func = function()
     local function tryMethod4(charName)
         local success = pcall(function()
             local char = player.Character
@@ -2530,7 +2526,7 @@ AimLeft:AddButton({ Text = "切换Hunter", Func = function()
     tryMethod4("Hunter")
 end })
 
-UnloadGroup:AddButton({ Text = "卸载脚本", Func = function() Library:Unload() end })
+UnloadGroup:AddButton({ Text = '卸载脚本', Func = function() Library:Unload() end })
 
 if ThemeManager then
     ThemeManager:SetLibrary(Library)
@@ -2545,8 +2541,4 @@ if SaveManager then
     SaveManager:BuildConfigSection(Tabs.Settings)
 end
 
-Library:Notify({
-    Title = "最强战场",
-    Description = "整合版加载成功 | 恐拜大帝",
-    Time = 5,
-})
+Library:Notify('最强战场整合版加载成功 | 恐拜大帝', 5)
