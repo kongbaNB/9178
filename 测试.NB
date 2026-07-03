@@ -22,6 +22,12 @@ if not Library then
     return
 end
 
+Library.Scheme.AccentColor = Color3.fromHex("00ffff")
+Library.Scheme.MainColor = Color3.fromHex("141414")
+Library.Scheme.BackgroundColor = Color3.fromHex("0c0c0c")
+Library.Scheme.OutlineColor = Color3.fromHex("232323")
+Library.Scheme.FontColor = Color3.fromHex("ffffff")
+
 local Options = Library.Options
 local Toggles = Library.Toggles
 
@@ -2524,7 +2530,7 @@ AimLeft:AddButton({ Text = "切换Hunter", Func = function()
     tryMethod4("Hunter")
 end, DoubleClick = false })
 
-UnloadGroup:AddButton("卸载脚本", function() Library:Unload() end)
+UnloadGroup:AddButton({ Text = "卸载脚本", Func = function() Library:Unload() end, DoubleClick = false })
 
 if ThemeManager then
     ThemeManager:SetLibrary(Library)
@@ -2541,6 +2547,6 @@ end
 
 Library:Notify({
     Title = "最强战场",
-    Description = "恐拜大帝 制作",
+    Description = "恐拜大帝",
     Time = 5,
 })
