@@ -17,7 +17,7 @@ local Character = LP.Character or LP.CharacterAdded:Wait()
 local Humanoid = Character:WaitForChild("Humanoid")
 local HRP = Character:WaitForChild("HumanoidRootPart")
 local KillAura = {Enabled = false, Range = 50, Method = "范围"}
-local ChopAura = {Enabled = false, Range = 200}
+local ChopAura = {Enabled = false, Range = 30, Interval = 0.1, DamageMulti = 3}
 local AutoFeed = {Enabled = false, Foods = {}, Threshold = 75}
 local AutoCook = {Enabled = false, Items = {}}
 local AutoCraft = {Enabled = false, ItemName = "Shelf", Interval = 5}
@@ -83,6 +83,13 @@ local ToolsDamageIDs = {
 }
 local PlantShapeMap = {["正方形"]="square", ["圆形"]="circle", ["原地"]="original"}
 local PatternMap = {["球形"]="sphere", ["项链"]="star", ["流星"]="meteor"}
+
+local chopCount = 0
+local chopStartTime = 0
+local lastChopNotifyTime = 0
+local lastNoToolNotifyTime = 0
+local ignoreMobsConn = nil
+
 local function getHRP()
     local c = LP.Character
     return c and c:FindFirstChild("HumanoidRootPart")
@@ -446,6 +453,7 @@ local function instantFishingLoop()
         end
     end)
 end
+
 task.spawn(function()
     while true do
         if KillAura.Enabled then
@@ -472,9 +480,11 @@ task.spawn(function()
                             if target:IsA("Model") and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChild("HitRegisters") and target ~= char then
                                 local dist = (hrp.Position - target.HumanoidRootPart.Position).Magnitude
                                 if KillAura.Method == "全图" or dist <= KillAura.Range then
-                                    pcall(function()
-                                        ReplicatedStorage.RemoteEvents.ToolDamageObject:InvokeServer(target, tool, true, hrp.CFrame)
-                                    end)
+                                    for i = 1, ChopAura.DamageMulti do
+                                        pcall(function()
+                                            ReplicatedStorage.RemoteEvents.ToolDamageObject:InvokeServer(target, tool, true, hrp.CFrame)
+                                        end)
+                                    end
                                 end
                             end
                         end
@@ -482,59 +492,69 @@ task.spawn(function()
                 end
             end
         end
-        task.wait(0.1)
+        task.wait(0.05)
     end
 end)
+
 task.spawn(function()
     while true do
         if ChopAura.Enabled then
             local char = LP.Character
             if char then
                 local hrp = char:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    local tool = nil
-                    for _, child in ipairs(char:GetChildren()) do
-                        if child:IsA("Tool") and (child.Name:find("Axe") or child.Name:find("Chainsaw")) then
-                            tool = child
-                            break
-                        end
-                    end
-                    if not tool then
-                        tool = getAnyTool(true)
-                        if tool then
-                            equipTool(tool)
-                            task.wait(0.15)
-                        end
-                    end
-                    if tool then
-                        local map = Workspace:FindFirstChild("Map")
-                        if map then
-                            local function chopFolder(folder)
-                                if not folder then return end
-                                for _, obj in ipairs(folder:GetChildren()) do
-                                    if obj:IsA("Model") and (obj.Name == "Small Tree" or obj.Name == "TreeBig1" or obj.Name == "TreeBig2" or obj.Name == "TreeBig3") then
-                                        local primary = obj.PrimaryPart or obj:FindFirstChild("Trunk") or obj:FindFirstChildWhichIsA("BasePart")
-                                        if primary then
-                                            local dist = (primary.Position - hrp.Position).Magnitude
-                                            if dist <= ChopAura.Range then
-                                                pcall(function()
-                                                    ReplicatedStorage.RemoteEvents.ToolDamageObject:InvokeServer(obj, tool, 999, hrp.CFrame)
-                                                end)
-                                            end
+                local toolHandle = char:FindFirstChild("ToolHandle")
+                if hrp and toolHandle then
+                    local tool = toolHandle:FindFirstChild("OriginalItem") and toolHandle.OriginalItem.Value
+                    if tool and ({["Old Axe"] = true, ["Good Axe"] = true, ["Strong Axe"] = true, ["Chainsaw"] = true, ["Stone Axe"] = true, ["Iron Axe"] = true})[tool.Name] then
+                        if chopStartTime == 0 then chopStartTime = tick() end
+                        local function chopFolder(folder)
+                            if not folder then return end
+                            for _, tree in next, folder:GetChildren() do
+                                if tree:IsA("Model") and ({["Small Tree"] = true, ["TreeBig1"] = true, ["TreeBig2"] = true, ["TreeBig3"] = true})[tree.Name] and tree:FindFirstChild("HitRegisters") then
+                                    local trunk = tree:FindFirstChild("Trunk") or tree:FindFirstChild("HumanoidRootPart") or tree.PrimaryPart
+                                    if trunk and (hrp.Position - trunk.Position).Magnitude <= ChopAura.Range then
+                                        for i = 1, ChopAura.DamageMulti do
+                                            pcall(function()
+                                                ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("ToolDamageObject"):InvokeServer(tree, tool, true, hrp.CFrame)
+                                            end)
                                         end
                                     end
                                 end
                             end
+                        end
+                        local map = Workspace:FindFirstChild("Map")
+                        if map then
                             chopFolder(map:FindFirstChild("Foliage"))
                             chopFolder(map:FindFirstChild("Landmarks"))
                         end
+                        chopCount = chopCount + 1
+                        local now = tick()
+                        if now - lastChopNotifyTime >= 2 then
+                            Library:Notify("本次已砍 " .. chopCount .. " 次", 2)
+                            lastChopNotifyTime = now
+                        end
                     end
+                else
+                    local now = tick()
+                    if now - lastNoToolNotifyTime >= 3 then
+                        Library:Notify("请装备砍树工具！", 3)
+                        lastNoToolNotifyTime = now
+                    end
+                    chopCount = 0
+                    chopStartTime = 0
                 end
             end
+        else
+            if chopCount > 0 then
+                Library:Notify("本次共砍 " .. chopCount .. " 次", 3)
+                chopCount = 0
+                chopStartTime = 0
+            end
         end
-        task.wait(0.1)
+        task.wait(ChopAura.Interval)
     end
 end)
+
 RunService.Heartbeat:Connect(function()
     if SpeedEnabled and Humanoid and Humanoid.Parent then Humanoid.WalkSpeed = SpeedValue end
     if GodMode then
@@ -549,6 +569,7 @@ RunService.Heartbeat:Connect(function()
     end
     if ESP.MobsEnabled then updateKidESP() end
 end)
+
 task.spawn(function()
     while true do
         if AutoFeed.Enabled then
@@ -607,7 +628,7 @@ task.spawn(function()
                 if pulled % 10 == 0 then
                     Library:Notify("拉取进度: 已拉取 " .. pulled .. " / " .. total .. " 个物资", 3)
                 end
-                task.wait(math.max(0.1, PullConfig.Speed))
+                task.wait(math.max(0.05, PullConfig.Speed))
             end
             if total > 0 then
                 Library:Notify("拉取完成: 共 " .. total .. " 个物资", 3)
@@ -755,14 +776,61 @@ task.spawn(function()
                 end
             end
         end
-        if IgnoreMobs then
+        task.wait(0.1)
+    end
+end)
+
+local Window = Library:CreateWindow({
+    Title = "森林中的99夜",
+    Footer = "恐拜大帝",
+    Icon = 131153193945220,
+    NotifySide = "Right",
+    ShowCustomCursor = true,
+})
+Library:Notify("已加载", 5)
+local Tabs = {
+    Notice = Window:AddTab("通知", "info"),
+    Combat = Window:AddTab("战斗", "sword"),
+    Auto = Window:AddTab("自动", "cog"),
+    Teleport = Window:AddTab("传送", "map-pin"),
+    Pull = Window:AddTab("拉取物品", "truck"),
+    Player = Window:AddTab("玩家", "user"),
+    Visual = Window:AddTab("视觉", "eye"),
+    Fun = Window:AddTab("趣味", "sparkles"),
+    Map = Window:AddTab("地图加载", "globe"),
+    Settings = Window:AddTab("设置", "settings"),
+}
+
+local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者信息")
+NoticeGroup:AddLabel("恐拜大帝")
+NoticeGroup:AddLabel("QQ: 3999698324")
+
+local CombatGroup1 = Tabs.Combat:AddLeftGroupbox("攻击")
+CombatGroup1:AddToggle('KillAuraToggle', {Text = '杀戮光环', Default = false, Callback = function(v) KillAura.Enabled = v end})
+CombatGroup1:AddDropdown('KillAuraMethod', {Text = '攻击方式', Values = {'范围','全图'}, Default = '范围', Callback = function(v) KillAura.Method = v end})
+CombatGroup1:AddSlider('KillAuraRange', {Text = '攻击范围', Default = 50, Min = 0, Max = 500, Rounding = 0, Callback = function(v) KillAura.Range = v end})
+CombatGroup1:AddButton({Text = '显示当前武器', Func = function()
+    local tool = getAnyTool(false)
+    Library:Notify("当前武器: " .. (tool and tool.Name or "无"), 3)
+end})
+CombatGroup1:AddToggle('GodMode', {Text = '无敌（开了死）', Default = false, Callback = function(v) GodMode = v end})
+CombatGroup1:AddToggle('IgnoreMobs', {Text = '上帝模式（不会死）', Default = false, Callback = function(v)
+    IgnoreMobs = v
+    godModeSpamActive = v
+    if v then
+        Library:Notify("上帝模式已开启", 3)
+        local char = LP.Character
+        if char and char.Parent then
+            originalCharParent = char.Parent
+            pcall(function() char.Parent = Workspace end)
+        end
+        if ignoreMobsConn then ignoreMobsConn:Disconnect() end
+        ignoreMobsConn = RunService.Heartbeat:Connect(function()
+            if not IgnoreMobs then return end
             local char = LP.Character
-            if char then
-                local charsFolder = Workspace:FindFirstChild("Characters")
-                if charsFolder and char.Parent == charsFolder then
-                    originalCharParent = charsFolder
-                    pcall(function() char.Parent = Workspace end)
-                end
+            if char and char.Parent ~= Workspace then
+                originalCharParent = char.Parent
+                pcall(function() char.Parent = Workspace end)
             end
             local charsFolder = Workspace:FindFirstChild("Characters")
             if charsFolder then
@@ -789,49 +857,21 @@ task.spawn(function()
                     end
                 end
             end
+        end)
+    else
+        Library:Notify("上帝模式已关闭", 3)
+        if ignoreMobsConn then
+            ignoreMobsConn:Disconnect()
+            ignoreMobsConn = nil
         end
-        if not IgnoreMobs and originalCharParent then
-            local char = LP.Character
-            if char and char.Parent == Workspace then
-                pcall(function() char.Parent = originalCharParent end)
-            end
+        local char = LP.Character
+        if char and originalCharParent then
+            pcall(function() char.Parent = originalCharParent end)
             originalCharParent = nil
         end
-        task.wait(0.1)
     end
-end)
-local Window = Library:CreateWindow({
-    Title = "森林中的99夜",
-    Footer = "恐拜大帝",
-    Icon = 131153193945220,
-    NotifySide = "Right",
-    ShowCustomCursor = true,
-})
-Library:Notify("已加载", 5)
-local Tabs = {
-    Notice = Window:AddTab("通知", "info"),
-    Combat = Window:AddTab("战斗", "sword"),
-    Auto = Window:AddTab("自动", "cog"),
-    Teleport = Window:AddTab("传送", "map-pin"),
-    Pull = Window:AddTab("拉取物品", "truck"),
-    Player = Window:AddTab("玩家", "user"),
-    Visual = Window:AddTab("视觉", "eye"),
-    Fun = Window:AddTab("趣味", "sparkles"),
-    Map = Window:AddTab("地图加载", "globe"),
-    Settings = Window:AddTab("设置", "settings"),
-}
-local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者信息")
-NoticeGroup:AddLabel("恐拜大帝")
-local CombatGroup1 = Tabs.Combat:AddLeftGroupbox("攻击")
-CombatGroup1:AddToggle('KillAuraToggle', {Text = '杀戮光环', Default = false, Callback = function(v) KillAura.Enabled = v end})
-CombatGroup1:AddDropdown('KillAuraMethod', {Text = '攻击方式', Values = {'范围','全图'}, Default = '范围', Callback = function(v) KillAura.Method = v end})
-CombatGroup1:AddSlider('KillAuraRange', {Text = '攻击范围', Default = 50, Min = 0, Max = 500, Rounding = 0, Callback = function(v) KillAura.Range = v end})
-CombatGroup1:AddButton({Text = '显示当前武器', Func = function()
-    local tool = getAnyTool(false)
-    Library:Notify("当前武器: " .. (tool and tool.Name or "无"), 3)
 end})
-CombatGroup1:AddToggle('GodMode', {Text = '无敌（开了死）', Default = false, Callback = function(v) GodMode = v end})
-CombatGroup1:AddToggle('IgnoreMobs', {Text = '上帝模式（不会死）', Default = false, Callback = function(v) IgnoreMobs = v; godModeSpamActive = v end})
+
 local CombatGroup2 = Tabs.Combat:AddRightGroupbox("碰撞箱")
 CombatGroup2:AddToggle('CollisionShow', {Text = '显示碰撞箱', Default = false, Callback = function(v) CollisionBox.Show = v end})
 CombatGroup2:AddToggle('CollisionWolf', {Text = '狼碰撞箱', Default = false, Callback = function(v) CollisionBox.Wolf = v end})
@@ -839,6 +879,7 @@ CombatGroup2:AddToggle('CollisionBunny', {Text = '兔子碰撞箱', Default = fa
 CombatGroup2:AddToggle('CollisionCultist', {Text = '邪教徒碰撞箱', Default = false, Callback = function(v) CollisionBox.Cultist = v end})
 CombatGroup2:AddToggle('CollisionAll', {Text = '全部碰撞箱', Default = false, Callback = function(v) CollisionBox.All = v end})
 CombatGroup2:AddSlider('CollisionSize', {Text = '碰撞箱大小', Default = 10, Min = 2, Max = 250, Rounding = 0, Callback = function(v) CollisionBox.Size = v end})
+
 local CombatGroup3 = Tabs.Combat:AddLeftGroupbox("装备")
 CombatGroup3:AddToggle('AutoEquipBest', {Text = '自动装备最佳武器', Default = false, Callback = function(v)
     AutoEquipBest = v
@@ -939,6 +980,7 @@ CombatGroup3:AddToggle('AutoToolSwitch', {Text = '随机工具切换', Default =
         end)
     end
 end})
+
 local CombatGroup4 = Tabs.Combat:AddRightGroupbox("恶搞")
 local bearTrapList = {"无"}
 local bearTrapDropdown = CombatGroup4:AddDropdown('BearTrapTarget', {Text = '选择攻击玩家', Values = bearTrapList, Default = '无', Callback = function(v) BearTrapTarget = v end})
@@ -952,12 +994,17 @@ CombatGroup4:AddButton({Text = '刷新玩家列表', Func = function()
     Library:Notify("已刷新: " .. #list .. "人", 2)
 end})
 CombatGroup4:AddToggle('BearTrapToggle', {Text = '自动捕兽夹攻击', Default = false, Callback = function(v) BearTrapEnabled = v end})
+
 local AutoGroup1 = Tabs.Auto:AddLeftGroupbox("砍树与钓鱼")
+AutoGroup1:AddLabel("[使用方式]拿起你要用来砍树的工具")
 AutoGroup1:AddToggle('ChopAuraToggle', {Text = '砍树光环', Default = false, Callback = function(v) ChopAura.Enabled = v end})
-AutoGroup1:AddSlider('ChopAuraRange', {Text = '砍树范围', Default = 200, Min = 0, Max = 500, Rounding = 0, Callback = function(v) ChopAura.Range = v end})
+AutoGroup1:AddSlider('ChopAuraRange', {Text = '砍树范围', Default = 30, Min = 5, Max = 500, Rounding = 0, Callback = function(v) ChopAura.Range = v end})
+AutoGroup1:AddSlider('ChopAuraInterval', {Text = '砍树频率(秒)', Default = 0.1, Min = 0.01, Max = 1, Rounding = 2, Callback = function(v) ChopAura.Interval = v end})
+AutoGroup1:AddSlider('ChopAuraDamage', {Text = '伤害倍率', Default = 3, Min = 1, Max = 50, Rounding = 0, Callback = function(v) ChopAura.DamageMulti = v end})
 AutoGroup1:AddToggle('FishingAuto', {Text = '自动钓鱼', Default = false, Callback = function(v) Fishing.Auto = v; if v then autoFishingLoop() end end})
 AutoGroup1:AddToggle('FishingNoDelay', {Text = '无延迟钓鱼', Default = false, Callback = function(v) Fishing.NoDelay = v; if v then noDelayFishingLoop() end end})
 AutoGroup1:AddToggle('FishingInstant', {Text = '秒钓鱼', Default = false, Callback = function(v) Fishing.Instant = v; if v then instantFishingLoop() end end})
+
 local AutoGroup2 = Tabs.Auto:AddRightGroupbox("食物与烹饪")
 AutoGroup2:AddToggle('AutoFeedToggle', {Text = '自动进食', Default = false, Callback = function(v) AutoFeed.Enabled = v end})
 AutoGroup2:AddDropdown('AutoFeedFoods', {Text = '选择食物', Values = {"苹果","浆果","胡萝卜","蛋糕","辣椒","熟肉块","熟牛排"}, Multi = true, Callback = function(v)
@@ -979,6 +1026,7 @@ AutoGroup2:AddDropdown('AutoCookItems', {Text = '烹饪食物', Values = {"生�
 end})
 AutoGroup2:AddToggle('AutoCookToggle', {Text = '自动烹饪', Default = false, Callback = function(v) AutoCook.Enabled = v end})
 AutoGroup2:AddToggle('AutoPullRawMeat', {Text = '自动拉生肉到篝火', Default = false, Callback = function(v) AutoPullRawMeat = v end})
+
 local AutoGroup3 = Tabs.Auto:AddLeftGroupbox("制作与宝箱")
 AutoGroup3:AddInput('CraftItemName', {Text = '制作物品名', Default = 'Shelf', Callback = function(v) AutoCraft.ItemName = v end})
 AutoGroup3:AddSlider('CraftInterval', {Text = '制作间隔(秒)', Default = 5, Min = 1, Max = 60, Rounding = 0, Callback = function(v) AutoCraft.Interval = v end})
@@ -992,9 +1040,11 @@ AutoGroup3:AddToggle('AutoCraftToggle', {Text = '自动制作', Default = false,
 AutoGroup3:AddToggle('AutoOpenChest', {Text = '自动开全部宝箱', Default = false, Callback = function(v) AutoOpenChest = v end})
 AutoGroup3:AddToggle('ChestAura', {Text = '宝箱光环', Default = false, Callback = function(v) ChestAura = v end})
 AutoGroup3:AddSlider('ChestAuraRange', {Text = '光环范围', Default = 50, Min = 1, Max = 200, Rounding = 0, Callback = function(v) ChestAuraRange = v end})
+
 local AutoGroup4 = Tabs.Auto:AddRightGroupbox("其它")
 AutoGroup4:AddToggle('AutoStunDeerToggle', {Text = '自动眩晕鹿', Default = false, Callback = function(v) AutoStunDeer = v end})
 AutoGroup4:AddToggle('AutoSaveChild', {Text = '自动救所有小孩', Default = false, Callback = function(v) AutoSaveChild = v end})
+
 local TpGroup1 = Tabs.Teleport:AddLeftGroupbox("基础传送点")
 TpGroup1:AddButton({Text = '传送到营火', Func = function()
     local hrp = getHRP()
@@ -1036,6 +1086,7 @@ TpGroup1:AddButton({Text = '传送到随机树', Func = function()
         hrp.CFrame = CFrame.new(t.Position + Vector3.new(3, 0, 3))
     end
 end})
+
 local TpGroup2 = Tabs.Teleport:AddRightGroupbox("目标传送")
 local childList, childNames = getChildrenList()
 local childDropdown = TpGroup2:AddDropdown('ChildSelect', {Text = '选择儿童', Values = childNames, Default = childNames[1] or "无"})
@@ -1073,10 +1124,12 @@ TpGroup2:AddButton({Text = '传送到最近宝箱', Func = function()
     end
     if nearest then hrp.CFrame = nearest.CFrame + Vector3.new(0, 5, 0) end
 end})
+
 local PullGroup1 = Tabs.Pull:AddLeftGroupbox("拉取设置")
 PullGroup1:AddDropdown('PullTarget', {Text = '拉取到', Values = {"自己", "篝火", "建造台"}, Default = "自己", Callback = function(v) PullConfig.Target = v end})
 PullGroup1:AddSlider('PullSpeed', {Text = '拉取间隔(秒)', Default = 0.5, Min = 0.1, Max = 5, Rounding = 1, Callback = function(v) PullConfig.Speed = v end})
 PullGroup1:AddToggle('PullToggle', {Text = '开始拉取', Default = false, Callback = function(v) PullConfig.Enabled = v if v then Library:Notify("拉取已启动", 3) else Library:Notify("拉取已停止", 3) end end})
+
 local PullGroup2 = Tabs.Pull:AddRightGroupbox("选择物品")
 PullGroup2:AddDropdown('PullFuel', {Text = '燃烧物', Values = {"木头","煤","油桶","椅子","生物燃料"}, Multi = true, Callback = function(v)
     local en = {}
@@ -1118,6 +1171,7 @@ PullGroup2:AddDropdown('PullMed', {Text = '药品', Values = {"绷带","医疗�
     end
     PullConfig.SelectedMed = en
 end})
+
 local PlayerGroup1 = Tabs.Player:AddLeftGroupbox("移动与增强")
 PlayerGroup1:AddToggle('SpeedToggle', {Text = '启用速度', Default = false, Callback = function(v)
     SpeedEnabled = v
@@ -1150,6 +1204,7 @@ PlayerGroup1:AddToggle('AntiAFK', {Text = '反挂机踢出', Default = false, Ca
         end)
     end
 end})
+
 local PlayerGroup2 = Tabs.Player:AddRightGroupbox("飞行")
 PlayerGroup2:AddSlider('FlySpeed', {Text = '飞行速度', Default = 1, Min = 1, Max = 20, Rounding = 0, Callback = function(v) FlySpeed = v end})
 PlayerGroup2:AddButton({Text = '加载外部飞行', Func = function()
@@ -1158,6 +1213,7 @@ PlayerGroup2:AddButton({Text = '加载外部飞行', Func = function()
     end)
     Library:Notify("已尝试加载外部飞行", 2)
 end})
+
 local VisGroup1 = Tabs.Visual:AddLeftGroupbox("透视")
 VisGroup1:AddToggle('ESPItemsToggle', {Text = '物品透视', Default = false, Callback = function(v) ESP.ItemsEnabled = v end})
 VisGroup1:AddDropdown('ESPItems', {Text = '选择物品', Values = {"木头","螺栓","煤","宝箱","步枪","绷带","椅子","轮胎"}, Multi = true, Callback = function(v)
@@ -1168,6 +1224,7 @@ VisGroup1:AddDropdown('ESPItems', {Text = '选择物品', Values = {"木头","�
     end
 end})
 VisGroup1:AddToggle('ESPMobsToggle', {Text = '敌人/小孩透视', Default = false, Callback = function(v) ESP.MobsEnabled = v end})
+
 local VisGroup2 = Tabs.Visual:AddRightGroupbox("环境")
 VisGroup2:AddToggle('Fullbright', {Text = '全亮', Default = false, Callback = function(v)
     FullbrightEnabled = v
@@ -1204,6 +1261,7 @@ VisGroup2:AddToggle('KidESP', {Text = '小孩透视', Default = false, Callback 
         kidESPData = {}
     end
 end})
+
 local FunGroup1 = Tabs.Fun:AddLeftGroupbox("种植")
 FunGroup1:AddDropdown('PlantShape', {Text = '种植形状', Values = {"正方形","圆形","原地"}, Default = "正方形", Callback = function(v) AutoPlant.Shape = PlantShapeMap[v] or "square" end})
 FunGroup1:AddSlider('PlantSize', {Text = '种植范围', Default = 80, Min = 10, Max = 500, Rounding = 0, Callback = function(v) AutoPlant.Size = v end})
@@ -1214,6 +1272,7 @@ FunGroup1:AddToggle('AutoPlantToggle', {Text = '自动种植', Default = false, 
     AutoPlant.Enabled = v
     if v then saplingPositions = genPlantPos(); currentSaplingIndex = 1 end
 end})
+
 local FunGroup2 = Tabs.Fun:AddRightGroupbox("图案与娱乐")
 FunGroup2:AddDropdown('PatternType', {Text = '图案类型', Values = {"球形","项链","流星"}, Default = "球形", Callback = function(v) FunPattern.Pattern = PatternMap[v] or "sphere" end})
 FunGroup2:AddSlider('PatternRadius', {Text = '图案大小', Default = 75, Min = 10, Max = 500, Rounding = 0, Callback = function(v) FunPattern.Radius = v end})
@@ -1223,6 +1282,7 @@ FunGroup2:AddButton({Text = '召唤撸管', Func = function()
     Library:Notify("生成中...", 2)
     loadLuGuan()
 end})
+
 local MapGroup = Tabs.Map:AddLeftGroupbox("地图加载")
 MapGroup:AddLabel("从篝火开始高空螺旋扩大扫描")
 MapGroup:AddLabel("自动加载所有未渲染区域")
@@ -1236,6 +1296,7 @@ MapGroup:AddButton({Text = '停止加载并落回篝火', Func = function()
     mapLoadRunning = false
     Library:Notify("已停止，返回篝火", 2)
 end})
+
 local SettGroup = Tabs.Settings:AddLeftGroupbox("菜单")
 SettGroup:AddButton({Text = '卸载脚本', Func = function() Library:Unload() end})
 SettGroup:AddLabel('菜单快捷键'):AddKeyPicker('MenuKeybind', {Default = 'RightShift', NoUI = true, Text = 'Menu keybind'})
@@ -1251,11 +1312,13 @@ if SaveManager then
     SaveManager:SetFolder("99NightsConfig")
     SaveManager:BuildConfigSection(Tabs.Settings)
 end
+
 task.spawn(function()
     task.wait(2)
     local _, names = getChildrenList()
     childDropdown:SetValues(names)
 end)
+
 task.spawn(function()
     while true do
         if godModeSpamActive then
@@ -1266,6 +1329,7 @@ task.spawn(function()
         task.wait(0.1)
     end
 end)
+
 task.spawn(function()
     while true do
         if godModeSpamActive then
@@ -1276,4 +1340,5 @@ task.spawn(function()
         task.wait(1)
     end
 end)
+
 Library:Notify("已加载", 5)
