@@ -1,413 +1,270 @@
-local function safeLoad(url)
-    local success, result = pcall(function()
-        return loadstring(game:HttpGet(url))()
-    end)
-    if not success then
-        warn("加载失败: " .. url)
-        return nil
-    end
-    return result
-end
+local function safeLoad(url) local success, result = pcall(function() return loadstring(game:HttpGet(url))() end) if not success then warn("加载失败: " .. url) return nil end return result end local Library = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/黑曜石主库.ui") local ThemeManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/主题管理.ui") local SaveManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/配置管理.ui") if not Library then game:GetService("StarterGui"):SetCore("SendNotification", { Title = "错误", Text = "UI 库加载失败，请检查网络或脚本资源", Duration = 5, }) return end local Options = Library.Options local Toggles = Library.Toggles local Players = game:GetService("Players") local ReplicatedStorage = game:GetService("ReplicatedStorage") local RunService = game:GetService("RunService") local UserInputService = game:GetService("UserInputService") local Workspace = game:GetService("Workspace") local Lighting = game:GetService("Lighting") local HttpService = game:GetService("HttpService") local player = Players.LocalPlayer local Window = Library:CreateWindow({ Title = "最强战场", Footer = "恐拜大帝 制作", Icon = 131153193945220, NotifySide = "Right", ShowCustomCursor = true, }) Library:Notify({ Title = "最强战场", Description = "创作者：恐拜大帝\nQQ：3999698324\n脚本已加载成功", Time = 5, }) local Tabs = { Notice = Window:AddTab("通知", "info"), Main = Window:AddTab("主要", "info"), Violence = Window:AddTab("暴力", "info"), Hitbox = Window:AddTab("碰撞箱", "info"), Lock = Window:AddTab("锁人", "info"), Emote = Window:AddTab("击杀表情", "info"), Settings = Window:AddTab("设置", "settings"), } local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者消息") NoticeGroup:AddLabel('恐拜大帝将持续更新此脚本') NoticeGroup:AddLabel('创作者：恐拜大帝')
 
-local Library = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/黑曜石主库.ui")
-local ThemeManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/主题管理.ui")
-local SaveManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/配置管理.ui")
+local MainLeft = Tabs.Main:AddLeftGroupbox("战斗辅助")
+local MainRight = Tabs.Main:AddRightGroupbox("属性修改")
+local MainLeft2 = Tabs.Main:AddLeftGroupbox("移动与攻击")
+local MainRight2 = Tabs.Main:AddRightGroupbox("特效删除")
 
-if not Library then
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "错误",
-        Text = "UI 库加载失败，请检查网络或脚本资源",
-        Duration = 5,
-    })
-    return
-end
-
-local Options = Library.Options
-local Toggles = Library.Toggles
-
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
-local StarterGui = game:GetService("StarterGui")
-local VirtualUser = game:GetService("VirtualUser")
-local TweenService = game:GetService("TweenService")
-local Camera = Workspace.CurrentCamera
-local player = Players.LocalPlayer
-
-local Window = Library:CreateWindow({
-    Title = "最强战场",
-    Footer = "恐拜大帝 制作",
-    Icon = 131153193945220,
-    NotifySide = "Right",
-    ShowCustomCursor = true,
-})
-
-Library:Notify('最强战场 - 创作者：恐拜大帝 QQ:3999698324 脚本已加载成功', 5)
-
-local Tabs = {
-    Main = Window:AddTab("主要", "home"),
-    Combat = Window:AddTab("战斗", "sword"),
-    Movement = Window:AddTab("移动", "zap"),
-    Violent = Window:AddTab("暴力", "skull"),
-    Hitbox = Window:AddTab("碰撞", "box"),
-    Lock = Window:AddTab("锁定", "crosshair"),
-    Emote = Window:AddTab("表情", "smile"),
-    Battlefield = Window:AddTab("战场", "shield"),
-    Aim = Window:AddTab("瞄准", "target"),
-    Settings = Window:AddTab("设置", "settings"),
-}
-
-local MainLeft = Tabs.Main:AddLeftGroupbox("主要功能")
-local MainRight = Tabs.Main:AddRightGroupbox("杂项")
-local CombatLeft = Tabs.Combat:AddLeftGroupbox("战斗修改")
-local CombatRight = Tabs.Combat:AddRightGroupbox("战斗辅助")
-local MoveLeft = Tabs.Movement:AddLeftGroupbox("移动")
-local MoveRight = Tabs.Movement:AddRightGroupbox("传送")
-local ViolentLeft = Tabs.Violent:AddLeftGroupbox("暴力")
-local ViolentRight = Tabs.Violent:AddRightGroupbox("其他")
-local HitboxLeft = Tabs.Hitbox:AddLeftGroupbox("碰撞箱")
-local HitboxRight = Tabs.Hitbox:AddRightGroupbox("参数")
-local LockLeft = Tabs.Lock:AddLeftGroupbox("锁定")
-local EmoteLeft = Tabs.Emote:AddLeftGroupbox("击杀表情")
-local EmoteRight = Tabs.Emote:AddRightGroupbox("设置")
-local BattleLeft = Tabs.Battlefield:AddLeftGroupbox("战场辅助")
-local BattleRight = Tabs.Battlefield:AddRightGroupbox("状态")
-local AimLeft = Tabs.Aim:AddLeftGroupbox("自瞄")
-local AimRight = Tabs.Aim:AddRightGroupbox("参数")
-local UnloadGroup = Tabs.Settings:AddLeftGroupbox("脚本管理")
-local ConfigGroup = Tabs.Settings:AddRightGroupbox("配置")
-
-local function AddToArrayList(name, value)
-    if _G.AddToArrayList then _G.AddToArrayList(name, value) end
-end
-local function RemoveFromArrayList(name)
-    if _G.RemoveFromArrayList then _G.RemoveFromArrayList(name) end
-end
-local function UpdateModuleDisplay(name, value)
-    if _G.UpdateModuleDisplay then _G.UpdateModuleDisplay(name, value) end
-end
-
-local rs = game:GetService("ReplicatedStorage")
-local settings = rs.Settings
-local defaultCooldown = rs.Settings.Cooldowns.Dash.Value
-local defaultMeleeCooldown = rs.Settings.Cooldowns.Melee.Value
-local defaultAbility = rs.Settings.Cooldowns.Ability.Value
-local defaultDisableHitStun = settings.Toggles.DisableHitStun.Value
-local defaultDisableIntros = settings.Toggles.DisableIntros.Value
-local defaultNoStunOnMiss = settings.Toggles.NoStunOnMiss.Value
-local defaultRagdollTimer = settings.Multipliers.RagdollTimer.Value
-local defaultUltimateTimer = settings.Multipliers.UltimateTimer.Value
-local defaultInstantTransformation = settings.Toggles.InstantTransformation.Value
-local defaultNoSlowdowns = settings.Toggles.NoSlowdowns.Value
-local defaultMeleeDamage = 100
-
-local Ping = player:WaitForChild("Info"):WaitForChild("Ping")
-local MeleeDamage = rs:WaitForChild("Settings"):WaitForChild("Multipliers"):WaitForChild("MeleeDamage")
-MeleeDamage.Value = 100
+MainLeft:AddButton("篡改", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/dream77239/ubg-script/refs/heads/main/%E6%8B%A6%E6%88%AA.txt"))()
+end)
 
 local fakeBlockEnabled = false
 local loopRunning = false
-local emoteClaimActive = false
-local emoteClaimConnection = nil
-local tpwalking = false
-local tpwalkSpeed = 100
-local FLY_TOGGLE_STATE = false
-local iyflyspeed = 2
-local vehicleflyspeed = 2
-local FLYING = false
-local flyKeyDown, flyKeyUp, mobileFlyConn
-local QEfly = true
-local active = false
-local wallComboEnabled = false
-local ignoreFriends = false
-local running = false
-local conn
-local enabled = false
-local KillAuraConn
-local PlayersList = {}
-local index = 1
-local RANGE = 70
-local DASH_INTERVAL = 0.25
-local lastDash = 0
-local S = {}
-S.Players = game:GetService("Players")
-S.RunService = game:GetService("RunService")
-S.ReplicatedStorage = game:GetService("ReplicatedStorage")
-S.Cfg = { Hitbox = false, X = 150, Y = 150, Z = 150, Enhancer = false, Multi = 3 }
-S.Cache = {}
-S.Conn = nil
-S.DashT = 0
-local LP = S.Players.LocalPlayer
-getgenv().HitboxEnabled = false
-
-local T = {}
-T.env = { ReplicatedStorage = rs, Players = Players }
-T.env.LocalPlayer = player
-T.env.core = require(rs:WaitForChild("Core"))
-T.state = { killEmotes = {}, aura = false, spam = false, auraDelay = 0.5, spamDelay = 0.5, selectedEmote = "", keybind = Enum.KeyCode.G, dropdown = nil, tmp = {} }
-
-local _F = {}
-_F.P = Players
-_F.R = RunService
-_F.RS = rs
-_F.W = Workspace
-_F.L = player
-_F.Cfg = { Enabled = false, Range = 67.5, Friends = true, Target = "Closest" }
-_F.Data = { List = {}, Idx = 1, FCon = nil, KCon = nil, OSub = nil, OType = nil, SCFrame = nil, SCCFrame = nil, SCType = nil }
-
-local LockS = {}
-LockS.Players = Players
-LockS.RunService = RunService
-LockS.LocalPlayer = player
-LockS.v3new = Vector3.new
-LockS.cfnew = CFrame.new
-LockS.mathcos = math.cos
-LockS.mathsin = math.sin
-LockS.tableinsert = table.insert
-LockS.pairs = pairs
-LockS.BEHIND_DISTANCE = 5
-LockS.CIRCLE_RADIUS = 6
-LockS.CIRCLE_SPEED = 13
-LockS.followEnabled = false
-LockS.circleEnabled = false
-LockS.lookEnabled = false
-LockS.selectedTargetName = nil
-LockS.circleAngle = 0
-LockS.mainConnection = nil
-LockS.playerDropdown = nil
-
-local originalData = {}
-local skyBackup = nil
-local clone, platform, originalCFrame, originalCameraSubject
-local CircleParts = {}
-local Connection = nil
-local wall = nil
-local followConnection = nil
-local RagdollPower = rs:WaitForChild("Settings"):WaitForChild("Multipliers"):WaitForChild("RagdollPower")
-local wallCombo = rs.Settings.Cooldowns.WallCombo
-local multiUseCutscenesToggle = rs.Settings.Toggles.MultiUseCutscenes
-local defaultMultiUse = multiUseCutscenesToggle.Value
-local noSlowdownsToggle = rs.Settings.Toggles.NoSlowdowns
-local defaultNoSlowdownsValue = false
-
-local kenConfiguration = { Main = { Combat = { AttackAura = false, AutoParry = false }, Farm = { KillFarm = false, AutoUltimate = true } }, Player = { Character = { OverwriteProperties = false, WalkSpeed = 50, JumpPower = 50 } } }
-local Functions = {}
-local BCXZJHYT = false
-local AUTO_TRASH_MASTER = false
-local ZDGJT = false
-local ELZRCSXKT = false
-local ZDNLJTT = false
-local awdawdwaT = false
-local YCDSHYT = false
-local ZDFYT = false
-local Settings = { Autoparry = { Toggle = false, Range = 25, Delay = 0, Fov = 180, Facing = false, Dodgerange = 3, Aimhelper = false } }
-local TPYW = nil
-local attackAuraConnection = nil
-local killFarmConnection = nil
-
-local getgenvAutoAttack = false
-local getgenvAutoAim = false
-local getgenvAimbotFOV = 150
-local getgenvAimbotDistance = 3
-local getgenvShowFOV = false
-local getgenvAntiAfk = true
-local getgenvAttackDistance = 100
-local getgenvSelectedPlayer = ""
-local getgenvPlayerList = {}
-local fovCircle = nil
-local antiAfkThread = nil
-local attackThread = nil
-local autoAimConnection = nil
-local fovCircleThread = nil
-local monitorThread = nil
-
-local anims = { ["rbxassetid://10469493270"] = {0, 0.30}, ["rbxassetid://10469630950"] = {0, 0.30}, ["rbxassetid://10469639222"] = {0, 0.30}, ["rbxassetid://10469643643"] = {0, 0.30}, ["rbxassetid://13532562418"] = {0, 0.30}, ["rbxassetid://13532600125"] = {0, 0.30}, ["rbxassetid://13532604085"] = {0, 0.30}, ["rbxassetid://13294471966"] = {0, 0.30}, ["rbxassetid://13491635433"] = {0, 0.30}, ["rbxassetid://13296577783"] = {0, 0.30}, ["rbxassetid://13295919399"] = {0, 0.30}, ["rbxassetid://13295936866"] = {0, 0.30}, ["rbxassetid://13370310513"] = {0, 0.30}, ["rbxassetid://13390230973"] = {0, 0.30}, ["rbxassetid://13378751717"] = {0, 0.30}, ["rbxassetid://13378708199"] = {0, 0.30} }
-local dodges = { ["rbxassetid://10479335397"] = {0, 0.50}, ["rbxassetid://13380255751"] = {0, 0.50} }
-local barrages = { ["rbxassetid://10466974800"] = {0.20, 1.80}, ["rbxassetid://12534735382"] = {0.20, 1.80} }
-local abilities = { ["rbxassetid://10468665991"] = {0.15, 0.60}, ["rbxassetid://13376869471"] = {0.05, 1}, ["rbxassetid://13376962659"] = {0, 2}, ["rbxassetid://12296882427"] = {0.05, 1}, ["rbxassetid://13309500827"] = {0.05, 1}, ["rbxassetid://13365849295"] = {0, 1}, ["rbxassetid://13377153603"] = {0, 1}, ["rbxassetid://12509505723"] = {0.09, 2} }
-local cd = false
-local parryCooldown = 0.2
-
-local frontDashArgs = { { Dash = Enum.KeyCode.W, Key = Enum.KeyCode.Q, Goal = "KeyPress" } }
-local inputBeganConnections = {}
-local characterAddedConnections = {}
-local dashButtonConnections = {}
-
-local Configs = { IgnoreFriends = false, MaxDistance = 100, Damage = 9999, HealthLimit = 0, DashInterval = 0.7, AttackInterval = 0.001 }
-local lastAttack = 0
-local data = player:WaitForChild("Data")
-local charValue = data:WaitForChild("Character")
-local localCharacterName = charValue.Value
-local ability = rs:WaitForChild("Characters"):WaitForChild(localCharacterName):WaitForChild("WallCombo")
-local AbilitiesRemote = rs:WaitForChild("Remotes"):WaitForChild("Abilities"):WaitForChild("Ability")
-local CombatRemote = rs:WaitForChild("Remotes"):WaitForChild("Combat"):WaitForChild("Action")
-
-local HttpService = game:GetService("HttpService")
-local State = { ConfigName = "default", CurrentConfig = nil }
-
-MainLeft:AddButton({ Text = '篡改', Func = function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/dream77239/ubg-script/refs/heads/main/%E6%8B%A6%E6%88%AA.txt"))()
-end })
-
-MainLeft:AddToggle("FakeBlock", { Text = "假防", Default = false, Callback = function(state)
-    if state then AddToArrayList("假防") else RemoveFromArrayList("假防") end
+MainLeft:AddToggle("假防", { Default = false, Callback = function(state)
     fakeBlockEnabled = state
-    local BlockRemote = rs:WaitForChild("Remotes"):WaitForChild("Combat"):WaitForChild("Block")
+    local BlockRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Combat"):WaitForChild("Block")
     local character = player.Character or player.CharacterAdded:Wait()
     local function enableBlock()
-        pcall(function() BlockRemote:FireServer(true) end)
+        pcall(function()
+            BlockRemote:FireServer(true)
+        end)
     end
-    if fakeBlockEnabled then enableBlock() end
+    if fakeBlockEnabled then
+        enableBlock()
+    end
     if not loopRunning then
         loopRunning = true
         task.spawn(function()
             while true do
                 task.wait(0.01)
                 if fakeBlockEnabled then
-                    local success, isBlocking = pcall(function() return character:GetAttribute("IsBlocking") end)
-                    if success and not isBlocking then enableBlock() end
+                    local success, isBlocking = pcall(function()
+                        return character:GetAttribute("IsBlocking")
+                    end)
+                    if success and not isBlocking then
+                        enableBlock()
+                    end
                 end
             end
         end)
     end
 end })
 
-MainLeft:AddToggle("NoDashCooldown", { Text = "侧闪无冷却", Default = false, Callback = function(state)
-    if state then AddToArrayList("侧闪无冷却") else RemoveFromArrayList("侧闪无冷却") end
-    local dashCooldown = rs.Settings.Cooldowns.Dash
-    dashCooldown.Value = state and 1 or defaultCooldown
-end })
-
-MainLeft:AddToggle("NoMeleeCooldown", { Text = "近战无冷却", Default = false, Callback = function(state)
-    if state then AddToArrayList("近战无冷却") else RemoveFromArrayList("近战无冷却") end
-    local meleeCooldown = rs.Settings.Cooldowns.Melee
-    meleeCooldown.Value = state and 1 or defaultMeleeCooldown
-end })
-
-MainLeft:AddToggle("NoAbilityCooldown", { Text = "技能无冷却(仅宿傩)", Default = false, Callback = function(state)
-    if state then AddToArrayList("技能无冷却") else RemoveFromArrayList("技能无冷却") end
-    settings.Cooldowns.Ability.Value = state and 1 or defaultAbility
-end })
-
-MainLeft:AddToggle("AutoEmoteClaim", { Text = "自动签到表情", Default = false, Callback = function(state)
-    if state then AddToArrayList("自动签到表情") else RemoveFromArrayList("自动签到表情") end
-    emoteClaimActive = state
+local defaultCooldown = ReplicatedStorage.Settings.Cooldowns.Dash.Value
+MainLeft:AddToggle("侧闪无冷却", { Default = false, Callback = function(state)
+    local dashCooldown = ReplicatedStorage.Settings.Cooldowns.Dash
     if state then
-        emoteClaimConnection = game:GetService("RunService").Heartbeat:Connect(function()
-            if emoteClaimActive then rs.Remotes.Combat.EmoteClaim:FireServer() end
-        end)
+        dashCooldown.Value = 1
     else
-        if emoteClaimConnection then emoteClaimConnection:Disconnect() emoteClaimConnection = nil end
+        dashCooldown.Value = defaultCooldown
     end
 end })
 
-MainRight:AddToggle("NoSlowdown", { Text = "无减速效果", Default = false, Callback = function(state)
-    if state then AddToArrayList("无减速") else RemoveFromArrayList("无减速") end
-    noSlowdownsToggle.Value = state and true or defaultNoSlowdownsValue
+local defaultMeleeCooldown = ReplicatedStorage.Settings.Cooldowns.Melee.Value
+MainLeft:AddToggle("近战无冷却", { Default = false, Callback = function(state)
+    local meleeCooldown = ReplicatedStorage.Settings.Cooldowns.Melee
+    if state then
+        meleeCooldown.Value = 1
+    else
+        meleeCooldown.Value = defaultMeleeCooldown
+    end
 end })
 
-MainRight:AddToggle("NoHitStun", { Text = "取消被攻击硬直", Default = false, Callback = function(state)
-    if state then AddToArrayList("取消硬直") else RemoveFromArrayList("取消硬直") end
+local settings = ReplicatedStorage.Settings
+local defaultAbility = settings.Cooldowns.Ability.Value
+MainLeft:AddToggle("技能无冷却(仅宿傩角色)", { Default = false, Callback = function(state)
+    settings.Cooldowns.Ability.Value = state and 1 or defaultAbility
+end })
+
+local Remotes = ReplicatedStorage.Remotes
+local Combat = Remotes.Combat
+local EmoteClaim = Combat.EmoteClaim
+local emoteClaimActive = false
+local emoteClaimConnection = nil
+local function startEmoteClaim()
+    emoteClaimConnection = RunService.Heartbeat:Connect(function()
+        if emoteClaimActive then
+            EmoteClaim:FireServer()
+        end
+    end)
+end
+local function stopEmoteClaim()
+    if emoteClaimConnection then
+        emoteClaimConnection:Disconnect()
+        emoteClaimConnection = nil
+    end
+end
+MainLeft:AddToggle("自动签到表情", { Default = false, Callback = function(state)
+    emoteClaimActive = state
+    if state then
+        startEmoteClaim()
+    else
+        stopEmoteClaim()
+    end
+end })
+
+local noSlowdownsToggle = ReplicatedStorage.Settings.Toggles.NoSlowdowns
+local defaultNoSlowdowns = false
+MainLeft:AddToggle("无减速效果", { Default = false, Callback = function(state)
+    if state then
+        noSlowdownsToggle.Value = true
+    else
+        noSlowdownsToggle.Value = defaultNoSlowdowns
+    end
+end })
+
+local defaultDisableHitStun = settings.Toggles.DisableHitStun.Value
+MainLeft:AddToggle("取消被攻击硬直", { Default = false, Callback = function(state)
     settings.Toggles.DisableHitStun.Value = state
 end })
 
-MainRight:AddToggle("SkipIntro", { Text = "跳过角色开场动作", Default = false, Callback = function(state)
-    if state then AddToArrayList("跳过开场") else RemoveFromArrayList("跳过开场") end
+local defaultDisableIntros = settings.Toggles.DisableIntros.Value
+MainLeft:AddToggle("跳过角色开场动作", { Default = false, Callback = function(state)
     settings.Toggles.DisableIntros.Value = state
 end })
 
-MainRight:AddToggle("NoStunOnMiss", { Text = "普攻无僵直", Default = false, Callback = function(state)
-    if state then AddToArrayList("普攻无僵直") else RemoveFromArrayList("普攻无僵直") end
+local defaultNoStunOnMiss = settings.Toggles.NoStunOnMiss.Value
+MainLeft:AddToggle("普攻无僵直", { Default = false, Callback = function(state)
     settings.Toggles.NoStunOnMiss.Value = state
 end })
 
-MainRight:AddToggle("NoRagdoll", { Text = "防布娃娃", Default = false, Callback = function(state)
-    if state then AddToArrayList("防布娃娃") else RemoveFromArrayList("防布娃娃") end
+local defaultRagdollTimer = settings.Multipliers.RagdollTimer.Value
+MainLeft:AddToggle("被别人击倒不会变成布娃娃", { Default = false, Callback = function(state)
     settings.Multipliers.RagdollTimer.Value = state and 0.5 or defaultRagdollTimer
 end })
 
-MainRight:AddToggle("InfiniteUlt", { Text = "延长大招时间", Default = false, Callback = function(state)
-    if state then AddToArrayList("无限大招") else RemoveFromArrayList("无限大招") end
+local defaultUltimateTimer = settings.Multipliers.UltimateTimer.Value
+MainLeft:AddToggle("延长大招时间", { Default = false, Callback = function(state)
     settings.Multipliers.UltimateTimer.Value = state and 100000 or defaultUltimateTimer
 end })
 
-MainRight:AddToggle("InstantUlt", { Text = "秒开大", Default = false, Callback = function(state)
-    if state then AddToArrayList("秒开大") else RemoveFromArrayList("秒开大") end
+local defaultInstantTransformation = settings.Toggles.InstantTransformation.Value
+MainLeft:AddToggle("秒开大", { Default = false, Callback = function(state)
     settings.Toggles.InstantTransformation.Value = state
 end })
 
-MainRight:AddToggle("PingSpam", { Text = "Ping乱码", Default = false, Callback = function(state)
-    if state then AddToArrayList("Ping乱码") else RemoveFromArrayList("Ping乱码") end
+local Ping = player:WaitForChild("Info"):WaitForChild("Ping")
+local pingLoop = nil
+MainRight:AddToggle("ping乱码", { Default = false, Callback = function(state)
     if state then
-        task.spawn(function()
-            while Toggles.PingSpam.Value do
+        pingLoop = task.spawn(function()
+            while true do
                 for i = 0, 999, 25 do
-                    if not Toggles.PingSpam.Value then break end
                     Ping.Value = i
                     task.wait(0.03)
                 end
                 for i = 999, 0, -25 do
-                    if not Toggles.PingSpam.Value then break end
                     Ping.Value = i
                     task.wait(0.03)
                 end
             end
         end)
+    else
+        if pingLoop then
+            task.cancel(pingLoop)
+            pingLoop = nil
+        end
     end
 end })
 
-CombatLeft:AddToggle("OnePunch", { Text = "一拳倒地", Default = false, Callback = function(state)
-    if state then AddToArrayList("一拳倒地") else RemoveFromArrayList("一拳倒地") end
-    MeleeDamage.Value = state and 1000000 or 100
+local MeleeDamage = ReplicatedStorage:WaitForChild("Settings"):WaitForChild("Multipliers"):WaitForChild("MeleeDamage")
+MeleeDamage.Value = 100
+MainRight:AddToggle("一拳倒地", { Default = false, Callback = function(state)
+    if state then
+        MeleeDamage.Value = 1000000
+    else
+        MeleeDamage.Value = 100
+    end
 end })
 
-CombatLeft:AddToggle("OnePunchFly", { Text = "一拳击飞", Default = false, Callback = function(state)
-    if state then AddToArrayList("一拳击飞") else RemoveFromArrayList("一拳击飞") end
-    local LocalPlayer = Players.LocalPlayer
-    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+local RagdollPower = ReplicatedStorage:WaitForChild("Settings"):WaitForChild("Multipliers"):WaitForChild("RagdollPower")
+local tpConnection = nil
+MainRight:AddToggle("一拳击飞", { Default = false, Callback = function(state)
     local maxTeleportDistance = 50
-    local lastPosition = HumanoidRootPart.Position
-    local connection
+    local lastPosition = nil
     if state then
         RagdollPower.Value = 10000
-        connection = RunService.RenderStepped:Connect(function()
-            if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local Character = player.Character or player.CharacterAdded:Wait()
+        local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+        lastPosition = HumanoidRootPart.Position
+        tpConnection = RunService.RenderStepped:Connect(function()
+            if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+                Character = player.Character or player.CharacterAdded:Wait()
                 HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
                 lastPosition = HumanoidRootPart.Position
             end
-            local currentPos = HumanoidRootPart.Position
+            local currentPos = player.Character.HumanoidRootPart.Position
             local distance = (currentPos - lastPosition).Magnitude
             if distance > maxTeleportDistance then
-                HumanoidRootPart.CFrame = CFrame.new(lastPosition)
+                player.Character.HumanoidRootPart.CFrame = CFrame.new(lastPosition)
             else
                 lastPosition = currentPos
             end
         end)
     else
         RagdollPower.Value = 100
-        if connection then connection:Disconnect() connection = nil end
+        if tpConnection then
+            tpConnection:Disconnect()
+            tpConnection = nil
+        end
     end
 end })
 
-CombatLeft:AddToggle("NoWallComboCooldown", { Text = "墙打无冷却", Default = false, Callback = function(state)
-    if state then AddToArrayList("墙打无冷却") else RemoveFromArrayList("墙打无冷却") end
-    wallCombo.Value = state and 0 or 100
+local wallCombo = ReplicatedStorage.Settings.Cooldowns.WallCombo
+MainRight:AddToggle("墙打无冷却", { Default = false, Callback = function(state)
+    if state then
+        wallCombo.Value = 0
+    else
+        wallCombo.Value = 100
+    end
 end })
 
-CombatLeft:AddToggle("MultiUlt", { Text = "大招多次使用", Default = false, Callback = function(state)
-    if state then AddToArrayList("大招多次使用") else RemoveFromArrayList("大招多次使用") end
-    multiUseCutscenesToggle.Value = state and true or defaultMultiUse
+local wall = nil
+pcall(function()
+    wall = workspace.Map.Structural.Terrain:GetChildren()[5]:GetChildren()[12]
+end)
+if not wall then
+    wall = Instance.new("Part")
+    wall.Parent = workspace
+end
+wall.Size = Vector3.new(12,6,2)
+wall.Transparency = 0.6
+wall.Material = Enum.Material.SmoothPlastic
+wall.Anchored = true
+wall.CanCollide = true
+wall.CFrame = wall.CFrame or CFrame.new(0,5,0)
+if getconnections then
+    for _, conn in pairs(getconnections(wall.AncestryChanged)) do
+        conn:Disable()
+    end
+end
+local mt = getrawmetatable(game)
+setreadonly(mt,false)
+local old = mt.__namecall
+mt.__namecall = newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    if self == wall and method == "Destroy" then
+        return
+    end
+    return old(self, ...)
+end)
+setreadonly(mt,true)
+local followConnection = nil
+MainRight:AddToggle("随处墙打", { Default = false, Callback = function(state)
+    if state then
+        if not followConnection then
+            followConnection = RunService.RenderStepped:Connect(function()
+                local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    wall.CFrame = hrp.CFrame * CFrame.new(0,0,-8)
+                end
+            end)
+        end
+    else
+        if followConnection then
+            followConnection:Disconnect()
+            followConnection = nil
+        end
+    end
 end })
 
-CombatRight:AddToggle("AntiLag", { Text = "防卡", Default = false, Callback = function(state)
-    if state then AddToArrayList("防卡") else RemoveFromArrayList("防卡") end
+local originalData = {}
+local skyBackup = nil
+MainRight:AddToggle("防卡", { Default = false, Callback = function(state)
     if state then
         originalData = {}
-        for _, v in pairs(Workspace:GetDescendants()) do
+        for _, v in pairs(workspace:GetDescendants()) do
             if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Explosion") then
                 originalData[v] = v.Enabled
                 v.Enabled = false
@@ -425,15 +282,17 @@ CombatRight:AddToggle("AntiLag", { Text = "防卡", Default = false, Callback = 
                     v.Enabled = false
                 else
                     originalData[v] = v.Enabled ~= nil and v.Enabled or true
-                    if v.Enabled ~= nil then v.Enabled = false end
+                    if v.Enabled ~= nil then
+                        v.Enabled = false
+                    end
                 end
             end
         end
-        originalData["GlobalShadows"] = game.Lighting.GlobalShadows
-        originalData["FogEnd"] = game.Lighting.FogEnd
-        game.Lighting.GlobalShadows = false
-        game.Lighting.FogEnd = 9e9
-        local sky = game.Lighting:FindFirstChildOfClass("Sky")
+        originalData["GlobalShadows"] = Lighting.GlobalShadows
+        originalData["FogEnd"] = Lighting.FogEnd
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        local sky = Lighting:FindFirstChildOfClass("Sky")
         if sky then
             skyBackup = sky:Clone()
             sky:Destroy()
@@ -447,9 +306,9 @@ CombatRight:AddToggle("AntiLag", { Text = "防卡", Default = false, Callback = 
         newSky.SkyboxUp = ""
         newSky.SunAngularSize = 0
         newSky.MoonAngularSize = 0
-        newSky.Parent = game.Lighting
-        game.Lighting.Ambient = Color3.fromRGB(128,128,128)
-        game.Lighting.OutdoorAmbient = Color3.fromRGB(128,128,128)
+        newSky.Parent = Lighting
+        Lighting.Ambient = Color3.fromRGB(128,128,128)
+        Lighting.OutdoorAmbient = Color3.fromRGB(128,128,128)
     else
         for obj, value in pairs(originalData) do
             if typeof(obj) == "Instance" and obj.Parent then
@@ -467,68 +326,81 @@ CombatRight:AddToggle("AntiLag", { Text = "防卡", Default = false, Callback = 
                     end
                 end
             elseif obj == "GlobalShadows" then
-                game.Lighting.GlobalShadows = value
+                Lighting.GlobalShadows = value
             elseif obj == "FogEnd" then
-                game.Lighting.FogEnd = value
+                Lighting.FogEnd = value
             end
         end
         if skyBackup then
-            local currentSky = game.Lighting:FindFirstChildOfClass("Sky")
-            if currentSky then currentSky:Destroy() end
-            skyBackup.Parent = game.Lighting
+            local currentSky = Lighting:FindFirstChildOfClass("Sky")
+            if currentSky then
+                currentSky:Destroy()
+            end
+            skyBackup.Parent = Lighting
             skyBackup = nil
         end
         originalData = {}
     end
 end })
 
-CombatRight:AddToggle("Invisibility", { Text = "隐身", Default = false, Callback = function(state)
-    if state then AddToArrayList("隐身") else RemoveFromArrayList("隐身") end
-    local LocalPlayer = Players.LocalPlayer
-    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
-    local Camera = Workspace.CurrentCamera
-    local function CreatePlatform(position)
-        local part = Instance.new("Part")
-        part.Size = Vector3.new(10, 1, 10)
-        part.Position = position - Vector3.new(0, 3, 0)
-        part.Anchored = true
-        part.CanCollide = true
-        part.Transparency = 0.5
-        part.Parent = Workspace
-        return part
-    end
-    local function CreateClone()
-        local newClone = Character:Clone()
-        for _, v in ipairs(newClone:GetDescendants()) do
-            if v:IsA("BasePart") then v.Transparency = 0.5 end
+local clone, platform, originalCFrame, originalCameraSubject
+local Camera = workspace.CurrentCamera
+local function CreatePlatform(position)
+    local part = Instance.new("Part")
+    part.Size = Vector3.new(10, 1, 10)
+    part.Position = position - Vector3.new(0, 3, 0)
+    part.Anchored = true
+    part.CanCollide = true
+    part.Transparency = 0.5
+    part.Parent = workspace
+    return part
+end
+local function CreateClone(char)
+    local newClone = char:Clone()
+    for _, v in ipairs(newClone:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Transparency = 0.5
         end
-        newClone.Parent = Workspace
-        return newClone
     end
+    newClone.Parent = workspace
+    return newClone
+end
+local function ToggleInvisibility(state)
+    local Character = player.Character or player.CharacterAdded:Wait()
+    local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
     if state then
         originalCFrame = HumanoidRootPart.CFrame
         HumanoidRootPart.CFrame = HumanoidRootPart.CFrame + Vector3.new(0, -50, 0)
         platform = CreatePlatform(HumanoidRootPart.Position)
         task.wait(1)
-        clone = CreateClone()
+        clone = CreateClone(Character)
         clone:MoveTo(originalCFrame.Position)
         Camera.CameraSubject = clone:FindFirstChildWhichIsA("Humanoid")
-        LocalPlayer.Character = clone
+        player.Character = clone
     else
-        if clone then clone:Destroy() clone = nil end
-        if platform then platform:Destroy() platform = nil end
+        if clone then
+            clone:Destroy()
+            clone = nil
+        end
+        if platform then
+            platform:Destroy()
+            platform = nil
+        end
         if originalCFrame then
             HumanoidRootPart.CFrame = originalCFrame
             originalCFrame = nil
         end
         Camera.CameraSubject = Character:FindFirstChildWhichIsA("Humanoid")
-        LocalPlayer.Character = Character
+        player.Character = Character
     end
+end
+MainRight:AddToggle("隐身", { Default = false, Callback = function(state)
+    ToggleInvisibility(state)
 end })
 
-CombatRight:AddToggle("RangeDisplay", { Text = "范围显示", Default = false, Callback = function(state)
-    if state then AddToArrayList("范围显示") else RemoveFromArrayList("范围显示") end
+local CircleParts = {}
+local circleConnection = nil
+MainRight:AddToggle("墙打/杀戮光环范围显示", { Default = false, Callback = function(state)
     local function CreateCircle(radius, segments, thickness)
         local parts = {}
         for i = 1, segments do
@@ -538,15 +410,20 @@ CombatRight:AddToggle("RangeDisplay", { Text = "范围显示", Default = false, 
             part.Material = Enum.Material.Neon
             part.Size = Vector3.new(thickness, 0.2, radius * 2 * math.pi / segments)
             part.Color = Color3.fromRGB(180,180,180)
-            part.Parent = Workspace
+            part.Parent = workspace
             table.insert(parts, part)
         end
         return parts
     end
     local function DestroyCircle()
-        if Connection then Connection:Disconnect() Connection = nil end
+        if circleConnection then
+            circleConnection:Disconnect()
+            circleConnection = nil
+        end
         for _, part in ipairs(CircleParts) do
-            if part and part.Parent then part:Destroy() end
+            if part and part.Parent then
+                part:Destroy()
+            end
         end
         CircleParts = {}
     end
@@ -559,7 +436,7 @@ CombatRight:AddToggle("RangeDisplay", { Text = "范围显示", Default = false, 
         local time = 0
         local updateAccumulator = 0
         local updateRate = 1/60
-        Connection = RunService.RenderStepped:Connect(function(dt)
+        circleConnection = RunService.RenderStepped:Connect(function(dt)
             time = time + dt
             updateAccumulator = updateAccumulator + dt
             if updateAccumulator < updateRate then return end
@@ -574,11 +451,11 @@ CombatRight:AddToggle("RangeDisplay", { Text = "范围显示", Default = false, 
                     local angle = (i / #CircleParts) * 2 * math.pi
                     local x = pos.X + math.cos(angle) * radius
                     local z = pos.Z + math.sin(angle) * radius
-                    local r = math.sin(time) * 40 + 180
-                    local g = math.sin(time + 2) * 40 + 180
-                    local b = math.sin(time + 4) * 40 + 180
                     part.Position = Vector3.new(x, pos.Y, z)
                     part.Orientation = Vector3.new(0, -math.deg(angle), 0)
+                    local r = math.sin(time + i * 0.1) * 40 + 180
+                    local g = math.sin(time + i * 0.1 + 2) * 40 + 180
+                    local b = math.sin(time + i * 0.1 + 4) * 40 + 180
                     part.Color = Color3.fromRGB(r, g, b)
                 end
             end
@@ -588,26 +465,28 @@ CombatRight:AddToggle("RangeDisplay", { Text = "范围显示", Default = false, 
     end
 end })
 
-CombatRight:AddButton({ Text = '删除墙打特效', Func = function()
+MainRight2:AddButton("删除墙打特效", function()
     local paths = {
-        rs.Characters.Gon.WallCombo.GonWallCombo.Center,
-        rs.Characters.Gon.WallCombo.GonWallCombo.Explosion,
-        rs.Characters.Gon.WallCombo.GonIntroHands,
-        rs.Characters.Mob.WallCombo.MobWallCombo.Center,
-        rs.Characters.Nanami.WallCombo.NanamiWallCombo.Center,
-        rs.Characters.Stark.WallCombo.StarkWallCombo.Center,
-        rs.Characters.Sukuna.WallCombo.SukunaTransformWallCombo,
-        rs.Characters.Sukuna.WallCombo.SukunaWallCombo
+        ReplicatedStorage.Characters.Gon.WallCombo.GonWallCombo.Center,
+        ReplicatedStorage.Characters.Gon.WallCombo.GonWallCombo.Explosion,
+        ReplicatedStorage.Characters.Gon.WallCombo.GonIntroHands,
+        ReplicatedStorage.Characters.Mob.WallCombo.MobWallCombo.Center,
+        ReplicatedStorage.Characters.Nanami.WallCombo.NanamiWallCombo.Center,
+        ReplicatedStorage.Characters.Stark.WallCombo.StarkWallCombo.Center,
+        ReplicatedStorage.Characters.Sukuna.WallCombo.SukunaTransformWallCombo,
+        ReplicatedStorage.Characters.Sukuna.WallCombo.SukunaWallCombo
     }
     for _, obj in ipairs(paths) do
         if obj and obj:IsA("Instance") then
-            for _, child in ipairs(obj:GetChildren()) do child:Destroy() end
+            for _, child in ipairs(obj:GetChildren()) do
+                child:Destroy()
+            end
         end
     end
-end })
+end)
 
-CombatRight:AddButton({ Text = '删除击杀表情特效', Func = function()
-    local KillEmote = rs:WaitForChild("Cosmetics"):WaitForChild("KillEmote")
+MainRight2:AddButton("删除击杀表情特效", function()
+    local KillEmote = ReplicatedStorage:WaitForChild("Cosmetics"):WaitForChild("KillEmote")
     local function removeEffects(obj)
         for _, child in ipairs(obj:GetChildren()) do
             if child:IsA("ParticleEmitter") or child:IsA("Trail") or child:IsA("Beam") or child:IsA("Fire") or child:IsA("Smoke") or child:IsA("Sparkles") or child:IsA("Light") then
@@ -618,102 +497,131 @@ CombatRight:AddButton({ Text = '删除击杀表情特效', Func = function()
         end
     end
     removeEffects(KillEmote)
+end)
+
+local multiUseCutscenesToggle = ReplicatedStorage.Settings.Toggles.MultiUseCutscenes
+local defaultMultiUse = false
+MainLeft2:AddToggle("艾斯帕大招技能多次使用(全角色通用)", { Default = false, Callback = function(state)
+    if state then
+        multiUseCutscenesToggle.Value = true
+    else
+        multiUseCutscenesToggle.Value = defaultMultiUse
+    end
 end })
 
-MoveLeft:AddToggle("Fly", { Text = "飞行", Default = false, Callback = function(state)
-    FLY_TOGGLE_STATE = state
-    if state then AddToArrayList("飞行", iyflyspeed) else RemoveFromArrayList("飞行") end
-    local function getRoot(char)
-        return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
-    end
-    local function NOFLY()
-        FLYING = false
-        if flyKeyDown then flyKeyDown:Disconnect() flyKeyDown = nil end
-        if flyKeyUp then flyKeyUp:Disconnect() flyKeyUp = nil end
-        if mobileFlyConn then mobileFlyConn:Disconnect() mobileFlyConn = nil end
-        local char = player.Character
-        if char then
-            local humanoid = char:FindFirstChildOfClass("Humanoid")
-            local root = getRoot(char)
-            if humanoid then humanoid.PlatformStand = false end
+local QEfly = true
+local FLYING = false
+local flyKeyDown, flyKeyUp, mobileFlyConn
+local iyflyspeed = 2
+local vehicleflyspeed = 2
+local FLY_TOGGLE_STATE = false
+local function getRoot(char)
+    return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+end
+local function NOFLY()
+    FLYING = false
+    if flyKeyDown then flyKeyDown:Disconnect() flyKeyDown = nil end
+    if flyKeyUp then flyKeyUp:Disconnect() flyKeyUp = nil end
+    if mobileFlyConn then mobileFlyConn:Disconnect() mobileFlyConn = nil end
+    local char = player.Character
+    if char then
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        local root = getRoot(char)
+        if humanoid then humanoid.PlatformStand = false end
+        if root then
             for _, v in pairs(root:GetChildren()) do
-                if v:IsA("BodyGyro") or v:IsA("BodyVelocity") then v:Destroy() end
+                if v:IsA("BodyGyro") or v:IsA("BodyVelocity") then
+                    v:Destroy()
+                end
             end
         end
-        pcall(function() Workspace.CurrentCamera.CameraType = Enum.CameraType.Custom end)
     end
-    local function sFLY(vfly)
-        local char = player.Character or player.CharacterAdded:Wait()
-        local humanoid = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid")
-        local root = getRoot(char)
-        if flyKeyDown then flyKeyDown:Disconnect() end
-        if flyKeyUp then flyKeyUp:Disconnect() end
-        if mobileFlyConn then mobileFlyConn:Disconnect() end
-        local CONTROL = {F=0,B=0,L=0,R=0,Q=0,E=0}
-        local BG = Instance.new("BodyGyro")
-        local BV = Instance.new("BodyVelocity")
-        BG.P = 9e4
-        BG.MaxTorque = Vector3.new(9e9,9e9,9e9)
-        BG.CFrame = root.CFrame
-        BG.Parent = root
-        BV.MaxForce = Vector3.new(9e9,9e9,9e9)
-        BV.Velocity = Vector3.new(0,0,0)
-        BV.Parent = root
-        FLYING = true
-        flyKeyDown = UserInputService.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.Keyboard then
-                if input.KeyCode == Enum.KeyCode.W then CONTROL.F = iyflyspeed end
-                if input.KeyCode == Enum.KeyCode.S then CONTROL.B = -iyflyspeed end
-                if input.KeyCode == Enum.KeyCode.A then CONTROL.L = -iyflyspeed end
-                if input.KeyCode == Enum.KeyCode.D then CONTROL.R = iyflyspeed end
-                if input.KeyCode == Enum.KeyCode.E and QEfly then CONTROL.Q = iyflyspeed*2 end
-                if input.KeyCode == Enum.KeyCode.Q and QEfly then CONTROL.E = -iyflyspeed*2 end
-            end
+    pcall(function()
+        workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+    end)
+end
+local function sFLY(vfly)
+    local char = player.Character or player.CharacterAdded:Wait()
+    local humanoid = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid")
+    local root = getRoot(char)
+    if not root then return end
+    if flyKeyDown then flyKeyDown:Disconnect() end
+    if flyKeyUp then flyKeyUp:Disconnect() end
+    if mobileFlyConn then mobileFlyConn:Disconnect() end
+    local CONTROL = {F=0,B=0,L=0,R=0,Q=0,E=0}
+    local BG = Instance.new("BodyGyro")
+    local BV = Instance.new("BodyVelocity")
+    BG.P = 9e4
+    BG.MaxTorque = Vector3.new(9e9,9e9,9e9)
+    BG.CFrame = root.CFrame
+    BG.Parent = root
+    BV.MaxForce = Vector3.new(9e9,9e9,9e9)
+    BV.Velocity = Vector3.new(0,0,0)
+    BV.Parent = root
+    FLYING = true
+    flyKeyDown = UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            if input.KeyCode == Enum.KeyCode.W then CONTROL.F = iyflyspeed end
+            if input.KeyCode == Enum.KeyCode.S then CONTROL.B = -iyflyspeed end
+            if input.KeyCode == Enum.KeyCode.A then CONTROL.L = -iyflyspeed end
+            if input.KeyCode == Enum.KeyCode.D then CONTROL.R = iyflyspeed end
+            if input.KeyCode == Enum.KeyCode.E and QEfly then CONTROL.Q = iyflyspeed*2 end
+            if input.KeyCode == Enum.KeyCode.Q and QEfly then CONTROL.E = -iyflyspeed*2 end
+        end
+    end)
+    flyKeyUp = UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            if input.KeyCode == Enum.KeyCode.W then CONTROL.F = 0 end
+            if input.KeyCode == Enum.KeyCode.S then CONTROL.B = 0 end
+            if input.KeyCode == Enum.KeyCode.A then CONTROL.L = 0 end
+            if input.KeyCode == Enum.KeyCode.D then CONTROL.R = 0 end
+            if input.KeyCode == Enum.KeyCode.E then CONTROL.Q = 0 end
+            if input.KeyCode == Enum.KeyCode.Q then CONTROL.E = 0 end
+        end
+    end)
+    mobileFlyConn = RunService.RenderStepped:Connect(function()
+        if not FLYING then return end
+        local camera = workspace.CurrentCamera
+        local moveVector = Vector3.new(CONTROL.L+CONTROL.R, CONTROL.Q+CONTROL.E, CONTROL.F+CONTROL.B)
+        local ok, controlModule = pcall(function()
+            return require(player.PlayerScripts:WaitForChild("PlayerModule"):WaitForChild("ControlModule"))
         end)
-        flyKeyUp = UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.Keyboard then
-                if input.KeyCode == Enum.KeyCode.W then CONTROL.F = 0 end
-                if input.KeyCode == Enum.KeyCode.S then CONTROL.B = 0 end
-                if input.KeyCode == Enum.KeyCode.A then CONTROL.L = 0 end
-                if input.KeyCode == Enum.KeyCode.D then CONTROL.R = 0 end
-                if input.KeyCode == Enum.KeyCode.E then CONTROL.Q = 0 end
-                if input.KeyCode == Enum.KeyCode.Q then CONTROL.E = 0 end
-            end
-        end)
-        mobileFlyConn = RunService.RenderStepped:Connect(function()
-            if not FLYING then return end
-            local camera = Workspace.CurrentCamera
-            local moveVector = Vector3.new(CONTROL.L+CONTROL.R, CONTROL.Q+CONTROL.E, CONTROL.F+CONTROL.B)
-            local ok, controlModule = pcall(function()
-                return require(player.PlayerScripts:WaitForChild("PlayerModule"):WaitForChild("ControlModule"))
-            end)
-            if ok and controlModule then
-                local mv = controlModule:GetMoveVector()
-                moveVector = Vector3.new(mv.X*(vfly and vehicleflyspeed or iyflyspeed), moveVector.Y, -mv.Z*(vfly and vehicleflyspeed or iyflyspeed))
-            end
-            BV.Velocity = (camera.CFrame.RightVector*moveVector.X + Vector3.new(0,moveVector.Y,0) + camera.CFrame.LookVector*moveVector.Z)*50
-            BG.CFrame = camera.CFrame
-            humanoid.PlatformStand = true
-        end)
+        if ok and controlModule then
+            local mv = controlModule:GetMoveVector()
+            moveVector = Vector3.new(mv.X*(vfly and vehicleflyspeed or iyflyspeed), moveVector.Y, -mv.Z*(vfly and vehicleflyspeed or iyflyspeed))
+        end
+        BV.Velocity = (camera.CFrame.RightVector*moveVector.X + Vector3.new(0,moveVector.Y,0) + camera.CFrame.LookVector*moveVector.Z)*50
+        BG.CFrame = camera.CFrame
+        humanoid.PlatformStand = true
+    end)
+end
+local function applyFly()
+    sFLY()
+    player.CharacterAdded:Connect(function()
+        if FLY_TOGGLE_STATE then
+            task.wait(0.5)
+            sFLY()
+        end
+    end)
+end
+MainLeft2:AddToggle("飞行", { Default = false, Callback = function(state)
+    FLY_TOGGLE_STATE = state
+    if state then
+        applyFly()
+    else
+        NOFLY()
     end
-    local function applyFly()
-        sFLY()
-        player.CharacterAdded:Connect(function()
-            if FLY_TOGGLE_STATE then task.wait(0.5) sFLY() end
-        end)
-    end
-    if state then applyFly() else NOFLY() end
 end })
 
-MoveLeft:AddSlider("FlySpeed", { Text = "飞行速度", Default = 2, Min = 1, Max = 10, Rounding = 0, Callback = function(value)
+MainLeft2:AddSlider("飞行速度", { Min = 1, Max = 10, Default = 2, Rounding = 0, Callback = function(value)
     iyflyspeed = value
     vehicleflyspeed = value
-    if FLY_TOGGLE_STATE then UpdateModuleDisplay("飞行", value) end
 end })
 
-MoveLeft:AddToggle("Speed", { Text = "速度", Default = false, Callback = function(state)
+local tpwalking = false
+local tpwalkSpeed = 100
+MainLeft2:AddToggle("速度", { Default = false, Callback = function(state)
     tpwalking = state
-    if state then AddToArrayList("速度", tpwalkSpeed) else RemoveFromArrayList("速度") end
     if state then
         spawn(function()
             while tpwalking do
@@ -729,152 +637,112 @@ MoveLeft:AddToggle("Speed", { Text = "速度", Default = false, Callback = funct
     end
 end })
 
-MoveLeft:AddSlider("SpeedSlider", { Text = "速度调节", Default = 100, Min = 0, Max = 250, Rounding = 0, Callback = function(value)
+MainLeft2:AddSlider("速度调节", { Min = 0, Max = 250, Default = 100, Rounding = 0, Callback = function(value)
     tpwalkSpeed = value
-    if tpwalking then UpdateModuleDisplay("速度", value) end
 end })
 
-MoveLeft:AddSlider("DashSpeed", { Text = "冲刺加速", Default = 100, Min = 0, Max = 1000, Rounding = 0, Callback = function(value)
-    rs.Settings.Multipliers.DashSpeed.Value = value
+MainLeft2:AddSlider("冲刺加速(默认值100)", { Min = 0, Max = 1000, Default = 100, Rounding = 0, Callback = function(value)
+    ReplicatedStorage.Settings.Multipliers.DashSpeed.Value = value
 end })
 
-MoveLeft:AddSlider("JumpHeight", { Text = "跳跃增强", Default = 100, Min = 0, Max = 1000, Rounding = 0, Callback = function(value)
-    rs.Settings.Multipliers.JumpHeight.Value = value
+MainLeft2:AddSlider("跳跃增强(默认值100)", { Min = 0, Max = 1000, Default = 100, Rounding = 0, Callback = function(value)
+    ReplicatedStorage.Settings.Multipliers.JumpHeight.Value = value
 end })
 
-MoveLeft:AddSlider("MeleeSpeed", { Text = "攻击加速", Default = 100, Min = 0, Max = 1000, Rounding = 0, Callback = function(value)
-    rs.Settings.Multipliers.MeleeSpeed.Value = value
+MainLeft2:AddSlider("攻击加速(默认值100)", { Min = 0, Max = 1000, Default = 100, Rounding = 0, Callback = function(value)
+    ReplicatedStorage.Settings.Multipliers.MeleeSpeed.Value = value
 end })
 
-MoveRight:AddSlider("WallComboAnywhere", { Text = "随处墙打", Default = 0, Min = 0, Max = 1, Rounding = 0, Callback = function(value)
-    if value == 1 then
-        if not followConnection then
-            followConnection = RunService.RenderStepped:Connect(function()
-                local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then wall.CFrame = hrp.CFrame * CFrame.new(0,0,-8) end
-            end)
-        end
-    else
-        if followConnection then followConnection:Disconnect() followConnection = nil end
-    end
-end })
+local ViolenceLeft = Tabs.Violence:AddLeftGroupbox("暴力功能")
 
-pcall(function()
-    wall = Workspace.Map.Structural.Terrain:GetChildren()[5]:GetChildren()[12]
-end)
-if not wall then
-    wall = Instance.new("Part")
-    wall.Parent = Workspace
+local active = false
+local function getLocalPlayerCharacter()
+    return player.Character
 end
-wall.Size = Vector3.new(12,6,2)
-wall.Transparency = 0.6
-wall.Material = Enum.Material.SmoothPlastic
-wall.Anchored = true
-wall.CanCollide = true
-wall.CFrame = wall.CFrame or CFrame.new(0,5,0)
-if getconnections then
-    for _, conn in pairs(getconnections(wall.AncestryChanged)) do conn:Disable() end
+local function generateActionNumber()
+    return "Action" .. math.random(1000, 9999)
 end
-local mt = getrawmetatable(game)
-setreadonly(mt,false)
-local old = mt.__namecall
-mt.__namecall = newcclosure(function(self, ...)
-    local method = getnamecallmethod()
-    if self == wall and method == "Destroy" then return end
-    return old(self, ...)
-end)
-setreadonly(mt,true)
-
-MoveRight:AddDropdown("TeleportLocations", { Text = "固定传送", Default = 1, Values = { "地图", "山脉", "安全港", "秘密房间1", "秘密房间2" }, Callback = function(option)
-    if option == "地图" then
-        player.Character.HumanoidRootPart.CFrame = CFrame.new(63.4928513, 440.505829, -92.9229507)
-    elseif option == "山脉" then
-        player.Character.HumanoidRootPart.CFrame = CFrame.new(253.515198, 699.103455, 420.533813)
-    elseif option == "安全港" then
-        player.Character.HumanoidRootPart.CFrame = CFrame.new(-774.454834, -137.237228, 126.384216)
-    elseif option == "秘密房间1" then
-        player.Character.HumanoidRootPart.CFrame = CFrame.new(-62, 29, 20338)
-    elseif option == "秘密房间2" then
-        player.Character.HumanoidRootPart.CFrame = CFrame.new(1068, 133, 23015)
-    end
-end })
-
-MoveRight:AddButton({ Text = '设置原位', Func = function()
-    TPYW = player.Character.HumanoidRootPart.CFrame
-end })
-
-MoveRight:AddButton({ Text = '传送原位', Func = function()
-    if TPYW then player.Character.HumanoidRootPart.CFrame = TPYW end
-end })
-
-ViolentLeft:AddToggle("GodMode", { Text = "无敌", Default = false, Callback = function(state)
-    if state then AddToArrayList("无敌") else RemoveFromArrayList("无敌") end
-    active = state
-end })
-
+local function getServerTime()
+    return tick()
+end
+local function wallcomboveryud()
+    local playerChar = getLocalPlayerCharacter()
+    if not playerChar then return false end
+    local head = playerChar:FindFirstChild("Head")
+    if not head then return false end
+    local charData = player:FindFirstChild("Data")
+    local charValue = charData and charData:FindFirstChild("Character") and charData.Character.Value
+    if not charValue then return false end
+    local charsFolder = ReplicatedStorage:FindFirstChild("Characters")
+    if not charsFolder or not charsFolder:FindFirstChild(charValue) then return false end
+    local wallComboAbility = charsFolder[charValue]:FindFirstChild("WallCombo")
+    if not wallComboAbility then return false end
+    local targetCharacter = playerChar
+    if not targetCharacter then return false end
+    local actionNumber = generateActionNumber()
+    local serverTime = getServerTime()
+    local randomId = math.random(100000, 999999)
+    local remoteArgs = {
+        wallComboAbility,
+        "Characters:" .. charValue .. ":WallCombo",
+        1,
+        randomId,
+        {
+            HitboxCFrames = {nil},
+            BestHitCharacter = targetCharacter,
+            HitCharacters = {targetCharacter},
+            Ignore = {[actionNumber] = {targetCharacter}},
+            DeathInfo = {},
+            Actions = {[actionNumber] = {}},
+            HitInfo = {
+                Blocked = false,
+                IsFacing = true,
+                IsInFront = true
+            },
+            BlockedCharacters = {},
+            ServerTime = serverTime,
+            FromCFrame = nil
+        },
+        actionNumber
+    }
+    pcall(function()
+        ReplicatedStorage.Remotes.Abilities.Ability:FireServer(wallComboAbility, randomId)
+    end)
+    pcall(function()
+        ReplicatedStorage.Remotes.Combat.Action:FireServer(unpack(remoteArgs))
+    end)
+end
 task.spawn(function()
     while task.wait(0.01) do
         if active then
-            pcall(function()
-                local playerChar = player.Character
-                if not playerChar then return end
-                local head = playerChar:FindFirstChild("Head")
-                if not head then return end
-                local charData = player:FindFirstChild("Data")
-                local charValue = charData and charData:FindFirstChild("Character") and charData.Character.Value
-                if not charValue then return end
-                local charsFolder = rs:FindFirstChild("Characters")
-                if not charsFolder or not charsFolder:FindFirstChild(charValue) then return end
-                local wallComboAbility = charsFolder[charValue]:FindFirstChild("WallCombo")
-                if not wallComboAbility then return end
-                local targetCharacter = playerChar
-                if not targetCharacter then return end
-                local actionNumber = "Action" .. math.random(1000, 9999)
-                local serverTime = tick()
-                local randomId = math.random(100000, 999999)
-                local remoteArgs = {
-                    wallComboAbility,
-                    "Characters:" .. charValue .. ":WallCombo",
-                    1,
-                    randomId,
-                    {
-                        HitboxCFrames = {nil},
-                        BestHitCharacter = targetCharacter,
-                        HitCharacters = {targetCharacter},
-                        Ignore = {[actionNumber] = {targetCharacter}},
-                        DeathInfo = {},
-                        Actions = {[actionNumber] = {}},
-                        HitInfo = { Blocked = false, IsFacing = true, IsInFront = true },
-                        BlockedCharacters = {},
-                        ServerTime = serverTime,
-                        FromCFrame = nil
-                    },
-                    actionNumber
-                }
-                pcall(function() rs.Remotes.Abilities.Ability:FireServer(wallComboAbility, randomId) end)
-                pcall(function() rs.Remotes.Combat.Action:FireServer(unpack(remoteArgs)) end)
-            end)
+            pcall(wallcomboveryud)
         end
     end
 end)
+ViolenceLeft:AddToggle("无敌", { Default = false, Callback = function(state)
+    active = state
+end })
 
-ViolentLeft:AddButton({ Text = '卡服', Func = function()
-    local active = true
+ViolenceLeft:AddButton("卡服", function()
+    local active2 = true
     local spawnedTasks = {}
     local function buildCombatArgs()
         return {
-            [1] = rs.Characters.Gon.WallCombo,
+            [1] = ReplicatedStorage.Characters.Gon.WallCombo,
             [2] = "Characters:Gon:WallCombo",
             [3] = 1,
             [4] = 33036,
             [5] = {
                 ["HitboxCFrames"] = {},
-                ["BestHitCharacter"] = Workspace.Characters.NPCs:FindFirstChild("The Ultimate Bum"),
-                ["HitCharacters"] = {Workspace.Characters.NPCs:FindFirstChild("The Ultimate Bum")},
+                ["BestHitCharacter"] = workspace.Characters.NPCs:FindFirstChild("The Ultimate Bum"),
+                ["HitCharacters"] = {workspace.Characters.NPCs:FindFirstChild("The Ultimate Bum")},
                 ["Ignore"] = {},
                 ["DeathInfo"] = {},
                 ["Actions"] = {},
-                ["HitInfo"] = { ["IsFacing"] = true, ["IsInFront"] = true },
+                ["HitInfo"] = {
+                    ["IsFacing"] = true,
+                    ["IsInFront"] = true
+                },
                 ["BlockedCharacters"] = {},
                 ["ServerTime"] = os.clock(),
                 ["FromCFrame"] = CFrame.new(534.693, 5.532, 79.486)
@@ -884,198 +752,65 @@ ViolentLeft:AddButton({ Text = '卡服', Func = function()
         }
     end
     local abilityArgs = {
-        [1] = rs.Characters.Gon.WallCombo,
+        [1] = ReplicatedStorage.Characters.Gon.WallCombo,
         [2] = 33036,
-        [4] = Workspace.Characters.NPCs:FindFirstChild("The Ultimate Bum"),
+        [4] = workspace.Characters.NPCs:FindFirstChild("The Ultimate Bum"),
         [5] = Vector3.new(527.693, 4.532, 79.978)
     }
     for i = 1, 10000 do
         local t = task.spawn(function()
-            if active then
+            if active2 then
                 pcall(function()
                     local combatArgs = buildCombatArgs()
-                    rs.Remotes.Abilities.Ability:FireServer(unpack(abilityArgs))
-                    rs.Remotes.Combat.Action:FireServer(unpack(combatArgs))
+                    ReplicatedStorage.Remotes.Abilities.Ability:FireServer(unpack(abilityArgs))
+                    ReplicatedStorage.Remotes.Combat.Action:FireServer(unpack(combatArgs))
                 end)
             end
         end)
         table.insert(spawnedTasks, t)
     end
     task.delay(3, function()
-        active = false
+        active2 = false
         for _, t in ipairs(spawnedTasks) do
-            if task.cancel then task.cancel(t) end
+            if task.cancel then
+                task.cancel(t)
+            end
         end
         spawnedTasks = {}
-        local localContainers = Workspace:FindFirstChild("Container(Drawing)")
+        local localContainers = workspace:FindFirstChild("Container(Drawing)")
         if localContainers then
             for _, v in ipairs(localContainers:GetChildren()) do
-                if v.Name:match(tostring(player.UserId)) then v:Destroy() end
+                if v.Name:match(tostring(player.UserId)) then
+                    v:Destroy()
+                end
             end
         end
     end)
-end })
+end)
 
-ViolentLeft:AddToggle("KillAuraV1", { Text = "杀戮光环 v1(慢)", Default = false, Callback = function(state)
-    if state then AddToArrayList("杀戮光环") else RemoveFromArrayList("杀戮光环") end
-    running = state
-    if running then
-        if conn then conn:Disconnect() conn = nil end
-        conn = RunService.Heartbeat:Connect(function()
-            if running then
-                pcall(function()
-                    local localRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                    if not localRootPart then return end
-                    triggerDash()
-                    local maxDistSq = Configs.MaxDistance * Configs.MaxDistance
-                    for _, targetPlayer in ipairs(Players:GetPlayers()) do
-                        if targetPlayer ~= player then
-                            local targetChar = targetPlayer.Character
-                            if targetChar then
-                                local targetRootPart = targetChar:FindFirstChild("HumanoidRootPart")
-                                local targetHumanoid = targetChar:FindFirstChild("Humanoid")
-                                if targetRootPart and targetHumanoid and targetHumanoid.Health > Configs.HealthLimit then
-                                    if not (Configs.IgnoreFriends and player:IsFriendsWith(targetPlayer.UserId)) then
-                                        local delta = localRootPart.Position - targetRootPart.Position
-                                        if delta.Magnitude * delta.Magnitude <= maxDistSq then
-                                            pcall(function() AbilitiesRemote:FireServer(ability, Configs.Damage, {}, targetRootPart.Position) end)
-                                            pcall(function()
-                                                CombatRemote:FireServer(ability, localCharacterName .. ":WallCombo", 2, Configs.Damage, {
-                                                    HitboxCFrames = {targetRootPart.CFrame, targetRootPart.CFrame},
-                                                    BestHitCharacter = targetChar,
-                                                    HitCharacters = {targetChar},
-                                                    Ignore = {},
-                                                    DeathInfo = {},
-                                                    BlockedCharacters = {},
-                                                    HitInfo = {IsFacing = false, IsInFront = true},
-                                                    ServerTime = os.time(),
-                                                    Actions = { ActionNumber1 = { [targetPlayer.Name] = { StartCFrameStr = tostring(localRootPart.CFrame), Local = true, Collision = false, Animation = "Punch1Hit", Preset = "Punch", Velocity = Vector3.zero, FromPosition = targetRootPart.Position, Seed = math.random(1,999999) } } },
-                                                    FromCFrame = targetRootPart.CFrame
-                                                }, "Action150", 0)
-                                            end)
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end)
-            end
-        end)
-    else
-        if conn then conn:Disconnect() conn = nil end
-    end
-end })
-
-ViolentLeft:AddToggle("KillAuraV2", { Text = "杀戮光环 v2(快)", Default = false, Callback = function(state)
-    enabled = state
-    if enabled then
-        KillAuraConn = RunService.Heartbeat:Connect(function()
-            local count = (player.Data.Character.Value == "Gon") and 20 or 50
-            triggerDash()
-            local targets = {}
-            local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= player and p.Character then
-                    if player:IsFriendsWith(p.UserId) then continue end
-                    local hum = p.Character:FindFirstChild("Humanoid")
-                    local root = p.Character:FindFirstChild("HumanoidRootPart")
-                    if hum and root and hum.Health > 0 then
-                        if (root.Position - hrp.Position).Magnitude <= RANGE then
-                            if not p.Character:GetAttribute("Invincible") then
-                                table.insert(targets, p.Character)
-                            end
-                        end
-                    end
-                end
-            end
-            for _, char in ipairs(targets) do
-                for i = 1, count do
-                    PlayersList[index] = char
-                    index += 1
-                end
-            end
-            if index > 1 then
-                local combo = rs.Characters[player.Data.Character.Value].WallCombo
-                rs.Remotes.Abilities.Ability:FireServer(combo, 69)
-                rs.Remotes.Combat.Action:FireServer(combo, "", 4, 69, { BestHitCharacter = nil, HitCharacters = PlayersList, Ignore = {}, Actions = {} })
-                table.clear(PlayersList)
-                index = 1
-            end
-        end)
-    else
-        if KillAuraConn then KillAuraConn:Disconnect() KillAuraConn = nil end
-    end
-end })
-
-ViolentLeft:AddToggle("IgnoreFriendsAura", { Text = "杀戮光环忽略好友", Default = false, Callback = function(state)
-    Configs.IgnoreFriends = state
-end })
-
-ViolentLeft:AddToggle("WallComboKill", { Text = "墙打秒杀", Default = false, Callback = function(state)
-    if state then AddToArrayList("墙打秒杀") else RemoveFromArrayList("墙打秒杀") end
-    wallComboEnabled = state
-    local wallComboConn = nil
-    local dashConn = nil
-    local lastWallComboTime = 0
-    local lastDashTime = 0
-    local Core = require(rs:WaitForChild("Core"))
-    local function executeWallCombo()
-        local head = player.Character and player.Character:FindFirstChild("Head")
-        if not head then return end
-        local now = tick()
-        if now - lastWallComboTime < 0.05 then return end
-        lastWallComboTime = now
-        local res
-        local success = pcall(function()
-            res = Core.Get("Combat","Hit").Box(nil, player.Character, {Size = Vector3.new(100,100,100)})
-        end)
-        if not success or not res then return end
-        pcall(function()
-            Core.Get("Combat","Ability").Activate(rs.Characters[player.Data.Character.Value].WallCombo, res, head.Position + Vector3.new(0,0,2.5))
-        end)
-    end
-    local function fireDash()
-        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        local now = tick()
-        if now - lastDashTime < 0.1 then return end
-        lastDashTime = now
-        local args = { hrp.CFrame, "F", hrp.CFrame.LookVector, nil, now }
-        pcall(function() rs.Remotes.Character.Dash:FireServer(unpack(args)) end)
-    end
-    if wallComboEnabled then
-        wallComboConn = RunService.Heartbeat:Connect(function() executeWallCombo() end)
-        dashConn = RunService.Heartbeat:Connect(function() fireDash() end)
-    else
-        if wallComboConn then wallComboConn:Disconnect() end
-        if dashConn then dashConn:Disconnect() end
-    end
-end })
-
-ViolentLeft:AddToggle("IgnoreFriendsWall", { Text = "墙打秒杀忽略好友", Default = false, Callback = function(state)
-    ignoreFriends = state
-end })
-
-ViolentRight:AddToggle("FullMapKill", { Text = "全图秒杀", Default = false, Callback = function(state)
-    _F.Cfg.Enabled = state
-    if _F.Cfg.Enabled then
-        if not _F.Save() then return end
-        _F.Grav(false)
-        local cam = Workspace.CurrentCamera
-        if cam then _F.Data.OSub = cam.CameraSubject _F.Data.OType = cam.CameraType end
-        _F.Data.FCon = _F.R.Heartbeat:Connect(_F.Loop)
-        _F.Data.KCon = _F.R.Heartbeat:Connect(function()
-            _F.Dash()
-            local cn = _F.L.Data.Character.Value
-            _F.Aura(cn == "Gon" and 20 or 50)
-        end)
-    else
-        _F.Stop()
-    end
-end })
-
+local _F = {}
+_F.P = game:GetService("Players")
+_F.R = game:GetService("RunService")
+_F.RS = game:GetService("ReplicatedStorage")
+_F.W = game:GetService("Workspace")
+_F.L = _F.P.LocalPlayer
+_F.Cfg = {
+    Enabled = false,
+    Range = 67.5,
+    Friends = true,
+    Target = "Closest"
+}
+_F.Data = {
+    List = {},
+    Idx = 1,
+    FCon = nil,
+    KCon = nil,
+    OSub = nil,
+    OType = nil,
+    SCFrame = nil,
+    SCCFrame = nil,
+    SCType = nil
+}
 _F.Dash = function()
     local char = _F.L.Character or _F.L.CharacterAdded:Wait()
     local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -1083,18 +818,17 @@ _F.Dash = function()
         require(_F.RS:WaitForChild("Core")).Library("Remote").Send("Dash", hrp.CFrame, "L", 1)
     end
 end
-
 _F.HRP = function()
     local c = _F.L.Character
-    if c and c:FindFirstChild('Humanoid') and c.Humanoid.RootPart then return c.Humanoid.RootPart end
+    if c and c:FindFirstChild('Humanoid') and c.Humanoid.RootPart then
+        return c.Humanoid.RootPart
+    end
     return nil
 end
-
 _F.IsF = function(p)
     if not p or p == _F.L then return false end
     return _F.L:IsFriendsWith(p.UserId)
 end
-
 _F.GetT = function()
     local tgs = {}
     local root = _F.HRP()
@@ -1114,7 +848,10 @@ _F.GetT = function()
                         local lName = lchar.Name
                         local cs = char:GetAttribute("Cutscene")
                         local csV = not cs or cs == lchar:GetAttribute("Cutscene")
-                        if hrp and not char:GetAttribute("Ignore") and csV and ((not char:GetAttribute("Grabbed") or char:GetAttribute("Grabbed") == lName) and (not char:GetAttribute("Victim") or char:GetAttribute("Victim") == lName)) and not char:GetAttribute("Invincible") and not char:GetAttribute("Grabbing") then
+                        if hrp and not char:GetAttribute("Ignore") and csV and
+                           ((not char:GetAttribute("Grabbed") or char:GetAttribute("Grabbed") == lName) and
+                           (not char:GetAttribute("Victim") or char:GetAttribute("Victim") == lName)) and
+                           not char:GetAttribute("Invincible") and not char:GetAttribute("Grabbing") then
                             table.insert(tgs, {c = char, d = dist, h = hum:GetAttribute("Health") or hum.Health or 0})
                         end
                     end
@@ -1128,7 +865,6 @@ _F.GetT = function()
     end
     return tgs
 end
-
 _F.Aura = function(n)
     local root = _F.HRP()
     if not root then return end
@@ -1150,7 +886,6 @@ _F.Aura = function(n)
         _F.Data.Idx = 1
     end
 end
-
 _F.GetR = function()
     local al = {}
     for _, p in ipairs(_F.P:GetPlayers()) do
@@ -1164,7 +899,6 @@ _F.GetR = function()
     end
     return #al > 0 and al[math.random(1, #al)] or nil
 end
-
 _F.TP = function(p)
     if not p or not p.Character then return false end
     local hr = p.Character:FindFirstChild("HumanoidRootPart")
@@ -1174,7 +908,6 @@ _F.TP = function(p)
     end)
     return true
 end
-
 _F.Spec = function(p)
     local cam = _F.W.CurrentCamera
     if cam and p and p.Character then
@@ -1182,7 +915,6 @@ _F.Spec = function(p)
         if hu then cam.CameraType = Enum.CameraType.Custom cam.CameraSubject = hu end
     end
 end
-
 _F.Loop = function()
     local c = _F.L.Character
     if not c or not c.Parent then return end
@@ -1193,7 +925,6 @@ _F.Loop = function()
         task.wait(0.5)
     end
 end
-
 _F.Grav = function(b)
     local c = _F.L.Character
     if not c then return end
@@ -1204,35 +935,63 @@ _F.Grav = function(b)
         end
     end
 end
-
 _F.Save = function()
     local c = _F.L.Character
     local hr = c and c:FindFirstChild("HumanoidRootPart")
     if not hr then return false end
     _F.Data.SCFrame = hr.CFrame
     local cam = _F.W.CurrentCamera
-    if cam then _F.Data.SCCFrame = cam.CFrame _F.Data.SCType = cam.CameraType end
+    if cam then
+        _F.Data.SCCFrame = cam.CFrame
+        _F.Data.SCType = cam.CameraType
+    end
     return true
 end
-
 _F.Rest = function()
     if not _F.Data.SCFrame or not _F.L.Character then return end
     pcall(function() require(_F.L.PlayerScripts.Character.FullCustomReplication).Override(_F.L.Character, _F.Data.SCFrame) end)
     task.delay(0.1, function()
         local cam = _F.W.CurrentCamera
-        if cam and _F.Data.SCCFrame then cam.CameraType = _F.Data.SCType cam.CFrame = _F.Data.SCCFrame end
+        if cam and _F.Data.SCCFrame then
+            cam.CameraType = _F.Data.SCType
+            cam.CFrame = _F.Data.SCCFrame
+        end
     end)
 end
-
+_F.Start = function()
+    if not _F.Save() then return end
+    _F.Grav(false)
+    local cam = _F.W.CurrentCamera
+    if cam then
+        _F.Data.OSub = cam.CameraSubject
+        _F.Data.OType = cam.CameraType
+    end
+    _F.Data.FCon = _F.R.Heartbeat:Connect(_F.Loop)
+    _F.Data.KCon = _F.R.Heartbeat:Connect(function()
+        _F.Dash()
+        local cn = _F.L.Data.Character.Value
+        _F.Aura(cn == "Gon" and 20 or 50)
+    end)
+end
 _F.Stop = function()
     if _F.Data.FCon then _F.Data.FCon:Disconnect() _F.Data.FCon = nil end
     if _F.Data.KCon then _F.Data.KCon:Disconnect() _F.Data.KCon = nil end
     _F.Rest()
     _F.Grav(true)
     local cam = _F.W.CurrentCamera
-    if cam and _F.Data.OSub then cam.CameraSubject = _F.Data.OSub cam.CameraType = _F.Data.OType end
+    if cam and _F.Data.OSub then
+        cam.CameraSubject = _F.Data.OSub
+        cam.CameraType = _F.Data.OType
+    end
 end
-
+ViolenceLeft:AddToggle("全图秒杀", { Default = false, Callback = function(state)
+    _F.Cfg.Enabled = state
+    if _F.Cfg.Enabled then
+        _F.Start()
+    else
+        _F.Stop()
+    end
+end })
 _F.L.CharacterAdded:Connect(function()
     if _F.Cfg.Enabled then
         _F.Stop()
@@ -1240,39 +999,494 @@ _F.L.CharacterAdded:Connect(function()
     end
 end)
 
-ViolentRight:AddButton({ Text = '删除墙打特效', Func = function()
-    local paths = {
-        rs.Characters.Gon.WallCombo.GonWallCombo.Center,
-        rs.Characters.Gon.WallCombo.GonWallCombo.Explosion,
-        rs.Characters.Gon.WallCombo.GonIntroHands,
-        rs.Characters.Mob.WallCombo.MobWallCombo.Center,
-        rs.Characters.Nanami.WallCombo.NanamiWallCombo.Center,
-        rs.Characters.Stark.WallCombo.StarkWallCombo.Center,
-        rs.Characters.Sukuna.WallCombo.SukunaTransformWallCombo,
-        rs.Characters.Sukuna.WallCombo.SukunaWallCombo
-    }
-    for _, obj in ipairs(paths) do
-        if obj and obj:IsA("Instance") then
-            for _, child in ipairs(obj:GetChildren()) do child:Destroy() end
-        end
-    end
-end })
+local Core = require(ReplicatedStorage:WaitForChild("Core"))
+local charValue = player:WaitForChild("Data"):WaitForChild("Character").Value
+local chars = ReplicatedStorage:WaitForChild("Characters")
+local ability = chars:WaitForChild(charValue):WaitForChild("WallCombo")
+local wallComboCooldown = 0.05
+local lastWallComboTime = 0
+local wallComboKey = Enum.KeyCode.E
+local lastDashTime = 0
+local wallComboEnabled = false
+local ignoreFriends = false
+local wallComboConn = nil
+local dashConn = nil
 
-ViolentRight:AddButton({ Text = '删除击杀表情特效', Func = function()
-    local KillEmote = rs:WaitForChild("Cosmetics"):WaitForChild("KillEmote")
-    local function removeEffects(obj)
-        for _, child in ipairs(obj:GetChildren()) do
-            if child:IsA("ParticleEmitter") or child:IsA("Trail") or child:IsA("Beam") or child:IsA("Fire") or child:IsA("Smoke") or child:IsA("Sparkles") or child:IsA("Light") then
-                child:Destroy()
-            else
-                removeEffects(child)
+local function isFriend3(targetPlayer)
+    local ok, res = pcall(function() return player:IsFriendsWith(targetPlayer.UserId) end)
+    return ok and res
+end
+local function shouldIgnorePlayerModel(model)
+    if not model then return false end
+    if ignoreFriends then
+        for _, pl in ipairs(Players:GetPlayers()) do
+            if pl ~= player and pl.Character == model then
+                if isFriend3(pl) then
+                    return true
+                end
             end
         end
     end
-    removeEffects(KillEmote)
+    return false
+end
+local function getHead()
+    local character = player.Character
+    if not character then return nil end
+    return character:FindFirstChild("Head")
+end
+local function hasValidTargetsForWallCombo(range)
+    local head = getHead()
+    if not head then return false end
+    local hrpPos = head.Position
+    for _, pl in ipairs(Players:GetPlayers()) do
+        if pl ~= player and pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") then
+            if not shouldIgnorePlayerModel(pl.Character) then
+                local d = (pl.Character.HumanoidRootPart.Position - hrpPos).Magnitude
+                if d <= range then return true end
+            end
+        end
+    end
+    return false
+end
+local function executeWallCombo()
+    local head = getHead()
+    if not head then return end
+    local now = tick()
+    if now - lastWallComboTime < wallComboCooldown then return end
+    if not hasValidTargetsForWallCombo(100) then return end
+    lastWallComboTime = now
+    local res
+    local success = pcall(function()
+        res = Core.Get("Combat","Hit").Box(nil, player.Character, {Size = Vector3.new(100,100,100)})
+    end)
+    if not success or not res then return end
+    pcall(function()
+        Core.Get("Combat","Ability").Activate(chars[charValue].WallCombo, res, head.Position + Vector3.new(0,0,2.5))
+    end)
+end
+local function fireDash()
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local now = tick()
+    if now - lastDashTime < 0.1 then return end
+    lastDashTime = now
+    local args = {
+        [1] = hrp.CFrame,
+        [2] = "F",
+        [3] = hrp.CFrame.LookVector,
+        [5] = now
+    }
+    if ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("Character") and ReplicatedStorage.Remotes.Character:FindFirstChild("Dash") then
+        ReplicatedStorage.Remotes.Character.Dash:FireServer(unpack(args))
+    else
+        pcall(function()
+            ReplicatedStorage.Remotes.Character.Dash:FireServer(unpack(args))
+        end)
+    end
+end
+local function toggleWallComboFunc(state)
+    wallComboEnabled = state
+    if wallComboConn then wallComboConn:Disconnect(); wallComboConn = nil end
+    if dashConn then dashConn:Disconnect(); dashConn = nil end
+    if wallComboEnabled then
+        wallComboConn = RunService.Heartbeat:Connect(function()
+            executeWallCombo()
+        end)
+        dashConn = RunService.Heartbeat:Connect(function()
+            fireDash()
+        end)
+    end
+end
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == wallComboKey then
+        executeWallCombo()
+    end
+end)
+
+local Configs = {
+    IgnoreFriends = false,
+    MaxDistance = 100,
+    Damage = 9999,
+    HealthLimit = 0,
+    DashInterval = 0.7,
+    AttackInterval = 0.001
+}
+local running = false
+local auraConn
+local lastDash = 0
+local lastAttack = 0
+local data = player:WaitForChild("Data")
+local charValue2 = data:WaitForChild("Character")
+local localCharacterName = charValue2.Value
+local ability2 = ReplicatedStorage:WaitForChild("Characters"):WaitForChild(localCharacterName):WaitForChild("WallCombo")
+local AbilitiesRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Abilities"):WaitForChild("Ability")
+local CombatRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Combat"):WaitForChild("Action")
+
+local function getLocalRootPart()
+    local c = player.Character
+    return c and c:FindFirstChild("HumanoidRootPart")
+end
+
+local function triggerDash()
+    if tick() - lastDash < Configs.DashInterval then return end
+    lastDash = tick()
+    local hrp = getLocalRootPart()
+    if not hrp then return end
+    local dashRemote = ReplicatedStorage.Remotes.Character:FindFirstChild("Dash")
+    if dashRemote then
+        pcall(function()
+            dashRemote:FireServer(hrp.CFrame, "L", hrp.CFrame.LookVector, nil, tick())
+        end)
+    end
+end
+
+local function sendKillAura()
+    if tick() - lastAttack < Configs.AttackInterval then return end
+    lastAttack = tick()
+    local localRootPart = getLocalRootPart()
+    if not localRootPart then return end
+    triggerDash()
+    local maxDistSq = Configs.MaxDistance * Configs.MaxDistance
+    for _, targetPlayer in ipairs(Players:GetPlayers()) do
+        if targetPlayer ~= player then
+            local targetChar = targetPlayer.Character
+            if targetChar then
+                local targetRootPart = targetChar:FindFirstChild("HumanoidRootPart")
+                local targetHumanoid = targetChar:FindFirstChild("Humanoid")
+                if targetRootPart and targetHumanoid and targetHumanoid.Health > Configs.HealthLimit then
+                    if not (Configs.IgnoreFriends and player:IsFriendsWith(targetPlayer.UserId)) then
+                        local delta = localRootPart.Position - targetRootPart.Position
+                        if delta.Magnitude * delta.Magnitude <= maxDistSq then
+                            pcall(function()
+                                AbilitiesRemote:FireServer(ability2, Configs.Damage, {}, targetRootPart.Position)
+                            end)
+                            pcall(function()
+                                CombatRemote:FireServer(
+                                    ability2,
+                                    localCharacterName .. ":WallCombo",
+                                    2,
+                                    Configs.Damage,
+                                    {
+                                        HitboxCFrames = {targetRootPart.CFrame, targetRootPart.CFrame},
+                                        BestHitCharacter = targetChar,
+                                        HitCharacters = {targetChar},
+                                        Ignore = {},
+                                        DeathInfo = {},
+                                        BlockedCharacters = {},
+                                        HitInfo = {IsFacing = false, IsInFront = true},
+                                        ServerTime = os.time(),
+                                        Actions = {
+                                            ActionNumber1 = {
+                                                [targetPlayer.Name] = {
+                                                    StartCFrameStr = tostring(localRootPart.CFrame),
+                                                    Local = true,
+                                                    Collision = false,
+                                                    Animation = "Punch1Hit",
+                                                    Preset = "Punch",
+                                                    Velocity = Vector3.zero,
+                                                    FromPosition = targetRootPart.Position,
+                                                    Seed = math.random(1,999999)
+                                                }
+                                            }
+                                        },
+                                        FromCFrame = targetRootPart.CFrame
+                                    },
+                                    "Action150",
+                                    0
+                                )
+                            end)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function startAura()
+    if auraConn then auraConn:Disconnect() auraConn = nil end
+    auraConn = RunService.Heartbeat:Connect(function()
+        if running then
+            sendKillAura()
+        end
+    end)
+end
+
+local function stopAura()
+    if auraConn then auraConn:Disconnect() auraConn = nil end
+end
+
+ViolenceLeft:AddToggle("杀戮光环v1(慢)", { Default = false, Callback = function(state)
+    running = state
+    if running then
+        startAura()
+    else
+        stopAura()
+    end
 end })
 
-HitboxLeft:AddToggle("HitboxExpand", { Text = "碰撞箱扩大", Default = false, Callback = function(v)
+local enabled2 = false
+local conn2
+local PlayersList = {}
+local index = 1
+local RANGE = 70
+local DASH_INTERVAL = 0.25
+local lastDash2 = 0
+
+local function C()
+    return player.Character
+end
+
+local function HRP()
+    if C() and C():FindFirstChild("Humanoid") then
+        return C().Humanoid.RootPart
+    end
+end
+
+local function isFriend4(p)
+    return player:IsFriendsWith(p.UserId)
+end
+
+local function triggerDash2()
+    local now = tick()
+    if now - lastDash2 < DASH_INTERVAL then return end
+    lastDash2 = now
+    local hrp = HRP()
+    if not hrp then return end
+    local dashRemote = ReplicatedStorage.Remotes.Character:FindFirstChild("Dash")
+    if dashRemote then
+        pcall(function()
+            dashRemote:FireServer(
+                hrp.CFrame,
+                "L",
+                hrp.CFrame.LookVector,
+                nil,
+                now
+            )
+        end)
+    end
+end
+
+local function getTargets()
+    local targets = {}
+    local hrp = HRP()
+    if not hrp then return targets end
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= player and p.Character then
+            if isFriend4(p) then continue end
+            local hum = p.Character:FindFirstChild("Humanoid")
+            local root = p.Character:FindFirstChild("HumanoidRootPart")
+            if hum and root and hum.Health > 0 then
+                if (root.Position - hrp.Position).Magnitude <= RANGE then
+                    if not p.Character:GetAttribute("Invincible") then
+                        table.insert(targets, p.Character)
+                    end
+                end
+            end
+        end
+    end
+    return targets
+end
+
+local function KillAura(count)
+    triggerDash2()
+    local targets = getTargets()
+    for _, char in ipairs(targets) do
+        for i = 1, count do
+            PlayersList[index] = char
+            index = index + 1
+        end
+    end
+    if index > 1 then
+        local combo = ReplicatedStorage.Characters[player.Data.Character.Value].WallCombo
+        ReplicatedStorage.Remotes.Abilities.Ability:FireServer(combo, 69)
+        ReplicatedStorage.Remotes.Combat.Action:FireServer(
+            combo,
+            "",
+            4,
+            69,
+            {
+                BestHitCharacter = nil,
+                HitCharacters = PlayersList,
+                Ignore = {},
+                Actions = {}
+            }
+        )
+        table.clear(PlayersList)
+        index = 1
+    end
+end
+
+ViolenceLeft:AddToggle("杀戮光环v2(快)", { Default = false, Callback = function(state)
+    enabled2 = state
+    if enabled2 then
+        conn2 = RunService.Heartbeat:Connect(function()
+            local count = (player.Data.Character.Value == "Gon") and 20 or 50
+            KillAura(count)
+        end)
+    else
+        if conn2 then
+            conn2:Disconnect()
+            conn2 = nil
+        end
+    end
+end })
+
+ViolenceLeft:AddToggle("杀戮光环忽略好友", { Default = false, Callback = function(state)
+    Configs.IgnoreFriends = state
+end })
+
+ViolenceLeft:AddToggle("墙打秒杀", { Default = false, Callback = function(state)
+    toggleWallComboFunc(state)
+end })
+
+ViolenceLeft:AddToggle("墙打秒杀忽略好友", { Default = false, Callback = function(state)
+    ignoreFriends = state
+end })
+
+local HitboxTab = Tabs.Hitbox:AddLeftGroupbox("碰撞箱扩大")
+pcall(function()
+    setthreadidentity(8)
+end)
+
+local S = {
+    Players = game:GetService("Players"),
+    RunService = game:GetService("RunService"),
+    ReplicatedStorage = game:GetService("ReplicatedStorage"),
+    Cfg = {
+        Hitbox = false,
+        X = 150,
+        Y = 150,
+        Z = 150,
+        Enhancer = false,
+        Multi = 3
+    },
+    Cache = {},
+    Conn = nil,
+    DashT = 0
+}
+
+local LP = S.Players.LocalPlayer
+
+getgenv().HitboxEnabled = false
+
+function S:HRP()
+    local c = LP.Character
+    return c and c:FindFirstChild("HumanoidRootPart")
+end
+
+function S:GetCore()
+    if self.Cache.Core then
+        return self.Cache.Core
+    end
+    local ok, core = pcall(function()
+        return require(self.ReplicatedStorage:WaitForChild("Core", 10))
+    end)
+    if ok then
+        self.Cache.Core = core
+        return core
+    end
+end
+
+function S:ToggleHitbox(state)
+    self.Cfg.Hitbox = state
+    getgenv().HitboxEnabled = state
+
+    local core = self:GetCore()
+    if not core or not core.Get then return end
+
+    local hit = core.Get("Combat", "Hit")
+    if not hit or not hit.Box then return end
+
+    if state then
+        if not self.Cache.OrigBox then
+            self.Cache.OrigBox = hit.Box
+        end
+        hit.Box = function(_, char, data)
+            data = data or {}
+            data.Size = Vector3.new(self.Cfg.X, self.Cfg.Y, self.Cfg.Z)
+            return self.Cache.OrigBox(nil, char, data)
+        end
+    else
+        if self.Cache.OrigBox then
+            hit.Box = self.Cache.OrigBox
+        end
+    end
+end
+
+function S:Dash()
+    if tick() - self.DashT < 0.18 then return end
+    self.DashT = tick()
+
+    local hrp = self:HRP()
+    if not hrp then return end
+
+    pcall(function()
+        self:GetCore()
+            .Library("Remote")
+            .Send("Dash", hrp.CFrame, "L", 1)
+    end)
+end
+
+function S:EnableEnhancer()
+    if self.Cache.HitProc then return end
+
+    local ok, hit = pcall(function()
+        return require(LP.PlayerScripts:WaitForChild("Combat"):WaitForChild("Hit"))
+    end)
+    if not ok or not hit.Process then return end
+
+    self.Cache.HitProc = hit.Process
+
+    hit.Process = function(...)
+        local best, targets, blocked = self.Cache.HitProc(...)
+        if not targets or #targets == 0 then
+            return best, targets, blocked
+        end
+
+        self:Dash()
+
+        local r = self.ReplicatedStorage.Remotes.Combat.Action
+        for _ = 1, self.Cfg.Multi do
+            pcall(function()
+                r:FireServer(
+                    nil, "", 4, 69,
+                    {BestHitCharacter=nil, HitCharacters=targets, Ignore={}, Actions={}}
+                )
+            end)
+        end
+
+        return best, targets, blocked
+    end
+end
+
+function S:DisableEnhancer()
+    if not self.Cache.HitProc then return end
+    local ok, hit = pcall(function()
+        return require(LP.PlayerScripts.Combat.Hit)
+    end)
+    if ok then
+        hit.Process = self.Cache.HitProc
+    end
+    self.Cache.HitProc = nil
+end
+
+function S:StartDashLoop()
+    if self.Conn then return end
+    self.Conn = self.RunService.Heartbeat:Connect(function()
+        self:Dash()
+    end)
+end
+
+function S:StopDashLoop()
+    if self.Conn then
+        self.Conn:Disconnect()
+        self.Conn = nil
+    end
+end
+
+HitboxTab:AddToggle("碰撞箱扩大", { Default = false, Callback = function(v)
     if v then
         S:ToggleHitbox(true)
         S:EnableEnhancer()
@@ -1284,187 +1498,184 @@ HitboxLeft:AddToggle("HitboxExpand", { Text = "碰撞箱扩大", Default = false
     end
 end })
 
-HitboxRight:AddInput("HitboxX", { Text = "碰撞箱X轴", Default = tostring(S.Cfg.X), Numeric = true, Finished = true, Callback = function(v)
+HitboxTab:AddInput("碰撞箱X轴", { Default = tostring(S.Cfg.X), Numeric = true, Callback = function(v)
     v = tonumber(v)
-    if v then S.Cfg.X = math.clamp(v, 10, 150) end
+    if v then
+        S.Cfg.X = math.clamp(v, 10, 150)
+    end
 end })
 
-HitboxRight:AddInput("HitboxY", { Text = "碰撞箱Y轴", Default = tostring(S.Cfg.Y), Numeric = true, Finished = true, Callback = function(v)
+HitboxTab:AddInput("碰撞箱Y轴", { Default = tostring(S.Cfg.Y), Numeric = true, Callback = function(v)
     v = tonumber(v)
-    if v then S.Cfg.Y = math.clamp(v, 10, 150) end
+    if v then
+        S.Cfg.Y = math.clamp(v, 10, 150)
+    end
 end })
 
-HitboxRight:AddInput("HitboxZ", { Text = "碰撞箱Z轴", Default = tostring(S.Cfg.Z), Numeric = true, Finished = true, Callback = function(v)
+HitboxTab:AddInput("碰撞箱Z轴", { Default = tostring(S.Cfg.Z), Numeric = true, Callback = function(v)
     v = tonumber(v)
-    if v then S.Cfg.Z = math.clamp(v, 10, 150) end
+    if v then
+        S.Cfg.Z = math.clamp(v, 10, 150)
+    end
 end })
 
-function S:HRP()
-    local c = LP.Character
-    return c and c:FindFirstChild("HumanoidRootPart")
+local LockLeft = Tabs.Lock:AddLeftGroupbox("锁人")
+
+local S2 = {}
+S2.Players = game:GetService("Players")
+S2.RunService = game:GetService("RunService")
+S2.LocalPlayer = S2.Players.LocalPlayer
+S2.v3new = Vector3.new
+S2.cfnew = CFrame.new
+S2.mathcos = math.cos
+S2.mathsin = math.sin
+S2.tableinsert = table.insert
+S2.pairs = pairs
+S2.BEHIND_DISTANCE = 5
+S2.CIRCLE_RADIUS = 6
+S2.CIRCLE_SPEED = 13
+S2.followEnabled = false
+S2.circleEnabled = false
+S2.lookEnabled = false
+S2.selectedTargetName = nil
+S2.circleAngle = 0
+S2.mainConnection = nil
+S2.playerDropdown = nil
+
+function S2.getRoot(player)
+    if player and player.Character then
+        return player.Character:FindFirstChild("HumanoidRootPart")
+    end
 end
 
-function S:GetCore()
-    if self.Cache.Core then return self.Cache.Core end
-    local ok, core = pcall(function() return require(self.ReplicatedStorage:WaitForChild("Core", 10)) end)
-    if ok then self.Cache.Core = core return core end
-end
-
-function S:ToggleHitbox(state)
-    self.Cfg.Hitbox = state
-    getgenv().HitboxEnabled = state
-    local core = self:GetCore()
-    if not core or not core.Get then return end
-    local hit = core.Get("Combat", "Hit")
-    if not hit or not hit.Box then return end
-    if state then
-        if not self.Cache.OrigBox then self.Cache.OrigBox = hit.Box end
-        hit.Box = function(_, char, data)
-            data = data or {}
-            data.Size = Vector3.new(self.Cfg.X, self.Cfg.Y, self.Cfg.Z)
-            return self.Cache.OrigBox(nil, char, data)
+function S2.getPlayerByName(name)
+    for _, p in S2.pairs(S2.Players:GetPlayers()) do
+        if p.Name == name then
+            return p
         end
-    else
-        if self.Cache.OrigBox then hit.Box = self.Cache.OrigBox end
     end
 end
 
-function S:Dash()
-    if tick() - self.DashT < 0.18 then return end
-    self.DashT = tick()
-    local hrp = self:HRP()
-    if not hrp then return end
-    pcall(function() self:GetCore().Library("Remote").Send("Dash", hrp.CFrame, "L", 1) end)
-end
-
-function S:EnableEnhancer()
-    if self.Cache.HitProc then return end
-    local ok, hit = pcall(function() return require(LP.PlayerScripts:WaitForChild("Combat"):WaitForChild("Hit")) end)
-    if not ok or not hit.Process then return end
-    self.Cache.HitProc = hit.Process
-    hit.Process = function(...)
-        local best, targets, blocked = self.Cache.HitProc(...)
-        if not targets or #targets == 0 then return best, targets, blocked end
-        self:Dash()
-        local r = self.ReplicatedStorage.Remotes.Combat.Action
-        for _ = 1, self.Cfg.Multi do
-            pcall(function() r:FireServer(nil, "", 4, 69, {BestHitCharacter=nil, HitCharacters=targets, Ignore={}, Actions={}}) end)
+function S2.getPlayerNames()
+    local names = {}
+    for _, p in S2.pairs(S2.Players:GetPlayers()) do
+        if p ~= S2.LocalPlayer then
+            S2.tableinsert(names, p.Name)
         end
-        return best, targets, blocked
     end
+    return names
 end
 
-function S:DisableEnhancer()
-    if not self.Cache.HitProc then return end
-    local ok, hit = pcall(function() return require(LP.PlayerScripts.Combat.Hit) end)
-    if ok then hit.Process = self.Cache.HitProc end
-    self.Cache.HitProc = nil
-end
-
-function S:StartDashLoop()
-    if self.Conn then return end
-    self.Conn = self.RunService.Heartbeat:Connect(function() self:Dash() end)
-end
-
-function S:StopDashLoop()
-    if self.Conn then self.Conn:Disconnect() self.Conn = nil end
-end
-
-LockLeft:AddDropdown("LockTarget", { Text = "选择目标玩家", Default = 1, Values = {}, Callback = function(name)
-    LockS.selectedTargetName = name
-end })
-
-LockLeft:AddButton({ Text = '刷新玩家列表', Func = function()
-    LockS.selectedTargetName = nil
-    local newNames = {}
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= player then table.insert(newNames, p.Name) end
-    end
-    if Toggles.LockTarget then Toggles.LockTarget:SetValues(newNames) end
-end })
-
-LockLeft:AddToggle("FollowBack", { Text = "锁背", Default = false, Callback = function(state)
-    LockS.followEnabled = state
-    if state then LockS.circleEnabled = false end
-    LockS.toggleConnection()
-end })
-
-LockLeft:AddToggle("Circle", { Text = "转圈", Default = false, Callback = function(state)
-    LockS.circleEnabled = state
-    if state then LockS.followEnabled = false end
-    LockS.toggleConnection()
-end })
-
-LockLeft:AddToggle("LookAt", { Text = "看着玩家", Default = false, Callback = function(state)
-    LockS.lookEnabled = state
-    LockS.toggleConnection()
-end })
-
-function LockS.getRoot(pl)
-    if pl and pl.Character then return pl.Character:FindFirstChild("HumanoidRootPart") end
-end
-
-function LockS.getPlayerByName(name)
-    for _, p in pairs(Players:GetPlayers()) do if p.Name == name then return p end end
-end
-
-function LockS.updateLoop(dt)
-    if not LockS.selectedTargetName then return end
-    local target = LockS.getPlayerByName(LockS.selectedTargetName)
-    local targetRoot = LockS.getRoot(target)
-    local myRoot = LockS.getRoot(player)
+function S2.updateLoop(dt)
+    if not S2.selectedTargetName then return end
+    local target = S2.getPlayerByName(S2.selectedTargetName)
+    local targetRoot = S2.getRoot(target)
+    local myRoot = S2.getRoot(S2.LocalPlayer)
     if not targetRoot or not myRoot then return end
     local targetPos = targetRoot.Position
     local finalPos = nil
-    if LockS.circleEnabled then
-        LockS.circleAngle += (LockS.CIRCLE_SPEED * dt)
-        local x = math.cos(LockS.circleAngle) * LockS.CIRCLE_RADIUS
-        local z = math.sin(LockS.circleAngle) * LockS.CIRCLE_RADIUS
-        finalPos = targetPos + Vector3.new(x, 0, z)
-    elseif LockS.followEnabled then
-        local offset = targetRoot.CFrame.LookVector * LockS.BEHIND_DISTANCE
+    if S2.circleEnabled then
+        S2.circleAngle = S2.circleAngle + (S2.CIRCLE_SPEED * dt)
+        local x = S2.mathcos(S2.circleAngle) * S2.CIRCLE_RADIUS
+        local z = S2.mathsin(S2.circleAngle) * S2.CIRCLE_RADIUS
+        finalPos = targetPos + S2.v3new(x, 0, z)
+    elseif S2.followEnabled then
+        local offset = targetRoot.CFrame.LookVector * S2.BEHIND_DISTANCE
         finalPos = targetPos - offset
     end
     if finalPos then
-        if LockS.lookEnabled then
-            myRoot.CFrame = CFrame.new(finalPos, Vector3.new(targetPos.X, finalPos.Y, targetPos.Z))
+        if S2.lookEnabled then
+            myRoot.CFrame = S2.cfnew(finalPos, S2.v3new(targetPos.X, finalPos.Y, targetPos.Z))
         else
-            myRoot.CFrame = CFrame.new(finalPos) * myRoot.CFrame.Rotation
+            myRoot.CFrame = S2.cfnew(finalPos) * myRoot.CFrame.Rotation
         end
-    elseif LockS.lookEnabled then
+    elseif S2.lookEnabled then
         local myPos = myRoot.Position
-        myRoot.CFrame = CFrame.new(myPos, Vector3.new(targetPos.X, myPos.Y, targetPos.Z))
+        myRoot.CFrame = S2.cfnew(myPos, S2.v3new(targetPos.X, myPos.Y, targetPos.Z))
     end
 end
 
-function LockS.toggleConnection()
-    if LockS.followEnabled or LockS.circleEnabled or LockS.lookEnabled then
-        if not LockS.mainConnection then LockS.mainConnection = RunService.RenderStepped:Connect(LockS.updateLoop) end
+function S2.toggleConnection()
+    if S2.followEnabled or S2.circleEnabled or S2.lookEnabled then
+        if not S2.mainConnection then
+            S2.mainConnection = S2.RunService.RenderStepped:Connect(S2.updateLoop)
+        end
     else
-        if LockS.mainConnection then LockS.mainConnection:Disconnect() LockS.mainConnection = nil end
+        if S2.mainConnection then
+            S2.mainConnection:Disconnect()
+            S2.mainConnection = nil
+        end
     end
 end
 
-EmoteLeft:AddButton({ Text = '刷新击杀表情', Func = function()
-    table.clear(T.state.killEmotes)
-    for _, e in pairs(rs:WaitForChild("Cosmetics"):WaitForChild("KillEmote"):GetChildren()) do
-        table.insert(T.state.killEmotes, e.Name)
+S2.playerDropdown = LockLeft:AddDropdown("选择目标玩家", {
+    Values = S2.getPlayerNames(),
+    Default = 1,
+    Multi = false,
+    Callback = function(name)
+        S2.selectedTargetName = name
     end
-    if T.state.dropdown then T.state.dropdown:Destroy() T.state.dropdown = nil end
-    T.state.dropdown = EmoteLeft:AddDropdown("KillEmoteSelect", { Text = "击杀表情", Default = 1, Values = T.state.killEmotes, Callback = function(v)
-        if v ~= "No emotes found" then T.state.selectedEmote = v T.useEmote(v) end
-    end })
+})
+
+LockLeft:AddButton("刷新玩家列表", function()
+    S2.selectedTargetName = nil
+    local newNames = S2.getPlayerNames()
+    if S2.playerDropdown then
+        if S2.playerDropdown.SetValues then
+            S2.playerDropdown:SetValues(newNames)
+        elseif S2.playerDropdown.Refresh then
+            S2.playerDropdown:Refresh(newNames, true)
+        end
+        if S2.playerDropdown.SetValue then
+            S2.playerDropdown:SetValue(nil)
+        end
+    end
+end)
+
+LockLeft:AddToggle("锁背", { Default = false, Callback = function(state)
+    S2.followEnabled = state
+    if state then S2.circleEnabled = false end
+    S2.toggleConnection()
 end })
 
-for _, e in pairs(rs:WaitForChild("Cosmetics"):WaitForChild("KillEmote"):GetChildren()) do
-    table.insert(T.state.killEmotes, e.Name)
-end
+LockLeft:AddToggle("转圈", { Default = false, Callback = function(state)
+    S2.circleEnabled = state
+    if state then S2.followEnabled = false end
+    S2.toggleConnection()
+end })
 
-if #T.state.killEmotes > 0 then
-    T.state.dropdown = EmoteLeft:AddDropdown("KillEmoteSelect", { Text = "击杀表情", Default = 1, Values = T.state.killEmotes, Callback = function(v)
-        if v ~= "No emotes found" then T.state.selectedEmote = v T.useEmote(v) end
-    end })
-end
+LockLeft:AddToggle("看着玩家(需要关移位锁)", { Default = false, Callback = function(state)
+    S2.lookEnabled = state
+    S2.toggleConnection()
+end })
+
+local EmoteLeft = Tabs.Emote:AddLeftGroupbox("击杀表情")
+
+local T = {}
+T.env = {
+    ReplicatedStorage = game:GetService("ReplicatedStorage"),
+    Players = game:GetService("Players"),
+}
+T.env.LocalPlayer = T.env.Players.LocalPlayer
+T.env.core = require(T.env.ReplicatedStorage:WaitForChild("Core"))
+T.env.Character = T.env.LocalPlayer.Character or T.env.LocalPlayer.CharacterAdded:Wait()
+T.env.HumanoidRootPart = T.env.Character:WaitForChild("HumanoidRootPart")
+
+T.state = {
+    killEmotes = {},
+    aura = false,
+    spam = false,
+    auraDelay = 0.5,
+    spamDelay = 0.5,
+    selectedEmote = "",
+    keybind = Enum.KeyCode.G,
+    dropdown = nil,
+    tmp = {}
+}
+
+T.services = {
+    UserInputService = game:GetService("UserInputService")
+}
 
 function T.getRoot(char)
     return char and char:FindFirstChild("HumanoidRootPart")
@@ -1472,13 +1683,14 @@ end
 
 function T.useEmote(name)
     local tmp = T.state.tmp
-    tmp.emote = rs:WaitForChild("Cosmetics"):WaitForChild("KillEmote"):FindFirstChild(name)
-    tmp.myRoot = T.getRoot(player.Character)
+    tmp.emote = T.env.ReplicatedStorage:WaitForChild("Cosmetics"):WaitForChild("KillEmote"):FindFirstChild(name)
+    tmp.myRoot = T.getRoot(T.env.LocalPlayer.Character)
     if not tmp.emote or not tmp.myRoot then return end
+
     tmp.closest = nil
     tmp.dist = math.huge
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= player and p.Character then
+    for _, p in pairs(T.env.Players:GetPlayers()) do
+        if p ~= T.env.LocalPlayer and p.Character then
             tmp.r = T.getRoot(p.Character)
             if tmp.r then
                 tmp.d = (tmp.myRoot.Position - tmp.r.Position).Magnitude
@@ -1489,10 +1701,13 @@ function T.useEmote(name)
             end
         end
     end
+
     if tmp.closest then
         task.spawn(function()
             _G.KillEmote = true
-            pcall(function() T.env.core.Get("Combat", "Ability").Activate(tmp.emote, tmp.closest) end)
+            pcall(function()
+                T.env.core.Get("Combat", "Ability").Activate(tmp.emote, tmp.closest)
+            end)
             _G.KillEmote = false
         end)
     end
@@ -1500,7 +1715,9 @@ end
 
 function T.useRandom()
     local list = T.state.killEmotes
-    if #list > 0 then T.useEmote(list[math.random(#list)]) end
+    if #list > 0 then
+        T.useEmote(list[math.random(#list)])
+    end
 end
 
 task.spawn(function()
@@ -1525,1002 +1742,94 @@ task.spawn(function()
     end
 end)
 
-UserInputService.InputBegan:Connect(function(i, g)
-    if not g and i.KeyCode == T.state.keybind and T.state.selectedEmote ~= "" then T.useEmote(T.state.selectedEmote) end
+T.services.UserInputService.InputBegan:Connect(function(i, g)
+    if not g and i.KeyCode == T.state.keybind and T.state.selectedEmote ~= "" then
+        T.useEmote(T.state.selectedEmote)
+    end
 end)
 
-EmoteRight:AddToggle("KillAuraEmote", { Text = "击杀表情光环", Default = false, Callback = function(v) T.state.aura = v end })
+function T.updateDropdown(list)
+    local values = (#list > 0 and list) or { "No emotes found" }
+    if T.state.dropdown then
+        pcall(function()
+            T.state.dropdown:Destroy()
+        end)
+        T.state.dropdown = nil
+    end
+    T.state.dropdown = EmoteLeft:AddDropdown("击杀表情功能(要靠近别人)", {
+        Values = values,
+        Default = 1,
+        Multi = false,
+        Callback = function(v)
+            if v ~= "No emotes found" then
+                T.state.selectedEmote = v
+                T.useEmote(v)
+            end
+        end
+    })
+end
 
-EmoteRight:AddSlider("AuraDelay", { Text = "光环间隔", Default = 0.5, Min = 0.01, Max = 5, Rounding = 2, Callback = function(v) T.state.auraDelay = v end })
+EmoteLeft:AddButton("刷新击杀表情", function()
+    table.clear(T.state.killEmotes)
+    for _, e in pairs(T.env.ReplicatedStorage:WaitForChild("Cosmetics"):WaitForChild("KillEmote"):GetChildren()) do
+        T.state.killEmotes[#T.state.killEmotes + 1] = e.Name
+    end
+    T.updateDropdown(T.state.killEmotes)
+end)
 
-EmoteRight:AddToggle("SpamEmote", { Text = "持续发送表情", Default = false, Callback = function(v) T.state.spam = v end })
+for _, e in pairs(T.env.ReplicatedStorage:WaitForChild("Cosmetics"):WaitForChild("KillEmote"):GetChildren()) do
+    T.state.killEmotes[#T.state.killEmotes + 1] = e.Name
+end
 
-EmoteRight:AddSlider("SpamDelay", { Text = "发送速度", Default = 0.5, Min = 0.01, Max = 5, Rounding = 2, Callback = function(v) T.state.spamDelay = v end })
+T.updateDropdown(T.state.killEmotes)
 
-local keyMap = { G = Enum.KeyCode.G, F = Enum.KeyCode.F, H = Enum.KeyCode.H, J = Enum.KeyCode.J, K = Enum.KeyCode.K, L = Enum.KeyCode.L, Z = Enum.KeyCode.Z, X = Enum.KeyCode.X, C = Enum.KeyCode.C, V = Enum.KeyCode.V, B = Enum.KeyCode.B, N = Enum.KeyCode.N, M = Enum.KeyCode.M, Q = Enum.KeyCode.Q, E = Enum.KeyCode.E, R = Enum.KeyCode.R, T = Enum.KeyCode.T, Y = Enum.KeyCode.Y, U = Enum.KeyCode.U, I = Enum.KeyCode.I, O = Enum.KeyCode.O, P = Enum.KeyCode.P }
+EmoteLeft:AddToggle("击杀表情光环", { Default = false, Callback = function(v)
+    T.state.aura = v
+end })
+
+EmoteLeft:AddSlider("击杀表情光环间隔", { Min = 0.01, Max = 5, Default = 0.5, Rounding = 2, Callback = function(v)
+    T.state.auraDelay = v
+end })
+
+EmoteLeft:AddToggle("持续发送你选择的表情", { Default = false, Callback = function(v)
+    T.state.spam = v
+end })
+
+EmoteLeft:AddSlider("调整你选择的表情速度", { Min = 0.01, Max = 5, Default = 0.5, Rounding = 2, Callback = function(v)
+    T.state.spamDelay = v
+end })
+
+T.keyMap = {
+    G = Enum.KeyCode.G, F = Enum.KeyCode.F, H = Enum.KeyCode.H, J = Enum.KeyCode.J,
+    K = Enum.KeyCode.K, L = Enum.KeyCode.L, Z = Enum.KeyCode.Z, X = Enum.KeyCode.X,
+    C = Enum.KeyCode.C, V = Enum.KeyCode.V, B = Enum.KeyCode.B, N = Enum.KeyCode.N,
+    M = Enum.KeyCode.M, Q = Enum.KeyCode.Q, E = Enum.KeyCode.E, R = Enum.KeyCode.R,
+    T = Enum.KeyCode.T, Y = Enum.KeyCode.Y, U = Enum.KeyCode.U, I = Enum.KeyCode.I,
+    O = Enum.KeyCode.O, P = Enum.KeyCode.P,
+}
+
 local keyList = {}
-for k in pairs(keyMap) do table.insert(keyList, k) end
- table.sort(keyList)
-
-EmoteRight:AddDropdown("Keybind", { Text = "快捷键", Default = 1, Values = keyList, Callback = function(v) T.state.keybind = keyMap[v] end })
-
-EmoteRight:AddButton({ Text = '随机表情', Func = function() T.useRandom() end })
-
-BattleLeft:AddToggle("NoFaceFriend", { Text = "不朝向好友", Default = false, Callback = function(state) BCXZJHYT = state end })
-
-BattleLeft:AddToggle("AutoTrashV1", { Text = "自动垃圾桶 v1", Default = false, Callback = function(state)
-    AUTO_TRASH_MASTER = state
-    if state then
-        task.spawn(function()
-            local TRASH_RANGE = 15
-            local PLAYER_RANGE = 100
-            local PICKUP_DISTANCE = 2
-            local ATTACK_DISTANCE = 2
-            local HEIGHT_OFFSET = 3
-            local localPlayer = player
-            local character, rootPart, humanoid
-            local function updateCharacter()
-                character = localPlayer.Character
-                if character then
-                    rootPart = character:FindFirstChild("HumanoidRootPart")
-                    humanoid = character:FindFirstChildOfClass("Humanoid")
-                else
-                    rootPart = nil
-                    humanoid = nil
-                end
-            end
-            updateCharacter()
-            localPlayer.CharacterAdded:Connect(updateCharacter)
-            local function getTrashPart(trashModel)
-                return trashModel:FindFirstChild("Handle") or trashModel:FindFirstChild("MainPart") or trashModel:FindFirstChild("TrashCan") or trashModel.PrimaryPart or trashModel:FindFirstChildWhichIsA("BasePart")
-            end
-            local function performAction(action)
-                if AUTO_TRASH_MASTER and character then
-                    local communicate = character:FindFirstChild("Communicate")
-                    if communicate then communicate:FireServer({["Goal"] = action}) end
-                end
-            end
-            local function calculateOffsetPosition(targetPos, referencePos)
-                local direction = (targetPos - referencePos).Unit
-                direction = Vector3.new(direction.X, 0, direction.Z).Unit
-                if direction.Magnitude < 0.1 then direction = Vector3.new(math.random(), 0, math.random()).Unit end
-                return targetPos + (direction * PICKUP_DISTANCE)
-            end
-            local function calculateBehindPosition(targetRoot)
-                local lookVector = targetRoot.CFrame.LookVector
-                lookVector = Vector3.new(lookVector.X, 0, lookVector.Z).Unit
-                return targetRoot.Position - (lookVector * ATTACK_DISTANCE)
-            end
-            local function findNearestPlayer()
-                if not rootPart then return nil, nil end
-                local nearestPlayer = nil
-                local nearestDistance = math.huge
-                local targetPosition = nil
-                for _, targetPlayer in ipairs(Players:GetPlayers()) do
-                    if targetPlayer ~= localPlayer and targetPlayer.Character then
-                        local targetChar = targetPlayer.Character
-                        local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-                        local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
-                        if targetRoot and targetHum and targetHum.Health > 0 then
-                            local distance = (rootPart.Position - targetRoot.Position).Magnitude
-                            if distance <= PLAYER_RANGE and distance < nearestDistance then
-                                nearestDistance = distance
-                                nearestPlayer = targetPlayer
-                                targetPosition = calculateBehindPosition(targetRoot)
-                            end
-                        end
-                    end
-                end
-                return nearestPlayer, targetPosition
-            end
-            local function teleportTo(position, faceTarget)
-                if rootPart and AUTO_TRASH_MASTER then
-                    local raycastParams = RaycastParams.new()
-                    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-                    raycastParams.FilterDescendantsInstances = {character}
-                    local groundPosition = position
-                    local ray = Workspace:Raycast(position + Vector3.new(0, 10, 0), Vector3.new(0, -20, 0), raycastParams)
-                    if ray and ray.Position then
-                        groundPosition = ray.Position + Vector3.new(0, HEIGHT_OFFSET, 0)
-                    else
-                        groundPosition = position + Vector3.new(0, HEIGHT_OFFSET, 0)
-                    end
-                    if faceTarget then
-                        local lookVector = (faceTarget - groundPosition).Unit
-                        rootPart.CFrame = CFrame.new(groundPosition, groundPosition + lookVector)
-                    else
-                        rootPart.CFrame = CFrame.new(groundPosition)
-                    end
-                end
-            end
-            while AUTO_TRASH_MASTER and game:GetService("RunService").Heartbeat:Wait() do
-                pcall(function()
-                    updateCharacter()
-                    if not character or not rootPart or not humanoid or humanoid.Health <= 0 then task.wait(1) return end
-                    if not character:GetAttribute("HasTrashcan") then
-                        local trashFolder = Workspace:FindFirstChild("Trash") or (Workspace:FindFirstChild("Map") and Workspace.Map:FindFirstChild("Trash"))
-                        if not trashFolder then task.wait(1) return end
-                        local nearestTrash, nearestDistance, trashPosition
-                        for _, trashModel in ipairs(trashFolder:GetChildren()) do
-                            if trashModel:IsA("Model") then
-                                local trashPart = getTrashPart(trashModel)
-                                if trashPart then
-                                    local distance = (rootPart.Position - trashPart.Position).Magnitude
-                                    if distance <= TRASH_RANGE and (not nearestDistance or distance < nearestDistance) then
-                                        nearestTrash = trashModel
-                                        nearestDistance = distance
-                                        trashPosition = trashPart.Position
-                                    end
-                                end
-                            end
-                        end
-                        if nearestTrash and trashPosition then
-                            local offsetPosition = calculateOffsetPosition(trashPosition, rootPart.Position)
-                            teleportTo(offsetPosition, trashPosition)
-                            task.wait(0.2)
-                            local direction = (trashPosition - rootPart.Position).Unit
-                            local lookVector = Vector3.new(direction.X, 0, direction.Z).Unit
-                            if lookVector.Magnitude > 0.1 then rootPart.CFrame = CFrame.new(rootPart.Position, rootPart.Position + lookVector) end
-                            performAction("LeftClick")
-                            task.wait(0.15)
-                            performAction("LeftClickRelease")
-                            local waitTime = 0
-                            while waitTime < 2 and AUTO_TRASH_MASTER do
-                                if character:GetAttribute("HasTrashcan") then break end
-                                task.wait(0.1)
-                                waitTime = waitTime + 0.1
-                            end
-                        else
-                            task.wait(1)
-                        end
-                    else
-                        local nearestPlayer, behindPos = findNearestPlayer()
-                        if nearestPlayer and behindPos then
-                            local targetChar = nearestPlayer.Character
-                            local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-                            if not targetRoot then task.wait(0.5) return end
-                            teleportTo(behindPos, targetRoot.Position)
-                            task.wait(0.2)
-                            local direction = (targetRoot.Position - rootPart.Position).Unit
-                            local lookVector = Vector3.new(direction.X, 0, direction.Z).Unit
-                            if lookVector.Magnitude > 0.1 then rootPart.CFrame = CFrame.new(rootPart.Position, rootPart.Position + lookVector) end
-                            performAction("LeftClick")
-                            task.wait(0.1)
-                            performAction("LeftClickRelease")
-                            task.wait(1.5)
-                        else
-                            task.wait(1)
-                        end
-                    end
-                end)
-            end
-        end)
-    end
-end })
-
-BattleLeft:AddToggle("AutoTrashV2", { Text = "自动垃圾桶 v2", Default = false, Callback = function(state)
-    ZDNLJTT = state
-    if state then
-        task.spawn(function()
-            local TRASH_RANGE = 5
-            while ZDNLJTT and task.wait(0.1) do
-                pcall(function()
-                    local character = player.Character
-                    if character then
-                        local humanoid = character:FindFirstChild("Humanoid")
-                        local rootPart = character:FindFirstChild("HumanoidRootPart")
-                        local trashFolder = Workspace:FindFirstChild("Trash") or (Workspace:FindFirstChild("Map") and Workspace.Map:FindFirstChild("Trash"))
-                        if trashFolder and rootPart then
-                            local nearestTrash = nil
-                            local nearestDistance = math.huge
-                            for _, trashModel in pairs(trashFolder:GetChildren()) do
-                                if trashModel:IsA("Model") then
-                                    local trashPosition = trashModel:GetPivot().Position
-                                    local distance = (rootPart.Position - trashPosition).Magnitude
-                                    if distance <= TRASH_RANGE and distance < nearestDistance then
-                                        nearestDistance = distance
-                                        nearestTrash = trashModel
-                                    end
-                                end
-                            end
-                            if nearestTrash then
-                                local trashPosition = nearestTrash:GetPivot().Position
-                                local direction = (trashPosition - rootPart.Position).Unit
-                                local lookVector = Vector3.new(direction.X, 0, direction.Z).Unit
-                                rootPart.CFrame = CFrame.lookAt(rootPart.Position, rootPart.Position + lookVector)
-                                local communicate = character:FindFirstChild("Communicate")
-                                if communicate and character:GetAttribute("HasTrashcan") == false then
-                                    communicate:FireServer({["Goal"] = "LeftClick"})
-                                    task.wait(0.05)
-                                    communicate:FireServer({["Goal"] = "LeftClickRelease"})
-                                end
-                            end
-                        end
-                    end
-                end)
-            end
-        end)
-    end
-end })
-
-BattleLeft:AddToggle("AttackAuraV2", { Text = "攻击光环", Default = false, Callback = function(state)
-    kenConfiguration.Main.Combat.AttackAura = state
-    if attackAuraConnection then attackAuraConnection:Disconnect() attackAuraConnection = nil end
-    if state then
-        attackAuraConnection = RunService.RenderStepped:Connect(function()
-            if not kenConfiguration.Main.Combat.AttackAura then return end
-            local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if not myRoot then return end
-            local NearestTarget = Functions.BestTarget(5)
-            if NearestTarget then
-                Functions.TeleportUnderPlayer(NearestTarget)
-                local RandomAbility = Functions.RandomAbility()
-                if RandomAbility then
-                    Functions.UseAbility(RandomAbility)
-                else
-                    if kenConfiguration.Main.Farm.AutoUltimate then Functions.ActivateUltimate() end
-                end
-            end
-        end)
-    end
-end })
-
-BattleLeft:AddToggle("KillFarm", { Text = "自动战斗", Default = false, Callback = function(state)
-    kenConfiguration.Main.Farm.KillFarm = state
-    if killFarmConnection then killFarmConnection:Disconnect() killFarmConnection = nil end
-    if state then
-        killFarmConnection = RunService.RenderStepped:Connect(function()
-            if not kenConfiguration.Main.Farm.KillFarm then return end
-            local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if not myRoot then return end
-            local BestTarget = Functions.BestTarget()
-            if BestTarget then
-                Functions.TeleportUnderPlayer(BestTarget)
-                local RandomAbility = Functions.RandomAbility()
-                if RandomAbility then
-                    Functions.UseAbility(RandomAbility)
-                else
-                    if kenConfiguration.Main.Farm.AutoUltimate then Functions.ActivateUltimate() end
-                end
-            end
-        end)
-    end
-end })
-
-BattleLeft:AddToggle("AutoAttackV1", { Text = "自动攻击 v1", Default = false, Callback = function(state)
-    ZDGJT = state
-    if state then
-        task.spawn(function()
-            while ZDGJT and task.wait(0.3) do
-                local Character = player.Character
-                if Character then
-                    local communicate = Character:FindFirstChild("Communicate")
-                    if communicate then
-                        communicate:FireServer({["Goal"] = "LeftClick"})
-                        task.wait(0.05)
-                        communicate:FireServer({["Goal"] = "LeftClickRelease"})
-                    end
-                end
-            end
-        end)
-    end
-end })
-
-BattleLeft:AddToggle("AutoUlt", { Text = "自动开大", Default = false, Callback = function(state)
-    kenConfiguration.Main.Farm.AutoUltimate = state
-end })
-
-BattleLeft:AddToggle("VoidGrab", { Text = "抓人传虚空", Default = false, Callback = function(state)
-    ELZRCSXKT = state
-    if state then
-        local Backpack = player:WaitForChild("Backpack")
-        local targetToolName = "Lethal Whirlwind Stream"
-        Backpack.ChildAdded:Connect(function(tool)
-            if ELZRCSXKT and tool:IsA("Tool") and tool.Name == targetToolName then
-                tool.Equipped:Connect(function()
-                    local A = player.Character.HumanoidRootPart.CFrame
-                    task.wait(1)
-                    player.Character.HumanoidRootPart.CFrame = CFrame.new(-62, 29, 20338)
-                    task.wait(3)
-                    player.Character.HumanoidRootPart.CFrame = A
-                end)
-            end
-        end)
-    end
-end })
-
-BattleLeft:AddToggle("NoDashEndlag", { Text = "取消冲刺后摇", Default = false, Callback = function(state)
-    awdawdwaT = state
-    local plr = player
-    local uis = UserInputService
-    local isMobile = uis.TouchEnabled
-    getgenv()._TempestAlreadyRan = true
-    local function frontDash()
-        if plr.Character then
-            local communicate = plr.Character:FindFirstChild("Communicate")
-            if communicate then communicate:FireServer(unpack(frontDashArgs)) end
-        end
-    end
-    local function stopAnimation(char, animationId)
-        local humanoid = char:FindFirstChildWhichIsA("Humanoid")
-        if humanoid then
-            local animator = humanoid:FindFirstChildWhichIsA("Animator")
-            if animator then
-                for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-                    if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. tostring(animationId) then track:Stop() end
-                end
-            end
-        end
-    end
-    local function isAnimationRunning(char, animationId)
-        local humanoid = char:FindFirstChildWhichIsA("Humanoid")
-        if humanoid then
-            local animator = humanoid:FindFirstChildWhichIsA("Animator")
-            if animator then
-                for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-                    if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. tostring(animationId) then return true end
-                end
-            end
-        end
-        return false
-    end
-    local function getMovementAngle(hrp, moveDirection)
-        if moveDirection.Magnitude == 0 then return 0 end
-        local relativeMoveDir = hrp.CFrame:VectorToObjectSpace(moveDirection)
-        local angle = math.deg(math.atan2(relativeMoveDir.Z, relativeMoveDir.X))
-        return (angle + 360) % 360
-    end
-    local function cleanupConnections()
-        for _, conn in ipairs(inputBeganConnections) do conn:Disconnect() end
-        for _, conn in ipairs(characterAddedConnections) do conn:Disconnect() end
-        for _, conn in ipairs(dashButtonConnections) do conn:Disconnect() end
-        inputBeganConnections = {}
-        characterAddedConnections = {}
-        dashButtonConnections = {}
-    end
-    local function setupNoEndlagDash()
-        if not plr.Character then return end
-        local connection = uis.InputBegan:Connect(function(input, t)
-            if t then return end
-            if awdawdwaT and input.KeyCode == Enum.KeyCode.Q and not uis:IsKeyDown(Enum.KeyCode.D) and not uis:IsKeyDown(Enum.KeyCode.A) and not uis:IsKeyDown(Enum.KeyCode.S) and plr.Character:FindFirstChild("UsedDash") then
-                frontDash()
-            end
-        end)
-        table.insert(inputBeganConnections, connection)
-    end
-    local function setupEmoteDash()
-        if not plr.Character then return end
-        local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        local connection = uis.InputBegan:Connect(function(input, t)
-            if t then return end
-            if awdawdwaT and input.KeyCode == Enum.KeyCode.Q and not uis:IsKeyDown(Enum.KeyCode.W) and not uis:IsKeyDown(Enum.KeyCode.S) and not isAnimationRunning(plr.Character, 10491993682) then
-                local vel = hrp:FindFirstChild("dodgevelocity")
-                if vel then
-                    vel:Destroy()
-                    stopAnimation(plr.Character, 10480793962)
-                    stopAnimation(plr.Character, 10480796021)
-                end
-            end
-        end)
-        table.insert(inputBeganConnections, connection)
-    end
-    local function setupMobileDash()
-        if not isMobile or not plr.Character then return end
-        local dashButton
-        local playerGui = plr:FindFirstChild("PlayerGui")
-        if playerGui then
-            local touchGui = playerGui:FindFirstChild("TouchGui")
-            if touchGui then
-                local controlFrame = touchGui:FindFirstChild("TouchControlFrame")
-                if controlFrame then
-                    local jumpButton = controlFrame:FindFirstChild("JumpButton")
-                    if jumpButton then dashButton = jumpButton:FindFirstChild("DashButton") end
-                end
-            end
-        end
-        if dashButton then
-            local connection = dashButton.MouseButton1Down:Connect(function()
-                if not awdawdwaT or not plr.Character then return end
-                local hum = plr.Character:FindFirstChild("Humanoid")
-                local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
-                if not hum or not hrp then return end
-                local angle = getMovementAngle(hrp, hum.MoveDirection)
-                local directionResult = nil
-                if angle == 0 then directionResult = "front"
-                elseif angle >= 315 or angle < 45 then directionResult = "right"
-                elseif angle >= 135 and angle < 225 then directionResult = "left"
-                elseif angle >= 45 and angle < 135 then directionResult = "back"
-                elseif angle >= 225 and angle < 315 then directionResult = "front" end
-                if awdawdwaT and directionResult == "front" and not plr.Character:FindFirstChild("Freeze") and not plr.Character:FindFirstChild("Slowed") and not plr.Character:FindFirstChild("WallCombo") then
-                    frontDash()
-                end
-                if awdawdwaT and (directionResult == "left" or directionResult == "right") and not isAnimationRunning(plr.Character, 10491993682) then
-                    local vel = hrp:FindFirstChild("dodgevelocity")
-                    if vel then
-                        vel:Destroy()
-                        stopAnimation(plr.Character, 10480793962)
-                        stopAnimation(plr.Character, 10480796021)
-                    end
-                end
-            end)
-            table.insert(dashButtonConnections, connection)
-        end
-    end
-    if state then
-        if plr.Character then
-            setupNoEndlagDash()
-            setupEmoteDash()
-            if isMobile then setupMobileDash() end
-        end
-        local charAddedConn1 = plr.CharacterAdded:Connect(setupNoEndlagDash)
-        local charAddedConn2 = plr.CharacterAdded:Connect(setupEmoteDash)
-        table.insert(characterAddedConnections, charAddedConn1)
-        table.insert(characterAddedConnections, charAddedConn2)
-        if isMobile then
-            local dashButtonConn = plr.PlayerGui.DescendantAdded:Connect(function(d)
-                if d.Name == "DashButton" and plr.Character then setupMobileDash() end
-            end)
-            table.insert(characterAddedConnections, dashButtonConn)
-        end
-    else
-        cleanupConnections()
-    end
-end })
-
-BattleLeft:AddToggle("AutoParry", { Text = "自动防御", Default = false, Callback = function(state)
-    Settings.Autoparry.Toggle = state
-    if state then
-        task.spawn(function()
-            while Settings.Autoparry.Toggle do
-                pcall(function()
-                    local closestPlayers = {}
-                    local localChar = player.Character
-                    local localRoot = localChar and localChar:FindFirstChild("HumanoidRootPart")
-                    local localHumanoid = localChar and localChar:FindFirstChildOfClass("Humanoid")
-                    if not localRoot or not localHumanoid or localHumanoid.Health <= 0 then return end
-                    local myPosition = localRoot.Position
-                    for _, plr in ipairs(Players:GetPlayers()) do
-                        if plr ~= player then
-                            local char = plr.Character
-                            local theirRoot = char and char:FindFirstChild("HumanoidRootPart")
-                            local theirHumanoid = char and char:FindFirstChildOfClass("Humanoid")
-                            if theirRoot and theirHumanoid and theirHumanoid.Health > 0 then
-                                local distance = (myPosition - theirRoot.Position).Magnitude
-                                if distance < Settings.Autoparry.Range then table.insert(closestPlayers, plr) end
-                            end
-                        end
-                    end
-                    table.sort(closestPlayers, function(a, b)
-                        local aRoot = a.Character and a.Character:FindFirstChild("HumanoidRootPart")
-                        local bRoot = b.Character and b.Character:FindFirstChild("HumanoidRootPart")
-                        if not aRoot or not bRoot then return false end
-                        return (myPosition - aRoot.Position).Magnitude < (myPosition - bRoot.Position).Magnitude
-                    end)
-                    for _, plr in ipairs(closestPlayers) do
-                        if not Settings.Autoparry.Toggle then break end
-                        local enemyChar = plr.Character
-                        if not enemyChar then continue end
-                        local enemyRoot = enemyChar:FindFirstChild("HumanoidRootPart")
-                        local enemyHumanoid = enemyChar:FindFirstChildOfClass("Humanoid")
-                        if not enemyRoot or not enemyHumanoid or enemyHumanoid.Health <= 0 then continue end
-                        local animator = enemyHumanoid:FindFirstChild("Animator")
-                        if not animator then continue end
-                        if not allowed(enemyChar) then continue end
-                        for _, animTrack in ipairs(animator:GetPlayingAnimationTracks()) do
-                            if not Settings.Autoparry.Toggle then break end
-                            local animId = animTrack.Animation and animTrack.Animation.AnimationId
-                            local animData = anims[animId]
-                            local dodgeData = dodges[animId]
-                            local abilityData = abilities[animId]
-                            local barrageData = barrages[animId]
-                            local timePos = animTrack.TimePosition
-                            if animData and timePos >= animData[1] and timePos <= animData[2] then
-                                task.spawn(function() def("anim") lookat(enemyChar) end)
-                                task.wait(parryCooldown)
-                                break
-                            elseif dodgeData and timePos >= dodgeData[1] and timePos <= dodgeData[2] then
-                                task.spawn(function() def("dodge") lookat(enemyChar) end)
-                                task.wait(parryCooldown)
-                                break
-                            elseif barrageData and timePos >= barrageData[1] and timePos <= barrageData[2] then
-                                task.spawn(function() def("barrage") lookat(enemyChar) end)
-                                task.wait(parryCooldown)
-                                break
-                            elseif abilityData and timePos >= abilityData[1] and timePos <= abilityData[2] then
-                                task.spawn(function() def("ability") lookat(enemyChar) end)
-                                task.wait(parryCooldown)
-                                break
-                            end
-                        end
-                    end
-                end)
-                task.wait(0.05)
-            end
-        end)
-    end
-end })
-
-function allowed(enemyChar)
-    if not enemyChar then return false end
-    local localChar = player.Character
-    if not localChar then return false end
-    if localChar:FindFirstChild("M1ing") then return false end
-    if attackchecker() then return false end
-    return isfacing(enemyChar)
+for k in pairs(T.keyMap) do
+    keyList[#keyList + 1] = k
 end
+table.sort(keyList)
 
-function isfacing(enemyChar)
-    if not Settings.Autoparry.Toggle then return false end
-    if not Settings.Autoparry.Facing then return true end
-    local localChar = player.Character
-    local enemyHead = enemyChar and enemyChar:FindFirstChild("Head")
-    local localHead = localChar and localChar:FindFirstChild("Head")
-    if not localHead or not enemyHead then return false end
-    local plrDirection = localHead.CFrame.LookVector
-    local unit = (enemyHead.CFrame.p - localHead.CFrame.p).Unit
-    local value = math.pow((plrDirection - unit).Magnitude / 2, 2)
-    return value < (Settings.Autoparry.Fov / 360)
-end
-
-function attackchecker()
-    local char = player.Character
-    if not char then return false end
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if not humanoid or humanoid.Health <= 0 then return false end
-    local animator = humanoid:FindFirstChild("Animator")
-    if not animator then return false end
-    for _, animTrack in ipairs(animator:GetPlayingAnimationTracks()) do
-        local animId = animTrack.Animation and animTrack.Animation.AnimationId
-        if animId then
-            if anims[animId] or dodges[animId] or abilities[animId] or barrages[animId] then return true end
-        end
+EmoteLeft:AddDropdown("快捷键设置", {
+    Values = keyList,
+    Default = 1,
+    Callback = function(v)
+        T.state.keybind = T.keyMap[v]
     end
-    return false
-end
+})
 
-function def(action)
-    if cd then return end
-    task.wait(Settings.Autoparry.Delay)
-    cd = true
-    local char = player.Character
-    if char and char:FindFirstChild("Communicate") then
-        char.Communicate:FireServer({["Goal"] = "KeyPress", ["Key"] = Enum.KeyCode.F})
-    end
-    local durations = { ["anim"] = 0.3, ["dodge"] = 0.9, ["barrage"] = 0.9, ["ability"] = 0.6 }
-    task.wait(durations[action])
-    if char and char:FindFirstChild("Communicate") then
-        char.Communicate:FireServer({["Goal"] = "KeyRelease", ["Key"] = Enum.KeyCode.F})
-    end
-    cd = false
-end
+EmoteLeft:AddButton("随机用一个击杀表情", function()
+    T.useRandom()
+end)
 
-function lookat(enemyChar)
-    if not Settings.Autoparry.Aimhelper then return end
-    local localChar = player.Character
-    if not localChar then return end
-    local localRoot = localChar:FindFirstChild("HumanoidRootPart")
-    local enemyRoot = enemyChar and enemyChar:FindFirstChild("HumanoidRootPart")
-    if localRoot and enemyRoot then localRoot.CFrame = CFrame.lookAt(localRoot.Position, enemyRoot.Position) end
-end
-
-BattleLeft:AddToggle("NoFreeze", { Text = "移除定身", Default = false, Callback = function(state)
-    YCDSHYT = state
-    if state then
-        task.spawn(function()
-            while YCDSHYT and task.wait(0.1) do
-                pcall(function()
-                    local Freeze = player.Character:FindFirstChild("Freeze")
-                    if Freeze then Freeze:Destroy() end
-                    local ComboStun = player.Character:FindFirstChild("ComboStun")
-                    if ComboStun then ComboStun:Destroy() end
-                end)
-            end
-        end)
-    end
-end })
-
-BattleRight:AddInput("FakeKills", { Text = "击杀数", Default = "", Numeric = true, Finished = true, Callback = function(input)
-    pcall(function() player.leaderstats.Kills.Value = tonumber(input) or 0 end)
-end })
-
-BattleRight:AddInput("FakeTotalKills", { Text = "总击杀数", Default = "", Numeric = true, Finished = true, Callback = function(input)
-    pcall(function() player.leaderstats["Total Kills"].Value = tonumber(input) or 0 end)
-end })
-
-Functions.BestTarget = function(MaxDistance)
-    MaxDistance = MaxDistance or math.huge
-    local Target = nil
-    local MinKills = math.huge
-    for _, v in pairs(Players:GetPlayers()) do
-        if v ~= player and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
-            local rootPart = v.Character:FindFirstChild("HumanoidRootPart")
-            if rootPart then
-                local distance = (player.Character.HumanoidRootPart.Position - rootPart.Position).Magnitude
-                local kills = v:GetAttribute("Kills") or 0
-                if distance < MaxDistance and kills < MinKills then
-                    Target = v
-                    MaxDistance = distance
-                    MinKills = kills
-                end
-            end
-        end
-    end
-    return Target
-end
-
-Functions.UseAbility = function(Ability)
-    if not player.Character then return end
-    local Tool = player.Backpack:FindFirstChild(Ability)
-    if Tool then
-        player.Character.Communicate:FireServer({ Tool = Tool, Goal = "Console Move", ToolName = tostring(Ability) })
-    end
-end
-
-Functions.RandomAbility = function()
-    if not player.PlayerGui:FindFirstChild("Hotbar") then return nil end
-    local Hotbar = player.PlayerGui.Hotbar.Backpack.Hotbar
-    local Abilities = {}
-    for _, v in pairs(Hotbar:GetChildren()) do
-        if v.ClassName ~= "UIListLayout" and v.Visible and v.Base.ToolName.Text ~= "N/A" and not v.Base:FindFirstChild("Cooldown") then
-            table.insert(Abilities, v)
-        end
-    end
-    if #Abilities > 0 then
-        local RandomAbility = Abilities[math.random(1, #Abilities)]
-        return RandomAbility.Base.ToolName.Text
-    else
-        return nil
-    end
-end
-
-Functions.ActivateUltimate = function()
-    local UltimateBar = player:GetAttribute("Ultimate") or 0
-    if UltimateBar >= 100 then
-        player.Character.Communicate:FireServer({ MoveDirection = Vector3.new(0, 0, 0), Key = Enum.KeyCode.G, Goal = "KeyPress" })
-    end
-end
-
-Functions.TeleportUnderPlayer = function(targetPlayer)
-    if not targetPlayer.Character then return end
-    local rootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if rootPart and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        local targetCFrame = rootPart.CFrame * CFrame.new(0, -5, 0)
-        player.Character:SetPrimaryPartCFrame(targetCFrame)
-    end
-end
-
-AimLeft:AddToggle("AntiAfk", { Text = "反挂机", Default = true, Callback = function(state)
-    getgenvAntiAfk = state
-    if state then
-        if antiAfkThread then task.cancel(antiAfkThread) antiAfkThread = nil end
-        antiAfkThread = task.spawn(function()
-            while getgenvAntiAfk do
-                pcall(function()
-                    VirtualUser:Button2Down(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
-                    task.wait(1)
-                    VirtualUser:Button2Up(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
-                    task.wait(10)
-                end)
-            end
-        end)
-    else
-        if antiAfkThread then task.cancel(antiAfkThread) antiAfkThread = nil end
-    end
-end })
-
-AimLeft:AddToggle("AutoAim", { Text = "自动瞄准", Default = false, Callback = function(state)
-    getgenvAutoAim = state
-    if state then
-        if autoAimConnection then autoAimConnection:Disconnect() autoAimConnection = nil end
-        autoAimConnection = RunService.RenderStepped:Connect(function()
-            if not getgenvAutoAim then return end
-            local camera = Camera
-            if not camera then return end
-            local fovRadius = getgenvAimbotFOV / 2
-            local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
-            local closestEnemy = nil
-            local targetPos = nil
-            local closestScreenDist = fovRadius
-            local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-            for _, plr in ipairs(Players:GetPlayers()) do
-                if plr ~= player and plr.Character then
-                    local targetPart = plr.Character:FindFirstChild("Head") or plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character:FindFirstChild("Torso")
-                    if targetPart then
-                        local distance = (targetPart.Position - hrp.Position).Magnitude
-                        if distance <= getgenvAimbotDistance then
-                            local targetPos2D, onScreen = camera:WorldToViewportPoint(targetPart.Position)
-                            if onScreen and targetPos2D.Z > 0 then
-                                local screenPos = Vector2.new(targetPos2D.X, targetPos2D.Y)
-                                local distFromCenter = (screenCenter - screenPos).Magnitude
-                                if distFromCenter <= fovRadius and distFromCenter < closestScreenDist then
-                                    closestScreenDist = distFromCenter
-                                    closestEnemy = plr
-                                    targetPos = targetPart.Position
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-            if closestEnemy and targetPos then
-                pcall(function()
-                    local cameraPos = camera.CFrame.Position
-                    camera.CFrame = CFrame.lookAt(cameraPos, targetPos)
-                end)
-            end
-        end)
-    else
-        if autoAimConnection then autoAimConnection:Disconnect() autoAimConnection = nil end
-    end
-end })
-
-AimLeft:AddToggle("ShowFOV", { Text = "显示自瞄圈", Default = false, Callback = function(state)
-    getgenvShowFOV = state
-    if state then
-        if fovCircle then pcall(function() fovCircle:Destroy() end) fovCircle = nil end
-        local guiParent = game:GetService("CoreGui") or player:FindFirstChild("PlayerGui")
-        if not guiParent then return end
-        fovCircle = Instance.new("ScreenGui")
-        fovCircle.Name = "AimFOVCircle"
-        fovCircle.Parent = guiParent
-        fovCircle.IgnoreGuiInset = true
-        fovCircle.DisplayOrder = 999999
-        fovCircle.Enabled = true
-        fovCircle.ResetOnSpawn = false
-        fovCircle.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        local frame = Instance.new("Frame")
-        frame.Name = "FOVFrame"
-        frame.Size = UDim2.new(0, getgenvAimbotFOV, 0, getgenvAimbotFOV)
-        frame.Position = UDim2.new(0.5, -getgenvAimbotFOV/2, 0.5, -getgenvAimbotFOV/2)
-        frame.BackgroundTransparency = 1
-        frame.BorderSizePixel = 0
-        frame.ZIndex = 999999
-        frame.Parent = fovCircle
-        local uiCorner = Instance.new("UICorner")
-        uiCorner.CornerRadius = UDim.new(1, 0)
-        uiCorner.Parent = frame
-        local stroke = Instance.new("UIStroke")
-        stroke.Thickness = 2
-        stroke.Color = Color3.fromRGB(255, 0, 0)
-        stroke.Transparency = 0.3
-        stroke.Parent = frame
-        local centerDot = Instance.new("Frame")
-        centerDot.Name = "CenterDot"
-        centerDot.Size = UDim2.new(0, 2, 0, 2)
-        centerDot.Position = UDim2.new(0.5, -1, 0.5, -1)
-        centerDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        centerDot.BackgroundTransparency = 0
-        centerDot.BorderSizePixel = 0
-        centerDot.ZIndex = 999999
-        centerDot.Parent = frame
-        local centerCorner = Instance.new("UICorner")
-        centerCorner.CornerRadius = UDim.new(1, 0)
-        centerCorner.Parent = centerDot
-        if fovCircleThread then task.cancel(fovCircleThread) fovCircleThread = nil end
-        fovCircleThread = task.spawn(function()
-            while fovCircle and fovCircle.Parent and getgenvShowFOV do
-                pcall(function()
-                    if fovCircle and fovCircle:FindFirstChild("FOVFrame") then
-                        local frame = fovCircle.FOVFrame
-                        local diameter = getgenvAimbotFOV
-                        frame.Size = UDim2.new(0, diameter, 0, diameter)
-                        frame.Position = UDim2.new(0.5, -diameter/2, 0.5, -diameter/2)
-                        local camera = Camera
-                        local fovRadius = getgenvAimbotFOV / 2
-                        local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
-                        local closestEnemy = nil
-                        local closestScreenDist = fovRadius
-                        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                        if hrp then
-                            for _, plr in ipairs(Players:GetPlayers()) do
-                                if plr ~= player and plr.Character then
-                                    local targetPart = plr.Character:FindFirstChild("Head") or plr.Character:FindFirstChild("HumanoidRootPart")
-                                    if targetPart then
-                                        local distance = (targetPart.Position - hrp.Position).Magnitude
-                                        if distance <= getgenvAimbotDistance then
-                                            local targetPos2D, onScreen = camera:WorldToViewportPoint(targetPart.Position)
-                                            if onScreen and targetPos2D.Z > 0 then
-                                                local screenPos = Vector2.new(targetPos2D.X, targetPos2D.Y)
-                                                local distFromCenter = (screenCenter - screenPos).Magnitude
-                                                if distFromCenter <= fovRadius and distFromCenter < closestScreenDist then
-                                                    closestScreenDist = distFromCenter
-                                                    closestEnemy = plr
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                        if closestEnemy then
-                            frame.UIStroke.Color = Color3.fromRGB(0, 255, 0)
-                        else
-                            frame.UIStroke.Color = Color3.fromRGB(255, 0, 0)
-                        end
-                    end
-                end)
-                task.wait(0.1)
-            end
-        end)
-    else
-        if fovCircle then fovCircle.Enabled = false end
-    end
-end })
-
-AimRight:AddSlider("AimFOV", { Text = "FOV大小", Default = 150, Min = 30, Max = 500, Rounding = 0, Callback = function(v) getgenvAimbotFOV = v end })
-
-AimRight:AddSlider("AimDistance", { Text = "自瞄距离", Default = 3, Min = 1, Max = 300, Rounding = 0, Callback = function(v) getgenvAimbotDistance = v end })
-
-AimLeft:AddToggle("AutoAttackV2", { Text = "自动攻击 v2", Default = false, Callback = function(state)
-    getgenvAutoAttack = state
-    if state then
-        if attackThread then task.cancel(attackThread) attackThread = nil end
-        attackThread = task.spawn(function()
-            while getgenvAutoAttack do
-                pcall(function()
-                    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                    if not hrp then return end
-                    for _, plr in ipairs(Players:GetPlayers()) do
-                        if plr ~= player and plr.Character then
-                            local targetRoot = plr.Character:FindFirstChild("HumanoidRootPart")
-                            if targetRoot then
-                                local distance = (targetRoot.Position - hrp.Position).Magnitude
-                                if distance <= getgenvAttackDistance then
-                                    local backpack = player:FindFirstChild("Backpack")
-                                    if backpack then
-                                        local punchTool = backpack:FindFirstChild("Normal Punch")
-                                        if punchTool then
-                                            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-                                            if humanoid then humanoid:EquipTool(punchTool) end
-                                        end
-                                    end
-                                    local Communicate = player.Character:FindFirstChild("Communicate")
-                                    if Communicate then
-                                        local backpack = player:FindFirstChild("Backpack")
-                                        if backpack then
-                                            local punchTool = backpack:FindFirstChild("Normal Punch")
-                                            if punchTool then
-                                                Communicate:FireServer({[1] = { Tool = punchTool, Goal = "Console Move" }})
-                                            end
-                                        end
-                                    end
-                                    break
-                                end
-                            end
-                        end
-                    end
-                end)
-                task.wait(0.1)
-            end
-        end)
-    else
-        if attackThread then task.cancel(attackThread) attackThread = nil end
-    end
-end })
-
-AimRight:AddSlider("AttackDist", { Text = "攻击距离", Default = 100, Min = 10, Max = 1000, Rounding = 0, Callback = function(v) getgenvAttackDistance = v end })
-
-AimLeft:AddDropdown("PlayerSelect", { Text = "选择玩家", Default = 1, Values = {}, Callback = function(option)
-    getgenvSelectedPlayer = option
-end })
-
-AimLeft:AddButton({ Text = '刷新列表', Func = function()
-    local names = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character then
-            local humanoid = plr.Character:FindFirstChild("Humanoid")
-            if humanoid and humanoid.Health > 0 then table.insert(names, plr.Name) end
-        end
-    end
-    getgenvPlayerList = names
-    if Toggles.PlayerSelect then Toggles.PlayerSelect:SetValues(names) end
-end })
-
-AimLeft:AddButton({ Text = '传送到玩家', Func = function()
-    if getgenvSelectedPlayer and getgenvSelectedPlayer ~= "" then
-        local target = Players:FindFirstChild(getgenvSelectedPlayer)
-        if target and target.Character then
-            local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
-            local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if targetRoot and hrp then
-                hrp.CFrame = targetRoot.CFrame * CFrame.new(0, 3, 0)
-            end
-        end
-    end
-end })
-
-AimLeft:AddButton({ Text = '拉到身边', Func = function()
-    if getgenvSelectedPlayer and getgenvSelectedPlayer ~= "" then
-        local target = Players:FindFirstChild(getgenvSelectedPlayer)
-        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if target and target.Character and hrp then
-            local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
-            if targetRoot then targetRoot.CFrame = hrp.CFrame * CFrame.new(0, 3, 0) end
-        end
-    end
-end })
-
-AimLeft:AddButton({ Text = '切换Bald', Func = function()
-    local function tryMethod4(charName)
-        local success = pcall(function()
-            local char = player.Character
-            if not char then return false end
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return false end
-            if charName == "Bald" then
-                if not hrp:FindFirstChild("BaldMode") then
-                    local baldMode = Instance.new("BoolValue")
-                    baldMode.Name = "BaldMode"
-                    baldMode.Value = true
-                    baldMode.Parent = hrp
-                end
-                if hrp:FindFirstChild("HunterMode") then hrp.HunterMode:Destroy() end
-            elseif charName == "Hunter" then
-                if not hrp:FindFirstChild("HunterMode") then
-                    local hunterMode = Instance.new("BoolValue")
-                    hunterMode.Name = "HunterMode"
-                    hunterMode.Value = true
-                    hunterMode.Parent = hrp
-                end
-                if hrp:FindFirstChild("BaldMode") then hrp.BaldMode:Destroy() end
-            end
-            hrp:SetAttribute("Mode", charName)
-            local modeValue = hrp:FindFirstChild("Mode")
-            if not modeValue then
-                modeValue = Instance.new("StringValue")
-                modeValue.Name = "Mode"
-                modeValue.Parent = hrp
-            end
-            modeValue.Value = charName
-            return true
-        end)
-        return success
-    end
-    tryMethod4("Bald")
-end })
-
-AimLeft:AddButton({ Text = '切换Hunter', Func = function()
-    local function tryMethod4(charName)
-        local success = pcall(function()
-            local char = player.Character
-            if not char then return false end
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return false end
-            if charName == "Bald" then
-                if not hrp:FindFirstChild("BaldMode") then
-                    local baldMode = Instance.new("BoolValue")
-                    baldMode.Name = "BaldMode"
-                    baldMode.Value = true
-                    baldMode.Parent = hrp
-                end
-                if hrp:FindFirstChild("HunterMode") then hrp.HunterMode:Destroy() end
-            elseif charName == "Hunter" then
-                if not hrp:FindFirstChild("HunterMode") then
-                    local hunterMode = Instance.new("BoolValue")
-                    hunterMode.Name = "HunterMode"
-                    hunterMode.Value = true
-                    hunterMode.Parent = hrp
-                end
-                if hrp:FindFirstChild("BaldMode") then hrp.BaldMode:Destroy() end
-            end
-            hrp:SetAttribute("Mode", charName)
-            local modeValue = hrp:FindFirstChild("Mode")
-            if not modeValue then
-                modeValue = Instance.new("StringValue")
-                modeValue.Name = "Mode"
-                modeValue.Parent = hrp
-            end
-            modeValue.Value = charName
-            return true
-        end)
-        return success
-    end
-    tryMethod4("Hunter")
-end })
-
-UnloadGroup:AddButton({ Text = '卸载脚本', Func = function() Library:Unload() end })
+local UnloadGroup = Tabs.Settings:AddLeftGroupbox("脚本管理")
+UnloadGroup:AddButton("卸载脚本", function()
+    Library:Unload()
+end)
 
 if ThemeManager then
     ThemeManager:SetLibrary(Library)
@@ -2534,5 +1843,3 @@ if SaveManager then
     SaveManager:SetFolder("MyScriptConfig")
     SaveManager:BuildConfigSection(Tabs.Settings)
 end
-
-Library:Notify('最强战场整合版加载成功 | 恐拜大帝', 5)
