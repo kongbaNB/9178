@@ -461,9 +461,14 @@ local function loadFlightScript()
     if ok then Notify("飞行脚本已加载") else Notify("飞行脚本加载失败: "..tostring(err)) end
 end
 
-Window = Library:CreateWindow({ Title = "破坏者谜团2", Footer = "By 恐拜大帝 | QQ:3999698324", Icon = 113517588654522, NotifySide = "Right", ShowCustomCursor = true })
+Window = Library:CreateWindow({ Title = "破坏者谜团2", Footer = "By 恐拜大帝 | QQ:3999698324", Icon = 131153193945220, NotifySide = "Right", ShowCustomCursor = true })
 Notify = function(msg) Library:Notify(msg, 3) end
-local Tabs = { Main = Window:AddTab("主要", "info"), Teleport = Window:AddTab("传送与跟随", "map"), Settings = Window:AddTab("设置", "settings") }
+local Tabs = { Notice = Window:AddTab("通知", "info"), Main = Window:AddTab("主要", "zap"), Teleport = Window:AddTab("传送与跟随", "map"), Settings = Window:AddTab("设置", "settings") }
+
+local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者消息")
+NoticeGroup:AddLabel('恐拜大帝将持续更新此脚本')
+NoticeGroup:AddLabel('创作者：恐拜大帝')
+NoticeGroup:AddLabel('QQ：3999698324')
 local selectedTexture = "恐脚本"
 local function ApplyWindowIcon()
     local id = (selectedTexture=="恐脚本" and "rbxassetid://113517588654522") or (selectedTexture=="巨魔" and "rbxassetid://131153193945220") or nil
@@ -496,16 +501,16 @@ MainLeft:AddToggle('Antifail', { Text = '防失败', Default = false, Callback =
 MainLeft:AddToggle('Range', { Text = '范围修改', Default = false, Callback = function(v) if v then enableRange() else disableRange() end end })
 MainLeft:AddToggle('RangeBox', { Text = '范围所有部位', Default = false, Callback = function(v) rangeBox = v end })
 MainLeft:AddSlider({ Title = "范围尺寸", Step = 1, Value = {Min = 1, Max = 10, Default = 1}, Callback = function(v) rangeSize = v end })
-MainLeft:AddButton({ Text = '飞行脚本', Func = loadFlightScript })
-MainLeft:AddButton({ Text = '上帝模式', Func = GodMode })
-MainLeft:AddButton({ Text = '甩飞杀手', Func = function() local m = findMurderer() if not m then Notify("找不到杀手") elseif m == LocalPlayer then Notify("不能甩飞自己") else powerfulFling(m) end end })
-MainLeft:AddButton({ Text = '甩飞警长', Func = function() local s = findSheriff() if not s then Notify("找不到警长") elseif s == LocalPlayer then Notify("不能甩飞自己") else powerfulFling(s) end end })
-MainLeft:AddButton({ Text = '杀戮光环', Func = function() if TaffyAu then disableKillAura() Notify("杀戮光环已关闭") else enableKillAura() Notify("杀戮光环已开启") end end })
-MainLeft:AddButton({ Text = '杀死所有人 v2', Func = KillAllV2 })
-MainLeft:AddButton({ Text = '扣为人质', Func = HostageAll })
-MainLeft:AddButton({ Text = '飞刀击杀最近玩家', Func = throwKillNearest })
-MainLeft:AddButton({ Text = '自动清场 (v1)', Func = KillerAutoKillAll })
-MainLeft:AddButton({ Text = '发送身份到聊天', Func = function()
+MainRight:AddButton({ Text = '飞行脚本', Func = loadFlightScript })
+MainRight:AddButton({ Text = '上帝模式', Func = GodMode })
+MainRight:AddButton({ Text = '甩飞杀手', Func = function() local m = findMurderer() if not m then Notify("找不到杀手") elseif m == LocalPlayer then Notify("不能甩飞自己") else powerfulFling(m) end end })
+MainRight:AddButton({ Text = '甩飞警长', Func = function() local s = findSheriff() if not s then Notify("找不到警长") elseif s == LocalPlayer then Notify("不能甩飞自己") else powerfulFling(s) end end })
+MainRight:AddButton({ Text = '杀戮光环', Func = function() if TaffyAu then disableKillAura() Notify("杀戮光环已关闭") else enableKillAura() Notify("杀戮光环已开启") end end })
+MainRight:AddButton({ Text = '杀死所有人 v2', Func = KillAllV2 })
+MainRight:AddButton({ Text = '扣为人质', Func = HostageAll })
+MainRight:AddButton({ Text = '飞刀击杀最近玩家', Func = throwKillNearest })
+MainRight:AddButton({ Text = '自动清场 (v1)', Func = KillerAutoKillAll })
+MainRight:AddButton({ Text = '发送身份到聊天', Func = function()
     local channels = game:GetService("TextChatService"):WaitForChild("TextChannels"):GetChildren()
     for _, ch in ipairs(channels) do
         if ch.Name == "RBXSystem" then continue end
@@ -515,11 +520,9 @@ MainLeft:AddButton({ Text = '发送身份到聊天', Func = function()
     end
     Notify("已发送")
 end })
-MainLeft:AddButton({ Text = '传送到掉落的枪', Func = teleportToGunDrop })
-MainRight:AddButton({ Text = '自瞄（锁定杀手视角）', Func = function() if trackLoop then StopTracking() else StartTracking("杀手") end end })
-MainRight:AddButton({ Text = '自瞄（锁定警长视角）', Func = function() if trackLoop then StopTracking() else StartTracking("警长") end end })
+MainRight:AddButton({ Text = '传送到掉落的枪', Func = teleportToGunDrop })
 local TeleLeft = Tabs.Teleport:AddLeftGroupbox("瞬间传送")
-local TeleRight = Tabs.Teleport:AddRightGroupbox("跟随与出生点")
+local TeleRight = Tabs.Teleport:AddRightGroupbox("视角与跟随")
 TeleLeft:AddButton({ Text = '传送到最近平民', Func = TPC })
 TeleLeft:AddButton({ Text = '传送到警长', Func = TPS })
 TeleLeft:AddButton({ Text = '传送到杀手', Func = TPK })
@@ -527,6 +530,8 @@ TeleLeft:AddLabel('跟随目标（持续传送身后）')
 TeleLeft:AddButton({ Text = '跟随平民', Func = function() FollowTargetByJob("平民") end })
 TeleLeft:AddButton({ Text = '跟随警长', Func = function() FollowTargetByJob("警长") end })
 TeleLeft:AddButton({ Text = '跟随杀手', Func = function() FollowTargetByJob("杀手") end })
+TeleRight:AddButton({ Text = '自瞄（锁定杀手视角）', Func = function() if trackLoop then StopTracking() else StartTracking("杀手") end end })
+TeleRight:AddButton({ Text = '自瞄（锁定警长视角）', Func = function() if trackLoop then StopTracking() else StartTracking("警长") end end })
 TeleRight:AddButton({ Text = '强制取消跟随', Func = ForceStopFollow })
 TeleRight:AddButton({ Text = '将杀手传送到出生点', Func = function()
     local found = false
