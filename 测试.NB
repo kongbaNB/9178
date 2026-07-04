@@ -179,7 +179,7 @@ local AimlockCircleFrame
 local AimlockStroke
 
 function Linni_Aim.Init()
-Linni_Aim.Settings.AimlockOffsetY = 85
+Linni_Aim.Settings.AimlockOffsetY = 0
     if AimlockFOVGui then AimlockFOVGui:Destroy() end
 
     AimlockFOVGui = Instance.new("ScreenGui")
@@ -204,6 +204,7 @@ Linni_Aim.Settings.AimlockOffsetY = 85
     AimlockCircleFrame.Name = "AimlockCircleFrame"
     AimlockCircleFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     AimlockCircleFrame.Position = UDim2.fromScale(0.5, 0.5)
+    AimlockCircleFrame.Size = UDim2.fromOffset(Settings.FOVSize * 2, Settings.FOVSize * 2)
     AimlockCircleFrame.BackgroundTransparency = 1
 
     AimlockStroke = Instance.new("UIStroke", AimlockCircleFrame)
@@ -537,7 +538,7 @@ if antiAFKConnection then antiAFKConnection:Disconnect() end
 antiAFKConnection = nil
 end
 Linni_Aim.Init()
-Linni_Aim.Settings.AimlockOffsetY = 85
+Linni_Aim.Settings.AimlockOffsetY = 0
 local function getHumanoid()
 local char = LocalPlayer.Character
 if char then return char:FindFirstChild("Humanoid") end
