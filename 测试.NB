@@ -30,7 +30,7 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
 end)
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
-local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/恐脚本.UI"))()
+local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/测试.UI"))()
 game:GetService("StarterGui"):SetCore("SendNotification",{Title = "恐脚本--通用",Text = "作者：恐拜大帝\nQQ：3999698324\n感谢ROB支持",Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"})
 local jumpFloatActive = false
 local jumpFloatGui = nil
@@ -1592,6 +1592,15 @@ page2:AddButton({ Text = "祖国人汉化", Callback = function()
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "祖国人汉化", Text = "正在加载中...", Duration = 5})
 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/-/refs/heads/main/祖国人汉化"))() end)
 end })
+page2:AddButton({ Text = "自瞄", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/自瞄"))() end)
+end })
+page2:AddToggle({ Text = "防甩飞", Default = false, Callback = function(state)
+AntiFlingEnabled = state
+if state then startAntiFling() else stopAntiFling() end
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "防甩飞", Text = state and "已开启" or "已关闭", Duration = 3})
+end })
 local page3 = window:AddPage("次要")
 page3:AddButton({ Text = "自动翻译", Callback = function()
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自动翻译", Text = "正在加载中...", Duration = 5})
@@ -1635,10 +1644,6 @@ OnCopy = function(text) copyToClipboard(text, "坐标") end,
 OnError = function(msg) game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = msg, Duration = 3}) end
 })
 page3:AddPlayerSelector({ Text = "选人传送", Callback = function(p) teleportToPlayer(p) end })
-page3:AddButton({ Text = "自瞄", Callback = function()
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = "正在加载中...", Duration = 5})
-task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/自瞄"))() end)
-end })
 page3:AddToggle({ Text = "锁定视角", Default = false, Callback = function(state)
 LockViewEnabled = state
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "锁定视角", Text = state and "已开启" or "已关闭", Duration = 3})
@@ -1699,11 +1704,6 @@ sliderReleaseActions["spinspeed"] = function(speed)
     game:GetService("StarterGui"):SetCore("SendNotification", {Title = "旋转速度", Text = "已设置为：" .. speed .. " 度/秒", Duration = 2})
 end
 local page4 = window:AddPage("杂项")
-page4:AddToggle({ Text = "防甩飞", Default = false, Callback = function(state)
-AntiFlingEnabled = state
-if state then startAntiFling() else stopAntiFling() end
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "防甩飞", Text = state and "已开启" or "已关闭", Duration = 3})
-end })
 page4:AddButton({ Text = "显示时间", Callback = function()
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "显示时间", Text = "正在加载中...", Duration = 5})
 task.spawn(function() loadstring(game:HttpGet("https://pastebin.com/raw/0zKLyd4W"))() end)
