@@ -167,7 +167,8 @@ Linni_Aim.Settings = {
     RainbowFOVSpeed = 2,
     WhitelistPlayers = {},
     PrioritizePlayers = {},
-    AimlockOffsetY = 0
+    AimlockOffsetY = 0,
+    PredictionAmount = 0
 }
 
 local Settings = Linni_Aim.Settings
@@ -178,7 +179,7 @@ local AimlockCircleFrame
 local AimlockStroke
 
 function Linni_Aim.Init()
-Linni_Aim.Settings.AimlockOffsetY = 0.85
+Linni_Aim.Settings.AimlockOffsetY = 85
     if AimlockFOVGui then AimlockFOVGui:Destroy() end
 
     AimlockFOVGui = Instance.new("ScreenGui")
@@ -388,7 +389,11 @@ function Linni_Aim.RenderLoop()
         local target = GetClosestPlayer()
         if target and target.Character and target.Character:FindFirstChild("Head") then
             local head = target.Character.Head
-            local targetPos = head.Position + Vector3.new(0, Settings.AimlockOffsetY * 10, 0)
+            local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
+            local targetPos = head.Position + Vector3.new(0, Settings.AimlockOffsetY, 0)
+            if targetRoot and Settings.PredictionAmount > 0 then
+                targetPos = targetPos + targetRoot.Velocity * Settings.PredictionAmount
+            end
 
             if Settings.SmoothAimlock then
                 local smoothness = Settings.AimbotSmoothness / 100
@@ -532,7 +537,7 @@ if antiAFKConnection then antiAFKConnection:Disconnect() end
 antiAFKConnection = nil
 end
 Linni_Aim.Init()
-Linni_Aim.Settings.AimlockOffsetY = 0.85
+Linni_Aim.Settings.AimlockOffsetY = 85
 local function getHumanoid()
 local char = LocalPlayer.Character
 if char then return char:FindFirstChild("Humanoid") end
@@ -2025,12 +2030,19 @@ sliderReleaseActions["rainbowspeed"] = function(val)
     Linni_Aim.Settings.RainbowFOVSpeed = val
     game:GetService("StarterGui"):SetCore("SendNotification", {Title = "彩虹速度", Text = "已设置为：" .. tostring(val), Duration = 2})
 end
-page3:AddSlider({ Text = "Y轴偏移", Min = -1, Max = 1, Default = 0, Callback = function(val)
+page3:AddSlider({ Text = "Y轴偏移", Min = 0, Max = 85, Default = 0, Callback = function(val)
     pendingSliderValues["offsety"] = val
 end })
 sliderReleaseActions["offsety"] = function(val)
     Linni_Aim.Settings.AimlockOffsetY = val
     game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Y轴偏移", Text = "已设置为：" .. tostring(val), Duration = 2})
+end
+page3:AddSlider({ Text = "预判量", Min = 0, Max = 1, Default = 0, Callback = function(val)
+    pendingSliderValues["prediction"] = val
+end })
+sliderReleaseActions["prediction"] = function(val)
+    Linni_Aim.Settings.PredictionAmount = val
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "预判量", Text = "已设置为：" .. tostring(val), Duration = 2})
 end
 page3:AddToggle({ Text = "锁定视角", Default = false, Callback = function(state)
 LockViewEnabled = state
