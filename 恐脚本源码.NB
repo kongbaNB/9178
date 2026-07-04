@@ -1506,7 +1506,27 @@ task.spawn(function() loadstring(game:HttpGet("https://pastebin.com/raw/Zt4kkQG9
 end })
 page2:AddToggle({ Text = "穿墙", Default = false, Callback = function(state)
 NoclipEnabled = state
-if state then startNoclip() else stopNoclip() end
+if state then
+    Clipon = true
+    Stepped = RunService.Stepped:Connect(function()
+        if Clipon then
+            for _, child in pairs(workspace:GetChildren()) do
+                if child.Name == LocalPlayer.Name then
+                    for _, part in pairs(child:GetChildren()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+            end
+        else
+            Stepped:Disconnect()
+        end
+    end)
+else
+    Clipon = false
+    if Stepped then Stepped:Disconnect() end
+end
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "穿墙", Text = state and "已开启" or "已关闭", Duration = 3})
 end })
 page2:AddSlider({ Text = "修改移速", Min = 5, Max = 1000, Default = 16, Callback = function(val)
