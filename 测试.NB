@@ -30,6 +30,7 @@ local Lighting = game:GetService("Lighting")
 local StarterGui = game:GetService("StarterGui")
 local CoreGui = game:GetService("CoreGui")
 local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 
 local MeleeSpam = false
@@ -138,16 +139,15 @@ local ESPOutlaw = false
 local espOutlawConn = nil
 local ESPBond = false
 local espBondConn = nil
+
 local TranslationEnabled = false
-local TranslationSpeed = 2
+local TranslationSpeed = 5
 local translatedTexts = {}
 local heartbeatConnection = nil
 local playerGuiConnection = nil
 local coreGuiConnection = nil
 local lastScanTime = 0
-local scanInterval = 0.75
-local HttpService = game:GetService("HttpService")
-
+local scanInterval = 0.3
 
 local modelInstanceNames = {
     "ModelInstance", "modelinstance", "MODELINSTANCE",
@@ -319,6 +319,155 @@ if ClientMeleeHandler then
     end
 end
 
+local function translateText(text)
+    if not text or text == "" or #text < 2 then
+        return nil
+    end
+    if translatedTexts[text] then
+        return translatedTexts[text]
+    end
+    local success, result = pcall(function()
+        local url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=" .. HttpService:UrlEncode(text)
+        local response = game:HttpGet(url)
+        local decoded = HttpService:JSONDecode(response)
+        if decoded and decoded[1] and decoded[1][1] and decoded[1][1][1] then
+            return decoded[1][1][1]
+        end
+        return nil
+    end)
+    if success and result then
+        translatedTexts[text] = result
+        return result
+    end
+    return nil
+end
+
+local function isEnglish(text)
+    if not text or text == "" then
+        return false
+    end
+    local englishCount = 0
+    local totalCount = 0
+    for char in text:gmatch(".") do
+        local byte = string.byte(char)
+        if byte then
+            totalCount = totalCount + 1
+            if (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122) then
+                englishCount = englishCount + 1
+            end
+        end
+    end
+    if totalCount == 0 then
+        return false
+    end
+    return (englishCount / totalCount) > 0.5
+end
+
+local function processTextObject(textObject)
+    if not TranslationEnabled then
+        return
+    end
+    if not textObject:IsA("TextLabel") and not textObject:IsA("TextButton") and not textObject:IsA("TextBox") then
+        return
+    end
+    local originalText = textObject.Text
+    if not originalText or originalText == "" then
+        return
+    end
+    if not isEnglish(originalText) then
+        return
+    end
+    local translatedText = translateText(originalText)
+    if translatedText and translatedText ~= originalText then
+        textObject.Text = translatedText
+    end
+end
+
+local function scanAndTranslate(parent)
+    if not TranslationEnabled then
+        return
+    end
+    for _, descendant in pairs(parent:GetDescendants()) do
+        if descendant:IsA("TextLabel") or descendant:IsA("TextButton") or descendant:IsA("TextBox") then
+            task.spawn(function()
+                processTextObject(descendant)
+            end)
+        end
+    end
+end
+
+local function onDescendantAdded(descendant)
+    if not TranslationEnabled then
+        return
+    end
+    if descendant:IsA("TextLabel") or descendant:IsA("TextButton") or descendant:IsA("TextBox") then
+        task.delay(0.1, function()
+            processTextObject(descendant)
+        end)
+    end
+end
+
+local function startTranslation()
+    if playerGuiConnection then
+        playerGuiConnection:Disconnect()
+    end
+    if coreGuiConnection then
+        coreGuiConnection:Disconnect()
+    end
+    if heartbeatConnection then
+        heartbeatConnection:Disconnect()
+    end
+    local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+    playerGuiConnection = PlayerGui.DescendantAdded:Connect(onDescendantAdded)
+    coreGuiConnection = CoreGui.DescendantAdded:Connect(onDescendantAdded)
+    lastScanTime = tick()
+    scanInterval = 1.5 / TranslationSpeed
+    heartbeatConnection = RunService.Heartbeat:Connect(function()
+        if not TranslationEnabled then
+            return
+        end
+        local currentTime = tick()
+        if currentTime - lastScanTime >= scanInterval then
+            lastScanTime = currentTime
+            task.spawn(function()
+                scanAndTranslate(PlayerGui)
+            end)
+            pcall(function()
+                for _, gui in pairs(CoreGui:GetChildren()) do
+                    if gui:IsA("ScreenGui") then
+                        task.spawn(function()
+                            scanAndTranslate(gui)
+                        end)
+                    end
+                end
+            end)
+        end
+    end)
+    scanAndTranslate(PlayerGui)
+    pcall(function()
+        for _, gui in pairs(CoreGui:GetChildren()) do
+            if gui:IsA("ScreenGui") then
+                scanAndTranslate(gui)
+            end
+        end
+    end)
+end
+
+local function stopTranslation()
+    if playerGuiConnection then
+        playerGuiConnection:Disconnect()
+        playerGuiConnection = nil
+    end
+    if coreGuiConnection then
+        coreGuiConnection:Disconnect()
+        coreGuiConnection = nil
+    end
+    if heartbeatConnection then
+        heartbeatConnection:Disconnect()
+        heartbeatConnection = nil
+    end
+end
+
 local Window = Library:CreateWindow({
     Title = "死铁轨",
     Footer = "恐拜大帝 制作",
@@ -336,7 +485,6 @@ local Tabs = {
     ESP = Window:AddTab("透视", "eye"),
     Interact = Window:AddTab("交互", "mouse-pointer-2"),
     Bond = Window:AddTab("刷债券", "banknote"),
-    Bond = Window:AddTab("刷债券", "banknote"),
     Settings = Window:AddTab("设置", "settings"),
 }
 
@@ -344,63 +492,6 @@ local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者消息")
 NoticeGroup:AddLabel('恐拜大帝将持续更新此脚本')
 NoticeGroup:AddLabel('创作者：恐拜大帝')
 NoticeGroup:AddLabel('QQ：3999698324')
-
-local MonsterGroup = Tabs.Notice:AddRightGroupbox("怪物预知")
-MonsterGroup:AddToggle('MonsterPredict', {
-    Text = '预知今晚怪物',
-    Default = false,
-}):OnChanged(function(value)
-    if value then
-        MonsterPredict = true
-        lastMonsterCount = 0
-        monsterPredictThread = task.spawn(function()
-            while MonsterPredict do
-                local nightEnemies = Workspace:FindFirstChild("NightEnemies")
-                local currentCount = 0
-                local monsterName = "未知"
-                if nightEnemies then
-                    currentCount = #nightEnemies:GetChildren()
-                    for _, v in ipairs(nightEnemies:GetChildren()) do
-                        if v:IsA("Model") then
-                            monsterName = v.Name
-                            break
-                        end
-                    end
-                end
-                if currentCount > 0 and lastMonsterCount == 0 then
-                    local displayName = monsterName
-                    if monsterName == "Wolf" then
-                        displayName = "狼"
-                    elseif monsterName == "Werewolf" then
-                        displayName = "狼人"
-                    elseif monsterName == "Vampire" then
-                        displayName = "吸血鬼"
-                    elseif monsterName == "Walker" then
-                        displayName = "正常僵尸"
-                    elseif monsterName == "Runner" then
-                        displayName = "奔跑僵尸"
-                    end
-                    StarterGui:SetCore("SendNotification", {
-                        Title = "怪物预知",
-                        Text = "今晚的怪物是：" .. displayName,
-                        Icon = "rbxthumb://type=Asset&id=17366451283&w=150&h=150",
-                        Duration = 15,
-                    })
-                end
-                lastMonsterCount = currentCount
-                task.wait(2)
-            end
-        end)
-        Library:Notify("怪物预知已启用", 2)
-    else
-        MonsterPredict = false
-        if monsterPredictThread then
-            task.cancel(monsterPredictThread)
-            monsterPredictThread = nil
-        end
-        Library:Notify("怪物预知已关闭", 2)
-    end
-end)
 
 local MeleeGroup = Tabs.Main:AddLeftGroupbox("近战杀戮")
 MeleeGroup:AddToggle('MeleeSpam', {
@@ -796,6 +887,63 @@ FuelGroup:AddToggle('FuelGuiEnabled', {
             fuelGui.Enabled = false
         end
         Library:Notify("燃油状态显示已关闭", 2)
+    end
+end)
+
+local MonsterGroup = Tabs.Main:AddRightGroupbox("怪物预知")
+MonsterGroup:AddToggle('MonsterPredict', {
+    Text = '预知今晚怪物',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        MonsterPredict = true
+        lastMonsterCount = 0
+        monsterPredictThread = task.spawn(function()
+            while MonsterPredict do
+                local nightEnemies = Workspace:FindFirstChild("NightEnemies")
+                local currentCount = 0
+                local monsterName = "未知"
+                if nightEnemies then
+                    currentCount = #nightEnemies:GetChildren()
+                    for _, v in ipairs(nightEnemies:GetChildren()) do
+                        if v:IsA("Model") then
+                            monsterName = v.Name
+                            break
+                        end
+                    end
+                end
+                if currentCount > 0 and lastMonsterCount == 0 then
+                    local displayName = monsterName
+                    if monsterName == "Wolf" then
+                        displayName = "狼"
+                    elseif monsterName == "Werewolf" then
+                        displayName = "狼人"
+                    elseif monsterName == "Vampire" then
+                        displayName = "吸血鬼"
+                    elseif monsterName == "Walker" then
+                        displayName = "正常僵尸"
+                    elseif monsterName == "Runner" then
+                        displayName = "奔跑僵尸"
+                    end
+                    StarterGui:SetCore("SendNotification", {
+                        Title = "怪物预知",
+                        Text = "今晚的怪物是：" .. displayName,
+                        Icon = "rbxthumb://type=Asset&id=17366451283&w=150&h=150",
+                        Duration = 15,
+                    })
+                end
+                lastMonsterCount = currentCount
+                task.wait(2)
+            end
+        end)
+        Library:Notify("怪物预知已启用", 2)
+    else
+        MonsterPredict = false
+        if monsterPredictThread then
+            task.cancel(monsterPredictThread)
+            monsterPredictThread = nil
+        end
+        Library:Notify("怪物预知已关闭", 2)
     end
 end)
 
@@ -1666,210 +1814,14 @@ end)
 
 local BondGroup = Tabs.Bond:AddLeftGroupbox("刷债券")
 BondGroup:AddButton("启动刷债券脚本", function()
-    local success, err = pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/afkar-gg/sc/refs/heads/main/auto-bond"))()
-    end)
-    if success then
-        Library:Notify("刷债券脚本已启动", 3)
-    else
-        Library:Notify("刷债券脚本启动失败: " .. tostring(err), 5)
-    end
-end)
-
-
-local BondGroup = Tabs.Bond:AddLeftGroupbox("刷债券")
-BondGroup:AddButton("启动刷债券脚本", function()
+    TranslationEnabled = true
+    TranslationSpeed = 5
+    scanInterval = 0.3
+    startTranslation()
     pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/afkar-gg/sc/refs/heads/main/auto-bond"))()
     end)
-    Library:Notify("刷债券脚本已启动", 3)
-end)
-
-local function translateText(text)
-    if not text or text == "" or #text < 2 then
-        return nil
-    end
-    if translatedTexts[text] then
-        return translatedTexts[text]
-    end
-    local success, result = pcall(function()
-        local url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=" .. HttpService:UrlEncode(text)
-        local response = game:HttpGet(url)
-        local decoded = HttpService:JSONDecode(response)
-        if decoded and decoded[1] and decoded[1][1] and decoded[1][1][1] then
-            return decoded[1][1][1]
-        end
-        return nil
-    end)
-    if success and result then
-        translatedTexts[text] = result
-        return result
-    end
-    return nil
-end
-
-local function isEnglish(text)
-    if not text or text == "" then
-        return false
-    end
-    local englishCount = 0
-    local totalCount = 0
-    for char in text:gmatch(".") do
-        local byte = string.byte(char)
-        if byte then
-            totalCount = totalCount + 1
-            if (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122) then
-                englishCount = englishCount + 1
-            end
-        end
-    end
-    if totalCount == 0 then
-        return false
-    end
-    return (englishCount / totalCount) > 0.5
-end
-
-local function processTextObject(textObject)
-    if not TranslationEnabled then
-        return
-    end
-    if not textObject:IsA("TextLabel") and not textObject:IsA("TextButton") and not textObject:IsA("TextBox") then
-        return
-    end
-    local originalText = textObject.Text
-    if not originalText or originalText == "" then
-        return
-    end
-    if not isEnglish(originalText) then
-        return
-    end
-    local translatedText = translateText(originalText)
-    if translatedText and translatedText ~= originalText then
-        textObject.Text = translatedText
-    end
-end
-
-local function scanAndTranslate(parent)
-    if not TranslationEnabled then
-        return
-    end
-    for _, descendant in pairs(parent:GetDescendants()) do
-        if descendant:IsA("TextLabel") or descendant:IsA("TextButton") or descendant:IsA("TextBox") then
-            task.spawn(function()
-                processTextObject(descendant)
-            end)
-        end
-    end
-end
-
-local function onDescendantAdded(descendant)
-    if not TranslationEnabled then
-        return
-    end
-    if descendant:IsA("TextLabel") or descendant:IsA("TextButton") or descendant:IsA("TextBox") then
-        task.delay(0.1, function()
-            processTextObject(descendant)
-        end)
-    end
-end
-
-local function startTranslation()
-    if playerGuiConnection then
-        playerGuiConnection:Disconnect()
-    end
-    if coreGuiConnection then
-        coreGuiConnection:Disconnect()
-    end
-    if heartbeatConnection then
-        heartbeatConnection:Disconnect()
-    end
-    local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-    playerGuiConnection = PlayerGui.DescendantAdded:Connect(onDescendantAdded)
-    coreGuiConnection = CoreGui.DescendantAdded:Connect(onDescendantAdded)
-    lastScanTime = tick()
-    scanInterval = 1.5 / TranslationSpeed
-    heartbeatConnection = RunService.Heartbeat:Connect(function()
-        if not TranslationEnabled then
-            return
-        end
-        local currentTime = tick()
-        if currentTime - lastScanTime >= scanInterval then
-            lastScanTime = currentTime
-            task.spawn(function()
-                scanAndTranslate(PlayerGui)
-            end)
-            pcall(function()
-                for _, gui in pairs(CoreGui:GetChildren()) do
-                    if gui:IsA("ScreenGui") then
-                        task.spawn(function()
-                            scanAndTranslate(gui)
-                        end)
-                    end
-                end
-            end)
-        end
-    end)
-    scanAndTranslate(PlayerGui)
-    pcall(function()
-        for _, gui in pairs(CoreGui:GetChildren()) do
-            if gui:IsA("ScreenGui") then
-                scanAndTranslate(gui)
-            end
-        end
-    end)
-end
-
-local function stopTranslation()
-    if playerGuiConnection then
-        playerGuiConnection:Disconnect()
-        playerGuiConnection = nil
-    end
-    if coreGuiConnection then
-        coreGuiConnection:Disconnect()
-        coreGuiConnection = nil
-    end
-    if heartbeatConnection then
-        heartbeatConnection:Disconnect()
-        heartbeatConnection = nil
-    end
-end
-
-local TranslateGroup = Tabs.Settings:AddRightGroupbox("自动翻译")
-TranslateGroup:AddLabel("注意：先开启翻译，再加载其他脚本")
-TranslateGroup:AddLabel("小部分特殊UI无法翻译")
-TranslateGroup:AddToggle('TranslationEnabled', {
-    Text = '启用自动翻译',
-    Default = false,
-}):OnChanged(function(value)
-    TranslationEnabled = value
-    if value then
-        startTranslation()
-        Library:Notify("自动翻译已启用", 2)
-    else
-        stopTranslation()
-        Library:Notify("自动翻译已关闭", 2)
-    end
-end)
-
-TranslateGroup:AddSlider('TranslationSpeed', {
-    Text = '翻译速度',
-    Default = 2,
-    Min = 1,
-    Max = 5,
-    Rounding = 0,
-}):OnChanged(function(value)
-    TranslationSpeed = value
-    scanInterval = 1.5 / value
-end)
-
-TranslateGroup:AddButton("复制官方群聊", function()
-    if setclipboard then
-        setclipboard("766691084")
-        Library:Notify("群号已复制到剪贴板", 2)
-    elseif toclipboard then
-        toclipboard("766691084")
-        Library:Notify("群号已复制到剪贴板", 2)
-    end
+    Library:Notify("刷债券脚本已启动，自动翻译已开启（速度5）", 3)
 end)
 
 local UnloadGroup = Tabs.Settings:AddLeftGroupbox("脚本管理")
