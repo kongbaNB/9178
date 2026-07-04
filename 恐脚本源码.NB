@@ -15,6 +15,18 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
+local pendingSliderValues = {}
+local sliderReleaseActions = {}
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        for id, value in pairs(pendingSliderValues) do
+            if sliderReleaseActions[id] then
+                sliderReleaseActions[id](value)
+            end
+            pendingSliderValues[id] = nil
+        end
+    end
+end)
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/恐脚本.UI"))()
@@ -129,6 +141,11 @@ local SmoothFollowEnabled = false
 local FollowNearestEnabled = false
 local AimbotEnabled = false
 local AimbotRadius = math.floor(Camera.ViewportSize.Y / 3)
+local AimbotSmoothness = 0.2
+local AimbotOffsetX = 0
+local AimbotOffsetY = 66
+local AimbotMode = 1
+local currentAimbotTarget = nil
 local LockViewEnabled = false
 local CrosshairEnabled = false
 local CrosshairSpinEnabled = false
@@ -251,17 +268,24 @@ local function stopAntiAFK()
 if antiAFKConnection then antiAFKConnection:Disconnect() end
 antiAFKConnection = nil
 end
+local AimbotCircleGui = Instance.new("ScreenGui")
+AimbotCircleGui.Name = "AimbotCircleGui"
+AimbotCircleGui.Parent = CoreGui
+AimbotCircleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+AimbotCircleGui.ResetOnSpawn = false
+
 local AimbotCircle = Instance.new("Frame")
 AimbotCircle.Name = "AimbotCircle"
-AimbotCircle.Parent = CoreGui
+AimbotCircle.Parent = AimbotCircleGui
 AimbotCircle.Size = UDim2.new(0, AimbotRadius*2, 0, AimbotRadius*2)
 AimbotCircle.Position = UDim2.new(0.5, -AimbotRadius, 0.5, -AimbotRadius)
-AimbotCircle.BackgroundTransparency = 1
+AimbotCircle.BackgroundTransparency = 0.85
+AimbotCircle.BackgroundColor3 = Color3.new(0,0,0)
 AimbotCircle.BorderSizePixel = 0
 AimbotCircle.ZIndex = 100
 local circleStroke = Instance.new("UIStroke")
 circleStroke.Color = Color3.new(1,1,1)
-circleStroke.Thickness = 2
+circleStroke.Thickness = 2.5
 circleStroke.LineJoinMode = Enum.LineJoinMode.Round
 circleStroke.Parent = AimbotCircle
 local circleCorner = Instance.new("UICorner")
@@ -378,36 +402,81 @@ root.CFrame = CFrame.new(root.Position, root.Position + flatDir)
 end
 end)
 RunService.RenderStepped:Connect(function()
-if not AimbotEnabled then AimbotCircle.Visible = false return end
-AimbotCircle.Visible = true
-AimbotCircle.Size = UDim2.new(0, AimbotRadius*2, 0, AimbotRadius*2)
-AimbotCircle.Position = UDim2.new(0.5, -AimbotRadius, 0.5, -AimbotRadius)
-local camPos = Camera.CFrame.Position
-local closestDist = math.huge
-local closestPlayer = nil
-for _, p in ipairs(Players:GetPlayers()) do
-if p == LocalPlayer then continue end
-local char = p.Character
-if char and char:FindFirstChild("HumanoidRootPart") then
-local targetPos = char.HumanoidRootPart.Position
-local screenPos, onScreen = Camera:WorldToScreenPoint(targetPos)
-if onScreen then
-local distFromCenter = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
-if distFromCenter <= AimbotRadius then
-local realDist = (targetPos - camPos).Magnitude
-if realDist < closestDist then
-closestDist = realDist
-closestPlayer = p
-end
-end
-end
-end
-end
-if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
-local targetPos = closestPlayer.Character.HumanoidRootPart.Position
-local dir = (targetPos - camPos).Unit
-Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(camPos, camPos + dir), 0.2)
-end
+    if not AimbotEnabled then 
+        AimbotCircle.Visible = false 
+        currentAimbotTarget = nil
+        return 
+    end
+    local maxRadius = math.floor(math.min(Camera.ViewportSize.X, Camera.ViewportSize.Y) / 2)
+    local displayRadius = math.min(AimbotRadius, maxRadius)
+    AimbotCircle.Visible = true
+    AimbotCircle.Size = UDim2.new(0, displayRadius*2, 0, displayRadius*2)
+    AimbotCircle.Position = UDim2.new(0.5, -displayRadius, 0.5, -displayRadius)
+    local camPos = Camera.CFrame.Position
+    local centerX = Camera.ViewportSize.X/2 + AimbotOffsetX
+    local centerY = Camera.ViewportSize.Y/2 + AimbotOffsetY
+
+    local function isTargetValid(target)
+        if not target or not target:IsDescendantOf(Players) then return false end
+        local char = target.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return false end
+        local targetPos = char.HumanoidRootPart.Position + Vector3.new(0, 3, 0)
+        local screenPos, onScreen = Camera:WorldToScreenPoint(targetPos)
+        if not onScreen then return false end
+        local distFromCenter = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(centerX, centerY)).Magnitude
+        if distFromCenter > AimbotRadius then return false end
+        return true
+    end
+
+    local function findNewTarget()
+        local closestDist = math.huge
+        local closestPlayer = nil
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p == LocalPlayer then continue end
+            local char = p.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local targetPos = char.HumanoidRootPart.Position + Vector3.new(0, 3, 0)
+                local screenPos, onScreen = Camera:WorldToScreenPoint(targetPos)
+                if onScreen then
+                    local distFromCenter = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(centerX, centerY)).Magnitude
+                    if AimbotMode == 1 then
+                        if distFromCenter <= AimbotRadius then
+                            local realDist = (targetPos - camPos).Magnitude
+                            if realDist < closestDist then
+                                closestDist = realDist
+                                closestPlayer = p
+                            end
+                        end
+                    else
+                        local realDist = (targetPos - camPos).Magnitude
+                        if realDist < closestDist then
+                            closestDist = realDist
+                            closestPlayer = p
+                        end
+                    end
+                end
+            end
+        end
+        return closestPlayer
+    end
+
+    if currentAimbotTarget and isTargetValid(currentAimbotTarget) then
+        -- 持续锁定当前目标
+    else
+        currentAimbotTarget = findNewTarget()
+    end
+
+    if currentAimbotTarget and currentAimbotTarget.Character and currentAimbotTarget.Character:FindFirstChild("HumanoidRootPart") then
+        local targetPos = currentAimbotTarget.Character.HumanoidRootPart.Position + Vector3.new(0, 3, 0)
+        local screenPos = Camera:WorldToScreenPoint(targetPos)
+        local adjX = math.clamp(screenPos.X + AimbotOffsetX, 0, Camera.ViewportSize.X)
+        local adjY = math.clamp(screenPos.Y + AimbotOffsetY, 0, Camera.ViewportSize.Y)
+        local depth = (targetPos - camPos).Magnitude
+        local ray = Camera:ViewportPointToRay(adjX, adjY)
+        local offsetTarget = camPos + ray.Direction.Unit * depth
+        local targetCFrame = CFrame.new(camPos, offsetTarget)
+        Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, AimbotSmoothness)
+    end
 end)
 local CrosshairGui = nil
 local CrosshairFrame = nil
@@ -721,11 +790,20 @@ selectGui.Name = "PlayerSelect"
 selectGui.Parent = LocalPlayer.PlayerGui
 selectGui.IgnoreGuiInset = true
 selectGui.ResetOnSpawn = false
+selectGui.DisplayOrder = 999
+local blocker = Instance.new("Frame")
+blocker.Name = "Blocker"
+blocker.Parent = selectGui
+blocker.Size = UDim2.new(1, 0, 1, 0)
+blocker.BackgroundTransparency = 1
+blocker.Active = true
+blocker.ZIndex = 0
 local bg = Instance.new("Frame")
 bg.Parent = selectGui
 bg.Size = UDim2.new(0, 200, 0, 250)
 bg.Position = UDim2.new(0.5, -100, 0.5, -125)
 bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+bg.ZIndex = 1
 local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
 local title = Instance.new("TextLabel")
 title.Parent = bg
@@ -1105,11 +1183,20 @@ selectGui.Name = "SmoothFollowSelect"
 selectGui.Parent = LocalPlayer.PlayerGui
 selectGui.IgnoreGuiInset = true
 selectGui.ResetOnSpawn = false
+selectGui.DisplayOrder = 999
+local blocker = Instance.new("Frame")
+blocker.Name = "Blocker"
+blocker.Parent = selectGui
+blocker.Size = UDim2.new(1, 0, 1, 0)
+blocker.BackgroundTransparency = 1
+blocker.Active = true
+blocker.ZIndex = 0
 local bg = Instance.new("Frame")
 bg.Parent = selectGui
 bg.Size = UDim2.new(0, 200, 0, 250)
 bg.Position = UDim2.new(0.5, -100, 0.5, -125)
 bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+bg.ZIndex = 1
 local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
 local title = Instance.new("TextLabel")
 title.Parent = bg
@@ -1168,11 +1255,20 @@ selectGui.Name = "HarassSelect"
 selectGui.Parent = LocalPlayer.PlayerGui
 selectGui.IgnoreGuiInset = true
 selectGui.ResetOnSpawn = false
+selectGui.DisplayOrder = 999
+local blocker = Instance.new("Frame")
+blocker.Name = "Blocker"
+blocker.Parent = selectGui
+blocker.Size = UDim2.new(1, 0, 1, 0)
+blocker.BackgroundTransparency = 1
+blocker.Active = true
+blocker.ZIndex = 0
 local bg = Instance.new("Frame")
 bg.Parent = selectGui
 bg.Size = UDim2.new(0, 220, 0, 300)
 bg.Position = UDim2.new(0.5, -110, 0.5, -150)
 bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+bg.ZIndex = 1
 local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
 local title = Instance.new("TextLabel")
 title.Parent = bg
@@ -1530,11 +1626,14 @@ end
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "穿墙", Text = state and "已开启" or "已关闭", Duration = 3})
 end })
 page2:AddSlider({ Text = "修改移速", Min = 5, Max = 1000, Default = 16, Callback = function(val)
-local hum = getHumanoid()
-if hum then hum.WalkSpeed = val end
-startSpeedAntiPull(val)
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "修改移速", Text = "移速已设置为：" .. tostring(val), Duration = 3})
+    pendingSliderValues["movespeed"] = val
 end })
+sliderReleaseActions["movespeed"] = function(val)
+    local hum = getHumanoid()
+    if hum then hum.WalkSpeed = val end
+    startSpeedAntiPull(val)
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "修改移速", Text = "移速已设置为：" .. tostring(val), Duration = 3})
+end
 page2:AddToggle({ Text = "夜视", Default = false, Callback = function(state)
 NightVisionEnabled = state
 local Lighting = game:GetService("Lighting")
@@ -1647,13 +1746,43 @@ page3:AddAimbotPanel({
 Text = "自瞄半径", Title = "自瞄半径",
 Default = math.floor(Camera.ViewportSize.Y / 3),
 Min = 50,
-Max = math.floor(Camera.ViewportSize.Y * 0.8),
-OnChange = function(r) AimbotRadius = r end
+Max = math.floor(math.min(Camera.ViewportSize.X, Camera.ViewportSize.Y) / 2),
+OnChange = function(r) pendingSliderValues["aimbotradius"] = r end
 })
+sliderReleaseActions["aimbotradius"] = function(r)
+    AimbotRadius = r
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄半径", Text = "已设置为：" .. tostring(r), Duration = 2})
+end
 page3:AddToggle({ Text = "自瞄", Default = false, Callback = function(state)
 AimbotEnabled = state
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = state and "已开启，请在面板中调整半径" or "已关闭", Duration = 3})
 end })
+page3:AddToggle({ Text = "优先最近敌人", Default = false, Callback = function(state)
+AimbotMode = state and 2 or 1
+local modeText = state and "优先最近敌人（无视圆圈）" or "优先圆圈内敌人"
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄模式", Text = modeText, Duration = 3})
+end })
+page3:AddSlider({ Text = "自瞄平滑度", Min = 1, Max = 100, Default = 20, Callback = function(val)
+    pendingSliderValues["aimbotsmooth"] = val
+end })
+sliderReleaseActions["aimbotsmooth"] = function(val)
+    AimbotSmoothness = val / 100
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄平滑度", Text = "已设置为：" .. val .. "%", Duration = 2})
+end
+page3:AddSlider({ Text = "自瞄X轴偏移", Min = -200, Max = 200, Default = 0, Callback = function(val)
+    pendingSliderValues["aimbotoffsetx"] = val
+end })
+sliderReleaseActions["aimbotoffsetx"] = function(val)
+    AimbotOffsetX = val
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄X轴偏移", Text = "已设置为：" .. val, Duration = 2})
+end
+page3:AddSlider({ Text = "自瞄Y轴偏移", Min = -200, Max = 200, Default = 66, Callback = function(val)
+    pendingSliderValues["aimbotoffsety"] = val
+end })
+sliderReleaseActions["aimbotoffsety"] = function(val)
+    AimbotOffsetY = val
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄Y轴偏移", Text = "已设置为：" .. val, Duration = 2})
+end
 page3:AddToggle({ Text = "锁定视角", Default = false, Callback = function(state)
 LockViewEnabled = state
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "锁定视角", Text = state and "已开启" or "已关闭", Duration = 3})
@@ -1703,8 +1832,16 @@ SpinEnabled = state
 if state then startSpin() else stopSpin() end
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "原地旋转", Text = state and "已开启" or "已关闭", Duration = 3})
 end })
-page3:AddHarassSpeedPanel({ Text = "操人速度", Title = "操人速度 (次/秒)", Default = 5, Min = 1, Max = 20, OnChange = function(speed) harassSpeed = speed end })
-page3:AddSpinSpeedPanel({ Text = "旋转速度", Title = "旋转速度 (度/秒)", Default = 360, Min = 1, Max = 10000, OnChange = function(speed) SpinSpeed = speed end })
+page3:AddHarassSpeedPanel({ Text = "操人速度", Title = "操人速度 (次/秒)", Default = 5, Min = 1, Max = 20, OnChange = function(speed) pendingSliderValues["harassspeed"] = speed end })
+sliderReleaseActions["harassspeed"] = function(speed)
+    harassSpeed = speed
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "操人速度", Text = "已设置为：" .. speed .. " 次/秒", Duration = 2})
+end
+page3:AddSpinSpeedPanel({ Text = "旋转速度", Title = "旋转速度 (度/秒)", Default = 360, Min = 1, Max = 10000, OnChange = function(speed) pendingSliderValues["spinspeed"] = speed end })
+sliderReleaseActions["spinspeed"] = function(speed)
+    SpinSpeed = speed
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "旋转速度", Text = "已设置为：" .. speed .. " 度/秒", Duration = 2})
+end
 local page4 = window:AddPage("杂项")
 page4:AddToggle({ Text = "防甩飞", Default = false, Callback = function(state)
 AntiFlingEnabled = state
@@ -1778,12 +1915,21 @@ placeGui.Name = "PlaceIdTeleportGui"
 placeGui.Parent = LocalPlayer.PlayerGui
 placeGui.IgnoreGuiInset = true
 placeGui.ResetOnSpawn = false
+placeGui.DisplayOrder = 999
+local blocker = Instance.new("Frame")
+blocker.Name = "Blocker"
+blocker.Parent = placeGui
+blocker.Size = UDim2.new(1, 0, 1, 0)
+blocker.BackgroundTransparency = 1
+blocker.Active = true
+blocker.ZIndex = 0
 local bg = Instance.new("Frame")
 bg.Parent = placeGui
 bg.Size = UDim2.new(0, 320, 0, 200)
 bg.Position = UDim2.new(0.5, -160, 0.5, -100)
 bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 bg.BorderSizePixel = 0
+bg.ZIndex = 1
 Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 12)
 local title = Instance.new("TextLabel")
 title.Parent = bg
@@ -1869,12 +2015,21 @@ kickGui.Name = "CustomKickGui"
 kickGui.Parent = LocalPlayer.PlayerGui
 kickGui.IgnoreGuiInset = true
 kickGui.ResetOnSpawn = false
+kickGui.DisplayOrder = 999
+local blocker = Instance.new("Frame")
+blocker.Name = "Blocker"
+blocker.Parent = kickGui
+blocker.Size = UDim2.new(1, 0, 1, 0)
+blocker.BackgroundTransparency = 1
+blocker.Active = true
+blocker.ZIndex = 0
 local bg = Instance.new("Frame")
 bg.Parent = kickGui
 bg.Size = UDim2.new(0, 320, 0, 280)
 bg.Position = UDim2.new(0.5, -160, 0.5, -140)
 bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 bg.BorderSizePixel = 0
+bg.ZIndex = 1
 Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 12)
 local title = Instance.new("TextLabel")
 title.Parent = bg
@@ -1982,12 +2137,21 @@ confirmGui.Name = "CustomConfirmGui"
 confirmGui.Parent = LocalPlayer.PlayerGui
 confirmGui.IgnoreGuiInset = true
 confirmGui.ResetOnSpawn = false
+confirmGui.DisplayOrder = 999
+local blocker = Instance.new("Frame")
+blocker.Name = "Blocker"
+blocker.Parent = confirmGui
+blocker.Size = UDim2.new(1, 0, 1, 0)
+blocker.BackgroundTransparency = 1
+blocker.Active = true
+blocker.ZIndex = 0
 local bg = Instance.new("Frame")
 bg.Parent = confirmGui
 bg.Size = UDim2.new(0, 320, 0, 260)
 bg.Position = UDim2.new(0.5, -160, 0.5, -130)
 bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 bg.BorderSizePixel = 0
+bg.ZIndex = 1
 Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 12)
 local title = Instance.new("TextLabel")
 title.Parent = bg
