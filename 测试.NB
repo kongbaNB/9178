@@ -144,6 +144,7 @@ local AimbotRadius = math.floor(Camera.ViewportSize.Y / 3)
 local AimbotSmoothness = 0.2
 local AimbotOffsetX = 0
 local AimbotOffsetY = -30
+local AimbotMode = 1
 local LockViewEnabled = false
 local CrosshairEnabled = false
 local CrosshairSpinEnabled = false
@@ -422,7 +423,15 @@ RunService.RenderStepped:Connect(function()
             local screenPos, onScreen = Camera:WorldToScreenPoint(targetPos)
             if onScreen then
                 local distFromCenter = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(centerX, centerY)).Magnitude
-                if distFromCenter <= AimbotRadius then
+                if AimbotMode == 1 then
+                    if distFromCenter <= AimbotRadius then
+                        local realDist = (targetPos - camPos).Magnitude
+                        if realDist < closestDist then
+                            closestDist = realDist
+                            closestPlayer = p
+                        end
+                    end
+                else
                     local realDist = (targetPos - camPos).Magnitude
                     if realDist < closestDist then
                         closestDist = realDist
@@ -1722,6 +1731,11 @@ end
 page3:AddToggle({ Text = "自瞄", Default = false, Callback = function(state)
 AimbotEnabled = state
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = state and "已开启，请在面板中调整半径" or "已关闭", Duration = 3})
+end })
+page3:AddToggle({ Text = "优先最近敌人", Default = false, Callback = function(state)
+AimbotMode = state and 2 or 1
+local modeText = state and "优先最近敌人（无视圆圈）" or "优先圆圈内敌人"
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄模式", Text = modeText, Duration = 3})
 end })
 page3:AddSlider({ Text = "自瞄平滑度", Min = 1, Max = 100, Default = 20, Callback = function(val)
     pendingSliderValues["aimbotsmooth"] = val
