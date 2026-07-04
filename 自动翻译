@@ -1,0 +1,271 @@
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "恐脚本--自动翻译",
+    Icon = "rbxassetid://113517588654522",
+    IconThemed = true,
+    Author = "恐拜大帝",
+    Folder = "恐脚本",
+    Size = UDim2.fromOffset(520, 340),
+    Transparent = true,
+    Theme = "Dark",
+    SideBarWidth = 80,
+    ScrollBarEnabled = true,
+})
+
+Window:EditOpenButton({
+    Title = "自动翻译",
+    Icon = "globe",
+    CornerRadius = UDim.new(0, 16),
+    StrokeThickness = 2,
+    Color = ColorSequence.new(
+        Color3.fromHex("FF0F7B"),
+        Color3.fromHex("F89B29")
+    ),
+    Draggable = true,
+})
+
+local translationEnabled = false
+local translationSpeed = 2
+local translatedTexts = {}
+local heartbeatConnection = nil
+local playerGuiConnection = nil
+local coreGuiConnection = nil
+
+local function translateText(text)
+    if not text or text == "" or #text < 2 then
+        return nil
+    end
+    if translatedTexts[text] then
+        return translatedTexts[text]
+    end
+    local success, result = pcall(function()
+        local url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=" .. HttpService:UrlEncode(text)
+        local response = game:HttpGet(url)
+        local decoded = HttpService:JSONDecode(response)
+        if decoded and decoded[1] and decoded[1][1] and decoded[1][1][1] then
+            return decoded[1][1][1]
+        end
+        return nil
+    end)
+    if success and result then
+        translatedTexts[text] = result
+        return result
+    end
+    return nil
+end
+
+local function isEnglish(text)
+    if not text or text == "" then
+        return false
+    end
+    local englishCount = 0
+    local totalCount = 0
+    for char in text:gmatch(".") do
+        local byte = string.byte(char)
+        if byte then
+            totalCount = totalCount + 1
+            if (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122) then
+                englishCount = englishCount + 1
+            end
+        end
+    end
+    if totalCount == 0 then
+        return false
+    end
+    return (englishCount / totalCount) > 0.5
+end
+
+local function processTextObject(textObject)
+    if not translationEnabled then
+        return
+    end
+    if not textObject:IsA("TextLabel") and not textObject:IsA("TextButton") and not textObject:IsA("TextBox") then
+        return
+    end
+    local originalText = textObject.Text
+    if not originalText or originalText == "" then
+        return
+    end
+    if not isEnglish(originalText) then
+        return
+    end
+    local translatedText = translateText(originalText)
+    if translatedText and translatedText ~= originalText then
+        textObject.Text = translatedText
+    end
+end
+
+local function scanAndTranslate(parent)
+    if not translationEnabled then
+        return
+    end
+    for _, descendant in pairs(parent:GetDescendants()) do
+        if descendant:IsA("TextLabel") or descendant:IsA("TextButton") or descendant:IsA("TextBox") then
+            task.spawn(function()
+                processTextObject(descendant)
+            end)
+        end
+    end
+end
+
+local function onDescendantAdded(descendant)
+    if not translationEnabled then
+        return
+    end
+    if descendant:IsA("TextLabel") or descendant:IsA("TextButton") or descendant:IsA("TextBox") then
+        task.delay(0.1, function()
+            processTextObject(descendant)
+        end)
+    end
+end
+
+local function startTranslation()
+    if playerGuiConnection then
+        playerGuiConnection:Disconnect()
+    end
+    if coreGuiConnection then
+        coreGuiConnection:Disconnect()
+    end
+    if heartbeatConnection then
+        heartbeatConnection:Disconnect()
+    end
+    local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+    playerGuiConnection = PlayerGui.DescendantAdded:Connect(onDescendantAdded)
+    coreGuiConnection = CoreGui.DescendantAdded:Connect(onDescendantAdded)
+    local lastScanTime = tick()
+    local scanInterval = 1 / translationSpeed
+    heartbeatConnection = RunService.Heartbeat:Connect(function()
+        if not translationEnabled then
+            return
+        end
+        local currentTime = tick()
+        if currentTime - lastScanTime >= scanInterval then
+            lastScanTime = currentTime
+            task.spawn(function()
+                scanAndTranslate(PlayerGui)
+            end)
+            pcall(function()
+                for _, gui in pairs(CoreGui:GetChildren()) do
+                    if gui:IsA("ScreenGui") then
+                        task.spawn(function()
+                            scanAndTranslate(gui)
+                        end)
+                    end
+                end
+            end)
+        end
+    end)
+    scanAndTranslate(PlayerGui)
+    pcall(function()
+        for _, gui in pairs(CoreGui:GetChildren()) do
+            if gui:IsA("ScreenGui") then
+                scanAndTranslate(gui)
+            end
+        end
+    end)
+end
+
+local function stopTranslation()
+    if playerGuiConnection then
+        playerGuiConnection:Disconnect()
+        playerGuiConnection = nil
+    end
+    if coreGuiConnection then
+        coreGuiConnection:Disconnect()
+        coreGuiConnection = nil
+    end
+    if heartbeatConnection then
+        heartbeatConnection:Disconnect()
+        heartbeatConnection = nil
+    end
+end
+
+local NotifyTab = Window:Tab({ Title = "通知" })
+local MainTab = Window:Tab({ Title = "主要" })
+local SettingsTab = Window:Tab({ Title = "设置" })
+
+NotifyTab:Paragraph({
+    Title = "恐脚本--自动翻译",
+    Desc = "请先加载此脚本开启翻译再加载你需要翻译的脚本\n特殊UI无法翻译",
+})
+
+NotifyTab:Button({
+    Title = "官方群聊",
+    Desc = "点击复制群号",
+    Callback = function()
+        if setclipboard then
+            setclipboard("1001577641")
+        elseif toclipboard then
+            toclipboard("1001577641")
+        end
+        WindUI:Notify({
+            Title = "已复制",
+            Content = "群号 1001577641 已复制到剪贴板",
+            Duration = 3,
+        })
+    end
+})
+
+MainTab:Toggle({
+    Title = "自动翻译",
+    Value = false,
+    Callback = function(state)
+        translationEnabled = state
+        if translationEnabled then
+            startTranslation()
+        else
+            stopTranslation()
+        end
+    end
+})
+
+MainTab:Slider({
+    Title = "翻译速度",
+    Value = {
+        Min = 1,
+        Max = 10,
+        Default = 2,
+    },
+    Callback = function(value)
+        translationSpeed = value
+    end
+})
+
+SettingsTab:Colorpicker({
+    Title = "背景颜色",
+    Default = Color3.fromRGB(255, 0, 0),
+    Callback = function(color)
+        local current = WindUI:GetCurrentTheme()
+        local themes = WindUI:GetThemes()
+        local theme = themes[current]
+        if theme then
+            theme.Outline = color
+            WindUI:AddTheme(theme)
+            WindUI:SetTheme(current)
+        end
+    end
+})
+
+SettingsTab:Colorpicker({
+    Title = "背景颜色2",
+    Default = Color3.fromRGB(0, 0, 0),
+    Callback = function(color)
+        local current = WindUI:GetCurrentTheme()
+        local themes = WindUI:GetThemes()
+        local theme = themes[current]
+        if theme then
+            theme.Background = color
+            WindUI:AddTheme(theme)
+            WindUI:SetTheme(current)
+        end
+    end
+})
+
+Window:SelectTab(1)
