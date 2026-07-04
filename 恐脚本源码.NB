@@ -124,7 +124,6 @@ end)
 local InfiniteJumpEnabled = false
 local NoclipEnabled = false
 local NightVisionEnabled = false
-local AntiPushEnabled = false
 local AutoTranslateEnabled = false
 local SmoothFollowEnabled = false
 local FollowNearestEnabled = false
@@ -142,34 +141,86 @@ local spinConnection = nil
 local antiAFKEnabled = false
 local antiAFKConnection = nil
 local UIButtons = {}
-local WQAntiFlingEnabled = false
-local WQAntiFlingConnection = nil
-local function startWQAntiFling()
-if WQAntiFlingConnection then WQAntiFlingConnection:Disconnect() end
-WQAntiFlingConnection = RunService.Heartbeat:Connect(function()
-local char = LocalPlayer.Character
-if not char then return end
-for _, part in ipairs(char:GetDescendants()) do
-if part:IsA("BasePart") then
-if part.Velocity.Magnitude > 500 or part.AssemblyLinearVelocity.Magnitude > 500 then
-part.Velocity = Vector3.zero
-part.AssemblyLinearVelocity = Vector3.zero
-part.RotVelocity = Vector3.zero
-part.AssemblyAngularVelocity = Vector3.zero
-part.CFrame = CFrame.new(part.Position + Vector3.new(0, 0.01, 0))
+local AntiFlingEnabled = false
+local AntiFlingConnection = nil
+local antiFlingOriginalStates = {}
+
+local function disablePlayerCollision(player)
+    if player == LocalPlayer then return end
+    local char = player.Character
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            if antiFlingOriginalStates[part] == nil then
+                antiFlingOriginalStates[part] = part.CanCollide
+            end
+            part.CanCollide = false
+        end
+    end
 end
-if part.RotVelocity.Magnitude > 50 then
-part.RotVelocity = Vector3.zero
-part.AssemblyAngularVelocity = Vector3.zero
+
+local function enablePlayerCollision(player)
+    if player == LocalPlayer then return end
+    local char = player.Character
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            if antiFlingOriginalStates[part] ~= nil then
+                part.CanCollide = antiFlingOriginalStates[part]
+                antiFlingOriginalStates[part] = nil
+            end
+        end
+    end
 end
+
+local function enableAllPlayersCollision()
+    for part, state in pairs(antiFlingOriginalStates) do
+        if part and part.Parent then
+            pcall(function() part.CanCollide = state end)
+        end
+    end
+    antiFlingOriginalStates = {}
 end
+
+local function startAntiFling()
+    if AntiFlingConnection then AntiFlingConnection:Disconnect() end
+    for _, p in ipairs(Players:GetPlayers()) do
+        disablePlayerCollision(p)
+    end
+    AntiFlingConnection = RunService.Heartbeat:Connect(function()
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                for _, part in ipairs(p.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        if antiFlingOriginalStates[part] == nil then
+                            antiFlingOriginalStates[part] = part.CanCollide
+                        end
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end
+    end)
 end
+
+local function stopAntiFling()
+    if AntiFlingConnection then AntiFlingConnection:Disconnect() end
+    AntiFlingConnection = nil
+    enableAllPlayersCollision()
+end
+
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(char)
+        if AntiFlingEnabled then
+            task.wait(0.5)
+            disablePlayerCollision(player)
+        end
+    end)
 end)
-end
-local function stopWQAntiFling()
-if WQAntiFlingConnection then WQAntiFlingConnection:Disconnect() end
-WQAntiFlingConnection = nil
-end
+
+Players.PlayerRemoving:Connect(function(player)
+    enablePlayerCollision(player)
+end)
 local function startSpin()
 if spinConnection then spinConnection:Disconnect() end
 spinConnection = RunService.Heartbeat:Connect(function(dt)
@@ -271,15 +322,7 @@ end
 end
 end
 end
-RunService.Stepped:Connect(function()
-if AntiPushEnabled then
-local char = LocalPlayer.Character
-if char then
-local root = char:FindFirstChild("HumanoidRootPart")
-if root then root.CanCollide = false end
-end
-end
-end)
+
 local followTarget = nil
 local followConnection = nil
 local followRange = 5
@@ -1557,14 +1600,7 @@ if nearest and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("H
 LocalPlayer.Character.HumanoidRootPart.CFrame = nearest.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, 3)
 end
 end })
-page3:AddToggle({ Text = "防甩飞", Default = false, Callback = function(state)
-AntiPushEnabled = state
-if not state then
-local char = LocalPlayer.Character
-if char then local root = char:FindFirstChild("HumanoidRootPart"); if root then root.CanCollide = true end end
-end
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "防甩飞", Text = state and "已开启" or "已关闭", Duration = 3})
-end })
+
 page3:AddPlayerSelector({ Text = "选定玩家跟随", Callback = function(player) startFollow(player) end })
 page3:AddButton({ Text = "停止跟随", Callback = function() stopFollow() end })
 page3:AddCoordPanel({
@@ -1650,10 +1686,10 @@ end })
 page3:AddHarassSpeedPanel({ Text = "操人速度", Title = "操人速度 (次/秒)", Default = 5, Min = 1, Max = 20, OnChange = function(speed) harassSpeed = speed end })
 page3:AddSpinSpeedPanel({ Text = "旋转速度", Title = "旋转速度 (度/秒)", Default = 360, Min = 1, Max = 10000, OnChange = function(speed) SpinSpeed = speed end })
 local page4 = window:AddPage("杂项")
-page4:AddToggle({ Text = "WQ防甩飞", Default = false, Callback = function(state)
-WQAntiFlingEnabled = state
-if state then startWQAntiFling() else stopWQAntiFling() end
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "WQ防甩飞", Text = state and "已开启" or "已关闭", Duration = 3})
+page4:AddToggle({ Text = "防甩飞", Default = false, Callback = function(state)
+AntiFlingEnabled = state
+if state then startAntiFling() else stopAntiFling() end
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "防甩飞", Text = state and "已开启" or "已关闭", Duration = 3})
 end })
 page4:AddButton({ Text = "显示时间", Callback = function()
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "显示时间", Text = "正在加载中...", Duration = 5})
@@ -2094,4 +2130,8 @@ end })
 page5:AddButton({ Text = "自然灾害", Callback = function()
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自然灾害", Text = "正在加载中...", Duration = 5})
 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZYZH.NB"))() end)
+end })
+page5:AddButton({ Text = "最强战场", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "最强战场", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCZC.NB"))() end)
 end })
