@@ -140,6 +140,129 @@ local NightVisionEnabled = false
 local AutoTranslateEnabled = false
 local SmoothFollowEnabled = false
 local FollowNearestEnabled = false
+local LockViewEnabled = false
+local CrosshairEnabled = false
+local CrosshairSpinEnabled = false
+local translateLoop = nil
+local translatedTexts = {}
+local speedAntiPull = nil
+local SpinEnabled = false
+local SpinSpeed = 360
+local spinConnection = nil
+local antiAFKEnabled = false
+local antiAFKConnection = nil
+local UIButtons = {}
+local AntiFlingEnabled = false
+local AntiFlingConnection = nil
+local antiFlingOriginalStates = {}
+
+local function disablePlayerCollision(player)
+    if player == LocalPlayer then return end
+    local char = player.Character
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            if antiFlingOriginalStates[part] == nil then
+                antiFlingOriginalStates[part] = part.CanCollide
+            end
+            part.CanCollide = false
+        end
+    end
+end
+
+local function enablePlayerCollision(player)
+    if player == LocalPlayer then return end
+    local char = player.Character
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            if antiFlingOriginalStates[part] ~= nil then
+                part.CanCollide = antiFlingOriginalStates[part]
+                antiFlingOriginalStates[part] = nil
+            end
+        end
+    end
+end
+
+local function enableAllPlayersCollision()
+    for part, state in pairs(antiFlingOriginalStates) do
+        if part and part.Parent then
+            pcall(function() part.CanCollide = state end)
+        end
+    end
+    antiFlingOriginalStates = {}
+end
+
+local function startAntiFling()
+    if AntiFlingConnection then AntiFlingConnection:Disconnect() end
+    for _, p in ipairs(Players:GetPlayers()) do
+        disablePlayerCollision(p)
+    end
+    AntiFlingConnection = RunService.Heartbeat:Connect(function()
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                for _, part in ipairs(p.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        if antiFlingOriginalStates[part] == nil then
+                            antiFlingOriginalStates[part] = part.CanCollide
+                        end
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end
+    end)
+end
+
+local function stopAntiFling()
+    if AntiFlingConnection then AntiFlingConnection:Disconnect() end
+    AntiFlingConnection = nil
+    enableAllPlayersCollision()
+end
+
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(char)
+        if AntiFlingEnabled then
+            task.wait(0.5)
+            disablePlayerCollision(player)
+        end
+    end)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    enablePlayerCollision(player)
+end)
+local function startSpin()
+if spinConnection then spinConnection:Disconnect() end
+spinConnection = RunService.Heartbeat:Connect(function(dt)
+if not SpinEnabled then return end
+local char = LocalPlayer.Character
+if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+local root = char.HumanoidRootPart
+local currentCF = root.CFrame
+local newCF = currentCF * CFrame.Angles(0, math.rad(SpinSpeed * dt), 0)
+root.CFrame = newCF
+end)
+end
+local function stopSpin()
+SpinEnabled = false
+if spinConnection then spinConnection:Disconnect() end
+spinConnection = nil
+end
+local function startAntiAFK()
+if antiAFKConnection then antiAFKConnection:Disconnect() end
+antiAFKConnection = LocalPlayer.Idled:Connect(function()
+local vu = game:GetService("VirtualUser")
+vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+wait(1)
+vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+end)
+end
+local function stopAntiAFK()
+if antiAFKConnection then antiAFKConnection:Disconnect() end
+antiAFKConnection = nil
+end
+local function getHumanoid()
 local char = LocalPlayer.Character
 if char then return char:FindFirstChild("Humanoid") end
 end
@@ -249,6 +372,58 @@ if flatDir.Magnitude > 0.01 then
 root.CFrame = CFrame.new(root.Position, root.Position + flatDir)
 end
 end)
+local CrosshairGui = nil
+local CrosshairFrame = nil
+local function createCrosshair()
+if CrosshairGui then return end
+CrosshairGui = Instance.new("ScreenGui")
+CrosshairGui.Name = "CrosshairGui"
+CrosshairGui.Parent = LocalPlayer.PlayerGui
+CrosshairGui.ResetOnSpawn = false
+CrosshairGui.IgnoreGuiInset = true
+CrosshairFrame = Instance.new("Frame")
+CrosshairFrame.Name = "Crosshair"
+CrosshairFrame.Parent = CrosshairGui
+CrosshairFrame.Size = UDim2.new(0, 30, 0, 30)
+CrosshairFrame.Position = UDim2.new(0.5, -15, 0.5, -15)
+CrosshairFrame.BackgroundTransparency = 1
+CrosshairFrame.Visible = false
+local hLine = Instance.new("Frame")
+hLine.Parent = CrosshairFrame
+hLine.Size = UDim2.new(1, 0, 0, 2)
+hLine.Position = UDim2.new(0, 0, 0.5, -1)
+hLine.BackgroundColor3 = Color3.new(1,1,1)
+hLine.BorderSizePixel = 0
+local vLine = Instance.new("Frame")
+vLine.Parent = CrosshairFrame
+vLine.Size = UDim2.new(0, 2, 1, 0)
+vLine.Position = UDim2.new(0.5, -1, 0, 0)
+vLine.BackgroundColor3 = Color3.new(1,1,1)
+vLine.BorderSizePixel = 0
+local dot = Instance.new("Frame")
+dot.Parent = CrosshairFrame
+dot.Size = UDim2.new(0, 6, 0, 6)
+dot.Position = UDim2.new(0.5, -3, 0.5, -3)
+dot.BackgroundColor3 = Color3.new(1,1,1)
+dot.BorderSizePixel = 0
+local dotCorner = Instance.new("UICorner")
+dotCorner.CornerRadius = UDim.new(1,0)
+dotCorner.Parent = dot
+end
+RunService.Heartbeat:Connect(function()
+if not CrosshairEnabled then
+if CrosshairFrame then CrosshairFrame.Visible = false end
+return
+end
+if not CrosshairGui then createCrosshair() end
+if CrosshairSpinEnabled then
+CrosshairFrame.Rotation = (CrosshairFrame.Rotation + 1) % 360
+else
+CrosshairFrame.Rotation = 0
+end
+CrosshairFrame.Visible = true
+end)
+local isStealing = false
 local function stealAllItems()
 if isStealing then return 0 end
 isStealing = true
@@ -1422,6 +1597,7 @@ page3:AddButton({ Text = "自动翻译", Callback = function()
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自动翻译", Text = "正在加载中...", Duration = 5})
 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/自动翻译"))() end)
 end })
+page3:AddButton({ Text = "传送最近玩家", Callback = function()
 local nearest = nil
 local minDist = math.huge
 local myPos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position
@@ -1463,6 +1639,7 @@ page3:AddButton({ Text = "自瞄", Callback = function()
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = "正在加载中...", Duration = 5})
 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/自瞄"))() end)
 end })
+page3:AddToggle({ Text = "锁定视角", Default = false, Callback = function(state)
 LockViewEnabled = state
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "锁定视角", Text = state and "已开启" or "已关闭", Duration = 3})
 end })
@@ -1535,6 +1712,16 @@ page4:AddButton({ Text = "美化包排行榜第一", Callback = function()
 beautifyStats()
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "美化包", Text = "数值已修改为999（若游戏支持）", Duration = 3})
 end })
+page4:AddToggle({ Text = "准星", Default = false, Callback = function(state)
+CrosshairEnabled = state
+CrosshairFrame.Visible = CrosshairEnabled
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "准星", Text = state and "已显示" or "已隐藏", Duration = 3})
+end })
+page4:AddToggle({ Text = "准星旋转", Default = false, Callback = function(state)
+CrosshairSpinEnabled = state
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "准星旋转", Text = state and "已开启" or "已关闭", Duration = 3})
+end })
+page4:AddToggle({ Text = "反挂机踢出", Default = false, Callback = function(state)
 antiAFKEnabled = state
 if state then startAntiAFK() else stopAntiAFK() end
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "反挂机踢出", Text = state and "已开启" or "已关闭", Duration = 3})
