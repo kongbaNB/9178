@@ -46,6 +46,7 @@ local FullbrightEnabled = false
 local DisableFogEnabled = false
 local DisableCampfireEffect = false
 local mapLoadRunning = false
+local MapLoadSpeed = 0.8
 local SpeedEnabled = false
 local SpeedValue = 16
 local NoclipEnabled = false
@@ -123,6 +124,7 @@ local function unequipTool(tool)
         end)
     end
 end
+local PullDelay = 0.1
 local function moveItemToPos(item, pos)
     if not item or not item:IsDescendantOf(Workspace) then return end
     pcall(function()
@@ -133,7 +135,7 @@ local function moveItemToPos(item, pos)
             elseif item:IsA("BasePart") then
                 item.CFrame = hrp.CFrame * CFrame.new(0, 0, -3)
             end
-            task.wait(0.1)
+            task.wait(PullDelay)
         end
         ReplicatedStorage.RemoteEvents.RequestStartDraggingItem:FireServer(item)
         task.wait(0.1)
@@ -148,7 +150,7 @@ local function moveItemToPos(item, pos)
 end
 local function getPullPos()
     if PullConfig.Target == "篝火" then
-        return Vector3.new(-0.0967, 7.937, -0.178)
+        return Vector3.new(-0.0967, 12, -0.178)
     elseif PullConfig.Target == "建造台" then
         return Vector3.new(21.67, 6.34, -4.05)
     else
@@ -389,8 +391,8 @@ local function mapLoadLoop()
         local center = Vector3.new(-0.0967, 7.937, -0.178)
         local angle, radius, height = 0, 10, 400
         while mapLoadRunning do
-            angle += 0.15
-            radius = math.min(radius + 2, 4000)
+            angle += 0.15 * MapLoadSpeed
+            radius = math.min(radius + 2 * MapLoadSpeed, 4000)
             local p = Vector3.new(
                 center.X + math.cos(angle) * radius,
                 height + math.sin(angle * 0.3) * 60,
@@ -398,7 +400,7 @@ local function mapLoadLoop()
             )
             hrp.CFrame = CFrame.new(p)
             hrp.Velocity = Vector3.zero
-            task.wait(0.03)
+            task.wait(0.03 / MapLoadSpeed)
         end
         hrp.CFrame = CFrame.new(center + Vector3.new(0, 5, 0))
     end)
@@ -782,7 +784,7 @@ end)
 
 local Window = Library:CreateWindow({
     Title = "森林中的99夜",
-    Footer = "恐拜大帝",
+    Footer = "恐拜大帝 制作",
     Icon = 131153193945220,
     NotifySide = "Right",
     ShowCustomCursor = true,
@@ -1044,7 +1046,7 @@ AutoGroup3:AddSlider('ChestAuraRange', {Text = '光环范围', Default = 50, Min
 
 local AutoGroup4 = Tabs.Auto:AddRightGroupbox("其它")
 AutoGroup4:AddToggle('AutoStunDeerToggle', {Text = '自动眩晕鹿', Default = false, Callback = function(v) AutoStunDeer = v end})
-AutoGroup4:AddToggle('AutoSaveChild', {Text = '自动救所有小孩', Default = false, Callback = function(v) AutoSaveChild = v end})
+AutoGroup4:AddToggle('AutoSaveChild', {Text = '自动救所有小孩[失效]', Default = false, Callback = function(v) AutoSaveChild = v end})
 
 local TpGroup1 = Tabs.Teleport:AddLeftGroupbox("基础传送点")
 TpGroup1:AddButton({Text = '传送到营火', Func = function()
@@ -1127,6 +1129,8 @@ TpGroup2:AddButton({Text = '传送到最近宝箱', Func = function()
 end})
 
 local PullGroup1 = Tabs.Pull:AddLeftGroupbox("拉取设置")
+PullGroup1:AddLabel("[温馨提示] 不要正面贴着火拉物品")
+PullGroup1:AddSlider('PullDelaySlider', {Text = '物品停留时间(秒)', Default = 0.1, Min = 0.01, Max = 0.3, Rounding = 2, Callback = function(v) PullDelay = v end})
 PullGroup1:AddDropdown('PullTarget', {Text = '拉取到', Values = {"自己", "篝火", "建造台"}, Default = "自己", Callback = function(v) PullConfig.Target = v end})
 PullGroup1:AddSlider('PullSpeed', {Text = '拉取间隔(秒)', Default = 0.5, Min = 0.1, Max = 5, Rounding = 1, Callback = function(v) PullConfig.Speed = v end})
 PullGroup1:AddToggle('PullToggle', {Text = '开始拉取', Default = false, Callback = function(v) PullConfig.Enabled = v if v then Library:Notify("拉取已启动", 3) else Library:Notify("拉取已停止", 3) end end})
@@ -1287,6 +1291,7 @@ end})
 local MapGroup = Tabs.Map:AddLeftGroupbox("地图加载")
 MapGroup:AddLabel("从篝火开始高空螺旋扩大扫描")
 MapGroup:AddLabel("自动加载所有未渲染区域")
+MapGroup:AddSlider('MapLoadSpeedSlider', {Text = '加载速度', Default = 0.8, Min = 0.1, Max = 3, Rounding = 1, Callback = function(v) MapLoadSpeed = v end})
 MapGroup:AddButton({Text = '开始自动加载地图', Func = function()
     if mapLoadRunning then Library:Notify("已经在加载中", 2); return end
     mapLoadRunning = true
