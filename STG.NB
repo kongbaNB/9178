@@ -27,12 +27,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
+local StarterGui = game:GetService("StarterGui")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 
 local MeleeSpam = false
 local SwingDelay = 0.05
 local SwingsPerDelay = 2
-
 local ClientMeleeHandler = nil
 local originalHandler = nil
 local currentMeleeTool = nil
@@ -69,61 +72,82 @@ local speedThread = nil
 local NightVision = false
 local nightVisionThread = nil
 
-local function safeGetMeleeHandler()
-    local success, module = pcall(function()
-        return require(ReplicatedStorage:WaitForChild("Client"):WaitForChild("Game"):WaitForChild("Melee"):WaitForChild("ClientMeleeHandler"))
-    end)
-    if success and module then
-        ClientMeleeHandler = module
-        originalHandler = module._meleeActionHandler
-    end
-end
-safeGetMeleeHandler()
+local AutoStore = false
+local autoStoreThread = nil
 
-local function Swing()
-    if not currentMeleeTool or not currentAttackTime or not currentLookVector then return end
-    pcall(function()
-        ReplicatedStorage.Shared.Universe.Network.RemoteEvent.SwingMelee:FireServer(
-            currentMeleeTool, currentAttackTime, currentLookVector
-        )
-    end)
-end
+local AutoDrop = false
+local autoDropThread = nil
 
-if ClientMeleeHandler then
-    ClientMeleeHandler._meleeActionHandler = function(actionName, inputState, inputObject)
-        if MeleeSpam then
-            if inputState == Enum.UserInputState.Begin then
-                local char = LocalPlayer.Character
-                if char then
-                    currentMeleeTool = char:FindFirstChildWhichIsA("Tool")
-                    if currentMeleeTool then
-                        currentAttackTime = workspace:GetServerTimeNow()
-                        local mouse = LocalPlayer:GetMouse()
-                        currentLookVector = (mouse.Hit and mouse.Hit.LookVector) or char:GetPivot().LookVector
+local AutoBandage = false
+local autoBandageThread = nil
+local BandageHealth = 30
 
-                        swingThread = task.spawn(function()
-                            while MeleeSpam and currentMeleeTool do
-                                for i = 1, SwingsPerDelay do
-                                    Swing()
-                                    task.wait(SwingDelay)
-                                end
-                            end
-                        end)
-                    end
-                end
-            elseif inputState == Enum.UserInputState.End then
-                if swingThread then
-                    task.cancel(swingThread)
-                    swingThread = nil
-                end
-            end
-        end
+local AutoEndGame = false
+local autoEndGameThread = nil
 
-        if not MeleeSpam and originalHandler then
-            return originalHandler(actionName, inputState, inputObject)
-        end
-    end
-end
+local AutoTrainHorn = false
+local autoTrainHornThread = nil
+
+local AutoWalkBond = false
+local autoWalkBondThread = nil
+
+local AutoCollectBond = false
+local autoCollectBondThread = nil
+
+local AutoCollectItem = false
+local autoCollectItemThread = nil
+
+local AutoCollectMoneybag = false
+local autoCollectMoneybagThread = nil
+
+local MonsterPredict = false
+local monsterPredictThread = nil
+local lastMonsterCount = 0
+
+local FuelGuiEnabled = false
+local fuelGui = nil
+local fuelThread = nil
+
+local InstantInteract = false
+local RemoteInteract = false
+local NoLOSInteract = false
+local oldPromptDurations = {}
+local oldPromptDistances = {}
+local oldPromptLOS = {}
+
+local DeleteDecor = false
+local deleteDecorThread = nil
+
+local DeleteLightning = false
+local deleteLightningThread = nil
+
+local ESPItems = false
+local espItemsConn = nil
+local ESPOre = false
+local espOreConn = nil
+local ESPNightEnemy = false
+local espNightEnemyConn = nil
+local ESPUnicorn = false
+local espUnicornConn = nil
+local ESPBuilding = false
+local espBuildingConn = nil
+local ESPZombie = false
+local espZombieConn = nil
+local ESPBank = false
+local espBankConn = nil
+local ESPOutlaw = false
+local espOutlawConn = nil
+local ESPBond = false
+local espBondConn = nil
+
+local TranslationEnabled = false
+local TranslationSpeed = 5
+local translatedTexts = {}
+local heartbeatConnection = nil
+local playerGuiConnection = nil
+local coreGuiConnection = nil
+local lastScanTime = 0
+local scanInterval = 0.3
 
 local modelInstanceNames = {
     "ModelInstance", "modelinstance", "MODELINSTANCE",
@@ -143,32 +167,6 @@ local modelInstanceNames = {
     "ModelIstanse", "modelistanse", "MODELISTANSE",
     "ModelIstence", "modelistence", "MODELISTENCE",
     "ModelIstanc", "modelistanc", "MODELISTANC",
-    "ModelIstance", "modelistance", "MODELISTANCE",
-    "ModelInstace", "modelinstace", "MODELINSTACE",
-    "ModelInstanse", "modelinstanse", "MODELINSTANSE",
-    "ModelInstence", "modelinstence", "MODELINSTENCE",
-    "ModelInstanc", "modelinstanc", "MODELINSTANC",
-    "ModelInstancee", "modelinstancee", "MODELINSTANCEE",
-    "ModelInstanec", "modelinstanec", "MODELINSTANEC",
-    "ModelInstancE", "modelInstancE", "MODELINSTANCE",
-    "ModelIstance", "modelistance", "MODELISTANCE",
-    "ModelIstanse", "modelistanse", "MODELISTANSE",
-    "ModelIstence", "modelistence", "MODELISTENCE",
-    "ModelIstanc", "modelistanc", "MODELISTANC",
-    "ModelIstance", "modelistance", "MODELISTANCE",
-    "ModelInstance", "modelinstance", "MODELINSTANCE",
-    "ModelInstace", "modelinstace", "MODELINSTACE",
-    "ModelInstanse", "modelinstanse", "MODELINSTANSE",
-    "ModelInstence", "modelinstence", "MODELINSTENCE",
-    "ModelInstanc", "modelinstanc", "MODELINSTANC",
-    "ModelInstancee", "modelinstancee", "MODELINSTANCEE",
-    "ModelInstanec", "modelinstanec", "MODELINSTANEC",
-    "ModelInstancE", "modelInstancE", "MODELINSTANCE",
-    "ModelIstance", "modelistance", "MODELISTANCE",
-    "ModelIstanse", "modelistanse", "MODELISTANSE",
-    "ModelIstence", "modelistence", "MODELISTENCE",
-    "ModelIstanc", "modelistanc", "MODELISTANC",
-    "ModelIstance", "modelistance", "MODELISTANCE",
 }
 
 local function isModelInstanceName(name)
@@ -265,6 +263,211 @@ local function fireStore(target)
     end
 end
 
+local function safeGetMeleeHandler()
+    local success, module = pcall(function()
+        return require(ReplicatedStorage:WaitForChild("Client"):WaitForChild("Game"):WaitForChild("Melee"):WaitForChild("ClientMeleeHandler"))
+    end)
+    if success and module then
+        ClientMeleeHandler = module
+        originalHandler = module._meleeActionHandler
+    end
+end
+safeGetMeleeHandler()
+
+local function Swing()
+    if not currentMeleeTool or not currentAttackTime or not currentLookVector then return end
+    pcall(function()
+        ReplicatedStorage.Shared.Universe.Network.RemoteEvent.SwingMelee:FireServer(
+            currentMeleeTool, currentAttackTime, currentLookVector
+        )
+    end)
+end
+
+if ClientMeleeHandler then
+    ClientMeleeHandler._meleeActionHandler = function(actionName, inputState, inputObject)
+        if MeleeSpam then
+            if inputState == Enum.UserInputState.Begin then
+                local char = LocalPlayer.Character
+                if char then
+                    currentMeleeTool = char:FindFirstChildWhichIsA("Tool")
+                    if currentMeleeTool then
+                        currentAttackTime = workspace:GetServerTimeNow()
+                        local mouse = LocalPlayer:GetMouse()
+                        currentLookVector = (mouse.Hit and mouse.Hit.LookVector) or char:GetPivot().LookVector
+
+                        swingThread = task.spawn(function()
+                            while MeleeSpam and currentMeleeTool do
+                                for i = 1, SwingsPerDelay do
+                                    Swing()
+                                    task.wait(SwingDelay)
+                                end
+                            end
+                        end)
+                    end
+                end
+            elseif inputState == Enum.UserInputState.End then
+                if swingThread then
+                    task.cancel(swingThread)
+                    swingThread = nil
+                end
+            end
+        end
+
+        if not MeleeSpam and originalHandler then
+            return originalHandler(actionName, inputState, inputObject)
+        end
+    end
+end
+
+local function translateText(text)
+    if not text or text == "" or #text < 2 then
+        return nil
+    end
+    if translatedTexts[text] then
+        return translatedTexts[text]
+    end
+    local success, result = pcall(function()
+        local url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=" .. HttpService:UrlEncode(text)
+        local response = game:HttpGet(url)
+        local decoded = HttpService:JSONDecode(response)
+        if decoded and decoded[1] and decoded[1][1] and decoded[1][1][1] then
+            return decoded[1][1][1]
+        end
+        return nil
+    end)
+    if success and result then
+        translatedTexts[text] = result
+        return result
+    end
+    return nil
+end
+
+local function isEnglish(text)
+    if not text or text == "" then
+        return false
+    end
+    local englishCount = 0
+    local totalCount = 0
+    for char in text:gmatch(".") do
+        local byte = string.byte(char)
+        if byte then
+            totalCount = totalCount + 1
+            if (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122) then
+                englishCount = englishCount + 1
+            end
+        end
+    end
+    if totalCount == 0 then
+        return false
+    end
+    return (englishCount / totalCount) > 0.5
+end
+
+local function processTextObject(textObject)
+    if not TranslationEnabled then
+        return
+    end
+    if not textObject:IsA("TextLabel") and not textObject:IsA("TextButton") and not textObject:IsA("TextBox") then
+        return
+    end
+    local originalText = textObject.Text
+    if not originalText or originalText == "" then
+        return
+    end
+    if not isEnglish(originalText) then
+        return
+    end
+    local translatedText = translateText(originalText)
+    if translatedText and translatedText ~= originalText then
+        textObject.Text = translatedText
+    end
+end
+
+local function scanAndTranslate(parent)
+    if not TranslationEnabled then
+        return
+    end
+    for _, descendant in pairs(parent:GetDescendants()) do
+        if descendant:IsA("TextLabel") or descendant:IsA("TextButton") or descendant:IsA("TextBox") then
+            task.spawn(function()
+                processTextObject(descendant)
+            end)
+        end
+    end
+end
+
+local function onDescendantAdded(descendant)
+    if not TranslationEnabled then
+        return
+    end
+    if descendant:IsA("TextLabel") or descendant:IsA("TextButton") or descendant:IsA("TextBox") then
+        task.delay(0.1, function()
+            processTextObject(descendant)
+        end)
+    end
+end
+
+local function startTranslation()
+    if playerGuiConnection then
+        playerGuiConnection:Disconnect()
+    end
+    if coreGuiConnection then
+        coreGuiConnection:Disconnect()
+    end
+    if heartbeatConnection then
+        heartbeatConnection:Disconnect()
+    end
+    local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+    playerGuiConnection = PlayerGui.DescendantAdded:Connect(onDescendantAdded)
+    coreGuiConnection = CoreGui.DescendantAdded:Connect(onDescendantAdded)
+    lastScanTime = tick()
+    scanInterval = 1.5 / TranslationSpeed
+    heartbeatConnection = RunService.Heartbeat:Connect(function()
+        if not TranslationEnabled then
+            return
+        end
+        local currentTime = tick()
+        if currentTime - lastScanTime >= scanInterval then
+            lastScanTime = currentTime
+            task.spawn(function()
+                scanAndTranslate(PlayerGui)
+            end)
+            pcall(function()
+                for _, gui in pairs(CoreGui:GetChildren()) do
+                    if gui:IsA("ScreenGui") then
+                        task.spawn(function()
+                            scanAndTranslate(gui)
+                        end)
+                    end
+                end
+            end)
+        end
+    end)
+    scanAndTranslate(PlayerGui)
+    pcall(function()
+        for _, gui in pairs(CoreGui:GetChildren()) do
+            if gui:IsA("ScreenGui") then
+                scanAndTranslate(gui)
+            end
+        end
+    end)
+end
+
+local function stopTranslation()
+    if playerGuiConnection then
+        playerGuiConnection:Disconnect()
+        playerGuiConnection = nil
+    end
+    if coreGuiConnection then
+        coreGuiConnection:Disconnect()
+        coreGuiConnection = nil
+    end
+    if heartbeatConnection then
+        heartbeatConnection:Disconnect()
+        heartbeatConnection = nil
+    end
+end
+
 local Window = Library:CreateWindow({
     Title = "死铁轨",
     Footer = "恐拜大帝 制作",
@@ -278,6 +481,10 @@ Library:Notify("死铁轨 - 创作者：恐拜大帝 | QQ：3999698324", 5)
 local Tabs = {
     Notice = Window:AddTab("通知", "info"),
     Main = Window:AddTab("功能", "zap"),
+    Auto = Window:AddTab("自动", "repeat"),
+    ESP = Window:AddTab("透视", "eye"),
+    Interact = Window:AddTab("交互", "mouse-pointer-2"),
+    Bond = Window:AddTab("刷债券", "banknote"),
     Settings = Window:AddTab("设置", "settings"),
 }
 
@@ -362,7 +569,7 @@ StaminaGroup:AddToggle('InfiniteStamina', {
         staminaThread = task.spawn(function()
             while InfiniteStamina do
                 pcall(function()
-                    game:GetService("ReplicatedStorage").Remotes.RequestSprint:FireServer(false)
+                    ReplicatedStorage.Remotes.RequestSprint:FireServer(false)
                 end)
                 task.wait(0.1)
             end
@@ -375,7 +582,7 @@ StaminaGroup:AddToggle('InfiniteStamina', {
             staminaThread = nil
         end
         pcall(function()
-            game:GetService("ReplicatedStorage").Remotes.RequestSprint:FireServer(true)
+            ReplicatedStorage.Remotes.RequestSprint:FireServer(true)
         end)
         Library:Notify("无限体力已关闭", 2)
     end
@@ -437,41 +644,39 @@ BringGroup:AddToggle('BringItems', {
             while BringItems do
                 local char = LocalPlayer.Character
                 local root = char and char:FindFirstChild("HumanoidRootPart")
-                if not root then
-                    task.wait(0.1)
-                    continue
-                end
+                if root then
+                    local items = getCachedItems()
+                    local closest = nil
+                    local closestDist = math.huge
 
-                local items = getCachedItems()
-                local closest = nil
-                local closestDist = math.huge
-
-                for _, item in ipairs(items) do
-                    if not collectedItems[item.Model] then
-                        local dist = (item.Part.Position - root.Position).Magnitude
-                        if dist < closestDist then
-                            closestDist = dist
-                            closest = item
+                    for _, item in ipairs(items) do
+                        if not collectedItems[item.Model] then
+                            local dist = (item.Part.Position - root.Position).Magnitude
+                            if dist < closestDist then
+                                closestDist = dist
+                                closest = item
+                            end
                         end
                     end
-                end
 
-                if closest then
-                    collectedItems[closest.Model] = true
-                    itemsBrought = itemsBrought + 1
+                    if closest then
+                        collectedItems[closest.Model] = true
+                        itemsBrought = itemsBrought + 1
 
-                    for i = 1, 2 do
-                        fireStore(closest.Part)
-                        task.wait(0.05)
-                    end
+                        for i = 1, 2 do
+                            fireStore(closest.Part)
+                            task.wait(0.05)
+                        end
 
-                    if itemsBrought % 10 == 0 then
-                        Library:Notify(itemsBrought .. "/" .. totalItems, 2)
+                        if itemsBrought % 10 == 0 then
+                            Library:Notify(itemsBrought .. "/" .. totalItems, 2)
+                        end
+                    else
+                        task.wait(0.5)
                     end
                 else
-                    task.wait(0.5)
+                    task.wait(0.1)
                 end
-
                 task.wait(BringDelay)
             end
         end)
@@ -541,7 +746,7 @@ end)
 local ReviveGroup = Tabs.Main:AddRightGroupbox("复活")
 ReviveGroup:AddButton("发起自我复活购买", function()
     pcall(function()
-        game:GetService("ReplicatedStorage").Remotes.RevivePlayer:FireServer()
+        ReplicatedStorage.Remotes.RevivePlayer:FireServer()
     end)
     Library:Notify("已发起自我复活购买", 2)
 end)
@@ -619,6 +824,1004 @@ NightVisionGroup:AddToggle('NightVision', {
         Lighting.OutdoorAmbient = Color3.new(0.7, 0.7, 0.7)
         Library:Notify("夜视已关闭", 2)
     end
+end)
+
+local FuelGroup = Tabs.Main:AddRightGroupbox("火车燃料")
+FuelGroup:AddToggle('FuelGuiEnabled', {
+    Text = '显示燃油状态',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        FuelGuiEnabled = true
+        if not fuelGui then
+            fuelGui = Instance.new("ScreenGui")
+            fuelGui.Name = "FuelGui"
+            fuelGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+            fuelGui.Parent = CoreGui
+            local label = Instance.new("TextLabel")
+            label.Name = "FuelLabel"
+            label.BackgroundColor3 = Color3.new(1, 1, 1)
+            label.BackgroundTransparency = 1
+            label.BorderColor3 = Color3.new(0, 0, 0)
+            label.Position = UDim2.new(0.5, 0, 0.5, -100)
+            label.Size = UDim2.new(0, 200, 0, 50)
+            label.Font = Enum.Font.GothamSemibold
+            label.Text = "燃料: 0 / 240"
+            label.TextColor3 = Color3.new(1, 1, 1)
+            label.TextScaled = true
+            label.TextSize = 14
+            label.TextWrapped = true
+            label.Parent = fuelGui
+        end
+        fuelGui.Enabled = true
+        fuelThread = task.spawn(function()
+            while FuelGuiEnabled do
+                pcall(function()
+                    local train = Workspace:FindFirstChild("Train")
+                    if train then
+                        local fuel = train:FindFirstChild("Fuel")
+                        if fuel then
+                            local fuelValue = fuel.Value
+                            fuelGui.FuelLabel.Text = "燃料: " .. fuelValue .. " / 240"
+                            if fuelValue <= 50 then
+                                fuelGui.FuelLabel.TextColor3 = Color3.new(1, 0, 0)
+                            elseif fuelValue <= 150 then
+                                fuelGui.FuelLabel.TextColor3 = Color3.new(1, 165/255, 0)
+                            else
+                                fuelGui.FuelLabel.TextColor3 = Color3.new(0, 1, 0)
+                            end
+                        end
+                    end
+                end)
+                task.wait(0.5)
+            end
+        end)
+        Library:Notify("燃油状态显示已启用", 2)
+    else
+        FuelGuiEnabled = false
+        if fuelThread then
+            task.cancel(fuelThread)
+            fuelThread = nil
+        end
+        if fuelGui then
+            fuelGui.Enabled = false
+        end
+        Library:Notify("燃油状态显示已关闭", 2)
+    end
+end)
+
+local MonsterGroup = Tabs.Main:AddRightGroupbox("怪物预知")
+MonsterGroup:AddToggle('MonsterPredict', {
+    Text = '预知今晚怪物',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        MonsterPredict = true
+        lastMonsterCount = 0
+        monsterPredictThread = task.spawn(function()
+            while MonsterPredict do
+                local nightEnemies = Workspace:FindFirstChild("NightEnemies")
+                local currentCount = 0
+                local monsterName = "未知"
+                if nightEnemies then
+                    currentCount = #nightEnemies:GetChildren()
+                    for _, v in ipairs(nightEnemies:GetChildren()) do
+                        if v:IsA("Model") then
+                            monsterName = v.Name
+                            break
+                        end
+                    end
+                end
+                if currentCount > 0 and lastMonsterCount == 0 then
+                    local displayName = monsterName
+                    if monsterName == "Wolf" then
+                        displayName = "狼"
+                    elseif monsterName == "Werewolf" then
+                        displayName = "狼人"
+                    elseif monsterName == "Vampire" then
+                        displayName = "吸血鬼"
+                    elseif monsterName == "Walker" then
+                        displayName = "正常僵尸"
+                    elseif monsterName == "Runner" then
+                        displayName = "奔跑僵尸"
+                    end
+                    StarterGui:SetCore("SendNotification", {
+                        Title = "怪物预知",
+                        Text = "今晚的怪物是：" .. displayName,
+                        Icon = "rbxthumb://type=Asset&id=17366451283&w=150&h=150",
+                        Duration = 15,
+                    })
+                end
+                lastMonsterCount = currentCount
+                task.wait(2)
+            end
+        end)
+        Library:Notify("怪物预知已启用", 2)
+    else
+        MonsterPredict = false
+        if monsterPredictThread then
+            task.cancel(monsterPredictThread)
+            monsterPredictThread = nil
+        end
+        Library:Notify("怪物预知已关闭", 2)
+    end
+end)
+
+local AutoLeft = Tabs.Auto:AddLeftGroupbox("自动收集")
+local AutoRight = Tabs.Auto:AddRightGroupbox("自动操作")
+
+AutoLeft:AddToggle('AutoStore', {
+    Text = '自动收物品',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        AutoStore = true
+        autoStoreThread = task.spawn(function()
+            while AutoStore do
+                local runtimeItems = Workspace:FindFirstChild("RuntimeItems")
+                if runtimeItems then
+                    for _, item in ipairs(runtimeItems:GetChildren()) do
+                        if item:IsA("Model") then
+                            pcall(function()
+                                ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("StoreItem"):FireServer(item)
+                            end)
+                        end
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
+        Library:Notify("自动收物品已启用", 2)
+    else
+        AutoStore = false
+        if autoStoreThread then
+            task.cancel(autoStoreThread)
+            autoStoreThread = nil
+        end
+        Library:Notify("自动收物品已关闭", 2)
+    end
+end)
+
+AutoLeft:AddToggle('AutoCollectBond', {
+    Text = '自动收集债券',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        AutoCollectBond = true
+        autoCollectBondThread = task.spawn(function()
+            while AutoCollectBond do
+                local runtimeItems = Workspace:FindFirstChild("RuntimeItems")
+                if runtimeItems then
+                    for _, v in ipairs(runtimeItems:GetChildren()) do
+                        if v.Name == "Bond" then
+                            local char = LocalPlayer.Character
+                            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                            if hrp then
+                                local dist = (hrp.Position - v.Position).Magnitude
+                                if dist < 10 then
+                                    pcall(function()
+                                        ReplicatedStorage.Packages.ActivateObjectClient:FireServer(v)
+                                    end)
+                                end
+                            end
+                        end
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
+        Library:Notify("自动收集债券已启用", 2)
+    else
+        AutoCollectBond = false
+        if autoCollectBondThread then
+            task.cancel(autoCollectBondThread)
+            autoCollectBondThread = nil
+        end
+        Library:Notify("自动收集债券已关闭", 2)
+    end
+end)
+
+AutoLeft:AddToggle('AutoCollectItem', {
+    Text = '自动收集物品',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        AutoCollectItem = true
+        autoCollectItemThread = task.spawn(function()
+            while AutoCollectItem do
+                local runtimeItems = Workspace:FindFirstChild("RuntimeItems")
+                if runtimeItems then
+                    for _, v in ipairs(runtimeItems:GetChildren()) do
+                        local char = LocalPlayer.Character
+                        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                        if hrp then
+                            local dist = (hrp.Position - v.Position).Magnitude
+                            if dist < 10 then
+                                pcall(function()
+                                    ReplicatedStorage.Remotes.Tool.PickUpTool:FireServer(v)
+                                end)
+                            end
+                        end
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
+        Library:Notify("自动收集物品已启用", 2)
+    else
+        AutoCollectItem = false
+        if autoCollectItemThread then
+            task.cancel(autoCollectItemThread)
+            autoCollectItemThread = nil
+        end
+        Library:Notify("自动收集物品已关闭", 2)
+    end
+end)
+
+AutoLeft:AddToggle('AutoCollectMoneybag', {
+    Text = '自动收集钱袋',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        AutoCollectMoneybag = true
+        autoCollectMoneybagThread = task.spawn(function()
+            while AutoCollectMoneybag do
+                local runtimeItems = Workspace:FindFirstChild("RuntimeItems")
+                if runtimeItems and runtimeItems:FindFirstChild("Moneybag") then
+                    local moneybag = runtimeItems.Moneybag
+                    local collectPrompt = moneybag:FindFirstChild("MoneyBag") and moneybag.MoneyBag:FindFirstChild("CollectPrompt")
+                    if collectPrompt then
+                        pcall(function()
+                            fireproximityprompt(collectPrompt)
+                        end)
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
+        Library:Notify("自动收集钱袋已启用", 2)
+    else
+        AutoCollectMoneybag = false
+        if autoCollectMoneybagThread then
+            task.cancel(autoCollectMoneybagThread)
+            autoCollectMoneybagThread = nil
+        end
+        Library:Notify("自动收集钱袋已关闭", 2)
+    end
+end)
+
+AutoLeft:AddToggle('AutoWalkBond', {
+    Text = '自动走向债券',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        AutoWalkBond = true
+        autoWalkBondThread = task.spawn(function()
+            while AutoWalkBond do
+                local char = LocalPlayer.Character
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    local runtimeItems = Workspace:FindFirstChild("RuntimeItems")
+                    if runtimeItems then
+                        for _, item in ipairs(runtimeItems:GetChildren()) do
+                            if item.Name == "Bond" and item:IsA("Model") then
+                                hum.WalkToPoint = Vector3.new(item.Position.X, item.Position.Y, item.Position.Z)
+                                break
+                            end
+                        end
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
+        Library:Notify("自动走向债券已启用", 2)
+    else
+        AutoWalkBond = false
+        if autoWalkBondThread then
+            task.cancel(autoWalkBondThread)
+            autoWalkBondThread = nil
+        end
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hum.WalkToPoint = hrp.Position
+            end
+        end
+        Library:Notify("自动走向债券已关闭", 2)
+    end
+end)
+
+AutoRight:AddToggle('AutoDrop', {
+    Text = '自动丢物品',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        AutoDrop = true
+        autoDropThread = task.spawn(function()
+            while AutoDrop do
+                pcall(function()
+                    ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("DropItem"):FireServer()
+                end)
+                task.wait(0.01)
+            end
+        end)
+        Library:Notify("自动丢物品已启用", 2)
+    else
+        AutoDrop = false
+        if autoDropThread then
+            task.cancel(autoDropThread)
+            autoDropThread = nil
+        end
+        Library:Notify("自动丢物品已关闭", 2)
+    end
+end)
+
+AutoRight:AddToggle('AutoEndGame', {
+    Text = '自动拉终点开关',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        AutoEndGame = true
+        autoEndGameThread = task.spawn(function()
+            while AutoEndGame do
+                pcall(function()
+                    local baseplates = Workspace:FindFirstChild("Baseplates")
+                    if not baseplates then return end
+                    local final = baseplates:FindFirstChild("FinalBasePlate")
+                    if not final then return end
+                    local outlaw = final:FindFirstChild("OutlawBase")
+                    if not outlaw then return end
+                    local bridge = outlaw:FindFirstChild("Bridge")
+                    if not bridge then return end
+                    local control = bridge:FindFirstChild("BridgeControl")
+                    if not control then return end
+                    local crank = control:FindFirstChild("Crank")
+                    if not crank then return end
+                    local model = crank:FindFirstChild("Model")
+                    if not model then return end
+                    local mid = model:FindFirstChild("Mid")
+                    if not mid then return end
+                    local endGame = mid:FindFirstChild("EndGame")
+                    if endGame and endGame:IsA("ProximityPrompt") then
+                        endGame.MaxActivationDistance = math.huge
+                        fireproximityprompt(endGame)
+                    end
+                end)
+                task.wait(0.1)
+            end
+        end)
+        Library:Notify("自动拉终点开关已启用", 2)
+    else
+        AutoEndGame = false
+        if autoEndGameThread then
+            task.cancel(autoEndGameThread)
+            autoEndGameThread = nil
+        end
+        Library:Notify("自动拉终点开关已关闭", 2)
+    end
+end)
+
+AutoRight:AddToggle('AutoTrainHorn', {
+    Text = '自动火车鸣声',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        AutoTrainHorn = true
+        autoTrainHornThread = task.spawn(function()
+            while AutoTrainHorn do
+                pcall(function()
+                    local train = Workspace:FindFirstChild("Train")
+                    if not train then return end
+                    local controls = train:FindFirstChild("TrainControls")
+                    if not controls then return end
+                    local lever = controls:FindFirstChild("Lever")
+                    if not lever then return end
+                    local hitbox = lever:FindFirstChild("HitBox")
+                    if not hitbox then return end
+                    local clickDetector = hitbox:FindFirstChild("ClickDetector")
+                    if clickDetector then
+                        clickDetector.MaxActivationDistance = math.huge
+                        fireclickdetector(clickDetector)
+                    end
+                end)
+                task.wait(0.1)
+            end
+        end)
+        Library:Notify("自动火车鸣声已启用", 2)
+    else
+        AutoTrainHorn = false
+        if autoTrainHornThread then
+            task.cancel(autoTrainHornThread)
+            autoTrainHornThread = nil
+        end
+        Library:Notify("自动火车鸣声已关闭", 2)
+    end
+end)
+
+AutoRight:AddToggle('AutoBandage', {
+    Text = '自动使用绷带',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        AutoBandage = true
+        autoBandageThread = task.spawn(function()
+            while AutoBandage do
+                local char = LocalPlayer.Character
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if hum and hum.Health <= BandageHealth then
+                    local backpack = LocalPlayer.Backpack
+                    for _, v in ipairs(backpack:GetChildren()) do
+                        if v.Name == "Bandage" then
+                            pcall(function()
+                                v.Parent = char
+                                local bandage = char:FindFirstChild("Bandage")
+                                if bandage and bandage:FindFirstChild("Use") then
+                                    bandage.Use:FireServer()
+                                end
+                            end)
+                            break
+                        end
+                    end
+                end
+                task.wait(0.5)
+            end
+        end)
+        Library:Notify("自动使用绷带已启用", 2)
+    else
+        AutoBandage = false
+        if autoBandageThread then
+            task.cancel(autoBandageThread)
+            autoBandageThread = nil
+        end
+        Library:Notify("自动使用绷带已关闭", 2)
+    end
+end)
+
+AutoRight:AddSlider('BandageHealth', {
+    Text = '使用绷带血量',
+    Default = 30,
+    Min = 1,
+    Max = 100,
+    Rounding = 0,
+}):OnChanged(function(value)
+    BandageHealth = value
+end)
+
+local ESPLeft = Tabs.ESP:AddLeftGroupbox("环境透视")
+local ESPRight = Tabs.ESP:AddRightGroupbox("敌人透视")
+
+local function createBillboard(parent, text, color)
+    if parent:FindFirstChild("BillboardGui") then return end
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "BillboardGui"
+    billboard.Parent = parent
+    billboard.Adornee = parent
+    billboard.Size = UDim2.new(0, 20, 0, 20)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Parent = billboard
+    nameLabel.Size = UDim2.new(1, 0, 1, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = text
+    nameLabel.TextColor3 = color
+    nameLabel.TextStrokeTransparency = 0.5
+    nameLabel.TextScaled = true
+end
+
+ESPLeft:AddToggle('ESPItems', {
+    Text = '透视物品',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        ESPItems = true
+        local runtimeItems = Workspace:FindFirstChild("RuntimeItems")
+        if runtimeItems then
+            for _, v in ipairs(runtimeItems:GetChildren()) do
+                if v:IsA("Model") then
+                    createBillboard(v, v.Name, Color3.new(255, 215, 0))
+                end
+            end
+        end
+        espItemsConn = Workspace.RuntimeItems.ChildAdded:Connect(function(v)
+            if ESPItems and v:IsA("Model") then
+                createBillboard(v, v.Name, Color3.new(255, 215, 0))
+            end
+        end)
+        Library:Notify("透视物品已启用", 2)
+    else
+        ESPItems = false
+        if espItemsConn then
+            espItemsConn:Disconnect()
+            espItemsConn = nil
+        end
+        local runtimeItems = Workspace:FindFirstChild("RuntimeItems")
+        if runtimeItems then
+            for _, v in ipairs(runtimeItems:GetChildren()) do
+                local bill = v:FindFirstChild("BillboardGui")
+                if bill then bill:Destroy() end
+            end
+        end
+        Library:Notify("透视物品已关闭", 2)
+    end
+end)
+
+ESPLeft:AddToggle('ESPOre', {
+    Text = '透视矿石',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        ESPOre = true
+        local oreFolder = Workspace:FindFirstChild("Ore")
+        if oreFolder then
+            for _, v in ipairs(oreFolder:GetChildren()) do
+                if v:IsA("Model") then
+                    createBillboard(v, v.Name, Color3.new(0, 0, 255))
+                end
+            end
+        end
+        espOreConn = Workspace.Ore.ChildAdded:Connect(function(v)
+            if ESPOre and v:IsA("Model") then
+                createBillboard(v, v.Name, Color3.new(0, 0, 255))
+            end
+        end)
+        Library:Notify("透视矿石已启用", 2)
+    else
+        ESPOre = false
+        if espOreConn then
+            espOreConn:Disconnect()
+            espOreConn = nil
+        end
+        local oreFolder = Workspace:FindFirstChild("Ore")
+        if oreFolder then
+            for _, v in ipairs(oreFolder:GetChildren()) do
+                local bill = v:FindFirstChild("BillboardGui")
+                if bill then bill:Destroy() end
+            end
+        end
+        Library:Notify("透视矿石已关闭", 2)
+    end
+end)
+
+ESPLeft:AddToggle('ESPBuilding', {
+    Text = '房子透视',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        ESPBuilding = true
+        local buildings = Workspace:FindFirstChild("RandomBuildings")
+        if buildings then
+            for _, v in ipairs(buildings:GetChildren()) do
+                if v:IsA("Model") then
+                    createBillboard(v, v.Name, Color3.new(0, 255, 0))
+                end
+            end
+        end
+        espBuildingConn = Workspace.RandomBuildings.ChildAdded:Connect(function(v)
+            if ESPBuilding and v:IsA("Model") then
+                createBillboard(v, v.Name, Color3.new(0, 255, 0))
+            end
+        end)
+        Library:Notify("房子透视已启用", 2)
+    else
+        ESPBuilding = false
+        if espBuildingConn then
+            espBuildingConn:Disconnect()
+            espBuildingConn = nil
+        end
+        local buildings = Workspace:FindFirstChild("RandomBuildings")
+        if buildings then
+            for _, v in ipairs(buildings:GetChildren()) do
+                local bill = v:FindFirstChild("BillboardGui")
+                if bill then bill:Destroy() end
+            end
+        end
+        Library:Notify("房子透视已关闭", 2)
+    end
+end)
+
+ESPLeft:AddToggle('ESPBank', {
+    Text = '银行透视',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        ESPBank = true
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v:IsA("Model") and v.Name == "Bank" then
+                createBillboard(v, v.Name, Color3.new(1, 0, 1))
+            end
+        end
+        espBankConn = Workspace.DescendantAdded:Connect(function(v)
+            if ESPBank and v:IsA("Model") and v.Name == "Bank" then
+                task.wait()
+                createBillboard(v, v.Name, Color3.new(1, 0, 1))
+            end
+        end)
+        Library:Notify("银行透视已启用", 2)
+    else
+        ESPBank = false
+        if espBankConn then
+            espBankConn:Disconnect()
+            espBankConn = nil
+        end
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v.Name == "Bank" then
+                local bill = v:FindFirstChild("BillboardGui")
+                if bill then bill:Destroy() end
+            end
+        end
+        Library:Notify("银行透视已关闭", 2)
+    end
+end)
+
+ESPLeft:AddToggle('ESPBond', {
+    Text = '透视债券',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        ESPBond = true
+        local runtimeItems = Workspace:FindFirstChild("RuntimeItems")
+        if runtimeItems then
+            for _, v in ipairs(runtimeItems:GetChildren()) do
+                if v:IsA("Model") and v.Name == "Bond" then
+                    createBillboard(v, v.Name, Color3.new(255, 215, 0))
+                end
+            end
+        end
+        espBondConn = Workspace.RuntimeItems.ChildAdded:Connect(function(v)
+            if ESPBond and v:IsA("Model") and v.Name == "Bond" then
+                createBillboard(v, v.Name, Color3.new(255, 215, 0))
+            end
+        end)
+        Library:Notify("透视债券已启用", 2)
+    else
+        ESPBond = false
+        if espBondConn then
+            espBondConn:Disconnect()
+            espBondConn = nil
+        end
+        local runtimeItems = Workspace:FindFirstChild("RuntimeItems")
+        if runtimeItems then
+            for _, v in ipairs(runtimeItems:GetChildren()) do
+                if v.Name == "Bond" then
+                    local bill = v:FindFirstChild("BillboardGui")
+                    if bill then bill:Destroy() end
+                end
+            end
+        end
+        Library:Notify("透视债券已关闭", 2)
+    end
+end)
+
+ESPLeft:AddToggle('ESPUnicorn', {
+    Text = '独角兽透视',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        ESPUnicorn = true
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v.Name == "Unicorn" then
+                createBillboard(v, "独角兽", Color3.new(1, 1, 1))
+            end
+        end
+        espUnicornConn = Workspace.DescendantAdded:Connect(function(v)
+            if ESPUnicorn and v.Name == "Unicorn" then
+                createBillboard(v, "独角兽", Color3.new(1, 1, 1))
+            end
+        end)
+        Library:Notify("独角兽透视已启用", 2)
+    else
+        ESPUnicorn = false
+        if espUnicornConn then
+            espUnicornConn:Disconnect()
+            espUnicornConn = nil
+        end
+        for _, v in ipairs(Workspace:GetChildren()) do
+            local bill = v:FindFirstChild("BillboardGui")
+            if bill and bill:FindFirstChild("TextLabel") and bill.TextLabel.Text == "独角兽" then
+                bill:Destroy()
+            end
+        end
+        Library:Notify("独角兽透视已关闭", 2)
+    end
+end)
+
+ESPRight:AddToggle('ESPNightEnemy', {
+    Text = '夜晚怪物透视',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        ESPNightEnemy = true
+        local nightEnemies = Workspace:FindFirstChild("NightEnemies")
+        if nightEnemies then
+            for _, v in ipairs(nightEnemies:GetChildren()) do
+                if v:IsA("Model") then
+                    createBillboard(v, v.Name, Color3.new(1, 0, 0))
+                end
+            end
+        end
+        espNightEnemyConn = Workspace.NightEnemies.ChildAdded:Connect(function(v)
+            if ESPNightEnemy and v:IsA("Model") then
+                createBillboard(v, v.Name, Color3.new(1, 0, 0))
+            end
+        end)
+        Library:Notify("夜晚怪物透视已启用", 2)
+    else
+        ESPNightEnemy = false
+        if espNightEnemyConn then
+            espNightEnemyConn:Disconnect()
+            espNightEnemyConn = nil
+        end
+        local nightEnemies = Workspace:FindFirstChild("NightEnemies")
+        if nightEnemies then
+            for _, v in ipairs(nightEnemies:GetChildren()) do
+                local bill = v:FindFirstChild("BillboardGui")
+                if bill then bill:Destroy() end
+            end
+        end
+        Library:Notify("夜晚怪物透视已关闭", 2)
+    end
+end)
+
+ESPRight:AddToggle('ESPZombie', {
+    Text = '房子中的怪物透视',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        ESPZombie = true
+        local buildings = Workspace:FindFirstChild("RandomBuildings")
+        if buildings then
+            for _, building in ipairs(buildings:GetChildren()) do
+                local standalone = building:FindFirstChild("StandaloneZombiePart")
+                if standalone then
+                    local zombies = standalone:FindFirstChild("Zombies")
+                    if zombies then
+                        for _, zombie in ipairs(zombies:GetChildren()) do
+                            if zombie:IsA("Model") then
+                                createBillboard(zombie, zombie.Name, Color3.new(0, 255, 0))
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        espZombieConn = Workspace.RandomBuildings.ChildAdded:Connect(function(building)
+            if not ESPZombie then return end
+            task.wait(0.5)
+            local standalone = building:FindFirstChild("StandaloneZombiePart")
+            if standalone then
+                local zombies = standalone:FindFirstChild("Zombies")
+                if zombies then
+                    for _, zombie in ipairs(zombies:GetChildren()) do
+                        if zombie:IsA("Model") then
+                            createBillboard(zombie, zombie.Name, Color3.new(0, 255, 0))
+                        end
+                    end
+                end
+            end
+        end)
+        Library:Notify("房子中的怪物透视已启用", 2)
+    else
+        ESPZombie = false
+        if espZombieConn then
+            espZombieConn:Disconnect()
+            espZombieConn = nil
+        end
+        local buildings = Workspace:FindFirstChild("RandomBuildings")
+        if buildings then
+            for _, building in ipairs(buildings:GetChildren()) do
+                local standalone = building:FindFirstChild("StandaloneZombiePart")
+                if standalone then
+                    local zombies = standalone:FindFirstChild("Zombies")
+                    if zombies then
+                        for _, zombie in ipairs(zombies:GetChildren()) do
+                            local bill = zombie:FindFirstChild("BillboardGui")
+                            if bill then bill:Destroy() end
+                        end
+                    end
+                end
+            end
+        end
+        Library:Notify("房子中的怪物透视已关闭", 2)
+    end
+end)
+
+ESPRight:AddToggle('ESPOutlaw', {
+    Text = '猎人透视',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        ESPOutlaw = true
+        local outlawNames = { "TurretOutlaw", "RifleOutlaw", "ShotgunOutlaw", "RevolverOutlaw" }
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if table.find(outlawNames, v.Name) then
+                createBillboard(v, v.Name, Color3.new(1, 1, 1))
+            end
+        end
+        espOutlawConn = Workspace.DescendantAdded:Connect(function(v)
+            if ESPOutlaw and table.find(outlawNames, v.Name) then
+                createBillboard(v, v.Name, Color3.new(1, 1, 1))
+            end
+        end)
+        Library:Notify("猎人透视已启用", 2)
+    else
+        ESPOutlaw = false
+        if espOutlawConn then
+            espOutlawConn:Disconnect()
+            espOutlawConn = nil
+        end
+        local outlawNames = { "TurretOutlaw", "RifleOutlaw", "ShotgunOutlaw", "RevolverOutlaw" }
+        for _, v in ipairs(Workspace:GetChildren()) do
+            if table.find(outlawNames, v.Name) then
+                local bill = v:FindFirstChild("BillboardGui")
+                if bill then bill:Destroy() end
+            end
+        end
+        Library:Notify("猎人透视已关闭", 2)
+    end
+end)
+
+local InteractLeft = Tabs.Interact:AddLeftGroupbox("交互修改")
+local InteractRight = Tabs.Interact:AddRightGroupbox("环境清理")
+
+InteractLeft:AddToggle('InstantInteract', {
+    Text = '秒交互',
+    Default = false,
+}):OnChanged(function(value)
+    InstantInteract = value
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") then
+            if value then
+                oldPromptDurations[v] = v.HoldDuration
+                v.HoldDuration = 0
+            else
+                if oldPromptDurations[v] ~= nil then
+                    v.HoldDuration = oldPromptDurations[v]
+                end
+            end
+        end
+    end
+    if value then
+        Library:Notify("秒交互已启用", 2)
+    else
+        Library:Notify("秒交互已关闭", 2)
+    end
+end)
+
+InteractLeft:AddToggle('RemoteInteract', {
+    Text = '远程交互',
+    Default = false,
+}):OnChanged(function(value)
+    RemoteInteract = value
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") then
+            if value then
+                oldPromptDistances[v] = v.MaxActivationDistance
+                v.MaxActivationDistance = math.huge
+            else
+                if oldPromptDistances[v] ~= nil then
+                    v.MaxActivationDistance = oldPromptDistances[v]
+                end
+            end
+        end
+    end
+    if value then
+        Library:Notify("远程交互已启用", 2)
+    else
+        Library:Notify("远程交互已关闭", 2)
+    end
+end)
+
+InteractLeft:AddToggle('NoLOSInteract', {
+    Text = '无视野互动',
+    Default = false,
+}):OnChanged(function(value)
+    NoLOSInteract = value
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") then
+            if value then
+                oldPromptLOS[v] = v.RequiresLineOfSight
+                v.RequiresLineOfSight = false
+            else
+                if oldPromptLOS[v] ~= nil then
+                    v.RequiresLineOfSight = oldPromptLOS[v]
+                end
+            end
+        end
+    end
+    if value then
+        Library:Notify("无视野互动已启用", 2)
+    else
+        Library:Notify("无视野互动已关闭", 2)
+    end
+end)
+
+InteractRight:AddButton("删除杂物", function()
+    local decor = Workspace:FindFirstChild("Decor")
+    if decor then
+        for _, v in ipairs(decor:GetChildren()) do
+            v:Destroy()
+        end
+    end
+    Library:Notify("杂物已删除", 2)
+end)
+
+InteractRight:AddToggle('DeleteDecor', {
+    Text = '持续删除杂物',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        DeleteDecor = true
+        deleteDecorThread = task.spawn(function()
+            while DeleteDecor do
+                local decor = Workspace:FindFirstChild("Decor")
+                if decor then
+                    for _, v in ipairs(decor:GetChildren()) do
+                        v:Destroy()
+                    end
+                end
+                task.wait(1)
+            end
+        end)
+        Library:Notify("持续删除杂物已启用", 2)
+    else
+        DeleteDecor = false
+        if deleteDecorThread then
+            task.cancel(deleteDecorThread)
+            deleteDecorThread = nil
+        end
+        Library:Notify("持续删除杂物已关闭", 2)
+    end
+end)
+
+InteractRight:AddButton("删除闪电", function()
+    for _, v in ipairs(Workspace:GetChildren()) do
+        if v.Name == "LightningModel" then
+            v:Destroy()
+        end
+    end
+    Library:Notify("闪电已删除", 2)
+end)
+
+InteractRight:AddToggle('DeleteLightning', {
+    Text = '持续删除闪电',
+    Default = false,
+}):OnChanged(function(value)
+    if value then
+        DeleteLightning = true
+        deleteLightningThread = task.spawn(function()
+            while DeleteLightning do
+                for _, v in ipairs(Workspace:GetChildren()) do
+                    if v.Name == "LightningModel" then
+                        v:Destroy()
+                    end
+                end
+                task.wait(1)
+            end
+        end)
+        Library:Notify("持续删除闪电已启用", 2)
+    else
+        DeleteLightning = false
+        if deleteLightningThread then
+            task.cancel(deleteLightningThread)
+            deleteLightningThread = nil
+        end
+        Library:Notify("持续删除闪电已关闭", 2)
+    end
+end)
+
+local BondGroup = Tabs.Bond:AddLeftGroupbox("刷债券")
+BondGroup:AddButton("启动刷债券脚本", function()
+    TranslationEnabled = true
+    TranslationSpeed = 5
+    scanInterval = 0.3
+    startTranslation()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/afkar-gg/sc/refs/heads/main/auto-bond"))()
+    end)
+    Library:Notify("刷债券脚本已启动，自动翻译已开启（速度5）", 3)
 end)
 
 local UnloadGroup = Tabs.Settings:AddLeftGroupbox("脚本管理")
