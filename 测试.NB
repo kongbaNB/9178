@@ -140,406 +140,6 @@ local NightVisionEnabled = false
 local AutoTranslateEnabled = false
 local SmoothFollowEnabled = false
 local FollowNearestEnabled = false
-local Linni_Aim = {}
-local lplayer = Players.LocalPlayer
-local camera = Workspace.CurrentCamera
-
-Linni_Aim.Settings = {
-    Enabled = false,
-    AimlockType = "距离最近玩家",
-    WallCheck = true,
-    TeamCheck = true,
-    AimlockCertainPlayer = nil,
-    EnableFOV = false,
-    ShowFOV = false,
-    FOVColor = Color3.fromRGB(255, 255, 255),
-    FOVType = "屏幕中心",
-    AimlockMaxDist = 5000,
-    MouseMaxDist = 5000,
-    FOVMaxDist = 5000,
-    AimlockAutoFire = false,
-    AimlockFireDelay = 0.05,
-    SmoothAimlock = false,
-    AimbotSmoothness = 25,
-    FOVSize = 150,
-    FOVStrokeThickness = 2.5,
-    RainbowFOV = false,
-    RainbowFOVSpeed = 2,
-    WhitelistPlayers = {},
-    PrioritizePlayers = {},
-    AimlockOffsetY = 0,
-    PredictionAmount = 0
-}
-
-local Settings = Linni_Aim.Settings
-local isMobile = UserInputService.TouchEnabled
-
-local AimlockFOVGui
-local AimlockCircleFrame
-local AimlockStroke
-
-function Linni_Aim.Init()
-Linni_Aim.Settings.AimlockOffsetY = 0
-    if AimlockFOVGui then AimlockFOVGui:Destroy() end
-
-    AimlockFOVGui = Instance.new("ScreenGui")
-    AimlockFOVGui.Name = "AimlockFOVGui_External"
-    AimlockFOVGui.ResetOnSpawn = false
-    AimlockFOVGui.IgnoreGuiInset = true
-    AimlockFOVGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-    local success, _ = pcall(function()
-        if getgenv().protectgui then
-            getgenv().protectgui(AimlockFOVGui)
-            AimlockFOVGui.Parent = CoreGui
-        else
-            AimlockFOVGui.Parent = CoreGui
-        end
-    end)
-    if not success then
-        AimlockFOVGui.Parent = lplayer:WaitForChild("PlayerGui")
-    end
-
-    AimlockCircleFrame = Instance.new("Frame", AimlockFOVGui)
-    AimlockCircleFrame.Name = "AimlockCircleFrame"
-    AimlockCircleFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-    AimlockCircleFrame.Position = UDim2.fromScale(0.5, 0.5)
-    AimlockCircleFrame.Size = UDim2.fromOffset(Settings.FOVSize * 2, Settings.FOVSize * 2)
-    AimlockCircleFrame.BackgroundTransparency = 1
-
-    AimlockStroke = Instance.new("UIStroke", AimlockCircleFrame)
-    AimlockStroke.Name = "AimlockStroke"
-    AimlockStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    AimlockStroke.Thickness = 1
-    AimlockStroke.Transparency = 0.5
-
-    local AimlockCorner = Instance.new("UICorner", AimlockCircleFrame)
-    AimlockCorner.Name = "AimlockCorner"
-    AimlockCorner.CornerRadius = UDim.new(1, 0)
-
-    RunService.RenderStepped:Connect(Linni_Aim.RenderLoop)
-end
-
-local rainbowClock = 0
-local function UpdateRainbowFOV()
-    if Settings.RainbowFOV then
-        rainbowClock = rainbowClock + (Settings.RainbowFOVSpeed / 100)
-        local r = math.sin(rainbowClock) * 0.5 + 0.5
-        local g = math.sin(rainbowClock + 2) * 0.5 + 0.5
-        local b = math.sin(rainbowClock + 4) * 0.5 + 0.5
-        AimlockStroke.Color = Color3.new(r, g, b)
-    else
-        AimlockStroke.Color = Settings.FOVColor
-    end
-end
-
-local function UpdateFOV()
-    if Settings.ShowFOV then
-        local radius = Settings.FOVSize
-        AimlockCircleFrame.Size = UDim2.fromOffset(radius * 2, radius * 2)
-        AimlockStroke.Transparency = 0
-        AimlockStroke.Thickness = Settings.FOVStrokeThickness
-
-        if Settings.FOVType == "屏幕中心" or (isMobile and Settings.FOVType == "跟随鼠标" and not UserInputService.TouchEnabled) then
-            AimlockCircleFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-        else
-            local mousePos = UserInputService:GetMouseLocation()
-            AimlockCircleFrame.Position = UDim2.new(0, mousePos.X, 0, mousePos.Y)
-        end
-
-        UpdateRainbowFOV()
-        AimlockFOVGui.Enabled = true
-    else
-        AimlockFOVGui.Enabled = false
-    end
-end
-
-local function IsValidTarget(plr)
-    if not plr or plr == lplayer then return false end
-    if not plr.Character or not plr.Character:FindFirstChild("Head") or not plr.Character:FindFirstChild("Humanoid") then return false end
-    if plr.Character.Humanoid.Health <= 0 then return false end
-    if Settings.TeamCheck and plr.Team == lplayer.Team then return false end
-
-    if Settings.WhitelistPlayers then
-        for whitelistedPlayer, isWhitelisted in pairs(Settings.WhitelistPlayers) do
-            if isWhitelisted and plr.Name == tostring(whitelistedPlayer) then
-                return false
-            end
-        end
-    end
-
-    return true
-end
-
-local function HasLineOfSight(targetHead)
-    if not Settings.WallCheck then return true end
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-    raycastParams.FilterDescendantsInstances = {lplayer.Character}
-    local result = Workspace:Raycast(camera.CFrame.Position, (targetHead.Position - camera.CFrame.Position).Unit * 500, raycastParams)
-    return not result or result.Instance:IsDescendantOf(targetHead.Parent)
-end
-
-local function GetClosestPlayer()
-    if Settings.AimlockCertainPlayer and Settings.AimlockCertainPlayer ~= "" then
-        local certainPlayerValue = tostring(Settings.AimlockCertainPlayer)
-        local certainPlayer = Players:FindFirstChild(certainPlayerValue)
-        if certainPlayer and IsValidTarget(certainPlayer) then
-            local head = certainPlayer.Character:FindFirstChild("Head")
-            if head and HasLineOfSight(head) then
-                local worldDist = (head.Position - camera.CFrame.Position).Magnitude
-                local maxDist = Settings.AimlockType == "鼠标/屏幕中心最近" and Settings.MouseMaxDist or Settings.AimlockMaxDist
-                if worldDist <= maxDist then
-                    return certainPlayer
-                end
-            end
-        end
-        return nil
-    end
-
-    local closest = nil
-    local shortestDistance = math.huge
-    local mousePos = Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y)
-
-    if isMobile then
-         mousePos = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
-    end
-
-    local centerPos = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
-    local checkPos = Settings.AimlockType == "鼠标/屏幕中心最近" and mousePos or centerPos
-
-    local prioritizedPlayers = {}
-    local normalPlayers = {}
-
-    for _, plr in Players:GetPlayers() do
-        if IsValidTarget(plr) then
-            local isPrioritized = false
-            if Settings.PrioritizePlayers then
-                for prioritizedPlayer, isPrio in pairs(Settings.PrioritizePlayers) do
-                    if isPrio and plr.Name == tostring(prioritizedPlayer) then
-                        isPrioritized = true
-                        break
-                    end
-                end
-            end
-
-            if isPrioritized then
-                table.insert(prioritizedPlayers, plr)
-            else
-                table.insert(normalPlayers, plr)
-            end
-        end
-    end
-
-    local function CheckPlayer(plr)
-        local head = plr.Character:FindFirstChild("Head")
-        if head then
-            local screenPos, onScreen = camera:WorldToViewportPoint(head.Position)
-            if onScreen then
-                local distance = (Vector2.new(screenPos.X, screenPos.Y) - checkPos).Magnitude
-                local worldDist = (head.Position - camera.CFrame.Position).Magnitude
-                local maxDist = Settings.AimlockType == "鼠标/屏幕中心最近" and Settings.MouseMaxDist or Settings.AimlockMaxDist
-
-                if worldDist <= maxDist and distance < shortestDistance then
-                    if Settings.EnableFOV then
-                        local fovCenter = Settings.FOVType == "屏幕中心" and centerPos or mousePos
-                        if isMobile then fovCenter = centerPos end
-
-                        if (Vector2.new(screenPos.X, screenPos.Y) - fovCenter).Magnitude <= Settings.FOVMaxDist then
-                            local distToCenter = (Vector2.new(screenPos.X, screenPos.Y) - fovCenter).Magnitude
-                            if distToCenter <= Settings.FOVSize then
-                                if HasLineOfSight(head) then
-                                    shortestDistance = distance
-                                    return plr
-                                end
-                            end
-                        end
-                    else
-                        if HasLineOfSight(head) then
-                            shortestDistance = distance
-                            return plr
-                        end
-                    end
-                end
-            end
-        end
-        return nil
-    end
-
-    for _, plr in ipairs(prioritizedPlayers) do
-        local result = CheckPlayer(plr)
-        if result then closest = result end
-    end
-
-    if not closest then
-        for _, plr in ipairs(normalPlayers) do
-            local result = CheckPlayer(plr)
-            if result then closest = result end
-        end
-    end
-
-    return closest
-end
-
-local lastAimlockAutoFire = 0
-
-function Linni_Aim.RenderLoop()
-    UpdateFOV()
-
-    if Settings.Enabled then
-        local target = GetClosestPlayer()
-        if target and target.Character and target.Character:FindFirstChild("Head") then
-            local head = target.Character.Head
-            local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
-            local targetPos = head.Position + Vector3.new(0, Settings.AimlockOffsetY, 0)
-            if targetRoot and Settings.PredictionAmount > 0 then
-                targetPos = targetPos + targetRoot.Velocity * Settings.PredictionAmount
-            end
-
-            if Settings.SmoothAimlock then
-                local smoothness = Settings.AimbotSmoothness / 100
-                camera.CFrame = camera.CFrame:Lerp(CFrame.new(camera.CFrame.Position, targetPos), smoothness)
-            else
-                camera.CFrame = CFrame.new(camera.CFrame.Position, targetPos)
-            end
-
-            if Settings.AimlockAutoFire then
-                if tick() - lastAimlockAutoFire >= (Settings.AimlockFireDelay or 0.1) then
-                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                    task.delay(0.05, function()
-                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-                    end)
-                    lastAimlockAutoFire = tick()
-                end
-            end
-        end
-    end
-end
-local LockViewEnabled = false
-local CrosshairEnabled = false
-local CrosshairSpinEnabled = false
-local translateLoop = nil
-local translatedTexts = {}
-local speedAntiPull = nil
-local SpinEnabled = false
-local SpinSpeed = 360
-local spinConnection = nil
-local antiAFKEnabled = false
-local antiAFKConnection = nil
-local UIButtons = {}
-local AntiFlingEnabled = false
-local AntiFlingConnection = nil
-local antiFlingOriginalStates = {}
-
-local function disablePlayerCollision(player)
-    if player == LocalPlayer then return end
-    local char = player.Character
-    if not char then return end
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            if antiFlingOriginalStates[part] == nil then
-                antiFlingOriginalStates[part] = part.CanCollide
-            end
-            part.CanCollide = false
-        end
-    end
-end
-
-local function enablePlayerCollision(player)
-    if player == LocalPlayer then return end
-    local char = player.Character
-    if not char then return end
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            if antiFlingOriginalStates[part] ~= nil then
-                part.CanCollide = antiFlingOriginalStates[part]
-                antiFlingOriginalStates[part] = nil
-            end
-        end
-    end
-end
-
-local function enableAllPlayersCollision()
-    for part, state in pairs(antiFlingOriginalStates) do
-        if part and part.Parent then
-            pcall(function() part.CanCollide = state end)
-        end
-    end
-    antiFlingOriginalStates = {}
-end
-
-local function startAntiFling()
-    if AntiFlingConnection then AntiFlingConnection:Disconnect() end
-    for _, p in ipairs(Players:GetPlayers()) do
-        disablePlayerCollision(p)
-    end
-    AntiFlingConnection = RunService.Heartbeat:Connect(function()
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character then
-                for _, part in ipairs(p.Character:GetDescendants()) do
-                    if part:IsA("BasePart") and part.CanCollide then
-                        if antiFlingOriginalStates[part] == nil then
-                            antiFlingOriginalStates[part] = part.CanCollide
-                        end
-                        part.CanCollide = false
-                    end
-                end
-            end
-        end
-    end)
-end
-
-local function stopAntiFling()
-    if AntiFlingConnection then AntiFlingConnection:Disconnect() end
-    AntiFlingConnection = nil
-    enableAllPlayersCollision()
-end
-
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function(char)
-        if AntiFlingEnabled then
-            task.wait(0.5)
-            disablePlayerCollision(player)
-        end
-    end)
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-    enablePlayerCollision(player)
-end)
-local function startSpin()
-if spinConnection then spinConnection:Disconnect() end
-spinConnection = RunService.Heartbeat:Connect(function(dt)
-if not SpinEnabled then return end
-local char = LocalPlayer.Character
-if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-local root = char.HumanoidRootPart
-local currentCF = root.CFrame
-local newCF = currentCF * CFrame.Angles(0, math.rad(SpinSpeed * dt), 0)
-root.CFrame = newCF
-end)
-end
-local function stopSpin()
-SpinEnabled = false
-if spinConnection then spinConnection:Disconnect() end
-spinConnection = nil
-end
-local function startAntiAFK()
-if antiAFKConnection then antiAFKConnection:Disconnect() end
-antiAFKConnection = LocalPlayer.Idled:Connect(function()
-local vu = game:GetService("VirtualUser")
-vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
-wait(1)
-vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
-end)
-end
-local function stopAntiAFK()
-if antiAFKConnection then antiAFKConnection:Disconnect() end
-antiAFKConnection = nil
-end
-Linni_Aim.Init()
-Linni_Aim.Settings.AimlockOffsetY = 0
-local function getHumanoid()
 local char = LocalPlayer.Character
 if char then return char:FindFirstChild("Humanoid") end
 end
@@ -649,58 +249,6 @@ if flatDir.Magnitude > 0.01 then
 root.CFrame = CFrame.new(root.Position, root.Position + flatDir)
 end
 end)
-local CrosshairGui = nil
-local CrosshairFrame = nil
-local function createCrosshair()
-if CrosshairGui then return end
-CrosshairGui = Instance.new("ScreenGui")
-CrosshairGui.Name = "CrosshairGui"
-CrosshairGui.Parent = LocalPlayer.PlayerGui
-CrosshairGui.ResetOnSpawn = false
-CrosshairGui.IgnoreGuiInset = true
-CrosshairFrame = Instance.new("Frame")
-CrosshairFrame.Name = "Crosshair"
-CrosshairFrame.Parent = CrosshairGui
-CrosshairFrame.Size = UDim2.new(0, 30, 0, 30)
-CrosshairFrame.Position = UDim2.new(0.5, -15, 0.5, -15)
-CrosshairFrame.BackgroundTransparency = 1
-CrosshairFrame.Visible = false
-local hLine = Instance.new("Frame")
-hLine.Parent = CrosshairFrame
-hLine.Size = UDim2.new(1, 0, 0, 2)
-hLine.Position = UDim2.new(0, 0, 0.5, -1)
-hLine.BackgroundColor3 = Color3.new(1,1,1)
-hLine.BorderSizePixel = 0
-local vLine = Instance.new("Frame")
-vLine.Parent = CrosshairFrame
-vLine.Size = UDim2.new(0, 2, 1, 0)
-vLine.Position = UDim2.new(0.5, -1, 0, 0)
-vLine.BackgroundColor3 = Color3.new(1,1,1)
-vLine.BorderSizePixel = 0
-local dot = Instance.new("Frame")
-dot.Parent = CrosshairFrame
-dot.Size = UDim2.new(0, 6, 0, 6)
-dot.Position = UDim2.new(0.5, -3, 0.5, -3)
-dot.BackgroundColor3 = Color3.new(1,1,1)
-dot.BorderSizePixel = 0
-local dotCorner = Instance.new("UICorner")
-dotCorner.CornerRadius = UDim.new(1,0)
-dotCorner.Parent = dot
-end
-RunService.Heartbeat:Connect(function()
-if not CrosshairEnabled then
-if CrosshairFrame then CrosshairFrame.Visible = false end
-return
-end
-if not CrosshairGui then createCrosshair() end
-if CrosshairSpinEnabled then
-CrosshairFrame.Rotation = (CrosshairFrame.Rotation + 1) % 360
-else
-CrosshairFrame.Rotation = 0
-end
-CrosshairFrame.Visible = true
-end)
-local isStealing = false
 local function stealAllItems()
 if isStealing then return 0 end
 isStealing = true
@@ -1675,10 +1223,9 @@ return false
 end
 loadSavedServers()
 local window = UILib:CreateWindow({
-Title = "恐脚本--自瞄",
-Icon = "rbxassetid://113517588654522",
-ToggleText = "自瞄",
-ToggleTextClose = "自瞄",
+Title = "恐脚本--通用" .. string.rep(" ", 6) .. "您已执行 " .. count .. " 次，谢谢您的支持！",
+ToggleText = "打开菜单",
+ToggleTextClose = "关闭菜单",
 })
 local function copyToClipboard(text, label)
 local success = pcall(function()
@@ -1753,7 +1300,6 @@ createCopyButton(page1.frame, "作者QQ", "3999698324", 10, startY)
 createCopyButton(page1.frame, "群1", "1106203175", 10, startY + 45)
 createCopyButton(page1.frame, "群2", "1001577641", 10, startY + 90)
 page1:UpdateCanvas()
-local page2 = window:AddPage("主要")
 local page2 = window:AddPage("主要")
 page2:AddToggle({ Text = "透视", Default = false, Callback = function(state)
 espEnabled = state
@@ -1871,171 +1417,574 @@ page2:AddButton({ Text = "祖国人汉化", Callback = function()
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "祖国人汉化", Text = "正在加载中...", Duration = 5})
 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/-/refs/heads/main/祖国人汉化"))() end)
 end })
+local page3 = window:AddPage("次要")
+page3:AddButton({ Text = "自动翻译", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自动翻译", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/自动翻译"))() end)
+end })
+local nearest = nil
+local minDist = math.huge
+local myPos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position
+if not myPos then return end
+for _, p in ipairs(Players:GetPlayers()) do
+if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
+if dist < minDist then minDist = dist; nearest = p end
+end
+end
+if nearest and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+LocalPlayer.Character.HumanoidRootPart.CFrame = nearest.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, 3)
+end
+end })
 
-page2:AddToggle({ Text = "自瞄", Default = false, Callback = function(state)
-Linni_Aim.Settings.Enabled = state
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = state and "已开启" or "已关闭", Duration = 3})
-end })
-page2:AddToggle({ Text = "墙体检测", Default = true, Callback = function(state)
-Linni_Aim.Settings.WallCheck = state
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "墙体检测", Text = state and "已开启" or "已关闭", Duration = 2})
-end })
-page2:AddToggle({ Text = "队友检测", Default = true, Callback = function(state)
-Linni_Aim.Settings.TeamCheck = state
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "队友检测", Text = state and "已开启" or "已关闭", Duration = 2})
-end })
-page2:AddToggle({ Text = "平滑自瞄", Default = false, Callback = function(state)
-Linni_Aim.Settings.SmoothAimlock = state
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "平滑自瞄", Text = state and "已开启" or "已关闭", Duration = 2})
-end })
-page2:AddToggle({ Text = "自动开火", Default = false, Callback = function(state)
-Linni_Aim.Settings.AimlockAutoFire = state
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自动开火", Text = state and "已开启" or "已关闭", Duration = 2})
-end })
-page2:AddToggle({ Text = "显示FOV圈", Default = false, Callback = function(state)
-Linni_Aim.Settings.ShowFOV = state
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "FOV圈", Text = state and "已显示" or "已隐藏", Duration = 2})
-end })
-page2:AddToggle({ Text = "彩虹FOV圈", Default = false, Callback = function(state)
-Linni_Aim.Settings.RainbowFOV = state
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "彩虹FOV圈", Text = state and "已开启" or "已关闭", Duration = 2})
-end })
-page2:AddToggle({ Text = "FOV范围限制", Default = false, Callback = function(state)
-Linni_Aim.Settings.EnableFOV = state
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "FOV范围限制", Text = state and "已开启" or "已关闭", Duration = 2})
-end })
-local aimlockTypeBtn = page2:AddButton({ Text = "锁定优先级: 距离最近玩家", Callback = function()
-if Linni_Aim.Settings.AimlockType == "距离最近玩家" then
-Linni_Aim.Settings.AimlockType = "鼠标/屏幕中心最近"
-aimlockTypeBtn.Text = "锁定优先级: 鼠标/屏幕中心最近"
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = "已切换为: 鼠标/屏幕中心最近", Duration = 2})
+page3:AddPlayerSelector({ Text = "选定玩家跟随", Callback = function(player) startFollow(player) end })
+page3:AddButton({ Text = "停止跟随", Callback = function() stopFollow() end })
+page3:AddCoordPanel({
+Text = "实时坐标", Title = "实时坐标",
+GetPosition = function()
+local char = LocalPlayer.Character
+if char and char:FindFirstChild("HumanoidRootPart") then return char.HumanoidRootPart.Position end
+return nil
+end,
+OnTeleport = function(x, y, z)
+local char = LocalPlayer.Character
+if char and char:FindFirstChild("HumanoidRootPart") then
+char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送成功", Text = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3})
 else
-Linni_Aim.Settings.AimlockType = "距离最近玩家"
-aimlockTypeBtn.Text = "锁定优先级: 距离最近玩家"
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = "已切换为: 距离最近玩家", Duration = 2})
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = "角色未加载", Duration = 3})
 end
+end,
+OnCopy = function(text) copyToClipboard(text, "坐标") end,
+OnError = function(msg) game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = msg, Duration = 3}) end
+})
+page3:AddPlayerSelector({ Text = "选人传送", Callback = function(p) teleportToPlayer(p) end })
+page3:AddButton({ Text = "自瞄", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/自瞄"))() end)
 end })
-local fovTypeBtn = page2:AddButton({ Text = "FOV类型: 屏幕中心", Callback = function()
-if Linni_Aim.Settings.FOVType == "屏幕中心" then
-Linni_Aim.Settings.FOVType = "跟随鼠标"
-fovTypeBtn.Text = "FOV类型: 跟随鼠标"
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "FOV类型", Text = "已切换为: 跟随鼠标", Duration = 2})
-else
-Linni_Aim.Settings.FOVType = "屏幕中心"
-fovTypeBtn.Text = "FOV类型: 屏幕中心"
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "FOV类型", Text = "已切换为: 屏幕中心", Duration = 2})
-end
-end })
-page2:AddPlayerSelector({ Text = "锁定指定玩家", Callback = function(player)
-Linni_Aim.Settings.AimlockCertainPlayer = player.Name
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = "已锁定指定玩家: " .. player.Name, Duration = 3})
-end })
-page2:AddButton({ Text = "清除指定玩家", Callback = function()
-Linni_Aim.Settings.AimlockCertainPlayer = nil
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄", Text = "已清除指定玩家锁定", Duration = 2})
-end })
-page2:AddSlider({ Text = "FOV圈半径", Min = 1, Max = 750, Default = 150, Callback = function(val)
-    pendingSliderValues["fovsize"] = val
-end })
-sliderReleaseActions["fovsize"] = function(val)
-    Linni_Aim.Settings.FOVSize = val
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "FOV圈半径", Text = "已设置为：" .. tostring(val), Duration = 2})
-end
-page2:AddSlider({ Text = "FOV圈线条粗细", Min = 1, Max = 10, Default = 2.5, Callback = function(val)
-    pendingSliderValues["fovstroke"] = val
-end })
-sliderReleaseActions["fovstroke"] = function(val)
-    Linni_Aim.Settings.FOVStrokeThickness = val
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "FOV圈线条粗细", Text = "已设置为：" .. tostring(val), Duration = 2})
-end
-page2:AddSlider({ Text = "自瞄生效距离", Min = 1, Max = 10000, Default = 5000, Callback = function(val)
-    pendingSliderValues["aimlockmaxdist"] = val
-end })
-sliderReleaseActions["aimlockmaxdist"] = function(val)
-    Linni_Aim.Settings.AimlockMaxDist = val
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自瞄生效距离", Text = "已设置为：" .. tostring(val), Duration = 2})
-end
-page2:AddSlider({ Text = "鼠标吸附范围", Min = 1, Max = 10000, Default = 5000, Callback = function(val)
-    pendingSliderValues["mousemaxdist"] = val
-end })
-sliderReleaseActions["mousemaxdist"] = function(val)
-    Linni_Aim.Settings.MouseMaxDist = val
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "鼠标吸附范围", Text = "已设置为：" .. tostring(val), Duration = 2})
-end
-page2:AddSlider({ Text = "FOV判定距离", Min = 1, Max = 10000, Default = 5000, Callback = function(val)
-    pendingSliderValues["fovmaxdist"] = val
-end })
-sliderReleaseActions["fovmaxdist"] = function(val)
-    Linni_Aim.Settings.FOVMaxDist = val
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "FOV判定距离", Text = "已设置为：" .. tostring(val), Duration = 2})
-end
-page2:AddSlider({ Text = "平滑度", Min = 1, Max = 100, Default = 25, Callback = function(val)
-    pendingSliderValues["aimbotsmoothness"] = val
-end })
-sliderReleaseActions["aimbotsmoothness"] = function(val)
-    Linni_Aim.Settings.AimbotSmoothness = val
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "平滑度", Text = "已设置为：" .. tostring(val), Duration = 2})
-end
-page2:AddSlider({ Text = "开火延迟", Min = 0.01, Max = 1, Default = 0.05, Callback = function(val)
-    pendingSliderValues["firedelay"] = val
-end })
-sliderReleaseActions["firedelay"] = function(val)
-    Linni_Aim.Settings.AimlockFireDelay = val
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "开火延迟", Text = "已设置为：" .. tostring(val), Duration = 2})
-end
-page2:AddSlider({ Text = "彩虹速度", Min = 1, Max = 10, Default = 2, Callback = function(val)
-    pendingSliderValues["rainbowspeed"] = val
-end })
-sliderReleaseActions["rainbowspeed"] = function(val)
-    Linni_Aim.Settings.RainbowFOVSpeed = val
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "彩虹速度", Text = "已设置为：" .. tostring(val), Duration = 2})
-end
-page2:AddSlider({ Text = "Y轴偏移", Min = 0, Max = 85, Default = 0, Callback = function(val)
-    pendingSliderValues["offsety"] = val
-end })
-sliderReleaseActions["offsety"] = function(val)
-    Linni_Aim.Settings.AimlockOffsetY = val
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Y轴偏移", Text = "已设置为：" .. tostring(val), Duration = 2})
-end
-page2:AddSlider({ Text = "预判量", Min = 0, Max = 1, Default = 0, Callback = function(val)
-    pendingSliderValues["prediction"] = val
-end })
-sliderReleaseActions["prediction"] = function(val)
-    Linni_Aim.Settings.PredictionAmount = val
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "预判量", Text = "已设置为：" .. tostring(val), Duration = 2})
-end
-page2:AddToggle({ Text = "锁定视角", Default = false, Callback = function(state)
 LockViewEnabled = state
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "锁定视角", Text = state and "已开启" or "已关闭", Duration = 3})
 end })
-
-page2:AddToggle({ Text = "准星", Default = false, Callback = function(state)
-CrosshairEnabled = state
-CrosshairFrame.Visible = CrosshairEnabled
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "准星", Text = state and "已显示" or "已隐藏", Duration = 3})
+local smoothFollowSelectBtn = page3:AddButton({ Text = "平滑跟随选定人", Callback = function()
+if smoothFollowConnection then stopSmoothFollow() else showSmoothFollowSelect() end
 end })
-
-page2:AddToggle({ Text = "准星旋转", Default = false, Callback = function(state)
-CrosshairSpinEnabled = state
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "准星旋转", Text = state and "已开启" or "已关闭", Duration = 3})
-end })
-
-local page3 = window:AddPage("设置")
-page3:AddToggle({ Text = "彩虹FOV圈", Default = false, Callback = function(state)
-Linni_Aim.Settings.RainbowFOV = state
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "彩虹FOV圈", Text = state and "已开启" or "已关闭", Duration = 2})
-end })
-page3:AddSlider({ Text = "彩虹速度", Min = 1, Max = 10, Default = 2, Callback = function(val)
-    pendingSliderValues["rainbowspeed"] = val
-end })
-sliderReleaseActions["rainbowspeed"] = function(val)
-    Linni_Aim.Settings.RainbowFOVSpeed = val
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "彩虹速度", Text = "已设置为：" .. tostring(val), Duration = 2})
+UIButtons.smoothFollowSelectBtn = smoothFollowSelectBtn
+local smoothFollowNearestBtn = page3:AddButton({ Text = "平滑跟随最近的人", Callback = function()
+if smoothFollowConnection then stopSmoothFollow()
+else
+local nearest = getNearestPlayer()
+if nearest then startSmoothFollow(nearest) smoothFollowNearestBtn.Text = "停止平滑跟随"
+else game:GetService("StarterGui"):SetCore("SendNotification", {Title = "平滑跟随", Text = "未找到其他玩家", Duration = 3}) end
 end
-page3:AddSlider({ Text = "FOV圈线条粗细", Min = 1, Max = 10, Default = 2.5, Callback = function(val)
-    pendingSliderValues["fovstroke"] = val
 end })
-sliderReleaseActions["fovstroke"] = function(val)
-    Linni_Aim.Settings.FOVStrokeThickness = val
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "FOV圈线条粗细", Text = "已设置为：" .. tostring(val), Duration = 2})
+UIButtons.smoothFollowNearestBtn = smoothFollowNearestBtn
+page3:AddButton({ Text = "撸管", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "撸管", Text = "正在生成工具...", Duration = 3})
+task.spawn(function() loadLuGuan() end)
+end })
+page3:AddToggle({ Text = "飞行控制", Default = false, Callback = function(state)
+if state then showFlyUI() else hideFlyUI() end
+end })
+local harassBtn = page3:AddButton({ Text = "操人", Callback = function()
+if harassEnabled then stopHarass() else showHarassSelect() end
+end })
+UIButtons.harassBtn = harassBtn
+local harassNearestBtn = page3:AddButton({ Text = "操最近的人", Callback = function()
+if harassEnabled then stopHarass()
+else
+local nearest = getNearestPlayer()
+if nearest then
+harassTarget = nearest
+harassEnabled = true
+startHarass()
+harassNearestBtn.Text = "停止操人"
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "操人", Text = "开始疯狂操 " .. nearest.Name .. "！", Duration = 3})
+else
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "操人", Text = "未找到其他玩家", Duration = 3})
 end
+end
+end })
+UIButtons.harassNearestBtn = harassNearestBtn
+page3:AddToggle({ Text = "原地旋转", Default = false, Callback = function(state)
+SpinEnabled = state
+if state then startSpin() else stopSpin() end
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "原地旋转", Text = state and "已开启" or "已关闭", Duration = 3})
+end })
+page3:AddHarassSpeedPanel({ Text = "操人速度", Title = "操人速度 (次/秒)", Default = 5, Min = 1, Max = 20, OnChange = function(speed) pendingSliderValues["harassspeed"] = speed end })
+sliderReleaseActions["harassspeed"] = function(speed)
+    harassSpeed = speed
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "操人速度", Text = "已设置为：" .. speed .. " 次/秒", Duration = 2})
+end
+page3:AddSpinSpeedPanel({ Text = "旋转速度", Title = "旋转速度 (度/秒)", Default = 360, Min = 1, Max = 10000, OnChange = function(speed) pendingSliderValues["spinspeed"] = speed end })
+sliderReleaseActions["spinspeed"] = function(speed)
+    SpinSpeed = speed
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "旋转速度", Text = "已设置为：" .. speed .. " 度/秒", Duration = 2})
+end
+local page4 = window:AddPage("杂项")
+page4:AddToggle({ Text = "防甩飞", Default = false, Callback = function(state)
+AntiFlingEnabled = state
+if state then startAntiFling() else stopAntiFling() end
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "防甩飞", Text = state and "已开启" or "已关闭", Duration = 3})
+end })
+page4:AddButton({ Text = "显示时间", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "显示时间", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://pastebin.com/raw/0zKLyd4W"))() end)
+end })
+page4:AddButton({ Text = "美化包排行榜第一", Callback = function()
+beautifyStats()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "美化包", Text = "数值已修改为999（若游戏支持）", Duration = 3})
+end })
+antiAFKEnabled = state
+if state then startAntiAFK() else stopAntiAFK() end
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "反挂机踢出", Text = state and "已开启" or "已关闭", Duration = 3})
+end })
+page4:AddInstanceIdPanel({
+Text = "获取实例ID", Title = "实例 ID (JobId)",
+OnCopy = function(id)
+pcall(function() setclipboard(id) end)
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "实例ID", Text = "已复制: " .. id, Duration = 3})
+end,
+OnSave = function(id)
+local defaultName = "服务器 " .. (#savedServers + 1)
+addServerId(tostring(game.PlaceId), defaultName)
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "保存服务器", Text = "已保存当前服务器到列表", Duration = 3})
+end
+})
+page4:AddPlaceIdPanel({
+Text = "获取数字ID", Title = "数字 ID (PlaceId)",
+OnCopy = function(id)
+pcall(function() setclipboard(id) end)
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "数字ID", Text = "已复制: " .. id, Duration = 3})
+end
+})
+page4:AddTeleportServerPanel({
+Text = "传送指定服务器", Title = "传送指定服务器",
+OnTeleport = function(placeId)
+pcall(function() game:GetService("TeleportService"):Teleport(tonumber(placeId) or game.PlaceId) end)
+end,
+OnError = function(msg) game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = msg, Duration = 3}) end
+})
+page4:AddSavedServersPanel({
+Text = "已保存的服务器", Title = "已保存的服务器",
+Servers = savedServers,
+OnTeleport = function(id)
+pcall(function() game:GetService("TeleportService"):Teleport(tonumber(id) or game.PlaceId) end)
+end,
+OnSave = function(id, name) addServerId(id, name) end,
+OnRename = function(id, name) return renameServerId(id, name) end,
+OnDelete = function(id)
+removeServerId(id)
+return true
+end
+})
+page4:AddButton({ Text = "数字ID传送", Callback = function()
+local placeGui = Instance.new("ScreenGui")
+placeGui.Name = "PlaceIdTeleportGui"
+placeGui.Parent = LocalPlayer.PlayerGui
+placeGui.IgnoreGuiInset = true
+placeGui.ResetOnSpawn = false
+placeGui.DisplayOrder = 999
+local blocker = Instance.new("Frame")
+blocker.Name = "Blocker"
+blocker.Parent = placeGui
+blocker.Size = UDim2.new(1, 0, 1, 0)
+blocker.BackgroundTransparency = 1
+blocker.Active = true
+blocker.ZIndex = 0
+local bg = Instance.new("Frame")
+bg.Parent = placeGui
+bg.Size = UDim2.new(0, 320, 0, 200)
+bg.Position = UDim2.new(0.5, -160, 0.5, -100)
+bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+bg.BorderSizePixel = 0
+bg.ZIndex = 1
+Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 12)
+local title = Instance.new("TextLabel")
+title.Parent = bg
+title.Size = UDim2.new(1, 0, 0, 35)
+title.Position = UDim2.new(0, 0, 0, 5)
+title.BackgroundTransparency = 1
+title.Text = "数字ID传送 (PlaceId)"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+local descLabel = Instance.new("TextLabel")
+descLabel.Parent = bg
+descLabel.Size = UDim2.new(1, -20, 0, 20)
+descLabel.Position = UDim2.new(0, 10, 0, 40)
+descLabel.BackgroundTransparency = 1
+descLabel.Text = "输入游戏数字ID，传送到对应游戏"
+descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+descLabel.Font = Enum.Font.SourceSans
+descLabel.TextSize = 13
+descLabel.TextXAlignment = Enum.TextXAlignment.Left
+local inputBox = Instance.new("TextBox")
+inputBox.Parent = bg
+inputBox.Size = UDim2.new(1, -20, 0, 35)
+inputBox.Position = UDim2.new(0, 10, 0, 65)
+inputBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+inputBox.PlaceholderText = "例如: 286090429 (兵工厂)"
+inputBox.Text = ""
+inputBox.TextColor3 = Color3.new(1, 1, 1)
+inputBox.Font = Enum.Font.SourceSans
+inputBox.TextSize = 16
+Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0, 6)
+local teleportBtn = Instance.new("TextButton")
+teleportBtn.Parent = bg
+teleportBtn.Size = UDim2.new(0.45, 0, 0, 35)
+teleportBtn.Position = UDim2.new(0.05, 0, 0, 110)
+teleportBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+teleportBtn.Text = "传送"
+teleportBtn.TextColor3 = Color3.new(1, 1, 1)
+teleportBtn.Font = Enum.Font.SourceSansBold
+teleportBtn.TextSize = 16
+Instance.new("UICorner", teleportBtn).CornerRadius = UDim.new(0, 6)
+teleportBtn.MouseButton1Click:Connect(function()
+local placeId = tonumber(inputBox.Text)
+if not placeId then
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "传送失败", Text = "请输入有效的数字ID", Duration = 3})
+return
+end
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "数字ID传送", Text = "正在传送到 PlaceId: " .. tostring(placeId) .. " ...", Duration = 5})
+pcall(function()
+game:GetService("TeleportService"):Teleport(placeId, LocalPlayer)
+end)
+placeGui:Destroy()
+end)
+local copyCurrentBtn = Instance.new("TextButton")
+copyCurrentBtn.Parent = bg
+copyCurrentBtn.Size = UDim2.new(0.45, 0, 0, 35)
+copyCurrentBtn.Position = UDim2.new(0.5, 0, 0, 110)
+copyCurrentBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+copyCurrentBtn.Text = "复制当前ID"
+copyCurrentBtn.TextColor3 = Color3.new(1, 1, 1)
+copyCurrentBtn.Font = Enum.Font.SourceSansBold
+copyCurrentBtn.TextSize = 16
+Instance.new("UICorner", copyCurrentBtn).CornerRadius = UDim.new(0, 6)
+copyCurrentBtn.MouseButton1Click:Connect(function()
+pcall(function() setclipboard(tostring(game.PlaceId)) end)
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "数字ID", Text = "已复制当前PlaceId: " .. tostring(game.PlaceId), Duration = 3})
+end)
+local closeBtn = Instance.new("TextButton")
+closeBtn.Parent = bg
+closeBtn.Size = UDim2.new(0.9, 0, 0, 30)
+closeBtn.Position = UDim2.new(0.05, 0, 0, 155)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.Text = "关闭"
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.TextSize = 16
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+closeBtn.MouseButton1Click:Connect(function() placeGui:Destroy() end)
+end })
+page4:AddButton({ Text = "自定义踢出", Callback = function()
+local kickGui = Instance.new("ScreenGui")
+kickGui.Name = "CustomKickGui"
+kickGui.Parent = LocalPlayer.PlayerGui
+kickGui.IgnoreGuiInset = true
+kickGui.ResetOnSpawn = false
+kickGui.DisplayOrder = 999
+local blocker = Instance.new("Frame")
+blocker.Name = "Blocker"
+blocker.Parent = kickGui
+blocker.Size = UDim2.new(1, 0, 1, 0)
+blocker.BackgroundTransparency = 1
+blocker.Active = true
+blocker.ZIndex = 0
+local bg = Instance.new("Frame")
+bg.Parent = kickGui
+bg.Size = UDim2.new(0, 320, 0, 280)
+bg.Position = UDim2.new(0.5, -160, 0.5, -140)
+bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+bg.BorderSizePixel = 0
+bg.ZIndex = 1
+Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 12)
+local title = Instance.new("TextLabel")
+title.Parent = bg
+title.Size = UDim2.new(1, 0, 0, 35)
+title.Position = UDim2.new(0, 0, 0, 5)
+title.BackgroundTransparency = 1
+title.Text = "自定义踢出弹窗"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Parent = bg
+titleLabel.Size = UDim2.new(1, -20, 0, 20)
+titleLabel.Position = UDim2.new(0, 10, 0, 45)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "踢出标题:"
+titleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+titleLabel.Font = Enum.Font.SourceSans
+titleLabel.TextSize = 14
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+local titleBox = Instance.new("TextBox")
+titleBox.Parent = bg
+titleBox.Size = UDim2.new(1, -20, 0, 30)
+titleBox.Position = UDim2.new(0, 10, 0, 65)
+titleBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+titleBox.Text = "你被踢出了游戏"
+titleBox.TextColor3 = Color3.new(1, 1, 1)
+titleBox.Font = Enum.Font.SourceSans
+titleBox.TextSize = 16
+Instance.new("UICorner", titleBox).CornerRadius = UDim.new(0, 6)
+local contentLabel = Instance.new("TextLabel")
+contentLabel.Parent = bg
+contentLabel.Size = UDim2.new(1, -20, 0, 20)
+contentLabel.Position = UDim2.new(0, 10, 0, 100)
+contentLabel.BackgroundTransparency = 1
+contentLabel.Text = "踢出内容:"
+contentLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+contentLabel.Font = Enum.Font.SourceSans
+contentLabel.TextSize = 14
+contentLabel.TextXAlignment = Enum.TextXAlignment.Left
+local contentBox = Instance.new("TextBox")
+contentBox.Parent = bg
+contentBox.Size = UDim2.new(1, -20, 0, 60)
+contentBox.Position = UDim2.new(0, 10, 0, 120)
+contentBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+contentBox.Text = "Error Code: 267"
+contentBox.TextColor3 = Color3.new(1, 1, 1)
+contentBox.Font = Enum.Font.SourceSans
+contentBox.TextSize = 14
+contentBox.TextWrapped = true
+contentBox.ClearTextOnFocus = false
+Instance.new("UICorner", contentBox).CornerRadius = UDim.new(0, 6)
+local codeLabel = Instance.new("TextLabel")
+codeLabel.Parent = bg
+codeLabel.Size = UDim2.new(1, -20, 0, 20)
+codeLabel.Position = UDim2.new(0, 10, 0, 185)
+codeLabel.BackgroundTransparency = 1
+codeLabel.Text = "错误代码 (可选):"
+codeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+codeLabel.Font = Enum.Font.SourceSans
+codeLabel.TextSize = 14
+codeLabel.TextXAlignment = Enum.TextXAlignment.Left
+local codeBox = Instance.new("TextBox")
+codeBox.Parent = bg
+codeBox.Size = UDim2.new(1, -20, 0, 25)
+codeBox.Position = UDim2.new(0, 10, 0, 205)
+codeBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+codeBox.Text = "267"
+codeBox.TextColor3 = Color3.new(1, 1, 1)
+codeBox.Font = Enum.Font.SourceSans
+codeBox.TextSize = 14
+Instance.new("UICorner", codeBox).CornerRadius = UDim.new(0, 6)
+local kickBtn = Instance.new("TextButton")
+kickBtn.Parent = bg
+kickBtn.Size = UDim2.new(0.45, 0, 0, 30)
+kickBtn.Position = UDim2.new(0.05, 0, 0, 240)
+kickBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+kickBtn.Text = "执行踢出"
+kickBtn.TextColor3 = Color3.new(1, 1, 1)
+kickBtn.Font = Enum.Font.SourceSansBold
+kickBtn.TextSize = 16
+Instance.new("UICorner", kickBtn).CornerRadius = UDim.new(0, 6)
+kickBtn.MouseButton1Click:Connect(function()
+local kickTitle = titleBox.Text
+local kickContent = contentBox.Text
+local kickCode = tonumber(codeBox.Text) or 267
+kickGui:Destroy()
+LocalPlayer:Kick(kickContent)
+end)
+local closeBtn = Instance.new("TextButton")
+closeBtn.Parent = bg
+closeBtn.Size = UDim2.new(0.45, 0, 0, 30)
+closeBtn.Position = UDim2.new(0.5, 0, 0, 240)
+closeBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+closeBtn.Text = "取消"
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.TextSize = 16
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+closeBtn.MouseButton1Click:Connect(function() kickGui:Destroy() end)
+end })
+page4:AddButton({ Text = "自定义确认弹窗", Callback = function()
+local confirmGui = Instance.new("ScreenGui")
+confirmGui.Name = "CustomConfirmGui"
+confirmGui.Parent = LocalPlayer.PlayerGui
+confirmGui.IgnoreGuiInset = true
+confirmGui.ResetOnSpawn = false
+confirmGui.DisplayOrder = 999
+local blocker = Instance.new("Frame")
+blocker.Name = "Blocker"
+blocker.Parent = confirmGui
+blocker.Size = UDim2.new(1, 0, 1, 0)
+blocker.BackgroundTransparency = 1
+blocker.Active = true
+blocker.ZIndex = 0
+local bg = Instance.new("Frame")
+bg.Parent = confirmGui
+bg.Size = UDim2.new(0, 320, 0, 260)
+bg.Position = UDim2.new(0.5, -160, 0.5, -130)
+bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+bg.BorderSizePixel = 0
+bg.ZIndex = 1
+Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 12)
+local title = Instance.new("TextLabel")
+title.Parent = bg
+title.Size = UDim2.new(1, 0, 0, 35)
+title.Position = UDim2.new(0, 0, 0, 5)
+title.BackgroundTransparency = 1
+title.Text = "自定义确认弹窗"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Parent = bg
+titleLabel.Size = UDim2.new(1, -20, 0, 20)
+titleLabel.Position = UDim2.new(0, 10, 0, 45)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "弹窗标题:"
+titleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+titleLabel.Font = Enum.Font.SourceSans
+titleLabel.TextSize = 14
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+local titleBox = Instance.new("TextBox")
+titleBox.Parent = bg
+titleBox.Size = UDim2.new(1, -20, 0, 30)
+titleBox.Position = UDim2.new(0, 10, 0, 65)
+titleBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+titleBox.Text = "确认操作"
+titleBox.TextColor3 = Color3.new(1, 1, 1)
+titleBox.Font = Enum.Font.SourceSans
+titleBox.TextSize = 16
+Instance.new("UICorner", titleBox).CornerRadius = UDim.new(0, 6)
+local contentLabel = Instance.new("TextLabel")
+contentLabel.Parent = bg
+contentLabel.Size = UDim2.new(1, -20, 0, 20)
+contentLabel.Position = UDim2.new(0, 10, 0, 100)
+contentLabel.BackgroundTransparency = 1
+contentLabel.Text = "弹窗内容:"
+contentLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+contentLabel.Font = Enum.Font.SourceSans
+contentLabel.TextSize = 14
+contentLabel.TextXAlignment = Enum.TextXAlignment.Left
+local contentBox = Instance.new("TextBox")
+contentBox.Parent = bg
+contentBox.Size = UDim2.new(1, -20, 0, 60)
+contentBox.Position = UDim2.new(0, 10, 0, 120)
+contentBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+contentBox.Text = "你确定要执行此操作吗？"
+contentBox.TextColor3 = Color3.new(1, 1, 1)
+contentBox.Font = Enum.Font.SourceSans
+contentBox.TextSize = 14
+contentBox.TextWrapped = true
+contentBox.ClearTextOnFocus = false
+Instance.new("UICorner", contentBox).CornerRadius = UDim.new(0, 6)
+local confirmBtn = Instance.new("TextButton")
+confirmBtn.Parent = bg
+confirmBtn.Size = UDim2.new(0.45, 0, 0, 30)
+confirmBtn.Position = UDim2.new(0.05, 0, 0, 200)
+confirmBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+confirmBtn.Text = "确认并弹出"
+confirmBtn.TextColor3 = Color3.new(1, 1, 1)
+confirmBtn.Font = Enum.Font.SourceSansBold
+confirmBtn.TextSize = 16
+Instance.new("UICorner", confirmBtn).CornerRadius = UDim.new(0, 6)
+confirmBtn.MouseButton1Click:Connect(function()
+local cTitle = titleBox.Text
+local cContent = contentBox.Text
+confirmGui:Destroy()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = cTitle, Text = cContent, Duration = 10})
+task.wait(0.5)
+local guiService = game:GetService("GuiService")
+guiService:SendNotification({Title = cTitle, Text = cContent, Duration = 10, Button1 = "确定"})
+end)
+local closeBtn = Instance.new("TextButton")
+closeBtn.Parent = bg
+closeBtn.Size = UDim2.new(0.45, 0, 0, 30)
+closeBtn.Position = UDim2.new(0.5, 0, 0, 200)
+closeBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+closeBtn.Text = "取消"
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.TextSize = 16
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+closeBtn.MouseButton1Click:Connect(function() confirmGui:Destroy() end)
+end })
+local page5 = window:AddPage("支持服务器")
+page5:AddButton({ Text = "执行加载器", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", { Title = "执行加载器", Text = "正在加载中...", Duration = 5 })
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本加载器"))() end)
+end })
+page5:AddButton({ Text = "复制加载器执行代码", Callback = function()
+copyToClipboard('loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本加载器"))()', "加载器代码")
+end })
+page5:AddButton({ Text = "破坏者谜团2", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "破坏者谜团2", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/PHZMT.NB"))() end)
+end })
+page5:AddButton({ Text = "吃吃世界", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "吃吃世界", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/CCSJ.NB"))() end)
+end })
+page5:AddButton({ Text = "在超市生活一周", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "在超市生活一周", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCSSHYZ.NB"))() end)
+end })
+page5:AddButton({ Text = "亡命速递", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "亡命速递", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/WMSD.NB"))() end)
+end })
+page5:AddButton({ Text = "巨剑骑士", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "巨剑骑士", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/JJQS.NB"))() end)
+end })
+page5:AddButton({ Text = "doors", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "doors", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/DOORS.NB"))() end)
+end })
+page5:AddButton({ Text = "盲射", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "盲射", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MS.NB"))() end)
+end })
+page5:AddButton({ Text = "找到按钮", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "找到按钮", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZDNN.NB"))() end)
+end })
+page5:AddButton({ Text = "墨水游戏", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "墨水游戏", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MSYS.NB"))() end)
+end })
+page5:AddButton({ Text = "力量传奇", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "力量传奇", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/LLCC.NB"))() end)
+end })
+page5:AddButton({ Text = "踢出幸运方块", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "踢出幸运方块", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/TCXYFK.NB"))() end)
+end })
+page5:AddButton({ Text = "森林中的99夜", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "森林中的99夜", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SLZDJJY.NB"))() end)
+end })
+page5:AddButton({ Text = "键盘速度逃脱", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "键盘速度逃脱", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/JPSDTT.NB"))() end)
+end })
+page5:AddButton({ Text = "被遗弃", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", { Title = "被遗弃", Text = "正在加载被遗弃脚本...", Duration = 5 })
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/BYC.NB"))() end)
+end })
+page5:AddButton({ Text = "变身躲猫猫", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "变身躲猫猫", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/BSDMM.NB"))() end)
+end })
+page5:AddButton({ Text = "能量爆炸幸运方块", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "能量爆炸幸运方块", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/NLBZXYFK.NB"))() end)
+end })
+page5:AddButton({ Text = "死铁轨", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "死铁轨", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/STG.NB"))() end)
+end })
+page5:AddButton({ Text = "自然灾害", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "自然灾害", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZYZH.NB"))() end)
+end })
+page5:AddButton({ Text = "最强战场", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "最强战场", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCZC.NB"))() end)
+end })
