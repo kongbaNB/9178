@@ -167,8 +167,7 @@ Linni_Aim.Settings = {
     RainbowFOVSpeed = 2,
     WhitelistPlayers = {},
     PrioritizePlayers = {},
-    AimlockOffsetY = 0,
-    AimlockOffsetX = 0
+    AimlockOffsetY = 0
 }
 
 local Settings = Linni_Aim.Settings
@@ -179,6 +178,7 @@ local AimlockCircleFrame
 local AimlockStroke
 
 function Linni_Aim.Init()
+Linni_Aim.Settings.AimlockOffsetY = 0.85
     if AimlockFOVGui then AimlockFOVGui:Destroy() end
 
     AimlockFOVGui = Instance.new("ScreenGui")
@@ -388,8 +388,7 @@ function Linni_Aim.RenderLoop()
         local target = GetClosestPlayer()
         if target and target.Character and target.Character:FindFirstChild("Head") then
             local head = target.Character.Head
-            local offset = Vector3.new(Settings.AimlockOffsetX * 10, Settings.AimlockOffsetY * 10, 0)
-            local targetPos = head.Position + offset
+            local targetPos = head.Position + Vector3.new(0, Settings.AimlockOffsetY * 10, 0)
 
             if Settings.SmoothAimlock then
                 local smoothness = Settings.AimbotSmoothness / 100
@@ -533,6 +532,7 @@ if antiAFKConnection then antiAFKConnection:Disconnect() end
 antiAFKConnection = nil
 end
 Linni_Aim.Init()
+Linni_Aim.Settings.AimlockOffsetY = 0.85
 local function getHumanoid()
 local char = LocalPlayer.Character
 if char then return char:FindFirstChild("Humanoid") end
@@ -2031,13 +2031,6 @@ end })
 sliderReleaseActions["offsety"] = function(val)
     Linni_Aim.Settings.AimlockOffsetY = val
     game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Y轴偏移", Text = "已设置为：" .. tostring(val), Duration = 2})
-end
-page3:AddSlider({ Text = "X轴偏移", Min = -1, Max = 1, Default = 0, Callback = function(val)
-    pendingSliderValues["offsetx"] = val
-end })
-sliderReleaseActions["offsetx"] = function(val)
-    Linni_Aim.Settings.AimlockOffsetX = val
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "X轴偏移", Text = "已设置为：" .. tostring(val), Duration = 2})
 end
 page3:AddToggle({ Text = "锁定视角", Default = false, Callback = function(state)
 LockViewEnabled = state
