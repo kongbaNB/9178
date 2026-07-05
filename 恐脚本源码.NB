@@ -38,7 +38,6 @@ local jumpFloatBtn = nil
 local jumpPanel = nil
 local jumpHeight = 60
 local espEnabled = false
-local espEnabled = false
 local espBillboards = {}
 
 local function enableESP(player)
@@ -1033,7 +1032,7 @@ if harassConnection then harassConnection:Disconnect() end
 harassConnection = nil
 if UIButtons.harassBtn then UIButtons.harassBtn.Text = "操人" end
 if UIButtons.harassNearestBtn then UIButtons.harassNearestBtn.Text = "操最近的人" end
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "操人", Text = "已停止操人", Duration = 2})
+game:GetService("StarterGui"):SetCore("SendNotification", { Title = "操人", Text = "已停止操人", Duration = 2})
 end
 local smoothFollowConnection = nil
 local smoothFollowTarget = nil
@@ -2174,4 +2173,8 @@ end })
 page5:AddButton({ Text = "最强战场", Callback = function()
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "最强战场", Text = "正在加载中...", Duration = 5})
 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCZC.NB"))() end)
+end })
+page5:AddButton({ Text = "生存与杀手", Callback = function()
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "生存与杀手", Text = "正在加载中...", Duration = 5})
+task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SCYSS.NB"))() end)
 end })
