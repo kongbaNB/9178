@@ -494,6 +494,7 @@ Linni_Aim.Init()
 local Window = WindUI:CreateWindow({
     Title = "恐脚本--自瞄",
     Icon = "rbxassetid://113517588654522",
+    IconThemed = true,
     Author = "恐拜大帝",
     Folder = "恐脚本",
     Size = UDim2.fromOffset(700, 460),
@@ -510,6 +511,7 @@ local Window = WindUI:CreateWindow({
 
 Window:EditOpenButton({
     Title = "自瞄",
+    Icon = "crosshair",
     CornerRadius = UDim.new(0,16),
     StrokeThickness = 2,
     Color = ColorSequence.new(
@@ -532,6 +534,8 @@ local function notify(title, text)
         Duration = 3,
     })
 end
+
+
 
 NotifyTab:Paragraph({
     Title = "恐脚本--自瞄",
