@@ -58,6 +58,7 @@ local scripts = {
     [189707] = "ZYZH.NB",
     [10449761463] = "ZCZC.NB",
     [4580204640] = "SCYSS.NB",
+    [136801880565837] = "SG.NB",
 }
 
 local currentId = game.PlaceId
