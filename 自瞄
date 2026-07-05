@@ -1,4 +1,5 @@
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
 local player = game:GetService("Players").LocalPlayer
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
@@ -10,6 +11,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+
 local BulletTracers = {
     Enabled = false,
     Color = Color3.fromRGB(0, 255, 255),
@@ -17,10 +19,12 @@ local BulletTracers = {
     Duration = 0.5,
     Material = Enum.Material.Neon
 }
+
 local function CreateBulletTracer(startPos, endPos)
     if not BulletTracers.Enabled then return end
     local distance = (endPos - startPos).Magnitude
     if distance < 0.1 then return end
+
     local tracer = Instance.new("Part")
     tracer.Name = "BulletTracer"
     tracer.Anchored = true
@@ -33,19 +37,24 @@ local function CreateBulletTracer(startPos, endPos)
     tracer.CFrame = CFrame.lookAt(startPos, endPos) * CFrame.new(0, 0, -distance / 2)
     tracer.Transparency = 0.3
     tracer.Parent = Workspace
+
     TweenService:Create(tracer, TweenInfo.new(BulletTracers.Duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
         Transparency = 1
     }):Play()
+
     task.delay(BulletTracers.Duration + 0.1, function()
         if tracer and tracer.Parent then
             tracer:Destroy()
         end
     end)
 end
+
 local function FireBulletTracer()
     if not BulletTracers.Enabled then return end
+
     local char = LocalPlayer.Character
     if not char then return end
+
     local startPos = Camera.CFrame.Position
     local tool = char:FindFirstChildOfClass("Tool")
     if tool then
@@ -54,14 +63,19 @@ local function FireBulletTracer()
             startPos = handle.Position
         end
     end
+
     local direction = Camera.CFrame.LookVector * 5000
+
     local raycastParams = RaycastParams.new()
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
     raycastParams.FilterDescendantsInstances = {char}
+
     local result = Workspace:Raycast(startPos, direction, raycastParams)
     local endPos = result and result.Position or (startPos + direction)
+
     CreateBulletTracer(startPos, endPos)
 end
+
 local lastManualTracer = 0
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
@@ -72,8 +86,10 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         end
     end
 end)
+
 local pendingSliderValues = {}
 local sliderReleaseActions = {}
+
 UserInputService.InputEnded:Connect(function(input, gameProcessed)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         for id, value in pairs(pendingSliderValues) do
@@ -84,9 +100,11 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
         end
     end
 end)
+
 local Linni_Aim = {}
 local lplayer = Players.LocalPlayer
 local camera = Workspace.CurrentCamera
+
 Linni_Aim.Settings = {
     Enabled = false,
     AimlockType = "距离最近玩家",
@@ -113,19 +131,24 @@ Linni_Aim.Settings = {
     AimlockOffsetY = 0,
     PredictionAmount = 0
 }
+
 local Settings = Linni_Aim.Settings
 local isMobile = UserInputService.TouchEnabled
+
 local AimlockFOVGui
 local AimlockCircleFrame
 local AimlockStroke
+
 function Linni_Aim.Init()
     Linni_Aim.Settings.AimlockOffsetY = 0
     if AimlockFOVGui then AimlockFOVGui:Destroy() end
+
     AimlockFOVGui = Instance.new("ScreenGui")
     AimlockFOVGui.Name = "AimlockFOVGui_External"
     AimlockFOVGui.ResetOnSpawn = false
     AimlockFOVGui.IgnoreGuiInset = true
     AimlockFOVGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
     local success, _ = pcall(function()
         if getgenv().protectgui then
             getgenv().protectgui(AimlockFOVGui)
@@ -137,22 +160,27 @@ function Linni_Aim.Init()
     if not success then
         AimlockFOVGui.Parent = lplayer:WaitForChild("PlayerGui")
     end
+
     AimlockCircleFrame = Instance.new("Frame", AimlockFOVGui)
     AimlockCircleFrame.Name = "AimlockCircleFrame"
     AimlockCircleFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     AimlockCircleFrame.Position = UDim2.fromScale(0.5, 0.5)
     AimlockCircleFrame.Size = UDim2.fromOffset(Settings.FOVSize * 2, Settings.FOVSize * 2)
     AimlockCircleFrame.BackgroundTransparency = 1
+
     AimlockStroke = Instance.new("UIStroke", AimlockCircleFrame)
     AimlockStroke.Name = "AimlockStroke"
     AimlockStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     AimlockStroke.Thickness = 1
     AimlockStroke.Transparency = 0.5
+
     local AimlockCorner = Instance.new("UICorner", AimlockCircleFrame)
     AimlockCorner.Name = "AimlockCorner"
     AimlockCorner.CornerRadius = UDim.new(1, 0)
+
     RunService.RenderStepped:Connect(Linni_Aim.RenderLoop)
 end
+
 local rainbowClock = 0
 local function UpdateRainbowFOV()
     if Settings.RainbowFOV then
@@ -165,29 +193,34 @@ local function UpdateRainbowFOV()
         AimlockStroke.Color = Settings.FOVColor
     end
 end
+
 local function UpdateFOV()
     if Settings.ShowFOV then
         local radius = Settings.FOVSize
         AimlockCircleFrame.Size = UDim2.fromOffset(radius * 2, radius * 2)
         AimlockStroke.Transparency = 0
         AimlockStroke.Thickness = Settings.FOVStrokeThickness
+
         if Settings.FOVType == "屏幕中心" or (isMobile and Settings.FOVType == "跟随鼠标" and not UserInputService.TouchEnabled) then
             AimlockCircleFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
         else
             local mousePos = UserInputService:GetMouseLocation()
             AimlockCircleFrame.Position = UDim2.new(0, mousePos.X, 0, mousePos.Y)
         end
+
         UpdateRainbowFOV()
         AimlockFOVGui.Enabled = true
     else
         AimlockFOVGui.Enabled = false
     end
 end
+
 local function IsValidTarget(plr)
     if not plr or plr == lplayer then return false end
     if not plr.Character or not plr.Character:FindFirstChild("Head") or not plr.Character:FindFirstChild("Humanoid") then return false end
     if plr.Character.Humanoid.Health <= 0 then return false end
     if Settings.TeamCheck and plr.Team == lplayer.Team then return false end
+
     if Settings.WhitelistPlayers then
         for whitelistedPlayer, isWhitelisted in pairs(Settings.WhitelistPlayers) do
             if isWhitelisted and plr.Name == tostring(whitelistedPlayer) then
@@ -195,8 +228,10 @@ local function IsValidTarget(plr)
             end
         end
     end
+
     return true
 end
+
 local function HasLineOfSight(targetHead)
     if not Settings.WallCheck then return true end
     local raycastParams = RaycastParams.new()
@@ -205,6 +240,7 @@ local function HasLineOfSight(targetHead)
     local result = Workspace:Raycast(camera.CFrame.Position, (targetHead.Position - camera.CFrame.Position).Unit * 500, raycastParams)
     return not result or result.Instance:IsDescendantOf(targetHead.Parent)
 end
+
 local function GetClosestPlayer()
     if Settings.AimlockCertainPlayer and Settings.AimlockCertainPlayer ~= "" then
         local certainPlayerValue = tostring(Settings.AimlockCertainPlayer)
@@ -221,16 +257,21 @@ local function GetClosestPlayer()
         end
         return nil
     end
+
     local closest = nil
     local shortestDistance = math.huge
     local mousePos = Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y)
+
     if isMobile then
          mousePos = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
     end
+
     local centerPos = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
     local checkPos = Settings.AimlockType == "鼠标/屏幕中心最近" and mousePos or centerPos
+
     local prioritizedPlayers = {}
     local normalPlayers = {}
+
     for _, plr in Players:GetPlayers() do
         if IsValidTarget(plr) then
             local isPrioritized = false
@@ -242,6 +283,7 @@ local function GetClosestPlayer()
                     end
                 end
             end
+
             if isPrioritized then
                 table.insert(prioritizedPlayers, plr)
             else
@@ -249,6 +291,7 @@ local function GetClosestPlayer()
             end
         end
     end
+
     local function CheckPlayer(plr)
         local head = plr.Character:FindFirstChild("Head")
         if head then
@@ -257,10 +300,12 @@ local function GetClosestPlayer()
                 local distance = (Vector2.new(screenPos.X, screenPos.Y) - checkPos).Magnitude
                 local worldDist = (head.Position - camera.CFrame.Position).Magnitude
                 local maxDist = Settings.AimlockType == "鼠标/屏幕中心最近" and Settings.MouseMaxDist or Settings.AimlockMaxDist
+
                 if worldDist <= maxDist and distance < shortestDistance then
                     if Settings.EnableFOV then
                         local fovCenter = Settings.FOVType == "屏幕中心" and centerPos or mousePos
                         if isMobile then fovCenter = centerPos end
+
                         if (Vector2.new(screenPos.X, screenPos.Y) - fovCenter).Magnitude <= Settings.FOVMaxDist then
                             local distToCenter = (Vector2.new(screenPos.X, screenPos.Y) - fovCenter).Magnitude
                             if distToCenter <= Settings.FOVSize then
@@ -281,21 +326,27 @@ local function GetClosestPlayer()
         end
         return nil
     end
+
     for _, plr in ipairs(prioritizedPlayers) do
         local result = CheckPlayer(plr)
         if result then closest = result end
     end
+
     if not closest then
         for _, plr in ipairs(normalPlayers) do
             local result = CheckPlayer(plr)
             if result then closest = result end
         end
     end
+
     return closest
 end
+
 local lastAimlockAutoFire = 0
+
 function Linni_Aim.RenderLoop()
     UpdateFOV()
+
     if Settings.Enabled then
         local target = GetClosestPlayer()
         if target and target.Character and target.Character:FindFirstChild("Head") then
@@ -305,12 +356,14 @@ function Linni_Aim.RenderLoop()
             if targetRoot and Settings.PredictionAmount > 0 then
                 targetPos = targetPos + targetRoot.Velocity * Settings.PredictionAmount
             end
+
             if Settings.SmoothAimlock then
                 local smoothness = Settings.AimbotSmoothness / 100
                 camera.CFrame = camera.CFrame:Lerp(CFrame.new(camera.CFrame.Position, targetPos), smoothness)
             else
                 camera.CFrame = CFrame.new(camera.CFrame.Position, targetPos)
             end
+
             if Settings.AimlockAutoFire then
                 if tick() - lastAimlockAutoFire >= (Settings.AimlockFireDelay or 0.1) then
                     VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
@@ -318,15 +371,18 @@ function Linni_Aim.RenderLoop()
                         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
                     end)
                     lastAimlockAutoFire = tick()
+
                     FireBulletTracer()
                 end
             end
         end
     end
 end
+
 local LockViewEnabled = false
 local CrosshairEnabled = false
 local CrosshairSpinEnabled = false
+
 local CrosshairGui = nil
 local CrosshairFrame = nil
 local function createCrosshair()
@@ -365,6 +421,7 @@ local function createCrosshair()
     dotCorner.CornerRadius = UDim.new(1,0)
     dotCorner.Parent = dot
 end
+
 RunService.Heartbeat:Connect(function()
     if not CrosshairEnabled then
         if CrosshairFrame then CrosshairFrame.Visible = false end
@@ -378,7 +435,9 @@ RunService.Heartbeat:Connect(function()
     end
     CrosshairFrame.Visible = true
 end)
+
 local LockViewGyro = nil
+
 local function GetLockViewGyro()
     if LockViewGyro and (not LockViewGyro.Parent or not LockViewGyro:IsDescendantOf(game)) then
         LockViewGyro:Destroy()
@@ -393,6 +452,7 @@ local function GetLockViewGyro()
     end
     return LockViewGyro
 end
+
 RunService:BindToRenderStep("LockView", Enum.RenderPriority.Camera.Value + 1, function()
     if not LockViewEnabled then
         if LockViewGyro and LockViewGyro.Parent then
@@ -400,20 +460,24 @@ RunService:BindToRenderStep("LockView", Enum.RenderPriority.Camera.Value + 1, fu
         end
         return
     end
+
     local char = LocalPlayer.Character
     if not char then return end
     local root = char:FindFirstChild("HumanoidRootPart")
     if not root then return end
+
     local gyro = GetLockViewGyro()
     if gyro.Parent ~= root then
         gyro.Parent = root
     end
+
     local camDir = Camera.CFrame.LookVector
     local flatDir = Vector3.new(camDir.X, 0, camDir.Z)
     if flatDir.Magnitude > 0.01 then
         gyro.CFrame = CFrame.new(root.Position, root.Position + flatDir)
     end
 end)
+
 LocalPlayer.CharacterAdded:Connect(function(char)
     if LockViewEnabled then
         task.wait(0.1)
@@ -424,9 +488,11 @@ LocalPlayer.CharacterAdded:Connect(function(char)
         end
     end
 end)
+
 Linni_Aim.Init()
+
 local Window = WindUI:CreateWindow({
-    Title = "恐脚本
+    Title = "恐脚本--自瞄",
     Icon = "rbxassetid://113517588654522",
     Author = "恐拜大帝",
     Folder = "恐脚本",
@@ -441,6 +507,7 @@ local Window = WindUI:CreateWindow({
     SideBarWidth = 200,
     ScrollBarEnabled = true,
 })
+
 Window:EditOpenButton({
     Title = "自瞄",
     CornerRadius = UDim.new(0,16),
@@ -451,10 +518,13 @@ Window:EditOpenButton({
     ),
     Draggable = true,
 })
+
 local NotifyTab = Window:Tab({ Title = "通知", Icon = "bell" })
 local MainTab = Window:Tab({ Title = "主要", Icon = "crosshair" })
 local SettingsTab = Window:Tab({ Title = "设置", Icon = "settings" })
+
 Window:SelectTab(1)
+
 local function notify(title, text)
     WindUI:Notify({
         Title = title,
@@ -462,12 +532,14 @@ local function notify(title, text)
         Duration = 3,
     })
 end
+
 NotifyTab:Paragraph({
-    Title = "恐脚本
+    Title = "恐脚本--自瞄",
     Desc = "建议不要开Y轴偏移",
     Image = "rbxassetid://113517588654522",
     ImageSize = 42,
 })
+
 NotifyTab:Button({
     Title = "复制官方群号",
     Desc = "点击复制官方群号",
@@ -483,9 +555,11 @@ NotifyTab:Button({
         end
     end
 })
+
 local ToggleAim, ToggleLockView, ToggleCrosshair, ToggleCrosshairSpin
 local ToggleWallCheck, ToggleTeamCheck, ToggleSmoothAim, ToggleAutoFire
 local ToggleShowFOV, ToggleRainbowFOV, ToggleEnableFOV
+
 ToggleAim = MainTab:Toggle({
     Title = "自瞄",
     Value = false,
@@ -494,6 +568,7 @@ ToggleAim = MainTab:Toggle({
         notify("自瞄", state and "已开启" or "已关闭")
     end
 })
+
 ToggleLockView = MainTab:Toggle({
     Title = "锁定视角",
     Value = false,
@@ -502,6 +577,7 @@ ToggleLockView = MainTab:Toggle({
         notify("锁定视角", state and "已开启" or "已关闭")
     end
 })
+
 ToggleCrosshair = MainTab:Toggle({
     Title = "准星",
     Value = false,
@@ -511,6 +587,7 @@ ToggleCrosshair = MainTab:Toggle({
         notify("准星", state and "已显示" or "已隐藏")
     end
 })
+
 ToggleCrosshairSpin = MainTab:Toggle({
     Title = "准星旋转",
     Value = false,
@@ -519,7 +596,9 @@ ToggleCrosshairSpin = MainTab:Toggle({
         notify("准星旋转", state and "已开启" or "已关闭")
     end
 })
+
 local ToggleBulletTracer, ColorpickerBulletTracer
+
 ToggleBulletTracer = MainTab:Toggle({
     Title = "子弹轨迹",
     Value = false,
@@ -528,6 +607,7 @@ ToggleBulletTracer = MainTab:Toggle({
         notify("子弹轨迹", state and "已开启" or "已关闭")
     end
 })
+
 ColorpickerBulletTracer = MainTab:Colorpicker({
     Title = "轨迹颜色",
     Default = Color3.fromRGB(0, 255, 255),
@@ -536,6 +616,7 @@ ColorpickerBulletTracer = MainTab:Colorpicker({
         notify("轨迹颜色", "已更新")
     end
 })
+
 MainTab:Slider({
     Title = "轨迹宽度",
     Step = 0.01,
@@ -548,6 +629,7 @@ sliderReleaseActions["bulletwidth"] = function(val)
     BulletTracers.Width = val
     notify("轨迹宽度", "已设置为：" .. tostring(val))
 end
+
 MainTab:Slider({
     Title = "轨迹持续时间",
     Step = 0.1,
@@ -560,6 +642,7 @@ sliderReleaseActions["bulletduration"] = function(val)
     BulletTracers.Duration = val
     notify("轨迹持续时间", "已设置为：" .. tostring(val))
 end
+
 ToggleWallCheck = MainTab:Toggle({
     Title = "墙体检测",
     Value = true,
@@ -568,6 +651,7 @@ ToggleWallCheck = MainTab:Toggle({
         notify("墙体检测", state and "已开启" or "已关闭")
     end
 })
+
 ToggleTeamCheck = MainTab:Toggle({
     Title = "队友检测",
     Value = true,
@@ -576,6 +660,7 @@ ToggleTeamCheck = MainTab:Toggle({
         notify("队友检测", state and "已开启" or "已关闭")
     end
 })
+
 ToggleSmoothAim = MainTab:Toggle({
     Title = "平滑自瞄",
     Value = false,
@@ -584,6 +669,7 @@ ToggleSmoothAim = MainTab:Toggle({
         notify("平滑自瞄", state and "已开启" or "已关闭")
     end
 })
+
 ToggleAutoFire = MainTab:Toggle({
     Title = "自动开火",
     Value = false,
@@ -592,6 +678,7 @@ ToggleAutoFire = MainTab:Toggle({
         notify("自动开火", state and "已开启" or "已关闭")
     end
 })
+
 ToggleShowFOV = MainTab:Toggle({
     Title = "显示FOV圈",
     Value = false,
@@ -600,6 +687,7 @@ ToggleShowFOV = MainTab:Toggle({
         notify("FOV圈", state and "已显示" or "已隐藏")
     end
 })
+
 ToggleRainbowFOV = MainTab:Toggle({
     Title = "彩虹FOV圈",
     Value = false,
@@ -608,6 +696,7 @@ ToggleRainbowFOV = MainTab:Toggle({
         notify("彩虹FOV圈", state and "已开启" or "已关闭")
     end
 })
+
 ToggleEnableFOV = MainTab:Toggle({
     Title = "FOV范围限制",
     Value = false,
@@ -616,6 +705,7 @@ ToggleEnableFOV = MainTab:Toggle({
         notify("FOV范围限制", state and "已开启" or "已关闭")
     end
 })
+
 MainTab:Button({
     Title = "切换锁定优先级",
     Callback = function()
@@ -628,6 +718,7 @@ MainTab:Button({
         end
     end
 })
+
 MainTab:Button({
     Title = "切换FOV类型",
     Callback = function()
@@ -640,6 +731,7 @@ MainTab:Button({
         end
     end
 })
+
 MainTab:Input({
     Title = "锁定指定玩家",
     Placeholder = "输入玩家名字",
@@ -650,6 +742,7 @@ MainTab:Input({
         end
     end
 })
+
 MainTab:Button({
     Title = "清除指定玩家",
     Callback = function()
@@ -657,9 +750,11 @@ MainTab:Button({
         notify("自瞄", "已清除指定玩家锁定")
     end
 })
+
 local SliderFOVSize, SliderFOVStroke, SliderAimlockMaxDist, SliderMouseMaxDist, SliderFOVMaxDist
 local SliderSmoothness, SliderFireDelay, SliderRainbowSpeed, SliderOffsetY, SliderPrediction
 local ColorpickerFOV
+
 SettingsTab:Slider({
     Title = "FOV圈半径",
     Value = { Min = 1, Max = 750, Default = 150 },
@@ -671,6 +766,7 @@ sliderReleaseActions["fovsize"] = function(val)
     Linni_Aim.Settings.FOVSize = val
     notify("FOV圈半径", "已设置为：" .. tostring(val))
 end
+
 SettingsTab:Slider({
     Title = "FOV圈线条粗细",
     Step = 0.1,
@@ -683,6 +779,7 @@ sliderReleaseActions["fovstroke"] = function(val)
     Linni_Aim.Settings.FOVStrokeThickness = val
     notify("FOV圈线条粗细", "已设置为：" .. tostring(val))
 end
+
 SettingsTab:Slider({
     Title = "自瞄生效距离",
     Value = { Min = 1, Max = 10000, Default = 5000 },
@@ -694,6 +791,7 @@ sliderReleaseActions["aimlockmaxdist"] = function(val)
     Linni_Aim.Settings.AimlockMaxDist = val
     notify("自瞄生效距离", "已设置为：" .. tostring(val))
 end
+
 SettingsTab:Slider({
     Title = "鼠标吸附范围",
     Value = { Min = 1, Max = 10000, Default = 5000 },
@@ -705,6 +803,7 @@ sliderReleaseActions["mousemaxdist"] = function(val)
     Linni_Aim.Settings.MouseMaxDist = val
     notify("鼠标吸附范围", "已设置为：" .. tostring(val))
 end
+
 SettingsTab:Slider({
     Title = "FOV判定距离",
     Value = { Min = 1, Max = 10000, Default = 5000 },
@@ -716,6 +815,7 @@ sliderReleaseActions["fovmaxdist"] = function(val)
     Linni_Aim.Settings.FOVMaxDist = val
     notify("FOV判定距离", "已设置为：" .. tostring(val))
 end
+
 SettingsTab:Slider({
     Title = "平滑度",
     Value = { Min = 1, Max = 100, Default = 25 },
@@ -727,6 +827,7 @@ sliderReleaseActions["aimbotsmoothness"] = function(val)
     Linni_Aim.Settings.AimbotSmoothness = val
     notify("平滑度", "已设置为：" .. tostring(val))
 end
+
 SettingsTab:Slider({
     Title = "开火延迟",
     Step = 0.01,
@@ -739,6 +840,7 @@ sliderReleaseActions["firedelay"] = function(val)
     Linni_Aim.Settings.AimlockFireDelay = val
     notify("开火延迟", "已设置为：" .. tostring(val))
 end
+
 SettingsTab:Slider({
     Title = "彩虹速度",
     Value = { Min = 1, Max = 10, Default = 2 },
@@ -750,6 +852,7 @@ sliderReleaseActions["rainbowspeed"] = function(val)
     Linni_Aim.Settings.RainbowFOVSpeed = val
     notify("彩虹速度", "已设置为：" .. tostring(val))
 end
+
 SettingsTab:Slider({
     Title = "Y轴偏移",
     Value = { Min = 0, Max = 85, Default = 0 },
@@ -761,6 +864,7 @@ sliderReleaseActions["offsety"] = function(val)
     Linni_Aim.Settings.AimlockOffsetY = val
     notify("Y轴偏移", "已设置为：" .. tostring(val))
 end
+
 SettingsTab:Slider({
     Title = "预判量",
     Step = 0.01,
@@ -773,6 +877,7 @@ sliderReleaseActions["prediction"] = function(val)
     Linni_Aim.Settings.PredictionAmount = val
     notify("预判量", "已设置为：" .. tostring(val))
 end
+
 ColorpickerFOV = SettingsTab:Colorpicker({
     Title = "FOV圈颜色",
     Default = Color3.fromRGB(255, 255, 255),
@@ -781,10 +886,13 @@ ColorpickerFOV = SettingsTab:Colorpicker({
         notify("FOV圈颜色", "已更新")
     end
 })
+
 SettingsTab:Divider()
+
 local ConfigManager = Window.ConfigManager
 local ConfigName = "default"
 local CurrentConfig = nil
+
 SettingsTab:Input({
     Title = "配置名称",
     Value = ConfigName,
@@ -793,6 +901,7 @@ SettingsTab:Input({
         ConfigName = text or "default"
     end
 })
+
 SettingsTab:Button({
     Title = "保存配置",
     Desc = "保存当前所有设置到文件",
@@ -833,6 +942,7 @@ SettingsTab:Button({
         end
     end
 })
+
 SettingsTab:Button({
     Title = "加载配置",
     Desc = "从文件加载配置",
@@ -860,6 +970,7 @@ SettingsTab:Button({
         end
     end
 })
+
 SettingsTab:Button({
     Title = "删除配置",
     Desc = "删除选定的配置文件",
@@ -873,6 +984,7 @@ SettingsTab:Button({
         end
     end
 })
+
 local autoLoadEnabled = false
 SettingsTab:Toggle({
     Title = "自动加载配置",
@@ -887,6 +999,7 @@ SettingsTab:Toggle({
         end
     end
 })
+
 pcall(function()
     if autoLoadEnabled and ConfigName ~= "" then
         CurrentConfig = ConfigManager:CreateConfig(ConfigName)
