@@ -535,7 +535,7 @@ end
 
 NotifyTab:Paragraph({
     Title = "恐脚本--自瞄",
-    Desc = "建议不要开Y轴偏移",
+    Desc = "建议不要开Y轴偏移与自动开火",
     Image = "rbxassetid://113517588654522",
     ImageSize = 42,
 })
