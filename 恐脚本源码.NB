@@ -1882,10 +1882,10 @@ AntiFlingEnabled = state
 if state then startAntiFling() else stopAntiFling() end
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "防甩飞", Text = state and "已开启" or "已关闭", Duration = 3})
 end })
-page2:AddToggle({ Text = "霖溺防甩飞", Default = false, Callback = function(state)
+page2:AddToggle({ Text = "防甩飞", Default = false, Callback = function(state)
 LinniAntiFlingEnabled = state
 if state then LinniStartAntiFling() else LinniStopAntiFling() end
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "霖溺防甩飞", Text = state and "已开启" or "已关闭", Duration = 3})
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "防甩飞", Text = state and "已开启" or "已关闭", Duration = 3})
 end })
 local page3 = window:AddPage("次要")
 page3:AddButton({ Text = "自动翻译", Callback = function()
