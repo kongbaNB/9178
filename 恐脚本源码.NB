@@ -367,151 +367,6 @@ Players.PlayerRemoving:Connect(function(player)
     cleanupAntiFlingForPlayer(player)
 end)
 
--- ==================== 霖溺防甩飞模块 ====================
-local LinniAntiFlingEnabled = false
-local LinniAntiFlingConnection = nil
-local LinniAntiFlingVelocityConn = nil
-local LinniAntiFlingOriginalStates = {}
-local LinniAntiFlingCharAddedConns = {}
-
-local function LinniDisablePlayerCollision(player)
-    if player == LocalPlayer then return end
-    local char = player.Character
-    if not char then return end
-    pcall(function()
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                if LinniAntiFlingOriginalStates[part] == nil then
-                    LinniAntiFlingOriginalStates[part] = part.CanCollide
-                end
-                part.CanCollide = false
-            end
-        end
-    end)
-end
-
-local function LinniEnablePlayerCollision(player)
-    if player == LocalPlayer then return end
-    local char = player.Character
-    if not char then return end
-    pcall(function()
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                if LinniAntiFlingOriginalStates[part] ~= nil then
-                    part.CanCollide = LinniAntiFlingOriginalStates[part]
-                    LinniAntiFlingOriginalStates[part] = nil
-                end
-            end
-        end
-    end)
-end
-
-local function LinniEnableAllPlayersCollision()
-    for part, state in pairs(LinniAntiFlingOriginalStates) do
-        pcall(function()
-            if part and part.Parent then
-                part.CanCollide = state
-            end
-        end)
-    end
-    LinniAntiFlingOriginalStates = {}
-end
-
-local function LinniSetupAntiFlingForPlayer(player)
-    if player == LocalPlayer then return end
-    LinniDisablePlayerCollision(player)
-    if LinniAntiFlingCharAddedConns[player] then
-        pcall(function() LinniAntiFlingCharAddedConns[player]:Disconnect() end)
-    end
-    LinniAntiFlingCharAddedConns[player] = player.CharacterAdded:Connect(function(char)
-        if not LinniAntiFlingEnabled then return end
-        task.spawn(function()
-            task.wait(0.3)
-            if LinniAntiFlingEnabled and player.Parent then
-                LinniDisablePlayerCollision(player)
-            end
-        end)
-    end)
-end
-
-local function LinniCleanupAntiFlingForPlayer(player)
-    if LinniAntiFlingCharAddedConns[player] then
-        pcall(function() LinniAntiFlingCharAddedConns[player]:Disconnect() end)
-        LinniAntiFlingCharAddedConns[player] = nil
-    end
-    LinniEnablePlayerCollision(player)
-end
-
-local function LinniStartAntiFling()
-    if LinniAntiFlingConnection then LinniAntiFlingConnection:Disconnect() end
-    if LinniAntiFlingVelocityConn then LinniAntiFlingVelocityConn:Disconnect() end
-
-    for _, p in ipairs(Players:GetPlayers()) do
-        LinniSetupAntiFlingForPlayer(p)
-    end
-
-    LinniAntiFlingConnection = RunService.Heartbeat:Connect(function()
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character then
-                pcall(function()
-                    for _, part in ipairs(p.Character:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            if part.CanCollide then
-                                if LinniAntiFlingOriginalStates[part] == nil then
-                                    LinniAntiFlingOriginalStates[part] = part.CanCollide
-                                end
-                                part.CanCollide = false
-                            end
-                        end
-                    end
-                end)
-            end
-        end
-    end)
-
-    LinniAntiFlingVelocityConn = RunService.Heartbeat:Connect(function()
-        local char = LocalPlayer.Character
-        if not char then return end
-        local root = char:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-        if root.Velocity.Magnitude > 500 then
-            root.Velocity = Vector3.new(0, 0, 0)
-            root.RotVelocity = Vector3.new(0, 0, 0)
-        end
-        root.CanCollide = true
-    end)
-end
-
-local function LinniStopAntiFling()
-    if LinniAntiFlingConnection then LinniAntiFlingConnection:Disconnect() end
-    LinniAntiFlingConnection = nil
-    if LinniAntiFlingVelocityConn then LinniAntiFlingVelocityConn:Disconnect() end
-    LinniAntiFlingVelocityConn = nil
-
-    for player, conn in pairs(LinniAntiFlingCharAddedConns) do
-        pcall(function() conn:Disconnect() end)
-    end
-    LinniAntiFlingCharAddedConns = {}
-
-    LinniEnableAllPlayersCollision()
-end
-
-for _, p in ipairs(Players:GetPlayers()) do
-    if LinniAntiFlingEnabled then
-        LinniSetupAntiFlingForPlayer(p)
-    end
-end
-
-Players.PlayerAdded:Connect(function(player)
-    if LinniAntiFlingEnabled then
-        LinniSetupAntiFlingForPlayer(player)
-    end
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-    LinniCleanupAntiFlingForPlayer(player)
-end)
--- ==================== 霖溺防甩飞模块结束 ====================
 
 local function startSpin()
 if spinConnection then spinConnection:Disconnect() end
@@ -1701,7 +1556,7 @@ info.Parent = page1.frame
 info.Size = UDim2.new(1, -20, 0, 60)
 info.Position = UDim2.new(0, 10, 0, 10)
 info.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-info.Text = "通用脚本\n创作者：恐拜大帝\n感谢ROB支持"
+info.Text = "恐脚本--通用\n创作者：恐拜大帝\n感谢ROB支持"
 info.TextColor3 = Color3.new(1, 1, 1)
 info.TextWrapped = true
 info.Font = Enum.Font.SourceSans
@@ -1880,11 +1735,6 @@ end })
 page2:AddToggle({ Text = "防甩飞", Default = false, Callback = function(state)
 AntiFlingEnabled = state
 if state then startAntiFling() else stopAntiFling() end
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "防甩飞", Text = state and "已开启" or "已关闭", Duration = 3})
-end })
-page2:AddToggle({ Text = "防甩飞", Default = false, Callback = function(state)
-LinniAntiFlingEnabled = state
-if state then LinniStartAntiFling() else LinniStopAntiFling() end
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "防甩飞", Text = state and "已开启" or "已关闭", Duration = 3})
 end })
 local page3 = window:AddPage("次要")
