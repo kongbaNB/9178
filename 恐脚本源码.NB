@@ -1760,8 +1760,8 @@ local page2 = window:AddPage("主要")
 page2:AddToggle({ Text = "透视", Default = false, Callback = function(state)
 espEnabled = state
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "透视", Text = state and "已打开" or "已关闭", Duration = 3})
-if state then for _, p in ipairs(Players:GetPlayers()) do enableESP(p) end
-else for _, p in ipairs(Players:GetPlayers()) do disableESP(p) end end
+if state then for _, p in ipairs(Players:GetPlayers()) do setupPlayerESP(p) end
+else for _, p in ipairs(Players:GetPlayers()) do cleanupESP(p) end end
 end })
 page2:AddButton({ Text = "飞行", Callback = function()
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "飞行脚本", Text = "正在加载中...", Duration = 5})
