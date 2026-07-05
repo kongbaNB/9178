@@ -39,98 +39,165 @@ local jumpPanel = nil
 local jumpHeight = 60
 local espEnabled = false
 local espBillboards = {}
+local espConnections = {}
 
-local function enableESP(player)
-    if player == LocalPlayer then return end
-    local char = player.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    if not char:FindFirstChild("EspHighlight") then
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "EspHighlight"
-        highlight.Parent = char
-        highlight.FillTransparency = 0.5
-        highlight.FillColor = Color3.fromRGB(255, 255, 0)
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 0)
-        highlight.OutlineTransparency = 0
-        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+local function cleanupESP(player)
+    if espConnections[player] then
+        for _, conn in ipairs(espConnections[player]) do
+            pcall(function() conn:Disconnect() end)
+        end
+        espConnections[player] = nil
     end
-
-    if not hrp:FindFirstChild("EspBillboard") then
-        local billboard = Instance.new("BillboardGui")
-        billboard.Name = "EspBillboard"
-        billboard.Parent = hrp
-        billboard.Size = UDim2.new(0, 200, 0, 50)
-        billboard.StudsOffset = Vector3.new(0, 3, 0)
-        billboard.AlwaysOnTop = true
-
-        local nameLabel = Instance.new("TextLabel")
-        nameLabel.Name = "NameLabel"
-        nameLabel.Parent = billboard
-        nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
-        nameLabel.BackgroundTransparency = 1
-        nameLabel.Text = player.Name
-        nameLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
-        nameLabel.TextStrokeTransparency = 0
-        nameLabel.TextSize = 14
-        nameLabel.Font = Enum.Font.SourceSansBold
-
-        local distLabel = Instance.new("TextLabel")
-        distLabel.Name = "DistLabel"
-        distLabel.Parent = billboard
-        distLabel.Size = UDim2.new(1, 0, 0.5, 0)
-        distLabel.Position = UDim2.new(0, 0, 0.5, 0)
-        distLabel.BackgroundTransparency = 1
-        distLabel.Text = "0m"
-        distLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
-        distLabel.TextStrokeTransparency = 0
-        distLabel.TextSize = 12
-        distLabel.Font = Enum.Font.SourceSans
-
-        espBillboards[player] = billboard
-    end
-end
-
-local function disableESP(player)
     local char = player.Character
     if char then
-        if char:FindFirstChild("EspHighlight") then
-            char.EspHighlight:Destroy()
-        end
-        if char:FindFirstChild("HumanoidRootPart") and char.HumanoidRootPart:FindFirstChild("EspBillboard") then
-            char.HumanoidRootPart.EspBillboard:Destroy()
-        end
+        pcall(function()
+            local hl = char:FindFirstChild("EspHighlight")
+            if hl then hl:Destroy() end
+        end)
+        pcall(function()
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local bb = hrp:FindFirstChild("EspBillboard")
+                if bb then bb:Destroy() end
+            end
+        end)
     end
     espBillboards[player] = nil
 end
+
+local function createESP(player)
+    if player == LocalPlayer then return end
+    local char = player.Character
+    if not char then return end
+    pcall(function()
+        local hl = char:FindFirstChild("EspHighlight")
+        if hl then hl:Destroy() end
+    end)
+    pcall(function()
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local bb = hrp:FindFirstChild("EspBillboard")
+            if bb then bb:Destroy() end
+        end
+    end)
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then
+        task.spawn(function()
+            local success = pcall(function() char:WaitForChild("HumanoidRootPart", 5) end)
+            if success and espEnabled and player.Parent then
+                createESP(player)
+            end
+        end)
+        return
+    end
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "EspHighlight"
+    highlight.Parent = char
+    highlight.FillTransparency = 0.5
+    highlight.FillColor = Color3.fromRGB(255, 255, 0)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 0)
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "EspBillboard"
+    billboard.Parent = hrp
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "NameLabel"
+    nameLabel.Parent = billboard
+    nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = player.Name
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+    nameLabel.TextStrokeTransparency = 0
+    nameLabel.TextSize = 14
+    nameLabel.Font = Enum.Font.SourceSansBold
+    local distLabel = Instance.new("TextLabel")
+    distLabel.Name = "DistLabel"
+    distLabel.Parent = billboard
+    distLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    distLabel.Position = UDim2.new(0, 0, 0.5, 0)
+    distLabel.BackgroundTransparency = 1
+    distLabel.Text = "0m"
+    distLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+    distLabel.TextStrokeTransparency = 0
+    distLabel.TextSize = 12
+    distLabel.Font = Enum.Font.SourceSans
+    espBillboards[player] = billboard
+end
+
+local function setupPlayerESP(player)
+    if player == LocalPlayer then return end
+    if espConnections[player] then
+        for _, conn in ipairs(espConnections[player]) do
+            pcall(function() conn:Disconnect() end)
+        end
+    end
+    espConnections[player] = {}
+    table.insert(espConnections[player], player.CharacterAdded:Connect(function(char)
+        task.spawn(function()
+            pcall(function() char:WaitForChild("HumanoidRootPart", 5) end)
+            if espEnabled then
+                task.wait(0.1)
+                createESP(player)
+            end
+        end)
+    end))
+    table.insert(espConnections[player], player.CharacterRemoving:Connect(function()
+        cleanupESP(player)
+    end))
+    if player.Character and espEnabled then
+        createESP(player)
+    end
+end
+
+for _, player in ipairs(Players:GetPlayers()) do
+    setupPlayerESP(player)
+end
+
+Players.PlayerAdded:Connect(function(player)
+    setupPlayerESP(player)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    cleanupESP(player)
+end)
 
 RunService.RenderStepped:Connect(function()
     if not espEnabled then return end
     local myChar = LocalPlayer.Character
     local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position
-
     for player, billboard in pairs(espBillboards) do
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and billboard and billboard.Parent then
+        if player.Parent and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and billboard and billboard.Parent then
             local distLabel = billboard:FindFirstChild("DistLabel")
             if distLabel and myPos then
                 local dist = (player.Character.HumanoidRootPart.Position - myPos).Magnitude
                 distLabel.Text = string.format("%.0fm", dist)
             end
+        else
+            espBillboards[player] = nil
         end
     end
 end)
 
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function(char)
-        char:WaitForChild("HumanoidRootPart")
-        if espEnabled then enableESP(player) end
-    end)
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-    disableESP(player)
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if not espEnabled then continue end
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local char = player.Character
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                local hasHighlight = char:FindFirstChild("EspHighlight")
+                local hasBillboard = hrp and hrp:FindFirstChild("EspBillboard")
+                if not hasHighlight or not hasBillboard then
+                    pcall(function() createESP(player) end)
+                end
+            end
+        end
+    end
 end)
 
 local InfiniteJumpEnabled = false
@@ -153,6 +220,7 @@ local antiAFKConnection = nil
 local UIButtons = {}
 local AntiFlingEnabled = false
 local AntiFlingConnection = nil
+local antiFlingVelocityConn = nil
 local antiFlingOriginalStates = {}
 
 local function disablePlayerCollision(player)
@@ -211,11 +279,25 @@ local function startAntiFling()
             end
         end
     end)
+    if antiFlingVelocityConn then antiFlingVelocityConn:Disconnect() end
+    antiFlingVelocityConn = RunService.Heartbeat:Connect(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+        if root.Velocity.Magnitude > 500 then
+            root.Velocity = Vector3.new(0, 0, 0)
+            root.RotVelocity = Vector3.new(0, 0, 0)
+        end
+        root.CanCollide = true
+    end)
 end
 
 local function stopAntiFling()
     if AntiFlingConnection then AntiFlingConnection:Disconnect() end
     AntiFlingConnection = nil
+    if antiFlingVelocityConn then antiFlingVelocityConn:Disconnect() end
+    antiFlingVelocityConn = nil
     enableAllPlayersCollision()
 end
 
@@ -2174,7 +2256,7 @@ page5:AddButton({ Text = "最强战场", Callback = function()
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "最强战场", Text = "正在加载中...", Duration = 5})
 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCZC.NB"))() end)
 end })
-page5:AddButton({ Text = "生存与杀手", Callback = function()
+page5:AddButton({ Text = "生存于杀手", Callback = function()
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "生存与杀手", Text = "正在加载中...", Duration = 5})
 task.spawn(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SCYSS.NB"))() end)
 end })
