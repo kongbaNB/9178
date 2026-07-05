@@ -261,8 +261,7 @@ local function loadFlightScript()
                     end
                 end)
                 if hum.RigType==Enum.HumanoidRigType.R6 then
-                    local plr=game.Players.LocalPlayer
-                    local torso=plr.Character.Torso
+                    local torso=chr:WaitForChild("Torso")
                     local bg=Instance.new("BodyGyro",torso)
                     bg.P=9e4
                     bg.maxTorque=Vector3.new(9e9,9e9,9e9)
@@ -271,33 +270,32 @@ local function loadFlightScript()
                     bv.Velocity=Vector3.new(0,0,0)
                     bv.MaxForce=Vector3.new(9e9,9e9,9e9)
                     if nowe then
-                        plr.Character.Humanoid.PlatformStand=true
+                        hum.PlatformStand=true
                     end
                     currentBg = bg
                     currentBv = bv
                     renderConnection = game:GetService("RunService").RenderStepped:Connect(function()
-                        if not nowe or not plr.Character or not plr.Character.Humanoid or plr.Character.Humanoid.Health<=0 or not bg.Parent then
+                        if not nowe or not chr or not hum or hum.Health<=0 or not bg.Parent then
                             renderConnection:Disconnect()
                             renderConnection = nil
                             bg:Destroy()
                             bv:Destroy()
                             currentBg = nil
                             currentBv = nil
-                            if plr.Character and plr.Character.Humanoid then
-                                plr.Character.Humanoid.PlatformStand=false
+                            if hum then
+                                hum.PlatformStand=false
                             end
-                            if plr.Character and plr.Character.Animate then
-                                plr.Character.Animate.Disabled=false
+                            if chr and chr.Animate then
+                                chr.Animate.Disabled=false
                             end
                             return
                         end
-                        if plr.Character:FindFirstChild("Torso") then
+                        if chr:FindFirstChild("Torso") then
                             bg.CFrame=workspace.CurrentCamera.CoordinateFrame
                         end
                     end)
                 else
-                    local plr=game.Players.LocalPlayer
-                    local UpperTorso=plr.Character.UpperTorso
+                    local UpperTorso=chr:WaitForChild("UpperTorso")
                     local bg=Instance.new("BodyGyro",UpperTorso)
                     bg.P=9e4
                     bg.maxTorque=Vector3.new(9e9,9e9,9e9)
@@ -306,27 +304,27 @@ local function loadFlightScript()
                     bv.Velocity=Vector3.new(0,0,0)
                     bv.MaxForce=Vector3.new(9e9,9e9,9e9)
                     if nowe then
-                        plr.Character.Humanoid.PlatformStand=true
+                        hum.PlatformStand=true
                     end
                     currentBg = bg
                     currentBv = bv
                     renderConnection = game:GetService("RunService").RenderStepped:Connect(function()
-                        if not nowe or not plr.Character or not plr.Character.Humanoid or plr.Character.Humanoid.Health<=0 or not bg.Parent then
+                        if not nowe or not chr or not hum or hum.Health<=0 or not bg.Parent then
                             renderConnection:Disconnect()
                             renderConnection = nil
                             bg:Destroy()
                             bv:Destroy()
                             currentBg = nil
                             currentBv = nil
-                            if plr.Character and plr.Character.Humanoid then
-                                plr.Character.Humanoid.PlatformStand=false
+                            if hum then
+                                hum.PlatformStand=false
                             end
-                            if plr.Character and plr.Character.Animate then
-                                plr.Character.Animate.Disabled=false
+                            if chr and chr.Animate then
+                                chr.Animate.Disabled=false
                             end
                             return
                         end
-                        if plr.Character:FindFirstChild("UpperTorso") then
+                        if chr:FindFirstChild("UpperTorso") then
                             bg.CFrame=workspace.CurrentCamera.CoordinateFrame
                         end
                     end)
@@ -361,11 +359,11 @@ local function loadFlightScript()
                 end
             end
             speaker.CharacterAdded:Connect(function(newChar)
+                nowe = false
+                onof.Text = "飞"
+                stopFlight()
                 chr = newChar
-                hum = chr:FindFirstChildOfClass("Humanoid")
-                if nowe then
-                    startFlight()
-                end
+                hum = chr:WaitForChild("Humanoid")
             end)
             onof.MouseButton1Click:Connect(function()
                 nowe = not nowe
