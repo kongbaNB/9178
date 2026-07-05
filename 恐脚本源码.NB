@@ -227,64 +227,103 @@ local AntiFlingEnabled = false
 local AntiFlingConnection = nil
 local antiFlingVelocityConn = nil
 local antiFlingOriginalStates = {}
+local antiFlingCharAddedConns = {}
 
 local function disablePlayerCollision(player)
     if player == LocalPlayer then return end
     local char = player.Character
     if not char then return end
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            if antiFlingOriginalStates[part] == nil then
-                antiFlingOriginalStates[part] = part.CanCollide
+    pcall(function()
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                if antiFlingOriginalStates[part] == nil then
+                    antiFlingOriginalStates[part] = part.CanCollide
+                end
+                part.CanCollide = false
             end
-            part.CanCollide = false
         end
-    end
+    end)
 end
 
 local function enablePlayerCollision(player)
     if player == LocalPlayer then return end
     local char = player.Character
     if not char then return end
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            if antiFlingOriginalStates[part] ~= nil then
-                part.CanCollide = antiFlingOriginalStates[part]
-                antiFlingOriginalStates[part] = nil
-            end
-        end
-    end
-end
-
-local function enableAllPlayersCollision()
-    for part, state in pairs(antiFlingOriginalStates) do
-        if part and part.Parent then
-            pcall(function() part.CanCollide = state end)
-        end
-    end
-    antiFlingOriginalStates = {}
-end
-
-local function startAntiFling()
-    if AntiFlingConnection then AntiFlingConnection:Disconnect() end
-    for _, p in ipairs(Players:GetPlayers()) do
-        disablePlayerCollision(p)
-    end
-    AntiFlingConnection = RunService.Heartbeat:Connect(function()
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character then
-                for _, part in ipairs(p.Character:GetDescendants()) do
-                    if part:IsA("BasePart") and part.CanCollide then
-                        if antiFlingOriginalStates[part] == nil then
-                            antiFlingOriginalStates[part] = part.CanCollide
-                        end
-                        part.CanCollide = false
-                    end
+    pcall(function()
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                if antiFlingOriginalStates[part] ~= nil then
+                    part.CanCollide = antiFlingOriginalStates[part]
+                    antiFlingOriginalStates[part] = nil
                 end
             end
         end
     end)
+end
+
+local function enableAllPlayersCollision()
+    for part, state in pairs(antiFlingOriginalStates) do
+        pcall(function()
+            if part and part.Parent then
+                part.CanCollide = state
+            end
+        end)
+    end
+    antiFlingOriginalStates = {}
+end
+
+local function setupAntiFlingForPlayer(player)
+    if player == LocalPlayer then return end
+    disablePlayerCollision(player)
+    if antiFlingCharAddedConns[player] then
+        pcall(function() antiFlingCharAddedConns[player]:Disconnect() end)
+    end
+    antiFlingCharAddedConns[player] = player.CharacterAdded:Connect(function(char)
+        if not AntiFlingEnabled then return end
+        task.spawn(function()
+            task.wait(0.3)
+            if AntiFlingEnabled and player.Parent then
+                disablePlayerCollision(player)
+            end
+        end)
+    end)
+end
+
+local function cleanupAntiFlingForPlayer(player)
+    if antiFlingCharAddedConns[player] then
+        pcall(function() antiFlingCharAddedConns[player]:Disconnect() end)
+        antiFlingCharAddedConns[player] = nil
+    end
+    enablePlayerCollision(player)
+end
+
+local function startAntiFling()
+    if AntiFlingConnection then AntiFlingConnection:Disconnect() end
     if antiFlingVelocityConn then antiFlingVelocityConn:Disconnect() end
+
+    for _, p in ipairs(Players:GetPlayers()) do
+        setupAntiFlingForPlayer(p)
+    end
+
+    AntiFlingConnection = RunService.Heartbeat:Connect(function()
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                pcall(function()
+                    for _, part in ipairs(p.Character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            if part.CanCollide then
+                                if antiFlingOriginalStates[part] == nil then
+                                    antiFlingOriginalStates[part] = part.CanCollide
+                                end
+                                part.CanCollide = false
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    end)
+
     antiFlingVelocityConn = RunService.Heartbeat:Connect(function()
         local char = LocalPlayer.Character
         if not char then return end
@@ -303,21 +342,177 @@ local function stopAntiFling()
     AntiFlingConnection = nil
     if antiFlingVelocityConn then antiFlingVelocityConn:Disconnect() end
     antiFlingVelocityConn = nil
+
+    for player, conn in pairs(antiFlingCharAddedConns) do
+        pcall(function() conn:Disconnect() end)
+    end
+    antiFlingCharAddedConns = {}
+
     enableAllPlayersCollision()
 end
 
+for _, p in ipairs(Players:GetPlayers()) do
+    if AntiFlingEnabled then
+        setupAntiFlingForPlayer(p)
+    end
+end
+
 Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function(char)
-        if AntiFlingEnabled then
-            task.wait(0.5)
-            disablePlayerCollision(player)
-        end
-    end)
+    if AntiFlingEnabled then
+        setupAntiFlingForPlayer(player)
+    end
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    enablePlayerCollision(player)
+    cleanupAntiFlingForPlayer(player)
 end)
+
+-- ==================== 霖溺防甩飞模块 ====================
+local LinniAntiFlingEnabled = false
+local LinniAntiFlingConnection = nil
+local LinniAntiFlingVelocityConn = nil
+local LinniAntiFlingOriginalStates = {}
+local LinniAntiFlingCharAddedConns = {}
+
+local function LinniDisablePlayerCollision(player)
+    if player == LocalPlayer then return end
+    local char = player.Character
+    if not char then return end
+    pcall(function()
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                if LinniAntiFlingOriginalStates[part] == nil then
+                    LinniAntiFlingOriginalStates[part] = part.CanCollide
+                end
+                part.CanCollide = false
+            end
+        end
+    end)
+end
+
+local function LinniEnablePlayerCollision(player)
+    if player == LocalPlayer then return end
+    local char = player.Character
+    if not char then return end
+    pcall(function()
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                if LinniAntiFlingOriginalStates[part] ~= nil then
+                    part.CanCollide = LinniAntiFlingOriginalStates[part]
+                    LinniAntiFlingOriginalStates[part] = nil
+                end
+            end
+        end
+    end)
+end
+
+local function LinniEnableAllPlayersCollision()
+    for part, state in pairs(LinniAntiFlingOriginalStates) do
+        pcall(function()
+            if part and part.Parent then
+                part.CanCollide = state
+            end
+        end)
+    end
+    LinniAntiFlingOriginalStates = {}
+end
+
+local function LinniSetupAntiFlingForPlayer(player)
+    if player == LocalPlayer then return end
+    LinniDisablePlayerCollision(player)
+    if LinniAntiFlingCharAddedConns[player] then
+        pcall(function() LinniAntiFlingCharAddedConns[player]:Disconnect() end)
+    end
+    LinniAntiFlingCharAddedConns[player] = player.CharacterAdded:Connect(function(char)
+        if not LinniAntiFlingEnabled then return end
+        task.spawn(function()
+            task.wait(0.3)
+            if LinniAntiFlingEnabled and player.Parent then
+                LinniDisablePlayerCollision(player)
+            end
+        end)
+    end)
+end
+
+local function LinniCleanupAntiFlingForPlayer(player)
+    if LinniAntiFlingCharAddedConns[player] then
+        pcall(function() LinniAntiFlingCharAddedConns[player]:Disconnect() end)
+        LinniAntiFlingCharAddedConns[player] = nil
+    end
+    LinniEnablePlayerCollision(player)
+end
+
+local function LinniStartAntiFling()
+    if LinniAntiFlingConnection then LinniAntiFlingConnection:Disconnect() end
+    if LinniAntiFlingVelocityConn then LinniAntiFlingVelocityConn:Disconnect() end
+
+    for _, p in ipairs(Players:GetPlayers()) do
+        LinniSetupAntiFlingForPlayer(p)
+    end
+
+    LinniAntiFlingConnection = RunService.Heartbeat:Connect(function()
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                pcall(function()
+                    for _, part in ipairs(p.Character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            if part.CanCollide then
+                                if LinniAntiFlingOriginalStates[part] == nil then
+                                    LinniAntiFlingOriginalStates[part] = part.CanCollide
+                                end
+                                part.CanCollide = false
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    end)
+
+    LinniAntiFlingVelocityConn = RunService.Heartbeat:Connect(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+        if root.Velocity.Magnitude > 500 then
+            root.Velocity = Vector3.new(0, 0, 0)
+            root.RotVelocity = Vector3.new(0, 0, 0)
+        end
+        root.CanCollide = true
+    end)
+end
+
+local function LinniStopAntiFling()
+    if LinniAntiFlingConnection then LinniAntiFlingConnection:Disconnect() end
+    LinniAntiFlingConnection = nil
+    if LinniAntiFlingVelocityConn then LinniAntiFlingVelocityConn:Disconnect() end
+    LinniAntiFlingVelocityConn = nil
+
+    for player, conn in pairs(LinniAntiFlingCharAddedConns) do
+        pcall(function() conn:Disconnect() end)
+    end
+    LinniAntiFlingCharAddedConns = {}
+
+    LinniEnableAllPlayersCollision()
+end
+
+for _, p in ipairs(Players:GetPlayers()) do
+    if LinniAntiFlingEnabled then
+        LinniSetupAntiFlingForPlayer(p)
+    end
+end
+
+Players.PlayerAdded:Connect(function(player)
+    if LinniAntiFlingEnabled then
+        LinniSetupAntiFlingForPlayer(player)
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    LinniCleanupAntiFlingForPlayer(player)
+end)
+-- ==================== 霖溺防甩飞模块结束 ====================
+
 local function startSpin()
 if spinConnection then spinConnection:Disconnect() end
 spinConnection = RunService.Heartbeat:Connect(function(dt)
@@ -1686,6 +1881,11 @@ page2:AddToggle({ Text = "防甩飞", Default = false, Callback = function(state
 AntiFlingEnabled = state
 if state then startAntiFling() else stopAntiFling() end
 game:GetService("StarterGui"):SetCore("SendNotification", {Title = "防甩飞", Text = state and "已开启" or "已关闭", Duration = 3})
+end })
+page2:AddToggle({ Text = "霖溺防甩飞", Default = false, Callback = function(state)
+LinniAntiFlingEnabled = state
+if state then LinniStartAntiFling() else LinniStopAntiFling() end
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "霖溺防甩飞", Text = state and "已开启" or "已关闭", Duration = 3})
 end })
 local page3 = window:AddPage("次要")
 page3:AddButton({ Text = "自动翻译", Callback = function()
