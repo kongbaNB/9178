@@ -904,6 +904,17 @@ MainLeft:AddButton("甩飞选定的人", function()
     end, "选择要甩飞的玩家")
 end)
 
+MainLeft:AddButton("传送回家", function()
+    local char = getCharacter()
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = CFrame.new(-110.4, 99.1, 34.2)
+        Library:Notify({ Title = "传送", Description = "已传送回家", Time = 2 })
+    else
+        Library:Notify({ Title = "传送", Description = "角色未加载", Time = 2 })
+    end
+end)
+
 local MainRight = Tabs.Main:AddRightGroupbox("鲨鱼功能")
 
 MainRight:AddToggle("SharkESPToggle", {
