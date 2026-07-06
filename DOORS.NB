@@ -75,7 +75,6 @@ local function disableESP(name)
     clearESPGroup(name)
 end
 
--- 物品、实体名称表
 local doorNames = {["Door"] = true}
 local fakeDoorNames = {["DoorFake"] = true}
 local objectiveItems = {["KeyObtain"] = true, ["FuseObtain"] = true, ["LiveBreakerPolePickup"] = true}
