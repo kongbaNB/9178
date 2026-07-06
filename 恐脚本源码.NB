@@ -2756,6 +2756,16 @@ Tabs.GamesTab:Button({
     end
 })
 
+Tabs.GamesTab:Button({
+    Title = "鲨口求生",
+    Callback = function()
+        WindUI:Notify({ Title = "鲨口求生", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SKQS.NB"))()
+        end)
+    end
+})
+
 Window:OnClose(function()
     print("界面已关闭。")
 end)
