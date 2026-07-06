@@ -2769,9 +2769,9 @@ Tabs.GamesTab:Button({
 })
 
 Tabs.GamesTab:Button({
-    Title = "鲨口求生",
+    Title = "鲨口求生2",
     Callback = function()
-        WindUI:Notify({ Title = "鲨口求生", Content = "正在加载中...", Duration = 5 })
+        WindUI:Notify({ Title = "鲨口求生2", Content = "正在加载中...", Duration = 5 })
         task.spawn(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SKQS.NB"))()
         end)
