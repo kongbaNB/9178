@@ -2594,7 +2594,7 @@ Tabs.GamesTab:Button({
 Tabs.GamesTab:Button({
     Title = "在超市生活一周",
     Callback = function()
-        WindUI:Notify({ Title = "在超市生活一周", Content = "正在加载中...", Duration = 5 })
+        WindUI:Notify({ Title = "在超市生活一周（基本不会更新）", Content = "正在加载中...", Duration = 5 })
         task.spawn(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCSSHYZ.NB"))()
         end)
@@ -2612,9 +2612,9 @@ Tabs.GamesTab:Button({
 })
 
 Tabs.GamesTab:Button({
-    Title = "巨剑骑士",
+    Title = "巨剑骑士（背上只因剑）",
     Callback = function()
-        WindUI:Notify({ Title = "巨剑骑士", Content = "正在加载中...", Duration = 5 })
+        WindUI:Notify({ Title = "巨剑骑士（背上只因剑）", Content = "正在加载中...", Duration = 5 })
         task.spawn(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/JJQS.NB"))()
         end)
@@ -2622,9 +2622,9 @@ Tabs.GamesTab:Button({
 })
 
 Tabs.GamesTab:Button({
-    Title = "doors",
+    Title = "doors（在出生点开反作弊再用功能）",
     Callback = function()
-        WindUI:Notify({ Title = "doors", Content = "正在加载中...", Duration = 5 })
+        WindUI:Notify({ Title = "doors（在出生点开反作弊再用功能）", Content = "正在加载中...", Duration = 5 })
         task.spawn(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/DOORS.NB"))()
         end)
@@ -2652,9 +2652,9 @@ Tabs.GamesTab:Button({
 })
 
 Tabs.GamesTab:Button({
-    Title = "墨水游戏",
+    Title = "墨水游戏（会封服务器不要用大号）",
     Callback = function()
-        WindUI:Notify({ Title = "墨水游戏", Content = "正在加载中...", Duration = 5 })
+        WindUI:Notify({ Title = "墨水游戏（会封服务器不要用大号）", Content = "正在加载中...", Duration = 5 })
         task.spawn(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MSYS.NB"))()
         end)
@@ -2662,9 +2662,9 @@ Tabs.GamesTab:Button({
 })
 
 Tabs.GamesTab:Button({
-    Title = "力量传奇",
+    Title = "力量传奇（修改数据不能用）",
     Callback = function()
-        WindUI:Notify({ Title = "力量传奇", Content = "正在加载中...", Duration = 5 })
+        WindUI:Notify({ Title = "力量传奇（修改数据不能用）", Content = "正在加载中...", Duration = 5 })
         task.spawn(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/LLCC.NB"))()
         end)
@@ -2682,9 +2682,9 @@ Tabs.GamesTab:Button({
 })
 
 Tabs.GamesTab:Button({
-    Title = "森林中的99夜",
+    Title = "森林中的99夜（修复大量功能）",
     Callback = function()
-        WindUI:Notify({ Title = "森林中的99夜", Content = "正在加载中...", Duration = 5 })
+        WindUI:Notify({ Title = "森林中的99夜（修复大量功能）", Content = "正在加载中...", Duration = 5 })
         task.spawn(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SLZDJJY.NB"))()
         end)
@@ -2692,9 +2692,9 @@ Tabs.GamesTab:Button({
 })
 
 Tabs.GamesTab:Button({
-    Title = "键盘速度逃脱",
+    Title = "键盘速度逃脱（疑似有检测）",
     Callback = function()
-        WindUI:Notify({ Title = "键盘速度逃脱", Content = "正在加载中...", Duration = 5 })
+        WindUI:Notify({ Title = "键盘速度逃脱（疑似有检测）", Content = "正在加载中...", Duration = 5 })
         task.spawn(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/JPSDTT.NB"))()
         end)
@@ -2702,9 +2702,9 @@ Tabs.GamesTab:Button({
 })
 
 Tabs.GamesTab:Button({
-    Title = "被遗弃",
+    Title = "被遗弃（不演也封服务器）",
     Callback = function()
-        WindUI:Notify({ Title = "被遗弃", Content = "正在加载被遗弃脚本...", Duration = 5 })
+        WindUI:Notify({ Title = "被遗弃（不演也封服务器）", Content = "正在加载被遗弃脚本...", Duration = 5 })
         task.spawn(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/BYC.NB"))()
         end)
@@ -2712,9 +2712,9 @@ Tabs.GamesTab:Button({
 })
 
 Tabs.GamesTab:Button({
-    Title = "变身躲猫猫",
+    Title = "变身躲猫猫（貌似没啥用了）",
     Callback = function()
-        WindUI:Notify({ Title = "变身躲猫猫", Content = "正在加载中...", Duration = 5 })
+        WindUI:Notify({ Title = "变身躲猫猫（貌似没啥用了）", Content = "正在加载中...", Duration = 5 })
         task.spawn(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/BSDMM.NB"))()
         end)
@@ -2732,9 +2732,9 @@ Tabs.GamesTab:Button({
 })
 
 Tabs.GamesTab:Button({
-    Title = "死铁轨",
+    Title = "死铁轨（可刷债券）",
     Callback = function()
-        WindUI:Notify({ Title = "死铁轨", Content = "正在加载中...", Duration = 5 })
+        WindUI:Notify({ Title = "死铁轨（可刷债券）", Content = "正在加载中...", Duration = 5 })
         task.spawn(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/STG.NB"))()
         end)
@@ -2752,9 +2752,9 @@ Tabs.GamesTab:Button({
 })
 
 Tabs.GamesTab:Button({
-    Title = "最强战场",
+    Title = "最强战场（只能用锁人了别的都失效）",
     Callback = function()
-        WindUI:Notify({ Title = "最强战场", Content = "正在加载中...", Duration = 5 })
+        WindUI:Notify({ Title = "最强战场（只能用锁人了别的都失效）", Content = "正在加载中...", Duration = 5 })
         task.spawn(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCZC.NB"))()
         end)
@@ -2772,9 +2772,9 @@ Tabs.GamesTab:Button({
 })
 
 Tabs.GamesTab:Button({
-    Title = "闪光",
+    Title = "闪光（会封）",
     Callback = function()
-        WindUI:Notify({ Title = "闪光", Content = "正在加载中...", Duration = 5 })
+        WindUI:Notify({ Title = "闪光（会封）", Content = "正在加载中...", Duration = 5 })
         task.spawn(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SG.NB"))()
         end)
