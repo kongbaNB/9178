@@ -1620,13 +1620,11 @@ local Window = WindUI:CreateWindow({
     IconThemed = true,
     Author = "恐拜大帝 | QQ:3999698324 | 已执行 " .. count .. " 次",
     Folder = "恐脚本",
-    Size = UDim2.fromOffset(580, 460),
+    Size = UDim2.fromOffset(700, 500),
     Transparent = true,
     Theme = "Dark",
     User = {
-        Enabled = true,
-        Callback = function() end,
-        Anonymous = true
+        Enabled = false,
     },
     SideBarWidth = 200,
     ScrollBarEnabled = true,
@@ -1681,6 +1679,19 @@ Tabs.NotifyTab:Button({
     Title = "复制群2: 1001577641",
     Callback = function()
         copyToClipboard("1001577641", "群2")
+    end
+})
+
+Tabs.NotifyTab:Divider()
+
+Tabs.NotifyTab:Button({
+    Title = "ROB脚本v2",
+    Desc = "必须用gi加速器",
+    Callback = function()
+        WindUI:Notify({ Title = "ROB脚本v2", Content = "正在加载中...\n必须用gi加速器", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/Zyb150933/ROB/refs/heads/main/ROB.V2"))()
+        end)
     end
 })
 
