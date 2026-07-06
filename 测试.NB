@@ -1652,6 +1652,23 @@ Tabs.GamesTab = Window:Tab({ Title = "支持服务器", Icon = "gamepad-2" })
 
 Window:SelectTab(1)
 
+-- 实时显示窗口尺寸（调好后自己改第1623行）
+local sizeDisplay = Tabs.NotifyTab:Paragraph({
+    Title = "当前窗口尺寸",
+    Desc = "宽度: 620 | 高度: 680\n调好尺寸后记住这两个数，改第1623行",
+    Color = "Blue",
+})
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if Window and Window.MainFrame then
+            local abs = Window.MainFrame.AbsoluteSize
+            sizeDisplay:SetDesc("宽度: " .. math.floor(abs.X) .. " | 高度: " .. math.floor(abs.Y) .. "\n调好尺寸后记住这两个数，改第1623行")
+        end
+    end
+end)
+
 Tabs.NotifyTab:Paragraph({
     Title = "恐脚本--通用",
     Desc = "创作者：恐拜大帝\n感谢ROB支持\n您已执行 " .. count .. " 次，谢谢您的支持！",
