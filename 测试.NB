@@ -1620,7 +1620,7 @@ local Window = WindUI:CreateWindow({
     IconThemed = true,
     Author = "恐拜大帝 | QQ:3999698324 | 已执行 " .. count .. " 次",
     Folder = "恐脚本",
-    Size = UDim2.fromOffset(620, 580),
+    Size = UDim2.fromOffset(700, 580),
     Transparent = true,
     Theme = "Dark",
     User = {
@@ -1685,8 +1685,8 @@ Tabs.NotifyTab:Button({
 Tabs.NotifyTab:Divider()
 
 Tabs.NotifyTab:Button({
-    Title = "ROB脚本v2",
-    Desc = "必须用gi加速器",
+    Title = "ROB脚本v2（牛逼）",
+    Desc = "必须用gi加速器 否则会被踢",
     Callback = function()
         WindUI:Notify({ Title = "ROB脚本v2", Content = "正在加载中...\n必须用gi加速器", Duration = 5 })
         task.spawn(function()
