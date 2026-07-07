@@ -1617,15 +1617,46 @@ Tabs.MainTab:Button({
     end
 })
 
-Tabs.MainTab:Button({
-    Title = "甩飞选定玩家",
-    Callback = function()
-        showPlayerSelect(function(p)
-            WindUI:Notify({ Title = "甩飞", Content = "正在甩飞 " .. p.Name, Duration = 3 })
-            task.spawn(function() powerfulFling(p) end)
-        end, "选择要甩飞的玩家")
+local currentFlingTarget = nil
+flingDropdown = Tabs.MainTab:Dropdown({
+    Title = "选定甩飞玩家",
+    Values = {},
+    Callback = function(name)
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name == name and p ~= LocalPlayer then
+                currentFlingTarget = p
+                flingDropdown:SetTitle("已选定: " .. p.Name)
+                WindUI:Notify({ Title = "甩飞", Content = "已选定 " .. p.Name .. "，点击确定执行甩飞", Duration = 3 })
+                break
+            end
+        end
     end
 })
+
+Tabs.MainTab:Button({
+    Title = "确定执行甩飞",
+    Callback = function()
+        if currentFlingTarget and currentFlingTarget.Parent then
+            WindUI:Notify({ Title = "甩飞", Content = "正在甩飞 " .. currentFlingTarget.Name, Duration = 3 })
+            task.spawn(function() powerfulFling(currentFlingTarget) end)
+            currentFlingTarget = nil
+            flingDropdown:SetTitle("选定甩飞玩家")
+        else
+            WindUI:Notify({ Title = "甩飞", Content = "请先选择玩家", Duration = 3 })
+        end
+    end
+})
+
+local function refreshFlingDropdown()
+    local names = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(names, p.Name) end
+    end
+    if flingDropdown then flingDropdown:Refresh(names) end
+end
+refreshFlingDropdown()
+Players.PlayerAdded:Connect(refreshFlingDropdown)
+Players.PlayerRemoving:Connect(refreshFlingDropdown)
 
 Tabs.MainTab:Button({
     Title = "祖国人汉化",
@@ -1693,14 +1724,43 @@ Tabs.SecondaryTab:Button({
     end
 })
 
-Tabs.SecondaryTab:Button({
-    Title = "选定玩家跟随",
-    Callback = function()
-        showPlayerSelect(function(p)
-            startFollow(p)
-        end, "选择要跟随的玩家")
+local currentFollowTarget = nil
+followDropdown = Tabs.SecondaryTab:Dropdown({
+    Title = "选定跟随玩家",
+    Values = {},
+    Callback = function(name)
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name == name and p ~= LocalPlayer then
+                currentFollowTarget = p
+                followDropdown:SetTitle("已选定: " .. p.Name)
+                WindUI:Notify({ Title = "跟随", Content = "已选定 " .. p.Name .. "，点击确定开始跟随", Duration = 3 })
+                break
+            end
+        end
     end
 })
+
+Tabs.SecondaryTab:Button({
+    Title = "确定执行跟随",
+    Callback = function()
+        if currentFollowTarget and currentFollowTarget.Parent then
+            startFollow(currentFollowTarget)
+        else
+            WindUI:Notify({ Title = "跟随", Content = "请先选择玩家", Duration = 3 })
+        end
+    end
+})
+
+local function refreshFollowDropdown()
+    local names = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(names, p.Name) end
+    end
+    if followDropdown then followDropdown:Refresh(names) end
+end
+refreshFollowDropdown()
+Players.PlayerAdded:Connect(refreshFollowDropdown)
+Players.PlayerRemoving:Connect(refreshFollowDropdown)
 
 Tabs.SecondaryTab:Button({
     Title = "停止跟随",
@@ -1723,28 +1783,88 @@ Tabs.SecondaryTab:Button({
     end
 })
 
-local coordInput = ""
-Tabs.SecondaryTab:Input({
-    Title = "传送指定坐标",
-    Placeholder = "格式: x, y, z  例如: 123.5, 50.0, -78.2",
-    Callback = function(v)
-        coordInput = v
-    end
-})
 Tabs.SecondaryTab:Button({
-    Title = "确定传送",
+    Title = "传送指定坐标",
     Callback = function()
-        local x, y, z = coordInput:match("^%s*([%-%d%.]+)%s*,%s*([%-%d%.]+)%s*,%s*([%-%d%.]+)%s*$")
-        x, y, z = tonumber(x), tonumber(y), tonumber(z)
-        if x and y and z then
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
-                WindUI:Notify({ Title = "传送成功", Content = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3 })
+        local coordGui = Instance.new("ScreenGui")
+        coordGui.Name = "CoordTeleportGui"
+        coordGui.Parent = LocalPlayer.PlayerGui
+        coordGui.IgnoreGuiInset = true
+        coordGui.ResetOnSpawn = false
+        coordGui.DisplayOrder = 999
+        local bg = Instance.new("Frame")
+        bg.Parent = coordGui
+        bg.Size = UDim2.new(0, 300, 0, 180)
+        bg.Position = UDim2.new(0.5, -150, 0.5, -90)
+        bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 12)
+        local title = Instance.new("TextLabel")
+        title.Parent = bg
+        title.Size = UDim2.new(1, 0, 0, 30)
+        title.BackgroundTransparency = 1
+        title.Text = "输入坐标传送"
+        title.TextColor3 = Color3.new(1,1,1)
+        title.Font = Enum.Font.SourceSansBold
+        title.TextSize = 18
+        local xBox = Instance.new("TextBox")
+        xBox.Parent = bg
+        xBox.Size = UDim2.new(0.28, 0, 0, 30)
+        xBox.Position = UDim2.new(0.05, 0, 0, 45)
+        xBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        xBox.PlaceholderText = "X"
+        xBox.Text = ""
+        xBox.TextColor3 = Color3.new(1,1,1)
+        Instance.new("UICorner", xBox).CornerRadius = UDim.new(0, 6)
+        local yBox = Instance.new("TextBox")
+        yBox.Parent = bg
+        yBox.Size = UDim2.new(0.28, 0, 0, 30)
+        yBox.Position = UDim2.new(0.36, 0, 0, 45)
+        yBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        yBox.PlaceholderText = "Y"
+        yBox.Text = ""
+        yBox.TextColor3 = Color3.new(1,1,1)
+        Instance.new("UICorner", yBox).CornerRadius = UDim.new(0, 6)
+        local zBox = Instance.new("TextBox")
+        zBox.Parent = bg
+        zBox.Size = UDim2.new(0.28, 0, 0, 30)
+        zBox.Position = UDim2.new(0.67, 0, 0, 45)
+        zBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        zBox.PlaceholderText = "Z"
+        zBox.Text = ""
+        zBox.TextColor3 = Color3.new(1,1,1)
+        Instance.new("UICorner", zBox).CornerRadius = UDim.new(0, 6)
+        local tpBtn = Instance.new("TextButton")
+        tpBtn.Parent = bg
+        tpBtn.Size = UDim2.new(0.4, 0, 0, 30)
+        tpBtn.Position = UDim2.new(0.05, 0, 0, 90)
+        tpBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        tpBtn.Text = "传送"
+        tpBtn.TextColor3 = Color3.new(1,1,1)
+        tpBtn.Font = Enum.Font.SourceSansBold
+        Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 6)
+        tpBtn.MouseButton1Click:Connect(function()
+            local x, y, z = tonumber(xBox.Text), tonumber(yBox.Text), tonumber(zBox.Text)
+            if x and y and z then
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+                    WindUI:Notify({ Title = "传送成功", Content = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3 })
+                end
+                coordGui:Destroy()
+            else
+                WindUI:Notify({ Title = "传送失败", Content = "请输入有效的数字坐标", Duration = 3 })
             end
-        else
-            WindUI:Notify({ Title = "传送失败", Content = "格式错误，请用: x, y, z", Duration = 3 })
-        end
+        end)
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Parent = bg
+        closeBtn.Size = UDim2.new(0.4, 0, 0, 30)
+        closeBtn.Position = UDim2.new(0.55, 0, 0, 90)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeBtn.Text = "关闭"
+        closeBtn.TextColor3 = Color3.new(1,1,1)
+        closeBtn.Font = Enum.Font.SourceSansBold
+        Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+        closeBtn.MouseButton1Click:Connect(function() coordGui:Destroy() end)
     end
 })
 
@@ -1757,18 +1877,52 @@ Tabs.SecondaryTab:Toggle({
     end
 })
 
-Tabs.SecondaryTab:Button({
-    Title = "平滑跟随选定人",
-    Callback = function()
-        if smoothFollowConnection then
-            stopSmoothFollow()
-        else
-            showPlayerSelect(function(p)
-                startSmoothFollow(p)
-            end, "选择要跟随的玩家")
+local currentSmoothTarget = nil
+smoothDropdown = Tabs.SecondaryTab:Dropdown({
+    Title = "选定平滑跟随玩家",
+    Values = {},
+    Callback = function(name)
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name == name and p ~= LocalPlayer then
+                currentSmoothTarget = p
+                smoothDropdown:SetTitle("已选定: " .. p.Name)
+                WindUI:Notify({ Title = "平滑跟随", Content = "已选定 " .. p.Name .. "，点击确定开始平滑跟随", Duration = 3 })
+                break
+            end
         end
     end
 })
+
+Tabs.SecondaryTab:Button({
+    Title = "确定执行平滑跟随",
+    Callback = function()
+        if currentSmoothTarget and currentSmoothTarget.Parent then
+            startSmoothFollow(currentSmoothTarget)
+        else
+            WindUI:Notify({ Title = "平滑跟随", Content = "请先选择玩家", Duration = 3 })
+        end
+    end
+})
+
+Tabs.SecondaryTab:Button({
+    Title = "停止平滑跟随",
+    Callback = function()
+        stopSmoothFollow()
+        currentSmoothTarget = nil
+        smoothDropdown:SetTitle("选定平滑跟随玩家")
+    end
+})
+
+local function refreshSmoothDropdown()
+    local names = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(names, p.Name) end
+    end
+    if smoothDropdown then smoothDropdown:Refresh(names) end
+end
+refreshSmoothDropdown()
+Players.PlayerAdded:Connect(refreshSmoothDropdown)
+Players.PlayerRemoving:Connect(refreshSmoothDropdown)
 
 Tabs.SecondaryTab:Button({
     Title = "平滑跟随最近的人",
@@ -1802,21 +1956,55 @@ Tabs.SecondaryTab:Toggle({
     end
 })
 
-Tabs.SecondaryTab:Button({
-    Title = "操人",
-    Callback = function()
-        if harassEnabled then
-            stopHarass()
-        else
-            showPlayerSelect(function(p)
-                harassTarget = p
-                harassEnabled = true
-                startHarass()
-                WindUI:Notify({ Title = "操人", Content = "开始疯狂操 " .. p.Name .. "！", Duration = 3 })
-            end, "选择操人目标")
+local currentHarassTarget = nil
+harassDropdown = Tabs.SecondaryTab:Dropdown({
+    Title = "选定操人目标",
+    Values = {},
+    Callback = function(name)
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name == name and p ~= LocalPlayer then
+                currentHarassTarget = p
+                harassDropdown:SetTitle("已选定: " .. p.Name)
+                WindUI:Notify({ Title = "操人", Content = "已选定 " .. p.Name .. "，点击确定开始操人", Duration = 3 })
+                break
+            end
         end
     end
 })
+
+Tabs.SecondaryTab:Button({
+    Title = "确定执行操人",
+    Callback = function()
+        if currentHarassTarget and currentHarassTarget.Parent then
+            harassTarget = currentHarassTarget
+            harassEnabled = true
+            startHarass()
+            WindUI:Notify({ Title = "操人", Content = "开始疯狂操 " .. currentHarassTarget.Name .. "！", Duration = 3 })
+        else
+            WindUI:Notify({ Title = "操人", Content = "请先选择玩家", Duration = 3 })
+        end
+    end
+})
+
+Tabs.SecondaryTab:Button({
+    Title = "停止操人",
+    Callback = function()
+        stopHarass()
+        currentHarassTarget = nil
+        harassDropdown:SetTitle("选定操人目标")
+    end
+})
+
+local function refreshHarassDropdown()
+    local names = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(names, p.Name) end
+    end
+    if harassDropdown then harassDropdown:Refresh(names) end
+end
+refreshHarassDropdown()
+Players.PlayerAdded:Connect(refreshHarassDropdown)
+Players.PlayerRemoving:Connect(refreshHarassDropdown)
 
 Tabs.SecondaryTab:Button({
     Title = "操最近的人",
