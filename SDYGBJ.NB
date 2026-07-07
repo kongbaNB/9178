@@ -1,0 +1,268 @@
+local function safeLoad(url)
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet(url))()
+    end)
+    if not success then
+        warn("加载失败: " .. url)
+        return nil
+    end
+    return result
+end
+
+local Library = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/黑曜石主库.ui")
+local ThemeManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/主题管理.ui")
+local SaveManager = safeLoad("https://raw.githubusercontent.com/kongbaNB/ui/refs/heads/main/配置管理.ui")
+
+if not Library then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "错误",
+        Text = "UI 库加载失败，请检查网络或脚本资源",
+        Duration = 5,
+    })
+    return
+end
+
+local Options = Library.Options
+local Toggles = Library.Toggles
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+
+local Window = Library:CreateWindow({
+    Title = "圣地亚哥边境",
+    Footer = "恐拜大帝 制作",
+    Icon = 131153193945220,
+    NotifySide = "Right",
+    ShowCustomCursor = true,
+})
+
+Library:Notify({
+    Title = "圣地亚哥边境",
+    Description = "创作者：恐拜大帝
+QQ：3999698324
+脚本已加载成功",
+    Time = 5,
+})
+
+local Tabs = {
+    Notice = Window:AddTab("通知", "info"),
+    Main = Window:AddTab("主要", "info"),
+    Settings = Window:AddTab("设置", "settings"),
+}
+
+local NoticeGroup = Tabs.Notice:AddLeftGroupbox("作者消息")
+NoticeGroup:AddLabel('恐拜大帝将持续更新此脚本')
+NoticeGroup:AddLabel('创作者：恐拜大帝')
+
+-- 坐标
+local BUY_COORDS = Vector3.new(6819.8, 17.5, 28.9)
+local SELL_COORDS = Vector3.new(211.2, 17.4, -43.3)
+local LAUNDER_COORDS = Vector3.new(6808.8, 17.6, -34.9)
+
+local function getHRP()
+    local char = player.Character
+    if not char then return nil end
+    return char:FindFirstChild("HumanoidRootPart")
+end
+
+local function teleportTo(position)
+    local hrp = getHRP()
+    if hrp then
+        hrp.CFrame = CFrame.new(position)
+    end
+end
+
+local function buyAvacados()
+    local item = workspace.WorldBuyableItems:FindFirstChild("Crate Of Avacados")
+    if item then
+        local args = {[1] = item}
+        ReplicatedStorage.__remotes.WorldBuyableItemService.PurchaseWorldBuyableItem:FireServer(unpack(args))
+    end
+end
+
+local function sellAvacados()
+    local seller = workspace.NPC:FindFirstChild("Seller4")
+    if seller then
+        local args = {[1] = seller}
+        ReplicatedStorage.__remotes.SmuggleService.SellSmuggledGoods:FireServer(unpack(args))
+    end
+end
+
+local function launderMoney()
+    local trigger = workspace.LaunderPrompts:FindFirstChild("LaunderTrigger")
+    if trigger then
+        local part = trigger:FindFirstChild("PromptPart")
+        if part then
+            local args = {[1] = part}
+            ReplicatedStorage.__remotes.SmuggleService.LaunderBriefcase:FireServer(unpack(args))
+        end
+    end
+end
+
+local function equipThirdItem()
+    local backpack = player:FindFirstChild("Backpack")
+    if not backpack then return end
+    local count = 0
+    for _, tool in ipairs(backpack:GetChildren()) do
+        if tool:IsA("Tool") then
+            count = count + 1
+            if count == 3 then
+                local char = player.Character
+                if char then
+                    tool.Parent = char
+                end
+                break
+            end
+        end
+    end
+end
+
+local function punch()
+    ReplicatedStorage.__remotes.Fists.Punch:InvokeServer()
+end
+
+-- 刷钱循环
+local isMoneyRunning = false
+local function waitSeconds(seconds)
+    local start = tick()
+    while tick() - start < seconds do
+        task.wait(0.1)
+        if not isMoneyRunning then return false end
+    end
+    return true
+end
+
+local function moneyLoop()
+    while isMoneyRunning do
+        teleportTo(BUY_COORDS)
+        task.wait(1.5)
+        buyAvacados()
+        if not waitSeconds(3) then break end
+
+        equipThirdItem()
+        task.wait(1)
+
+        teleportTo(SELL_COORDS)
+        task.wait(1.5)
+        sellAvacados()
+        if not waitSeconds(3) then break end
+        sellAvacados()
+        if not waitSeconds(3) then break end
+        sellAvacados()
+        if not waitSeconds(5) then break end
+
+        equipThirdItem()
+        task.wait(1)
+
+        teleportTo(LAUNDER_COORDS)
+        task.wait(1.5)
+        launderMoney()
+        if not waitSeconds(3) then break end
+        launderMoney()
+        if not waitSeconds(3) then break end
+        launderMoney()
+        if not waitSeconds(5) then break end
+    end
+end
+
+-- 自动挥拳循环
+local isPunchRunning = false
+local punchSpeed = 0.5
+local function punchLoop()
+    while isPunchRunning do
+        punch()
+        task.wait(punchSpeed)
+    end
+end
+
+-- 传送组
+local TeleportGroup = Tabs.Main:AddLeftGroupbox("传送")
+
+TeleportGroup:AddButton("传送到购买点", function()
+    teleportTo(BUY_COORDS)
+end)
+
+TeleportGroup:AddButton("传送到出售点", function()
+    teleportTo(SELL_COORDS)
+end)
+
+TeleportGroup:AddButton("传送到洗钱点", function()
+    teleportTo(LAUNDER_COORDS)
+end)
+
+-- 事件组
+local EventGroup = Tabs.Main:AddLeftGroupbox("发送事件")
+
+EventGroup:AddButton("购买牛油果", function()
+    buyAvacados()
+end)
+
+EventGroup:AddButton("出售牛油果", function()
+    equipThirdItem()
+    task.wait(0.5)
+    sellAvacados()
+end)
+
+EventGroup:AddButton("洗钱", function()
+    equipThirdItem()
+    task.wait(0.5)
+    launderMoney()
+end)
+
+-- 自动功能组
+local AutoGroup = Tabs.Main:AddRightGroupbox("自动功能")
+
+AutoGroup:AddToggle("自动刷钱", {
+    Text = "自动刷钱",
+    Default = false,
+    Callback = function(Value)
+        isMoneyRunning = Value
+        if Value then
+            task.spawn(moneyLoop)
+        end
+    end,
+})
+
+AutoGroup:AddToggle("自动挥拳", {
+    Text = "自动挥拳",
+    Default = false,
+    Callback = function(Value)
+        isPunchRunning = Value
+        if Value then
+            task.spawn(punchLoop)
+        end
+    end,
+})
+
+AutoGroup:AddSlider("挥拳速度", {
+    Text = "挥拳速度(秒)",
+    Default = 0.5,
+    Min = 0.1,
+    Max = 5,
+    Rounding = 1,
+    Callback = function(Value)
+        punchSpeed = Value
+    end,
+})
+
+-- 设置页
+local UnloadGroup = Tabs.Settings:AddLeftGroupbox("脚本管理")
+UnloadGroup:AddButton("卸载脚本", function()
+    isMoneyRunning = false
+    isPunchRunning = false
+    Library:Unload()
+end)
+
+if ThemeManager then
+    ThemeManager:SetLibrary(Library)
+    ThemeManager:SetFolder("MyScriptTheme")
+    ThemeManager:ApplyToTab(Tabs.Settings)
+end
+
+if SaveManager then
+    SaveManager:SetLibrary(Library)
+    SaveManager:IgnoreThemeSettings()
+    SaveManager:SetFolder("MyScriptConfig")
+    SaveManager:BuildConfigSection(Tabs.Settings)
+end
