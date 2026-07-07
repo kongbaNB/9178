@@ -1492,32 +1492,41 @@ Tabs.MainTab:Toggle({
     end
 })
 
+local speedToggle = false
+local speedValue = 16
+Tabs.MainTab:Toggle({
+    Title = "修改移速",
+    Value = false,
+    Callback = function(state)
+        speedToggle = state
+        if state then
+            local hum = getHumanoid()
+            if hum then hum.WalkSpeed = speedValue end
+            startSpeedAntiPull(speedValue)
+            WindUI:Notify({ Title = "修改移速", Content = "已开启，当前移速：" .. speedValue, Duration = 3 })
+        else
+            stopSpeedAntiPull()
+            local hum = getHumanoid()
+            if hum then hum.WalkSpeed = 16 end
+            WindUI:Notify({ Title = "修改移速", Content = "已关闭，恢复默认移速", Duration = 3 })
+        end
+    end
+})
+
 Tabs.MainTab:Slider({
-    Title = "修改移速 (当前: 16)",
+    Title = "移速数值 (当前: 16)",
     Value = {
         Min = 5,
         Max = 1000,
         Default = 16,
     },
     Callback = function(value)
-        pendingSliderValues["movespeed"] = value
-    end
-})
-sliderReleaseActions["movespeed"] = function(val)
-    local hum = getHumanoid()
-    if hum then hum.WalkSpeed = val end
-    startSpeedAntiPull(val)
-    WindUI:Notify({ Title = "修改移速", Content = "移速已设置为：" .. tostring(val), Duration = 3 })
-end
-
-Tabs.MainTab:Button({
-    Title = "确定修改移速",
-    Callback = function()
-        local val = pendingSliderValues["movespeed"] or 16
-        local hum = getHumanoid()
-        if hum then hum.WalkSpeed = val end
-        startSpeedAntiPull(val)
-        WindUI:Notify({ Title = "修改移速", Content = "移速已设置为：" .. tostring(val), Duration = 3 })
+        speedValue = value
+        if speedToggle then
+            local hum = getHumanoid()
+            if hum then hum.WalkSpeed = value end
+            startSpeedAntiPull(value)
+        end
     end
 })
 Tabs.MainTab:Toggle({
@@ -1745,26 +1754,17 @@ Tabs.SecondaryTab:Button({
     end
 })
 
-local coordX, coordY, coordZ = "", "", ""
+local coordInput = ""
 Tabs.SecondaryTab:Input({
-    Title = "传送X坐标",
-    Placeholder = "输入X坐标",
-    Callback = function(v) coordX = v end
-})
-Tabs.SecondaryTab:Input({
-    Title = "传送Y坐标",
-    Placeholder = "输入Y坐标",
-    Callback = function(v) coordY = v end
-})
-Tabs.SecondaryTab:Input({
-    Title = "传送Z坐标",
-    Placeholder = "输入Z坐标",
-    Callback = function(v) coordZ = v end
+    Title = "传送指定坐标",
+    Placeholder = "格式: x, y, z  例如: 123.5, 50.0, -78.2",
+    Callback = function(v) coordInput = v end
 })
 Tabs.SecondaryTab:Button({
     Title = "确定传送",
     Callback = function()
-        local x, y, z = tonumber(coordX), tonumber(coordY), tonumber(coordZ)
+        local x, y, z = coordInput:match("^%s*([%-%d%.]+)%s*,%s*([%-%d%.]+)%s*,%s*([%-%d%.]+)%s*$")
+        x, y, z = tonumber(x), tonumber(y), tonumber(z)
         if x and y and z then
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
@@ -1772,7 +1772,7 @@ Tabs.SecondaryTab:Button({
                 WindUI:Notify({ Title = "传送成功", Content = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3 })
             end
         else
-            WindUI:Notify({ Title = "传送失败", Content = "请输入有效的数字坐标", Duration = 3 })
+            WindUI:Notify({ Title = "传送失败", Content = "格式错误，请用: x, y, z", Duration = 3 })
         end
     end
 })
@@ -1823,26 +1823,17 @@ Tabs.SecondaryTab:Button({
     end
 })
 
-local coordX, coordY, coordZ = "", "", ""
+local coordInput = ""
 Tabs.SecondaryTab:Input({
-    Title = "传送X坐标",
-    Placeholder = "输入X坐标",
-    Callback = function(v) coordX = v end
-})
-Tabs.SecondaryTab:Input({
-    Title = "传送Y坐标",
-    Placeholder = "输入Y坐标",
-    Callback = function(v) coordY = v end
-})
-Tabs.SecondaryTab:Input({
-    Title = "传送Z坐标",
-    Placeholder = "输入Z坐标",
-    Callback = function(v) coordZ = v end
+    Title = "传送指定坐标",
+    Placeholder = "格式: x, y, z  例如: 123.5, 50.0, -78.2",
+    Callback = function(v) coordInput = v end
 })
 Tabs.SecondaryTab:Button({
     Title = "确定传送",
     Callback = function()
-        local x, y, z = tonumber(coordX), tonumber(coordY), tonumber(coordZ)
+        local x, y, z = coordInput:match("^%s*([%-%d%.]+)%s*,%s*([%-%d%.]+)%s*,%s*([%-%d%.]+)%s*$")
+        x, y, z = tonumber(x), tonumber(y), tonumber(z)
         if x and y and z then
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
@@ -1850,7 +1841,7 @@ Tabs.SecondaryTab:Button({
                 WindUI:Notify({ Title = "传送成功", Content = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3 })
             end
         else
-            WindUI:Notify({ Title = "传送失败", Content = "请输入有效的数字坐标", Duration = 3 })
+            WindUI:Notify({ Title = "传送失败", Content = "格式错误，请用: x, y, z", Duration = 3 })
         end
     end
 })
