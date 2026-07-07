@@ -433,6 +433,7 @@ local function startFollow(targetPlayer)
             followConnection:Disconnect()
             followConnection = nil
             followTarget = nil
+            if followDropdown then followDropdown:SetTitle("选定玩家跟随") end
             WindUI:Notify({ Title = "跟随", Content = "目标已消失，跟随停止", Duration = 3 })
             return
         end
@@ -449,6 +450,7 @@ local function startFollow(targetPlayer)
             myHum:MoveTo(myRoot.Position)
         end
     end)
+    if followDropdown then followDropdown:SetTitle("停止跟随") end
     WindUI:Notify({ Title = "跟随", Content = "开始跟随 " .. targetPlayer.Name, Duration = 3 })
 end
 
@@ -463,6 +465,7 @@ local function stopFollow()
             myHum:MoveTo(myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or myChar:GetPivot().Position)
         end
     end
+    if followDropdown then followDropdown:SetTitle("选定玩家跟随") end
     WindUI:Notify({ Title = "跟随", Content = "已停止跟随", Duration = 3 })
 end
 
@@ -1077,11 +1080,20 @@ local function startHarass()
     lastSwitchTime = tick()
     isBehind = true
     harassConnection = RunService.Heartbeat:Connect(function()
-        if not harassEnabled or not harassTarget or not harassTarget.Character then return end
+        if not harassEnabled or not harassTarget or not harassTarget:IsDescendantOf(Players) or not harassTarget.Character then
+            stopHarass()
+            if harassDropdown then harassDropdown:SetTitle("操人") end
+            WindUI:Notify({ Title = "操人", Content = "目标已消失，已停止", Duration = 2 })
+            return
+        end
         local myChar = LocalPlayer.Character
         if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
         local targetRoot = harassTarget.Character:FindFirstChild("HumanoidRootPart")
-        if not targetRoot then return end
+        if not targetRoot then
+            stopHarass()
+            if harassDropdown then harassDropdown:SetTitle("操人") end
+            return
+        end
         local switchInterval = 1 / math.max(harassSpeed, 0.1)
         local myRoot = myChar.HumanoidRootPart
         local targetPos = targetRoot.Position
@@ -1099,6 +1111,7 @@ local function startHarass()
             myRoot.CFrame = CFrame.new(onTargetPos, onTargetPos + targetLook)
         end
     end)
+    if harassDropdown then harassDropdown:SetTitle("停止操人") end
 end
 
 local function stopHarass()
@@ -1108,6 +1121,7 @@ local function stopHarass()
     harassConnection = nil
     if UIButtons.harassBtn then UIButtons.harassBtn.Text = "操人" end
     if UIButtons.harassNearestBtn then UIButtons.harassNearestBtn.Text = "操最近的人" end
+    if harassDropdown then harassDropdown:SetTitle("操人") end
     WindUI:Notify({ Title = "操人", Content = "已停止操人", Duration = 2 })
 end
 
@@ -1118,9 +1132,36 @@ local function stopSmoothFollow()
     if smoothFollowConnection then smoothFollowConnection:Disconnect() end
     smoothFollowConnection = nil
     smoothFollowTarget = nil
-    if UIButtons.smoothFollowSelectBtn then UIButtons.smoothFollowSelectBtn.Text = "平滑跟随选定人" end
-    if UIButtons.smoothFollowNearestBtn then UIButtons.smoothFollowNearestBtn.Text = "平滑跟随最近的人" end
+    if smoothDropdown then smoothDropdown:SetTitle("平滑跟随选定人") end
     WindUI:Notify({ Title = "平滑跟随", Content = "已停止平滑跟随", Duration = 3 })
+end
+
+local function startSmoothFollow(targetPlayer)
+    if smoothFollowConnection then smoothFollowConnection:Disconnect() end
+    smoothFollowTarget = targetPlayer
+    smoothFollowConnection = RunService.Heartbeat:Connect(function(dt)
+        if not smoothFollowTarget or not smoothFollowTarget:IsDescendantOf(Players) or not smoothFollowTarget.Character or not smoothFollowTarget.Character:FindFirstChild("HumanoidRootPart") then
+            stopSmoothFollow()
+            if smoothDropdown then smoothDropdown:SetTitle("平滑跟随选定人") end
+            WindUI:Notify({ Title = "平滑跟随", Content = "目标已消失，跟随停止", Duration = 3 })
+            return
+        end
+        local myChar = LocalPlayer.Character
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+        local myRoot = myChar.HumanoidRootPart
+        local targetRoot = smoothFollowTarget.Character.HumanoidRootPart
+        local targetPos = targetRoot.Position
+        local myPos = myRoot.Position
+        local dist = (targetPos - myPos).Magnitude
+        if dist > 4 then
+            local direction = (targetPos - myPos).Unit
+            local speed = math.min(dist * 2, 50)
+            local newPos = myPos + direction * speed * dt
+            myRoot.CFrame = CFrame.new(newPos, targetPos)
+        end
+    end)
+    if smoothDropdown then smoothDropdown:SetTitle("停止平滑跟随") end
+    WindUI:Notify({ Title = "平滑跟随", Content = "开始平滑跟随 " .. targetPlayer.Name, Duration = 3 })
 end
 
 local function startSmoothFollow(targetPlayer)
@@ -1721,14 +1762,21 @@ followDropdown = Tabs.SecondaryTab:Dropdown({
     Title = "选定玩家跟随",
     Values = {},
     Callback = function(name)
+        if followConnection then
+            stopFollow()
+            followDropdown:SetTitle("选定玩家跟随")
+            return
+        end
         for _, p in ipairs(Players:GetPlayers()) do
             if p.Name == name and p ~= LocalPlayer then
                 startFollow(p)
+                followDropdown:SetTitle("停止跟随")
                 break
             end
         end
     end
 })
+
 refreshFollowDropdown()
 Players.PlayerAdded:Connect(refreshFollowDropdown)
 Players.PlayerRemoving:Connect(refreshFollowDropdown)
@@ -1872,16 +1920,19 @@ smoothDropdown = Tabs.SecondaryTab:Dropdown({
     Callback = function(name)
         if smoothFollowConnection then
             stopSmoothFollow()
-        else
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p.Name == name and p ~= LocalPlayer then
-                    startSmoothFollow(p)
-                    break
-                end
+            smoothDropdown:SetTitle("平滑跟随选定人")
+            return
+        end
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name == name and p ~= LocalPlayer then
+                startSmoothFollow(p)
+                smoothDropdown:SetTitle("停止平滑跟随")
+                break
             end
         end
     end
 })
+
 refreshSmoothDropdown()
 Players.PlayerAdded:Connect(refreshSmoothDropdown)
 Players.PlayerRemoving:Connect(refreshSmoothDropdown)
@@ -1933,19 +1984,22 @@ harassDropdown = Tabs.SecondaryTab:Dropdown({
     Callback = function(name)
         if harassEnabled then
             stopHarass()
-        else
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p.Name == name and p ~= LocalPlayer then
-                    harassTarget = p
-                    harassEnabled = true
-                    startHarass()
-                    WindUI:Notify({ Title = "操人", Content = "开始疯狂操 " .. p.Name .. "！", Duration = 3 })
-                    break
-                end
+            harassDropdown:SetTitle("操人")
+            return
+        end
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name == name and p ~= LocalPlayer then
+                harassTarget = p
+                harassEnabled = true
+                startHarass()
+                harassDropdown:SetTitle("停止操人")
+                WindUI:Notify({ Title = "操人", Content = "开始疯狂操 " .. p.Name .. "！", Duration = 3 })
+                break
             end
         end
     end
 })
+
 refreshHarassDropdown()
 Players.PlayerAdded:Connect(refreshHarassDropdown)
 Players.PlayerRemoving:Connect(refreshHarassDropdown)
