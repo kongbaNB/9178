@@ -36,6 +36,7 @@ local V3 = Vector3.new
 local s = string
 local c = s.char
 local tsk = task
+local ins = Instance.new
 
 local e = c(65)..c(116)..c(116)..c(101)..c(109)..c(112)..c(116)..c(87)..c(101)..c(97)..c(112)..c(111)..c(110)..c(72)..c(105)..c(116)
 local gacha = c(65)..c(116)..c(116)..c(101)..c(109)..c(112)..c(116)..c(82)..c(111)..c(108)..c(108)..c(71)..c(97)..c(99)..c(104)..c(97)..c(67)..c(104)..c(101)..c(115)..c(116)
@@ -50,6 +51,9 @@ local divineChest = false
 local chestIv = 0.5
 
 local autoEquip = false
+
+local showModels = false
+local espEnabled = false
 
 local function doHit()
     local ch = me.Character
@@ -204,6 +208,155 @@ tsk.spawn(function()
     end
 end)
 
+local espGui = ins("ScreenGui")
+local espFolder = ins("Folder")
+local espLabels = {}
+
+pcall(function()
+    espGui.Name = "ESP_Gui"
+    espGui.ResetOnSpawn = false
+    espGui.Parent = me:WaitForChild("PlayerGui")
+    espFolder.Name = "ESP_Folder"
+    espFolder.Parent = espGui
+end)
+
+pls.PlayerRemoving:Connect(function(p)
+    if espLabels[p] then
+        pcall(function() espLabels[p]:Destroy() end)
+        espLabels[p] = nil
+    end
+end)
+
+tsk.spawn(function()
+    while true do
+        if showModels then
+            for _, p in ipairs(pls:GetPlayers()) do
+                if p ~= me then
+                    local tch = p.Character
+                    if tch then
+                        for _, obj in ipairs(tch:GetDescendants()) do
+                            if obj:IsA("BasePart") then
+                                pcall(function()
+                                    obj.Transparency = 0
+                                    obj.LocalTransparencyModifier = 0
+                                    obj.CastShadow = true
+                                end)
+                            elseif obj:IsA("Decal") or obj:IsA("Texture") then
+                                pcall(function()
+                                    obj.Transparency = 0
+                                end)
+                            elseif obj:IsA("ForceField") then
+                                pcall(function()
+                                    obj.Visible = true
+                                end)
+                            end
+                        end
+                        local hum = tch:FindFirstChildOfClass("Humanoid")
+                        if hum then
+                            pcall(function()
+                                hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+                            end)
+                        end
+                        pcall(function()
+                            tch.PrimaryPart = tch:FindFirstChild("HumanoidRootPart")
+                        end)
+                    end
+                end
+            end
+        end
+        tsk.wait(0.1)
+    end
+end)
+
+tsk.spawn(function()
+    while true do
+        if espEnabled then
+            local myCh = me.Character
+            local myHrp = nil
+            if myCh then
+                myHrp = myCh:FindFirstChild("HumanoidRootPart")
+            end
+            local myPos = nil
+            if myHrp then
+                myPos = myHrp.Position
+            end
+
+            for _, p in ipairs(pls:GetPlayers()) do
+                if p ~= me then
+                    local tch = p.Character
+                    local thrp = nil
+                    if tch then
+                        thrp = tch:FindFirstChild("HumanoidRootPart")
+                    end
+
+                    if tch and thrp then
+                        local bb = espLabels[p]
+                        if not bb then
+                            bb = ins("BillboardGui")
+                            bb.Name = p.Name .. "_ESP"
+                            bb.AlwaysOnTop = true
+                            bb.Size = UDim2.new(0, 120, 0, 50)
+                            bb.StudsOffset = Vector3.new(0, 3.5, 0)
+                            bb.MaxDistance = 9999
+                            bb.Parent = espFolder
+
+                            local nameLabel = ins("TextLabel")
+                            nameLabel.Name = "NameLabel"
+                            nameLabel.Size = UDim2.new(1, 0, 0, 20)
+                            nameLabel.Position = UDim2.new(0, 0, 0, 0)
+                            nameLabel.BackgroundTransparency = 1
+                            nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                            nameLabel.TextStrokeTransparency = 0
+                            nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+                            nameLabel.Font = Enum.Font.GothamBold
+                            nameLabel.TextSize = 14
+                            nameLabel.Text = p.Name
+                            nameLabel.Parent = bb
+
+                            local distLabel = ins("TextLabel")
+                            distLabel.Name = "DistLabel"
+                            distLabel.Size = UDim2.new(1, 0, 0, 18)
+                            distLabel.Position = UDim2.new(0, 0, 0, 20)
+                            distLabel.BackgroundTransparency = 1
+                            distLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                            distLabel.TextStrokeTransparency = 0
+                            distLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+                            distLabel.Font = Enum.Font.GothamBold
+                            distLabel.TextSize = 12
+                            distLabel.Parent = bb
+
+                            espLabels[p] = bb
+                        end
+
+                        bb.Adornee = thrp
+                        bb.Enabled = true
+                        bb.NameLabel.Text = p.Name
+
+                        if myPos then
+                            local dist = (thrp.Position - myPos).Magnitude
+                            bb.DistLabel.Text = s.format("%.1f m", dist)
+                        else
+                            bb.DistLabel.Text = "??? m"
+                        end
+                    else
+                        if espLabels[p] then
+                            pcall(function() espLabels[p]:Destroy() end)
+                            espLabels[p] = nil
+                        end
+                    end
+                end
+            end
+        else
+            for p, gui in pairs(espLabels) do
+                if gui then
+                    pcall(function() gui:Destroy() end)
+                end
+                espLabels[p] = nil
+            end
+        end
+        tsk.wait(0.1)
+    end
+end)
 
 local Window = Library:CreateWindow({
     Title = "沉默的刺客",
@@ -302,12 +455,37 @@ ChestGroup:AddToggle('AutoEquipToggle', {
     end
 })
 
+local VisualGroup = Tabs.Main:AddRightGroupbox("透视与显示")
+VisualGroup:AddToggle('ShowModelsToggle', {
+    Text = '显示人物建模（强制显现）',
+    Default = false,
+    Callback = function(Value)
+        showModels = Value
+    end
+})
+VisualGroup:AddToggle('ESPToggle', {
+    Text = '透视（用户名+距离）',
+    Default = false,
+    Callback = function(Value)
+        espEnabled = Value
+    end
+})
+
 local SettingsGroup = Tabs.Settings:AddLeftGroupbox("菜单")
 SettingsGroup:AddButton({ Text = '卸载脚本', Func = function()
     en = false
     basicChest = false
     divineChest = false
     autoEquip = false
+    showModels = false
+    espEnabled = false
+    for p, gui in pairs(espLabels) do
+        if gui then
+            pcall(function() gui:Destroy() end)
+        end
+        espLabels[p] = nil
+    end
+    pcall(function() espGui:Destroy() end)
     Library:Unload()
 end })
 
