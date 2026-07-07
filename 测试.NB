@@ -1620,14 +1620,6 @@ Tabs.MainTab:Button({
 Tabs.MainTab:Button({
     Title = "甩飞选定玩家",
     Callback = function()
-        local names = {}
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer then table.insert(names, p.Name) end
-        end
-        if #names == 0 then
-            WindUI:Notify({ Title = "甩飞", Content = "没有其他玩家", Duration = 3 })
-            return
-        end
         showPlayerSelect(function(p)
             WindUI:Notify({ Title = "甩飞", Content = "正在甩飞 " .. p.Name, Duration = 3 })
             task.spawn(function() powerfulFling(p) end)
@@ -1755,7 +1747,6 @@ Tabs.SecondaryTab:Button({
         end
     end
 })
-
 
 Tabs.SecondaryTab:Toggle({
     Title = "锁定视角",
@@ -2013,6 +2004,7 @@ Tabs.MiscTab:Button({
         WindUI:Notify({ Title = confirmTitle, Content = confirmContent, Duration = 10 })
     end
 })
+
 
 Tabs.GamesTab:Button({
     Title = "执行加载器",
