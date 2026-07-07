@@ -1,57 +1,4 @@
-lo
-
-Tabs.MiscTab:Input({
-    Title = "数字ID传送",
-    Placeholder = "输入PlaceId，例如: 286090429",
-    Callback = function(v)
-        local placeId = tonumber(v)
-        if placeId then
-            WindUI:Notify({ Title = "数字ID传送", Content = "正在传送到 PlaceId: " .. tostring(placeId) .. " ...", Duration = 5 })
-            pcall(function()
-                game:GetService("TeleportService"):Teleport(placeId, LocalPlayer)
-            end)
-        else
-            WindUI:Notify({ Title = "传送失败", Content = "请输入有效的数字ID", Duration = 3 })
-        end
-    end
-})
-
-local kickTitle, kickContent = "你被踢出了游戏", "Error Code: 267"
-Tabs.MiscTab:Input({
-    Title = "自定义踢出标题",
-    Placeholder = "输入踢出标题",
-    Callback = function(v) kickTitle = v end
-})
-Tabs.MiscTab:Input({
-    Title = "自定义踢出内容",
-    Placeholder = "输入踢出内容",
-    Callback = function(v) kickContent = v end
-})
-Tabs.MiscTab:Button({
-    Title = "执行自定义踢出",
-    Callback = function()
-        LocalPlayer:Kick(kickContent)
-    end
-})
-
-local confirmTitle, confirmContent = "确认操作", "你确定要执行此操作吗？"
-Tabs.MiscTab:Input({
-    Title = "弹窗标题",
-    Placeholder = "输入弹窗标题",
-    Callback = function(v) confirmTitle = v end
-})
-Tabs.MiscTab:Input({
-    Title = "弹窗内容",
-    Placeholder = "输入弹窗内容",
-    Callback = function(v) confirmContent = v end
-})
-Tabs.MiscTab:Button({
-    Title = "弹出确认窗口",
-    Callback = function()
-        WindUI:Notify({ Title = confirmTitle, Content = confirmContent, Duration = 10 })
-    end
-})
-cal WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 local player = game:GetService("Players").LocalPlayer
 local plrId = player.UserId
@@ -1855,6 +1802,70 @@ refreshTpDropdown()
 Players.PlayerAdded:Connect(refreshTpDropdown)
 Players.PlayerRemoving:Connect(refreshTpDropdown)
 
+Tabs.SecondaryTab:Button({
+    Title = "停止跟随",
+    Callback = function()
+        stopFollow()
+    end
+})
+
+Tabs.SecondaryTab:Button({
+    Title = "复制当前坐标",
+    Callback = function()
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local pos = char.HumanoidRootPart.Position
+            local text = string.format("%.1f, %.1f, %.1f", pos.X, pos.Y, pos.Z)
+            copyToClipboard(text, "坐标")
+        else
+            WindUI:Notify({ Title = "坐标", Content = "角色未加载", Duration = 3 })
+        end
+    end
+})
+
+local coordX, coordY, coordZ = "", "", ""
+Tabs.SecondaryTab:Input({
+    Title = "传送X坐标",
+    Placeholder = "输入X坐标",
+    Callback = function(v) coordX = v end
+})
+Tabs.SecondaryTab:Input({
+    Title = "传送Y坐标",
+    Placeholder = "输入Y坐标",
+    Callback = function(v) coordY = v end
+})
+Tabs.SecondaryTab:Input({
+    Title = "传送Z坐标",
+    Placeholder = "输入Z坐标",
+    Callback = function(v) coordZ = v end
+})
+Tabs.SecondaryTab:Button({
+    Title = "确定传送",
+    Callback = function()
+        local x, y, z = tonumber(coordX), tonumber(coordY), tonumber(coordZ)
+        if x and y and z then
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+                WindUI:Notify({ Title = "传送成功", Content = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3 })
+            end
+        else
+            WindUI:Notify({ Title = "传送失败", Content = "请输入有效的数字坐标", Duration = 3 })
+        end
+    end
+})
+
+
+
+Tabs.SecondaryTab:Toggle({
+    Title = "锁定视角",
+    Value = false,
+    Callback = function(state)
+        LockViewEnabled = state
+        WindUI:Notify({ Title = "锁定视角", Content = state and "已开启" or "已关闭", Duration = 3 })
+    end
+})
+
 local smoothDropdown
 local function refreshSmoothDropdown()
     local names = {}
@@ -1883,6 +1894,38 @@ smoothDropdown = Tabs.SecondaryTab:Dropdown({
 refreshSmoothDropdown()
 Players.PlayerAdded:Connect(refreshSmoothDropdown)
 Players.PlayerRemoving:Connect(refreshSmoothDropdown)
+
+Tabs.SecondaryTab:Button({
+    Title = "平滑跟随最近的人",
+    Callback = function()
+        if smoothFollowConnection then
+            stopSmoothFollow()
+        else
+            local nearest = getNearestPlayer()
+            if nearest then
+                startSmoothFollow(nearest)
+            else
+                WindUI:Notify({ Title = "平滑跟随", Content = "未找到其他玩家", Duration = 3 })
+            end
+        end
+    end
+})
+
+Tabs.SecondaryTab:Button({
+    Title = "撸管",
+    Callback = function()
+        WindUI:Notify({ Title = "撸管", Content = "正在生成工具...", Duration = 3 })
+        task.spawn(function() loadLuGuan() end)
+    end
+})
+
+Tabs.SecondaryTab:Toggle({
+    Title = "飞行控制",
+    Value = false,
+    Callback = function(state)
+        if state then showFlyUI() else hideFlyUI() end
+    end
+})
 
 local harassDropdown
 local function refreshHarassDropdown()
@@ -1916,4 +1959,434 @@ refreshHarassDropdown()
 Players.PlayerAdded:Connect(refreshHarassDropdown)
 Players.PlayerRemoving:Connect(refreshHarassDropdown)
 
-)
+Tabs.SecondaryTab:Button({
+    Title = "操最近的人",
+    Callback = function()
+        if harassEnabled then
+            stopHarass()
+        else
+            local nearest = getNearestPlayer()
+            if nearest then
+                harassTarget = nearest
+                harassEnabled = true
+                startHarass()
+                WindUI:Notify({ Title = "操人", Content = "开始疯狂操 " .. nearest.Name .. "！", Duration = 3 })
+            else
+                WindUI:Notify({ Title = "操人", Content = "未找到其他玩家", Duration = 3 })
+            end
+        end
+    end
+})
+
+Tabs.SecondaryTab:Toggle({
+    Title = "原地旋转",
+    Value = false,
+    Callback = function(state)
+        SpinEnabled = state
+        if state then startSpin() else stopSpin() end
+        WindUI:Notify({ Title = "原地旋转", Content = state and "已开启" or "已关闭", Duration = 3 })
+    end
+})
+
+Tabs.SecondaryTab:Slider({
+    Title = "操人速度 (当前: 5)",
+    Value = {
+        Min = 1,
+        Max = 20,
+        Default = 5,
+    },
+    Callback = function(value)
+        pendingSliderValues["harassspeed"] = value
+    end
+})
+sliderReleaseActions["harassspeed"] = function(speed)
+    harassSpeed = speed
+    WindUI:Notify({ Title = "操人速度", Content = "已设置为：" .. speed .. " 次/秒", Duration = 2 })
+end
+
+Tabs.SecondaryTab:Slider({
+    Title = "旋转速度 (当前: 360)",
+    Value = {
+        Min = 1,
+        Max = 10000,
+        Default = 360,
+    },
+    Callback = function(value)
+        pendingSliderValues["spinspeed"] = value
+    end
+})
+sliderReleaseActions["spinspeed"] = function(speed)
+    SpinSpeed = speed
+    WindUI:Notify({ Title = "旋转速度", Content = "已设置为：" .. speed .. " 度/秒", Duration = 2 })
+end
+
+Tabs.MiscTab:Button({
+    Title = "实体动作游泳",
+    Desc = "先点击此按钮一次之后点击飞，然后再点击此按钮一次",
+    Callback = function()
+        WindUI:Notify({ Title = "实体动作游泳", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/fly.lua"))()
+        end)
+    end
+})
+
+Tabs.MiscTab:Button({
+    Title = "显示时间",
+    Callback = function()
+        WindUI:Notify({ Title = "显示时间", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://pastebin.com/raw/0zKLyd4W"))()
+        end)
+    end
+})
+
+Tabs.MiscTab:Button({
+    Title = "美化包排行榜第一",
+    Callback = function()
+        beautifyStats()
+        WindUI:Notify({ Title = "美化包", Content = "数值已修改为999（若游戏支持）", Duration = 3 })
+    end
+})
+
+Tabs.MiscTab:Toggle({
+    Title = "准星",
+    Value = false,
+    Callback = function(state)
+        CrosshairEnabled = state
+        if CrosshairFrame then CrosshairFrame.Visible = CrosshairEnabled end
+        WindUI:Notify({ Title = "准星", Content = state and "已显示" or "已隐藏", Duration = 3 })
+    end
+})
+
+Tabs.MiscTab:Toggle({
+    Title = "准星旋转",
+    Value = false,
+    Callback = function(state)
+        CrosshairSpinEnabled = state
+        WindUI:Notify({ Title = "准星旋转", Content = state and "已开启" or "已关闭", Duration = 3 })
+    end
+})
+
+Tabs.MiscTab:Toggle({
+    Title = "反挂机踢出",
+    Value = false,
+    Callback = function(state)
+        antiAFKEnabled = state
+        if state then startAntiAFK() else stopAntiAFK() end
+        WindUI:Notify({ Title = "反挂机踢出", Content = state and "已开启" or "已关闭", Duration = 3 })
+    end
+})
+
+Tabs.MiscTab:Button({
+    Title = "复制实例ID (JobId)",
+    Callback = function()
+        local id = game.JobId
+        copyToClipboard(id, "实例ID")
+    end
+})
+
+Tabs.MiscTab:Button({
+    Title = "复制数字ID (PlaceId)",
+    Callback = function()
+        local id = tostring(game.PlaceId)
+        copyToClipboard(id, "数字ID")
+    end
+})
+
+Tabs.MiscTab:Input({
+    Title = "数字ID传送",
+    Placeholder = "输入PlaceId，例如: 286090429",
+    Callback = function(v)
+        local placeId = tonumber(v)
+        if placeId then
+            WindUI:Notify({ Title = "数字ID传送", Content = "正在传送到 PlaceId: " .. tostring(placeId) .. " ...", Duration = 5 })
+            pcall(function()
+                game:GetService("TeleportService"):Teleport(placeId, LocalPlayer)
+            end)
+        else
+            WindUI:Notify({ Title = "传送失败", Content = "请输入有效的数字ID", Duration = 3 })
+        end
+    end
+})
+
+local kickTitle, kickContent = "你被踢出了游戏", "Error Code: 267"
+Tabs.MiscTab:Input({
+    Title = "自定义踢出标题",
+    Placeholder = "输入踢出标题",
+    Callback = function(v) kickTitle = v end
+})
+Tabs.MiscTab:Input({
+    Title = "自定义踢出内容",
+    Placeholder = "输入踢出内容",
+    Callback = function(v) kickContent = v end
+})
+Tabs.MiscTab:Button({
+    Title = "执行自定义踢出",
+    Callback = function()
+        LocalPlayer:Kick(kickContent)
+    end
+})
+
+local confirmTitle, confirmContent = "确认操作", "你确定要执行此操作吗？"
+Tabs.MiscTab:Input({
+    Title = "弹窗标题",
+    Placeholder = "输入弹窗标题",
+    Callback = function(v) confirmTitle = v end
+})
+Tabs.MiscTab:Input({
+    Title = "弹窗内容",
+    Placeholder = "输入弹窗内容",
+    Callback = function(v) confirmContent = v end
+})
+Tabs.MiscTab:Button({
+    Title = "弹出确认窗口",
+    Callback = function()
+        WindUI:Notify({ Title = confirmTitle, Content = confirmContent, Duration = 10 })
+    end
+})
+
+
+Tabs.GamesTab:Button({
+    Title = "执行加载器",
+    Desc = "根据服务器判断并加载对应的脚本",
+    Callback = function()
+        WindUI:Notify({ Title = "执行加载器", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本加载器"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "复制加载器执行代码",
+    Callback = function()
+        copyToClipboard('loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本加载器"))()', "加载器代码")
+    end
+})
+
+Tabs.GamesTab:Divider()
+
+Tabs.GamesTab:Button({
+    Title = "破坏者谜团2",
+    Callback = function()
+        WindUI:Notify({ Title = "破坏者谜团2", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/PHZMT.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "吃吃世界",
+    Callback = function()
+        WindUI:Notify({ Title = "吃吃世界", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/CCSJ.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "在超市生活一周",
+    Callback = function()
+        WindUI:Notify({ Title = "在超市生活一周", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCSSHYZ.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "亡命速递",
+    Callback = function()
+        WindUI:Notify({ Title = "亡命速递", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/WMSD.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "巨剑骑士（背上只因剑）",
+    Callback = function()
+        WindUI:Notify({ Title = "巨剑骑士（背上只因剑）", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/JJQS.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "doors（在出生点开反作弊再用功能）",
+    Callback = function()
+        WindUI:Notify({ Title = "doors（在出生点开反作弊再用功能）", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/DOORS.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "盲射",
+    Callback = function()
+        WindUI:Notify({ Title = "盲射", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MS.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "找到按钮",
+    Callback = function()
+        WindUI:Notify({ Title = "找到按钮", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZDNN.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "墨水游戏（会封服务器不要用大号）",
+    Callback = function()
+        WindUI:Notify({ Title = "墨水游戏（会封服务器不要用大号）", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/MSYS.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "力量传奇（修改数据不能用）",
+    Callback = function()
+        WindUI:Notify({ Title = "力量传奇（修改数据不能用）", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/LLCC.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "踢出幸运方块",
+    Callback = function()
+        WindUI:Notify({ Title = "踢出幸运方块", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/TCXYFK.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "森林中的99夜（修复大量功能）",
+    Callback = function()
+        WindUI:Notify({ Title = "森林中的99夜（修复大量功能）", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SLZDJJY.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "键盘速度逃脱（疑似有检测）",
+    Callback = function()
+        WindUI:Notify({ Title = "键盘速度逃脱（疑似有检测）", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/JPSDTT.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "被遗弃（不演也封服务器）",
+    Callback = function()
+        WindUI:Notify({ Title = "被遗弃（不演也封服务器）", Content = "正在加载被遗弃脚本...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/BYC.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "变身躲猫猫（貌似没啥用了）",
+    Callback = function()
+        WindUI:Notify({ Title = "变身躲猫猫（貌似没啥用了）", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/BSDMM.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "能量爆炸幸运方块",
+    Callback = function()
+        WindUI:Notify({ Title = "能量爆炸幸运方块", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/NLBZXYFK.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "死铁轨（可刷债券）",
+    Callback = function()
+        WindUI:Notify({ Title = "死铁轨（可刷债券）", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/STG.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "自然灾害",
+    Callback = function()
+        WindUI:Notify({ Title = "自然灾害", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZYZH.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "最强战场（只能用锁人了别的都失效）",
+    Callback = function()
+        WindUI:Notify({ Title = "最强战场（只能用锁人了别的都失效）", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/ZCZC.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "生存于杀手",
+    Callback = function()
+        WindUI:Notify({ Title = "生存与杀手", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SCYSS.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "闪光（会封）",
+    Callback = function()
+        WindUI:Notify({ Title = "闪光（会封）", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SG.NB"))()
+        end)
+    end
+})
+
+Tabs.GamesTab:Button({
+    Title = "鲨口求生2",
+    Callback = function()
+        WindUI:Notify({ Title = "鲨口求生2", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/SKQS.NB"))()
+        end)
+    end
+})
+
+Window:OnClose(function()
+    print("界面已关闭。")
+end)
