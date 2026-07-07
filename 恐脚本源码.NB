@@ -1687,6 +1687,123 @@ Tabs.MainTab:Toggle({
     end
 })
 
+
+
+local heartbeatConnection
+local activeClone
+local selectedTargetName = ""
+
+local function resetToNormal()
+    if heartbeatConnection then heartbeatConnection:Disconnect() end
+    if activeClone then activeClone:Destroy() activeClone = nil end
+
+    local realChar = LocalPlayer.Character
+    if realChar then
+        LocalPlayer.Character = realChar
+        Camera.CameraSubject = realChar:FindFirstChildOfClass("Humanoid")
+        for _, v in ipairs(realChar:GetDescendants()) do
+            if v:IsA("BasePart") or v:IsA("Decal") then v.Transparency = 0 end
+        end
+        if realChar:FindFirstChild("HumanoidRootPart") then
+            realChar.HumanoidRootPart.CanCollide = true
+        end
+    end
+end
+
+local function startPossess(targetName)
+    local target = Players:FindFirstChild(targetName)
+    if not target or not target.Character then 
+        WindUI:Notify({Title = "错误", Content = "目标玩家不存在或角色未加载", Type = "error"})
+        return 
+    end
+
+    resetToNormal()
+    task.wait(0.2)
+
+    local targetChar = target.Character
+    local realChar = LocalPlayer.Character
+
+    targetChar.Archivable = true
+    local clone = targetChar:Clone()
+    clone.Name = "PossessedClone"
+    clone.Parent = workspace
+    activeClone = clone
+
+    local cloneHum = clone:FindFirstChildOfClass("Humanoid")
+    local cloneRoot = clone:FindFirstChild("HumanoidRootPart")
+
+    if realChar then
+        for _, v in ipairs(realChar:GetDescendants()) do
+            if v:IsA("BasePart") or v:IsA("Decal") then v.Transparency = 1 end
+        end
+        if realChar:FindFirstChild("HumanoidRootPart") then
+            realChar.HumanoidRootPart.CanCollide = false
+        end
+    end
+
+    LocalPlayer.Character = clone
+    Camera.CameraSubject = cloneHum
+
+    local animate = clone:FindFirstChild("Animate")
+    if animate then
+        animate.Disabled = true
+        task.wait(0.1)
+        animate.Disabled = false
+    end
+
+    heartbeatConnection = RunService.Heartbeat:Connect(function()
+        if clone and cloneRoot and realChar and realChar:FindFirstChild("HumanoidRootPart") then
+            realChar.HumanoidRootPart.CFrame = cloneRoot.CFrame
+        end
+    end)
+
+    WindUI:Notify({Title = "成功", Content = "已完全夺舍: "..targetName, Type = "success"})
+end
+
+Tabs.MainTab:Divider()
+
+local PlayerDropdown = Tabs.MainTab:Dropdown({
+    Title = "选择玩家",
+    Multi = false,
+    Options = {},
+    Callback = function(value)
+        selectedTargetName = value
+    end,
+})
+
+local function refreshPlayerList()
+    local names = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            table.insert(names, p.Name)
+        end
+    end
+    PlayerDropdown:Refresh(names)
+end
+
+Tabs.MainTab:Button({
+    Title = "刷新玩家列表",
+    Callback = function()
+        refreshPlayerList()
+    end,
+})
+
+Tabs.MainTab:Button({
+    Title = "变身成他人（栽赃）",
+    Callback = function()
+        if selectedTargetName ~= "" then
+            startPossess(selectedTargetName)
+        else
+            WindUI:Notify({Title = "提示", Content = "请先选择一名玩家", Type = "warning"})
+        end
+    end,
+})
+
+refreshPlayerList()
+Players.PlayerAdded:Connect(refreshPlayerList)
+Players.PlayerRemoving:Connect(refreshPlayerList)
+
+
 Tabs.SecondaryTab:Button({
     Title = "自动翻译",
     Callback = function()
