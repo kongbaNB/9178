@@ -674,7 +674,7 @@ ToolsGroup:AddToggle('GodModeToggle', {
 })
 
 ToolsGroup:AddToggle('VRGodModeToggle', {
-    Text = '无敌VR',
+    Text = '死亡',
     Default = false,
     Tooltip = '血量设为-999999999999',
     Callback = function(Value)
