@@ -1,5 +1,3 @@
-loadstring(game:HttpGet("https://ivyy.lol/kongbai/kbdd"))()
-
 local function httpGet(url)
     local s, r = pcall(function()
         if game and game.HttpGet then
