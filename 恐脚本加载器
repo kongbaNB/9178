@@ -62,6 +62,7 @@ local scripts = {
     [8908228901] = "SKQS.NB",
     [136020512003847] = "SDYGBJ.NB",
     [103854444055060] = "CMDCK.NB",
+    [111835260646713] = "TYXBYYZD.NB",
 }
 
 local currentId = game.PlaceId
