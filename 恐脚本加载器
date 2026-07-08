@@ -33,6 +33,8 @@ if wmsd then
 end
 
 local scripts = {
+    [104522435597696] = "DWYY.NB",
+    [78515283254292] = "DWYY.NB",
     [142823291] = "PHZMT.NB",
     [89469502395769] = "TCXYFK.NB",
     [18687417158] = "BYC.NB",
