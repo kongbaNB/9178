@@ -2598,6 +2598,7 @@ Tabs.GamesTab:Button({
         end)
     end
 })
+
 Tabs.GamesTab:Button({
     Title = "通用血布娃娃战斗",
     Callback = function()
