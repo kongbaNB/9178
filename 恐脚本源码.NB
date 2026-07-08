@@ -2598,6 +2598,15 @@ Tabs.GamesTab:Button({
         end)
     end
 })
+Tabs.GamesTab:Button({
+    Title = "通用血布娃娃战斗",
+    Callback = function()
+        WindUI:Notify({ Title = "通用血布娃娃战斗", Content = "正在加载中...", Duration = 5 })
+        task.spawn(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/TYXBYYZD.NB"))()
+        end)
+    end
+})
 
 Window:OnClose(function()
     print("界面已关闭。")
