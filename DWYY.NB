@@ -190,7 +190,7 @@ FuncGroup:AddToggle('DustToggle', {
     end
 })
 
-local GeneralGroup = Tabs.Main:AddLeftGroupbox("通用功能")
+local GeneralGroup = Tabs.Main:AddRightGroupbox("通用功能")
 
 GeneralGroup:AddToggle('AutoInteractToggle', {
     Text = '自动交互',
