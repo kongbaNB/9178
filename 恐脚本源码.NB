@@ -176,8 +176,11 @@ Players.PlayerRemoving:Connect(function(player)
     cleanupESP(player)
 end)
 
+local lastEspUpdate = 0
 RunService.RenderStepped:Connect(function()
     if not espEnabled then return end
+    if tick() - lastEspUpdate < 0.1 then return end
+    lastEspUpdate = tick()
     local myChar = LocalPlayer.Character
     local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position
     for player, billboard in pairs(espBillboards) do
@@ -193,23 +196,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if not espEnabled then continue end
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local char = player.Character
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                local hasHighlight = char:FindFirstChild("EspHighlight")
-                local hasBillboard = hrp and hrp:FindFirstChild("EspBillboard")
-                if not hasHighlight or not hasBillboard then
-                    pcall(function() createESP(player) end)
-                end
-            end
-        end
-    end
-end)
+
 
 local InfiniteJumpEnabled = false
 local NightVisionEnabled = false
@@ -308,7 +295,10 @@ local function startAntiFling()
     for _, p in ipairs(Players:GetPlayers()) do
         setupAntiFlingForPlayer(p)
     end
+    local lastAntiFlingCheck = 0
     AntiFlingConnection = RunService.Heartbeat:Connect(function()
+        if tick() - lastAntiFlingCheck < 0.1 then return end
+        lastAntiFlingCheck = tick()
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character then
                 pcall(function()
@@ -1646,17 +1636,6 @@ Tabs.MainTab:Button({
     end
 })
 
-local function refreshFlingDropdown()
-    local names = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then table.insert(names, p.Name) end
-    end
-    if flingDropdown then flingDropdown:Refresh(names) end
-end
-refreshFlingDropdown()
-Players.PlayerAdded:Connect(refreshFlingDropdown)
-Players.PlayerRemoving:Connect(refreshFlingDropdown)
-
 Tabs.MainTab:Button({
     Title = "祖国人汉化",
     Callback = function()
@@ -1845,20 +1824,28 @@ local ImpersonateDropdown = Tabs.MainTab:Dropdown({
     end,
 })
 
-local function refreshImpersonateList()
+local function refreshAllDropdowns()
     local names = {}
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer then
             table.insert(names, p.Name)
         end
     end
-    ImpersonateDropdown:Refresh(names)
+    if flingDropdown then flingDropdown:Refresh(names) end
+    if followDropdown then followDropdown:Refresh(names) end
+    if smoothDropdown then smoothDropdown:Refresh(names) end
+    if harassDropdown then harassDropdown:Refresh(names) end
+    if ImpersonateDropdown then ImpersonateDropdown:Refresh(names) end
 end
+
+Players.PlayerAdded:Connect(refreshAllDropdowns)
+Players.PlayerRemoving:Connect(refreshAllDropdowns)
+
 
 Tabs.MainTab:Button({
     Title = "刷新玩家列表",
     Callback = function()
-        refreshImpersonateList()
+        refreshAllDropdowns()
     end,
 })
 
@@ -1881,11 +1868,7 @@ Tabs.MainTab:Button({
     end,
 })
 
-refreshImpersonateList()
-Players.PlayerAdded:Connect(refreshImpersonateList)
-Players.PlayerRemoving:Connect(refreshImpersonateList)
-
-
+refreshAllDropdowns()
 Tabs.SecondaryTab:Button({
     Title = "自动翻译",
     Callback = function()
@@ -1948,17 +1931,6 @@ Tabs.SecondaryTab:Button({
         end
     end
 })
-
-local function refreshFollowDropdown()
-    local names = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then table.insert(names, p.Name) end
-    end
-    if followDropdown then followDropdown:Refresh(names) end
-end
-refreshFollowDropdown()
-Players.PlayerAdded:Connect(refreshFollowDropdown)
-Players.PlayerRemoving:Connect(refreshFollowDropdown)
 
 Tabs.SecondaryTab:Button({
     Title = "停止跟随",
@@ -2052,17 +2024,6 @@ Tabs.SecondaryTab:Button({
     end
 })
 
-local function refreshSmoothDropdown()
-    local names = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then table.insert(names, p.Name) end
-    end
-    if smoothDropdown then smoothDropdown:Refresh(names) end
-end
-refreshSmoothDropdown()
-Players.PlayerAdded:Connect(refreshSmoothDropdown)
-Players.PlayerRemoving:Connect(refreshSmoothDropdown)
-
 Tabs.SecondaryTab:Button({
     Title = "平滑跟随最近的人",
     Callback = function()
@@ -2133,17 +2094,6 @@ Tabs.SecondaryTab:Button({
         harassDropdown:SetTitle("选定操人目标")
     end
 })
-
-local function refreshHarassDropdown()
-    local names = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then table.insert(names, p.Name) end
-    end
-    if harassDropdown then harassDropdown:Refresh(names) end
-end
-refreshHarassDropdown()
-Players.PlayerAdded:Connect(refreshHarassDropdown)
-Players.PlayerRemoving:Connect(refreshHarassDropdown)
 
 Tabs.SecondaryTab:Button({
     Title = "操最近的人",
