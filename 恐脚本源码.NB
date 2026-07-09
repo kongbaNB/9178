@@ -1772,7 +1772,69 @@ local function startImpersonate(targetName)
     WindUI:Notify({Title = "成功", Content = "已伪装成: " .. targetName .. "（仅自己可见）", Type = "success"})
 end
 
-Tabs.MainTab:Divider()
+
+-- 原地复活和设置重生点
+local respawnEnabled = false
+local respawnPos = nil
+local deathPos = nil
+
+local function setupRespawnListener(char)
+    local humanoid = char:WaitForChild("Humanoid", 5)
+    if not humanoid then return end
+    humanoid.Died:Connect(function()
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            deathPos = hrp.Position
+        end
+    end)
+end
+
+if player.Character then
+    setupRespawnListener(player.Character)
+end
+player.CharacterAdded:Connect(function(char)
+    setupRespawnListener(char)
+    if respawnEnabled and deathPos then
+        task.defer(function()
+            local hrp = char:WaitForChild("HumanoidRootPart", 3)
+            if hrp then
+                task.wait(0.1)
+                char:PivotTo(CFrame.new(deathPos))
+                hrp.CFrame = CFrame.new(deathPos)
+            end
+        end)
+    end
+end)
+
+Tabs.MainTab:Toggle({
+    Title = "原地复活",
+    Value = false,
+    Callback = function(state)
+        respawnEnabled = state
+        WindUI:Notify({ Title = "原地复活", Content = state and "已开启" or "已关闭", Duration = 3 })
+    end
+})
+
+Tabs.MainTab:Button({
+    Title = "设置重生点",
+    Callback = function()
+        local char = player.Character
+        if not char then return end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+
+        respawnPos = hrp.Position
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj:IsA("SpawnLocation") then
+                obj.CFrame = CFrame.new(respawnPos)
+                obj.Enabled = true
+                obj.Neutral = true
+                obj.CanCollide = false
+            end
+        end
+        WindUI:Notify({ Title = "设置重生点", Content = "重生点已设置", Duration = 3 })
+    end
+})
 
 local ImpersonateDropdown = Tabs.MainTab:Dropdown({
     Title = "选择要伪装成的玩家",
@@ -1919,88 +1981,29 @@ Tabs.SecondaryTab:Button({
     end
 })
 
+local tpCoordStr = ""
+Tabs.SecondaryTab:Input({
+    Title = "输入坐标 (X,Y,Z)",
+    Placeholder = "例如: 100, 50, 200",
+    Callback = function(v)
+        tpCoordStr = v
+    end
+})
+
 Tabs.SecondaryTab:Button({
-    Title = "传送指定坐标",
+    Title = "执行坐标传送",
     Callback = function()
-        local coordGui = Instance.new("ScreenGui")
-        coordGui.Name = "CoordTeleportGui"
-        coordGui.Parent = LocalPlayer.PlayerGui
-        coordGui.IgnoreGuiInset = true
-        coordGui.ResetOnSpawn = false
-        coordGui.DisplayOrder = 999
-        local bg = Instance.new("Frame")
-        bg.Parent = coordGui
-        bg.Size = UDim2.new(0, 300, 0, 180)
-        bg.Position = UDim2.new(0.5, -150, 0.5, -90)
-        bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 12)
-        local title = Instance.new("TextLabel")
-        title.Parent = bg
-        title.Size = UDim2.new(1, 0, 0, 30)
-        title.BackgroundTransparency = 1
-        title.Text = "输入坐标传送"
-        title.TextColor3 = Color3.new(1,1,1)
-        title.Font = Enum.Font.SourceSansBold
-        title.TextSize = 18
-        local xBox = Instance.new("TextBox")
-        xBox.Parent = bg
-        xBox.Size = UDim2.new(0.28, 0, 0, 30)
-        xBox.Position = UDim2.new(0.05, 0, 0, 45)
-        xBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        xBox.PlaceholderText = "X"
-        xBox.Text = ""
-        xBox.TextColor3 = Color3.new(1,1,1)
-        Instance.new("UICorner", xBox).CornerRadius = UDim.new(0, 6)
-        local yBox = Instance.new("TextBox")
-        yBox.Parent = bg
-        yBox.Size = UDim2.new(0.28, 0, 0, 30)
-        yBox.Position = UDim2.new(0.36, 0, 0, 45)
-        yBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        yBox.PlaceholderText = "Y"
-        yBox.Text = ""
-        yBox.TextColor3 = Color3.new(1,1,1)
-        Instance.new("UICorner", yBox).CornerRadius = UDim.new(0, 6)
-        local zBox = Instance.new("TextBox")
-        zBox.Parent = bg
-        zBox.Size = UDim2.new(0.28, 0, 0, 30)
-        zBox.Position = UDim2.new(0.67, 0, 0, 45)
-        zBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        zBox.PlaceholderText = "Z"
-        zBox.Text = ""
-        zBox.TextColor3 = Color3.new(1,1,1)
-        Instance.new("UICorner", zBox).CornerRadius = UDim.new(0, 6)
-        local tpBtn = Instance.new("TextButton")
-        tpBtn.Parent = bg
-        tpBtn.Size = UDim2.new(0.4, 0, 0, 30)
-        tpBtn.Position = UDim2.new(0.05, 0, 0, 90)
-        tpBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        tpBtn.Text = "传送"
-        tpBtn.TextColor3 = Color3.new(1,1,1)
-        tpBtn.Font = Enum.Font.SourceSansBold
-        Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 6)
-        tpBtn.MouseButton1Click:Connect(function()
-            local x, y, z = tonumber(xBox.Text), tonumber(yBox.Text), tonumber(zBox.Text)
-            if x and y and z then
-                local char = LocalPlayer.Character
-                if char and char:FindFirstChild("HumanoidRootPart") then
-                    char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
-                    WindUI:Notify({ Title = "传送成功", Content = string.format("已传送到 %.1f, %.1f, %.1f", x, y, z), Duration = 3 })
-                end
-                coordGui:Destroy()
-            else
-                WindUI:Notify({ Title = "传送失败", Content = "请输入有效的数字坐标", Duration = 3 })
+        if not tpCoordStr or tpCoordStr == "" then return end
+        local parts = {}
+        for part in tpCoordStr:gmatch("[^,]+") do
+            table.insert(parts, tonumber(part:match("%S+")))
+        end
+        if #parts >= 3 and parts[1] and parts[2] and parts[3] then
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                char.HumanoidRootPart.CFrame = CFrame.new(parts[1], parts[2], parts[3])
             end
-        end)
-        local closeBtn = Instance.new("TextButton")
-        closeBtn.Parent = bg
-        closeBtn.Size = UDim2.new(0.4, 0, 0, 30)
-        closeBtn.Position = UDim2.new(0.55, 0, 0, 90)
-        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        closeBtn.Text = "关闭"
-        closeBtn.TextColor3 = Color3.new(1,1,1)
-        closeBtn.Font = Enum.Font.SourceSansBold
-        Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
-        closeBtn.MouseButton1Click:Connect(function() coordGui:Destroy() end)
+        end
     end
 })
 
