@@ -27,6 +27,7 @@ local Toggles = Library.Toggles
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
@@ -105,6 +106,19 @@ AutoGroup:AddToggle("AutoEatPlayer", {
     Default = false,
 })
 
+AutoGroup:AddToggle("AutoCoins", {
+    Text = "自动加金币",
+    Default = false,
+})
+
+AutoGroup:AddSlider("CoinsSpeed", {
+    Text = "自动加金币间隔(秒)",
+    Default = 0.2,
+    Min = 0.05,
+    Max = 1,
+    Rounding = 2,
+})
+
 local UnloadGroup = Tabs.Settings:AddLeftGroupbox("脚本管理")
 UnloadGroup:AddButton("卸载脚本", function()
     Library:Unload()
@@ -123,7 +137,6 @@ if SaveManager then
     SaveManager:BuildConfigSection(Tabs.Settings)
 end
 
--- 自动咬
 task.spawn(function()
     while true do
         if Toggles.AutoAttack.Value then
@@ -133,7 +146,6 @@ task.spawn(function()
     end
 end)
 
--- 自动农场
 local targetNames = {"Cola", "Fried Egg", "Hot Dog", "Cake Slice", "Beans", "Pizza", "Taco", "Milkshake", "Hill"}
 
 local function getTargets()
@@ -219,7 +231,6 @@ task.spawn(function()
     end
 end)
 
--- 极速自动农场
 task.spawn(function()
     while true do
         if Toggles.SuperFastFarm.Value then
@@ -267,40 +278,104 @@ local function getNearestAlivePlayer()
     return nearest
 end
 
+local currentEatTarget = nil
+local eatConnection = nil
+
 task.spawn(function()
     while true do
         if Toggles.AutoEatPlayer.Value then
-            local target = getNearestAlivePlayer()
-            if target and target.Character then
-                local char = target.Character
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                local hum = char:FindFirstChild("Humanoid")
-                if hrp and hum and hum.Health > 0 then
-                    local startHealth = hum.Health
-                    local biteCount = 0
-                    while Toggles.AutoEatPlayer.Value and target and target.Character and target.Character.Parent do
-                        local currentHrp = target.Character:FindFirstChild("HumanoidRootPart")
-                        local currentHum = target.Character:FindFirstChild("Humanoid")
+            if not currentEatTarget or not currentEatTarget.Character or not currentEatTarget.Character.Parent then
+                currentEatTarget = getNearestAlivePlayer()
+                if currentEatTarget then
+                    local startHealth = currentEatTarget.Character:FindFirstChild("Humanoid") and currentEatTarget.Character.Humanoid.Health or 0
+                    local noDamageCount = 0
+                    if eatConnection then eatConnection:Disconnect() end
+                    eatConnection = RunService.Heartbeat:Connect(function()
+                        if not Toggles.AutoEatPlayer.Value or not currentEatTarget or not currentEatTarget.Character or not currentEatTarget.Character.Parent then
+                            return
+                        end
+                        local currentHrp = currentEatTarget.Character:FindFirstChild("HumanoidRootPart")
+                        local currentHum = currentEatTarget.Character:FindFirstChild("Humanoid")
+                        if not currentHrp or not currentHum or currentHum.Health <= 0 then
+                            return
+                        end
+                        local behindPos = currentHrp.Position - currentHrp.CFrame.LookVector * 2
+                        humanoidRootPart.CFrame = CFrame.new(behindPos, currentHrp.Position)
+                    end)
+                    while Toggles.AutoEatPlayer.Value and currentEatTarget and currentEatTarget.Character and currentEatTarget.Character.Parent do
+                        local currentHrp = currentEatTarget.Character:FindFirstChild("HumanoidRootPart")
+                        local currentHum = currentEatTarget.Character:FindFirstChild("Humanoid")
                         if not currentHrp or not currentHum or currentHum.Health <= 0 then
                             break
                         end
-                        local behindPos = currentHrp.Position - currentHrp.CFrame.LookVector * 3
-                        humanoidRootPart.CFrame = CFrame.new(behindPos, currentHrp.Position)
                         attackEvent:FireServer("Chomp")
-                        biteCount = biteCount + 1
-                        if biteCount >= 5 then
-                            if currentHum.Health >= startHealth then
+                        task.wait(0.2)
+                        local checkHum = currentEatTarget.Character:FindFirstChild("Humanoid")
+                        if checkHum and checkHum.Health >= startHealth then
+                            noDamageCount = noDamageCount + 1
+                            if noDamageCount >= 3 then
                                 break
                             end
-                            startHealth = currentHum.Health
-                            biteCount = 0
+                        else
+                            noDamageCount = 0
+                            startHealth = checkHum and checkHum.Health or startHealth
                         end
-                        task.wait(0.1)
                     end
+                    if eatConnection then
+                        eatConnection:Disconnect()
+                        eatConnection = nil
+                    end
+                    currentEatTarget = nil
                 end
             end
+        else
+            if eatConnection then
+                eatConnection:Disconnect()
+                eatConnection = nil
+            end
+            currentEatTarget = nil
         end
-        task.wait(0.5)
+        task.wait(0.3)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if Toggles.AutoCoins.Value then
+            local args = {
+                [1] = "TriggerPickup",
+                [2] = workspace.PickupItems.Coins.SilverCoin.AutoGeneratedPickupPart,
+                [3] = {
+                    ["HitboxName"] = "LocalHitbox",
+                    ["PickupType"] = "Coins",
+                    ["IsLocal"] = true
+                },
+                [4] = {
+                    ["HitboxType"] = {
+                        ["ScaleSize"] = true,
+                        ["Attached"] = true,
+                        ["Size"] = Vector3.new(3.25, 6.5, 1.75)
+                    },
+                    ["Player"] = game:GetService("Players").LocalPlayer,
+                    ["Character"] = game:GetService("Players").LocalPlayer.Character,
+                    ["LastContent"] = {
+                        [1] = workspace.World.Baseplate.Grass
+                    },
+                    ["Parent"] = game:GetService("Players").LocalPlayer.Character.HumanoidRootPart,
+                    ["LastTime"] = tick(),
+                    ["ExtraData"] = {
+                        ["Player"] = game:GetService("Players").LocalPlayer,
+                        ["IgnoreDescendants"] = game:GetService("Players").LocalPlayer.Character,
+                        ["LocalMode"] = true,
+                        ["Name"] = "LocalHitbox",
+                        ["HipHeight"] = 1.8748564720153809
+                    }
+                }
+            }
+            game:GetService("ReplicatedStorage").Events.GeneralRemoteEvent:FireServer(unpack(args))
+        end
+        local speed = Options.CoinsSpeed.Value or 0.2
+        task.wait(speed)
     end
 end)
 
