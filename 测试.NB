@@ -193,23 +193,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if not espEnabled then continue end
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local char = player.Character
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                local hasHighlight = char:FindFirstChild("EspHighlight")
-                local hasBillboard = hrp and hrp:FindFirstChild("EspBillboard")
-                if not hasHighlight or not hasBillboard then
-                    pcall(function() createESP(player) end)
-                end
-            end
-        end
-    end
-end)
+
 
 local InfiniteJumpEnabled = false
 local NightVisionEnabled = false
