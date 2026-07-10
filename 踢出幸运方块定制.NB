@@ -253,6 +253,7 @@ Footer = "乌鲁鲁脚本",
 Icon = 131153193945220,
 NotifySide = "Right",
 ShowCustomCursor = true,
+BackgroundImage = "rbxassetid://122309667320654",
 })
 Library:Notify("踢出幸运方块 - 创作者：乌鲁鲁脚本", 5)
 
