@@ -1,89 +1,271 @@
-local function httpGet(url)
-    local s, r = pcall(function()
-        if game and game.HttpGet then
-            return game:HttpGet(url)
-        elseif syn and syn.request then
-            local res = syn.request({Url = url, Method = "GET"})
-            return res.Body
-        elseif http and http.request then
-            local res = http.request({Url = url, Method = "GET"})
-            return res.Body
-        elseif request then
-            local res = request({Url = url, Method = "GET"})
-            return res.Body
-        else
-            error("No HTTP method available")
-        end
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SecurityWarning"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local function QPopButton(button)
+    local originalSize = button.Size
+    local shrink = TweenService:Create(button, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(originalSize.X.Scale, originalSize.X.Offset * 0.92, originalSize.Y.Scale, originalSize.Y.Offset * 0.92)})
+    local expand = TweenService:Create(button, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = originalSize})
+    shrink:Play()
+    shrink.Completed:Connect(function()
+        expand:Play()
     end)
-    if not s then
-        warn("HttpGet failed: " .. tostring(r))
-        return nil
-    end
-    return r
 end
 
-local wmsd = httpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/WMSD.NB")
-if wmsd then
-    local s, e = pcall(function()
-        loadstring(wmsd)()
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 400, 0, 220)
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -110)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 8)
+Corner.Parent = MainFrame
+
+local TitleBar = Instance.new("Frame")
+TitleBar.Name = "TitleBar"
+TitleBar.Size = UDim2.new(1, 0, 0, 35)
+TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 8)
+TitleCorner.Parent = TitleBar
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "Title"
+TitleLabel.Size = UDim2.new(1, 0, 1, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "安全警告"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 16
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Parent = TitleBar
+
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Name = "Content"
+ContentFrame.Size = UDim2.new(1, -30, 0, 100)
+ContentFrame.Position = UDim2.new(0, 15, 0, 50)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent = MainFrame
+
+local WarningLabel = Instance.new("TextLabel")
+WarningLabel.Name = "Warning"
+WarningLabel.Size = UDim2.new(1, 0, 1, 0)
+WarningLabel.BackgroundTransparency = 1
+WarningLabel.Text = "该加载器已停止运行，因为有泄露源码风险"
+WarningLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+WarningLabel.TextSize = 14
+WarningLabel.Font = Enum.Font.Gotham
+WarningLabel.TextWrapped = true
+WarningLabel.Parent = ContentFrame
+
+local ButtonFrame = Instance.new("Frame")
+ButtonFrame.Name = "Buttons"
+ButtonFrame.Size = UDim2.new(1, -30, 0, 40)
+ButtonFrame.Position = UDim2.new(0, 15, 0, 160)
+ButtonFrame.BackgroundTransparency = 1
+ButtonFrame.Parent = MainFrame
+
+local ButtonLayout = Instance.new("UIListLayout")
+ButtonLayout.FillDirection = Enum.FillDirection.Horizontal
+ButtonLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+ButtonLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+ButtonLayout.Padding = UDim.new(0, 15)
+ButtonLayout.Parent = ButtonFrame
+
+local ConfirmButton = Instance.new("TextButton")
+ConfirmButton.Name = "Confirm"
+ConfirmButton.Size = UDim2.new(0, 120, 0, 35)
+ConfirmButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+ConfirmButton.Text = "确认"
+ConfirmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ConfirmButton.TextSize = 14
+ConfirmButton.Font = Enum.Font.GothamBold
+ConfirmButton.BorderSizePixel = 0
+ConfirmButton.AutoButtonColor = false
+ConfirmButton.Parent = ButtonFrame
+
+local ConfirmCorner = Instance.new("UICorner")
+ConfirmCorner.CornerRadius = UDim.new(0, 6)
+ConfirmCorner.Parent = ConfirmButton
+
+local FuckButton = Instance.new("TextButton")
+FuckButton.Name = "Fuck"
+FuckButton.Size = UDim2.new(0, 120, 0, 35)
+FuckButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+FuckButton.Text = "操你妈"
+FuckButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FuckButton.TextSize = 14
+FuckButton.Font = Enum.Font.GothamBold
+FuckButton.BorderSizePixel = 0
+FuckButton.AutoButtonColor = false
+FuckButton.Parent = ButtonFrame
+
+local FuckCorner = Instance.new("UICorner")
+FuckCorner.CornerRadius = UDim.new(0, 6)
+FuckCorner.Parent = FuckButton
+
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+MainFrame.Size = UDim2.new(0, 0, 0, 0)
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+
+local Tween = TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Size = UDim2.new(0, 400, 0, 220),
+    Position = UDim2.new(0.5, -200, 0.5, -110)
+})
+Tween:Play()
+
+local ConfirmPopup = Instance.new("Frame")
+ConfirmPopup.Name = "ConfirmPopup"
+ConfirmPopup.Size = UDim2.new(0, 300, 0, 150)
+ConfirmPopup.Position = UDim2.new(0.5, -150, 0.5, -75)
+ConfirmPopup.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+ConfirmPopup.BorderSizePixel = 0
+ConfirmPopup.Visible = false
+ConfirmPopup.ZIndex = 10
+ConfirmPopup.Parent = ScreenGui
+
+local PopupCorner = Instance.new("UICorner")
+PopupCorner.CornerRadius = UDim.new(0, 8)
+PopupCorner.Parent = ConfirmPopup
+
+local PopupTitle = Instance.new("Frame")
+PopupTitle.Size = UDim2.new(1, 0, 0, 30)
+PopupTitle.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+PopupTitle.BorderSizePixel = 0
+PopupTitle.Parent = ConfirmPopup
+
+local PopupTitleCorner = Instance.new("UICorner")
+PopupTitleCorner.CornerRadius = UDim.new(0, 8)
+PopupTitleCorner.Parent = PopupTitle
+
+local PopupTitleLabel = Instance.new("TextLabel")
+PopupTitleLabel.Size = UDim2.new(1, 0, 1, 0)
+PopupTitleLabel.BackgroundTransparency = 1
+PopupTitleLabel.Text = "二次确认"
+PopupTitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+PopupTitleLabel.TextSize = 14
+PopupTitleLabel.Font = Enum.Font.GothamBold
+PopupTitleLabel.Parent = PopupTitle
+
+local PopupText = Instance.new("TextLabel")
+PopupText.Size = UDim2.new(1, -20, 0, 50)
+PopupText.Position = UDim2.new(0, 10, 0, 40)
+PopupText.BackgroundTransparency = 1
+PopupText.Text = "确定操我妈吗？"
+PopupText.TextColor3 = Color3.fromRGB(255, 100, 100)
+PopupText.TextSize = 14
+PopupText.Font = Enum.Font.Gotham
+PopupText.TextWrapped = true
+PopupText.Parent = ConfirmPopup
+
+local PopupButtonFrame = Instance.new("Frame")
+PopupButtonFrame.Size = UDim2.new(1, -20, 0, 35)
+PopupButtonFrame.Position = UDim2.new(0, 10, 0, 100)
+PopupButtonFrame.BackgroundTransparency = 1
+PopupButtonFrame.Parent = ConfirmPopup
+
+local PopupLayout = Instance.new("UIListLayout")
+PopupLayout.FillDirection = Enum.FillDirection.Horizontal
+PopupLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+PopupLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+PopupLayout.Padding = UDim.new(0, 15)
+PopupLayout.Parent = PopupButtonFrame
+
+local PopupYes = Instance.new("TextButton")
+PopupYes.Size = UDim2.new(0, 100, 0, 30)
+PopupYes.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+PopupYes.Text = "确定"
+PopupYes.TextColor3 = Color3.fromRGB(255, 255, 255)
+PopupYes.TextSize = 13
+PopupYes.Font = Enum.Font.GothamBold
+PopupYes.BorderSizePixel = 0
+PopupYes.AutoButtonColor = false
+PopupYes.Parent = PopupButtonFrame
+
+local PopupYesCorner = Instance.new("UICorner")
+PopupYesCorner.CornerRadius = UDim.new(0, 6)
+PopupYesCorner.Parent = PopupYes
+
+local PopupNo = Instance.new("TextButton")
+PopupNo.Size = UDim2.new(0, 100, 0, 30)
+PopupNo.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+PopupNo.Text = "取消"
+PopupNo.TextColor3 = Color3.fromRGB(255, 255, 255)
+PopupNo.TextSize = 13
+PopupNo.Font = Enum.Font.GothamBold
+PopupNo.BorderSizePixel = 0
+PopupNo.AutoButtonColor = false
+PopupNo.Parent = PopupButtonFrame
+
+local PopupNoCorner = Instance.new("UICorner")
+PopupNoCorner.CornerRadius = UDim.new(0, 6)
+PopupNoCorner.Parent = PopupNo
+
+local function ShrinkAndDestroy(frame)
+    local shrink = TweenService:Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0)
+    })
+    shrink:Play()
+    shrink.Completed:Connect(function()
+        ScreenGui:Destroy()
     end)
-    if not s then
-        warn("WMSD error: " .. tostring(e))
-    end
 end
 
-local scripts = {
-    [104522435597696] = "DWYY.NB",
-    [78515283254292] = "DWYY.NB",
-    [142823291] = "PHZMT.NB",
-    [89469502395769] = "TCXYFK.NB",
-    [18687417158] = "BYC.NB",
-    [95082159892680] = "JPSDTT.NB",
-    [103593441753340] = "ZDNN.NB",
-    [16480898254] = "CCSJ.NB",
-    [126509999114328] = "SLZDJJY.NB",
-    [79546208627805] = "SLZDJJY.NB",
-    [6839171747] = "DOORS.NB",
-    [6516141723] = "DOORS.NB",
-    [12986400307] = "JJQS.NB",
-    [3623096087] = "LLCC.NB",
-    [118614517739521] = "MS.NB",
-    [127380660530951] = "ZCSSHYZ.NB",
-    [121418861436763] = "ZCSSHYZ.NB",
-    [119099244949868] = "MSYS.NB",
-    [99567941238278] = "MSYS.NB",
-    [125009265613167] = "MSYS.NB",
-    [70005410] = "BSDMM.NB",
-    [119822977170203] = "NLBZXYFK.NB",
-    [70876832253163] = "STG.NB",
-    [116495829188952] = "STG.NB",
-    [189707] = "ZYZH.NB",
-    [10449761463] = "ZCZC.NB",
-    [4580204640] = "SCYSS.NB",
-    [136801880565837] = "SG.NB",
-    [8908228901] = "SKQS.NB",
-    [136020512003847] = "SDYGBJ.NB",
-    [103854444055060] = "CMDCK.NB",
-    [111835260646713] = "TYXBYYZD.NB",
-    [121425305223131] = "CDQTRLCZ.NB",
-}
-
-local currentId = game.PlaceId
-local scriptName = scripts[currentId]
-
-if scriptName then
-    local url = "https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/" .. scriptName
-    local code = httpGet(url)
-    if code then
-        local s, e = pcall(function()
-            loadstring(code)()
-        end)
-        if not s then
-            warn("Script error [" .. scriptName .. "]: " .. tostring(e))
-        end
-    else
-        warn("Failed to download: " .. scriptName)
-    end
-else
-    warn("No script for PlaceId: " .. tostring(currentId))
+local function PopupIn(frame)
+    frame.Size = UDim2.new(0, 0, 0, 0)
+    frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    frame.Visible = true
+    local pop = TweenService:Create(frame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 300, 0, 150),
+        Position = UDim2.new(0.5, -150, 0.5, -75)
+    })
+    pop:Play()
 end
+
+local function PopupOut(frame)
+    local out = TweenService:Create(frame, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0)
+    })
+    out:Play()
+    out.Completed:Connect(function()
+        frame.Visible = false
+    end)
+end
+
+ConfirmButton.MouseButton1Click:Connect(function()
+    QPopButton(ConfirmButton)
+    task.wait(0.15)
+    ShrinkAndDestroy(MainFrame)
+end)
+
+FuckButton.MouseButton1Click:Connect(function()
+    QPopButton(FuckButton)
+    task.wait(0.15)
+    PopupIn(ConfirmPopup)
+end)
+
+PopupYes.MouseButton1Click:Connect(function()
+    QPopButton(PopupYes)
+    task.wait(0.15)
+    LocalPlayer:Kick("禁止操我妈")
+end)
+
+PopupNo.MouseButton1Click:Connect(function()
+    QPopButton(PopupNo)
+    task.wait(0.15)
+    PopupOut(ConfirmPopup)
+end)
