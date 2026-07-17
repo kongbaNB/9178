@@ -23,4 +23,10 @@ hide:Play()
 task.wait(0.5)
 Gui:Destroy()
 print("动画全部结束，主脚本开始运行")
-loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/%E6%81%90%E8%84%9A%E6%9C%AC%E6%BA%90%E7%A0%81"))()
+local ok, matched = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本加载器"))()
+end)
+
+if not ok or not matched then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本源码"))()
+end
