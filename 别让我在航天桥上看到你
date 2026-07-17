@@ -1,3 +1,4 @@
+--定制脚本
 local function safeLoad(url)
     local success, result = pcall(function()
         return loadstring(game:HttpGet(url))()
