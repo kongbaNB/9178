@@ -5,7 +5,7 @@ local RarityColors = {
 	uncommon = Color3.fromRGB(0, 170, 255),
 	rare = Color3.fromRGB(170, 0, 255),
 	epic = Color3.fromRGB(255, 200, 0),
-	legendary = Color3.fromRGB(255, 0, 0),
+	legendary = Color3.fromRGB(255, 140, 0),
 	mythic = Color3.fromRGB(255, 0, 0),
 	divine = Color3.fromRGB(255, 0, 0),
 	secret = Color3.fromRGB(255, 0, 0)
@@ -17,9 +17,20 @@ local RarityRanks = {
 	rare = 4,
 	epic = 5,
 	legendary = 6,
-	mythic = 6,
-	divine = 6,
-	secret = 6
+	mythic = 7,
+	divine = 7,
+	secret = 7
+}
+
+local RarityChinese = {
+	common = "普通",
+	uncommon = "优秀",
+	rare = "稀有",
+	epic = "史诗",
+	legendary = "传说",
+	mythic = "神话",
+	divine = "神圣",
+	secret = "神秘"
 }
 
 local RarityFilterNames = {
@@ -28,6 +39,7 @@ local RarityFilterNames = {
 	"蓝色",
 	"紫色",
 	"金色",
+	"橙色",
 	"红色"
 }
 
@@ -116,6 +128,19 @@ local function getRarityRank(rarity)
 	return 2
 end
 
+local function getRarityChinese(rarity)
+	if not rarity then
+		return nil
+	end
+	local key = string.lower(tostring(rarity))
+	for name, cn in pairs(RarityChinese) do
+		if string.find(key, name) then
+			return cn
+		end
+	end
+	return tostring(rarity)
+end
+
 local function getPetInfo(model)
 	local info = {}
 	local name = model:GetAttribute("Name")
@@ -162,7 +187,7 @@ local function buildESPText(model)
 	local lines = {}
 	local nameLine = info.Name or "宠物"
 	if info.Rarity then
-		nameLine = nameLine .. " [" .. info.Rarity .. "]"
+		nameLine = nameLine .. " [" .. getRarityChinese(info.Rarity) .. "]"
 	end
 	table.insert(lines, nameLine)
 	if info.Level then
@@ -545,7 +570,7 @@ ESPGroup:AddSlider("RarityFilter", {
 	Text = "品质过滤",
 	Default = 1,
 	Min = 1,
-	Max = 6,
+	Max = 7,
 	Rounding = 0,
 	Callback = function(value)
 		filterRarity = value
