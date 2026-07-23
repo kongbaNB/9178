@@ -28,5 +28,5 @@ local ok, matched = pcall(function()
 end)
 
 if not ok or not matched then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本源码"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本源码.lua"))()
 end
