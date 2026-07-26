@@ -24,7 +24,7 @@ task.wait(0.5)
 Gui:Destroy()
 print("动画全部结束，主脚本开始运行")
 local ok, matched = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本加载器.lua"))()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本加载器"))()
 end)
 
 if not ok or not matched then
