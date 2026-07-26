@@ -11,6 +11,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+local loadingCfg = false
 
 local BulletTracers = {
     Enabled = false,
@@ -109,7 +110,7 @@ Linni_Aim.Settings = {
     Enabled = false,
     AimlockType = "距离最近玩家",
     WallCheck = true,
-    TeamCheck = true,
+    TeamCheck = false,
     AimlockCertainPlayer = nil,
     EnableFOV = false,
     ShowFOV = false,
@@ -366,12 +367,16 @@ function Linni_Aim.RenderLoop()
 
             if Settings.AimlockAutoFire then
                 if tick() - lastAimlockAutoFire >= (Settings.AimlockFireDelay or 0.1) then
-                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                    task.delay(0.05, function()
-                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-                    end)
                     lastAimlockAutoFire = tick()
-
+                    local char = lplayer.Character
+                    local tool = char and char:FindFirstChildOfClass("Tool")
+                    if tool then
+                        task.spawn(function()
+                            pcall(function() tool:Activate() end)
+                            task.wait(0.05)
+                            pcall(function() if tool and tool.Parent then tool:Deactivate() end end)
+                        end)
+                    end
                     FireBulletTracer()
                 end
             end
@@ -524,18 +529,18 @@ Window:EditOpenButton({
 local NotifyTab = Window:Tab({ Title = "通知", Icon = "bell" })
 local MainTab = Window:Tab({ Title = "主要", Icon = "crosshair" })
 local SettingsTab = Window:Tab({ Title = "设置", Icon = "settings" })
+local ConfigTab = Window:Tab({ Title = "配置", Icon = "settings" })
 
 Window:SelectTab(1)
 
 local function notify(title, text)
+    if loadingCfg then return end
     WindUI:Notify({
         Title = title,
         Content = text,
         Duration = 3,
     })
 end
-
-
 
 NotifyTab:Paragraph({
     Title = "恐脚本--自瞄",
@@ -567,6 +572,7 @@ local ToggleShowFOV, ToggleRainbowFOV, ToggleEnableFOV
 ToggleAim = MainTab:Toggle({
     Title = "自瞄",
     Value = false,
+    Flag = "aimEnabled",
     Callback = function(state)
         Linni_Aim.Settings.Enabled = state
         notify("自瞄", state and "已开启" or "已关闭")
@@ -576,6 +582,7 @@ ToggleAim = MainTab:Toggle({
 ToggleLockView = MainTab:Toggle({
     Title = "锁定视角",
     Value = false,
+    Flag = "lockView",
     Callback = function(state)
         LockViewEnabled = state
         notify("锁定视角", state and "已开启" or "已关闭")
@@ -585,6 +592,7 @@ ToggleLockView = MainTab:Toggle({
 ToggleCrosshair = MainTab:Toggle({
     Title = "准星",
     Value = false,
+    Flag = "crosshair",
     Callback = function(state)
         CrosshairEnabled = state
         if CrosshairFrame then CrosshairFrame.Visible = CrosshairEnabled end
@@ -595,6 +603,7 @@ ToggleCrosshair = MainTab:Toggle({
 ToggleCrosshairSpin = MainTab:Toggle({
     Title = "准星旋转",
     Value = false,
+    Flag = "crosshairSpin",
     Callback = function(state)
         CrosshairSpinEnabled = state
         notify("准星旋转", state and "已开启" or "已关闭")
@@ -606,6 +615,7 @@ local ToggleBulletTracer, ColorpickerBulletTracer
 ToggleBulletTracer = MainTab:Toggle({
     Title = "子弹轨迹",
     Value = false,
+    Flag = "bulletTracer",
     Callback = function(state)
         BulletTracers.Enabled = state
         notify("子弹轨迹", state and "已开启" or "已关闭")
@@ -615,6 +625,7 @@ ToggleBulletTracer = MainTab:Toggle({
 ColorpickerBulletTracer = MainTab:Colorpicker({
     Title = "轨迹颜色",
     Default = Color3.fromRGB(0, 255, 255),
+    Flag = "bulletColor",
     Callback = function(color)
         BulletTracers.Color = color
         notify("轨迹颜色", "已更新")
@@ -625,6 +636,7 @@ MainTab:Slider({
     Title = "轨迹宽度",
     Step = 0.01,
     Value = { Min = 0.05, Max = 1, Default = 0.15 },
+    Flag = "bulletWidth",
     Callback = function(val)
         pendingSliderValues["bulletwidth"] = val
     end
@@ -638,6 +650,7 @@ MainTab:Slider({
     Title = "轨迹持续时间",
     Step = 0.1,
     Value = { Min = 0.1, Max = 3, Default = 0.5 },
+    Flag = "bulletDuration",
     Callback = function(val)
         pendingSliderValues["bulletduration"] = val
     end
@@ -650,6 +663,7 @@ end
 ToggleWallCheck = MainTab:Toggle({
     Title = "墙体检测",
     Value = true,
+    Flag = "wallCheck",
     Callback = function(state)
         Linni_Aim.Settings.WallCheck = state
         notify("墙体检测", state and "已开启" or "已关闭")
@@ -658,7 +672,8 @@ ToggleWallCheck = MainTab:Toggle({
 
 ToggleTeamCheck = MainTab:Toggle({
     Title = "队友检测",
-    Value = true,
+    Value = false,
+    Flag = "teamCheck",
     Callback = function(state)
         Linni_Aim.Settings.TeamCheck = state
         notify("队友检测", state and "已开启" or "已关闭")
@@ -668,6 +683,7 @@ ToggleTeamCheck = MainTab:Toggle({
 ToggleSmoothAim = MainTab:Toggle({
     Title = "平滑自瞄",
     Value = false,
+    Flag = "smoothAim",
     Callback = function(state)
         Linni_Aim.Settings.SmoothAimlock = state
         notify("平滑自瞄", state and "已开启" or "已关闭")
@@ -677,6 +693,7 @@ ToggleSmoothAim = MainTab:Toggle({
 ToggleAutoFire = MainTab:Toggle({
     Title = "自动开火",
     Value = false,
+    Flag = "autoFire",
     Callback = function(state)
         Linni_Aim.Settings.AimlockAutoFire = state
         notify("自动开火", state and "已开启" or "已关闭")
@@ -686,6 +703,7 @@ ToggleAutoFire = MainTab:Toggle({
 ToggleShowFOV = MainTab:Toggle({
     Title = "显示FOV圈",
     Value = false,
+    Flag = "showFOV",
     Callback = function(state)
         Linni_Aim.Settings.ShowFOV = state
         notify("FOV圈", state and "已显示" or "已隐藏")
@@ -695,6 +713,7 @@ ToggleShowFOV = MainTab:Toggle({
 ToggleRainbowFOV = MainTab:Toggle({
     Title = "彩虹FOV圈",
     Value = false,
+    Flag = "rainbowFOV",
     Callback = function(state)
         Linni_Aim.Settings.RainbowFOV = state
         notify("彩虹FOV圈", state and "已开启" or "已关闭")
@@ -704,6 +723,7 @@ ToggleRainbowFOV = MainTab:Toggle({
 ToggleEnableFOV = MainTab:Toggle({
     Title = "FOV范围限制",
     Value = false,
+    Flag = "enableFOV",
     Callback = function(state)
         Linni_Aim.Settings.EnableFOV = state
         notify("FOV范围限制", state and "已开启" or "已关闭")
@@ -739,6 +759,7 @@ MainTab:Button({
 MainTab:Input({
     Title = "锁定指定玩家",
     Placeholder = "输入玩家名字",
+    Flag = "certainPlayer",
     Callback = function(text)
         if text and text ~= "" then
             Linni_Aim.Settings.AimlockCertainPlayer = text
@@ -762,6 +783,7 @@ local ColorpickerFOV
 SettingsTab:Slider({
     Title = "FOV圈半径",
     Value = { Min = 1, Max = 750, Default = 150 },
+    Flag = "fovSize",
     Callback = function(val)
         pendingSliderValues["fovsize"] = val
     end
@@ -775,6 +797,7 @@ SettingsTab:Slider({
     Title = "FOV圈线条粗细",
     Step = 0.1,
     Value = { Min = 1, Max = 10, Default = 2.5 },
+    Flag = "fovStroke",
     Callback = function(val)
         pendingSliderValues["fovstroke"] = val
     end
@@ -787,6 +810,7 @@ end
 SettingsTab:Slider({
     Title = "自瞄生效距离",
     Value = { Min = 1, Max = 10000, Default = 5000 },
+    Flag = "aimlockMaxDist",
     Callback = function(val)
         pendingSliderValues["aimlockmaxdist"] = val
     end
@@ -799,6 +823,7 @@ end
 SettingsTab:Slider({
     Title = "鼠标吸附范围",
     Value = { Min = 1, Max = 10000, Default = 5000 },
+    Flag = "mouseMaxDist",
     Callback = function(val)
         pendingSliderValues["mousemaxdist"] = val
     end
@@ -811,6 +836,7 @@ end
 SettingsTab:Slider({
     Title = "FOV判定距离",
     Value = { Min = 1, Max = 10000, Default = 5000 },
+    Flag = "fovMaxDist",
     Callback = function(val)
         pendingSliderValues["fovmaxdist"] = val
     end
@@ -823,6 +849,7 @@ end
 SettingsTab:Slider({
     Title = "平滑度",
     Value = { Min = 1, Max = 100, Default = 25 },
+    Flag = "aimbotSmoothness",
     Callback = function(val)
         pendingSliderValues["aimbotsmoothness"] = val
     end
@@ -836,6 +863,7 @@ SettingsTab:Slider({
     Title = "开火延迟",
     Step = 0.01,
     Value = { Min = 0.01, Max = 1, Default = 0.05 },
+    Flag = "fireDelay",
     Callback = function(val)
         pendingSliderValues["firedelay"] = val
     end
@@ -848,6 +876,7 @@ end
 SettingsTab:Slider({
     Title = "彩虹速度",
     Value = { Min = 1, Max = 10, Default = 2 },
+    Flag = "rainbowSpeed",
     Callback = function(val)
         pendingSliderValues["rainbowspeed"] = val
     end
@@ -860,6 +889,7 @@ end
 SettingsTab:Slider({
     Title = "Y轴偏移",
     Value = { Min = 0, Max = 85, Default = 0 },
+    Flag = "offsetY",
     Callback = function(val)
         pendingSliderValues["offsety"] = val
     end
@@ -873,6 +903,7 @@ SettingsTab:Slider({
     Title = "预判量",
     Step = 0.01,
     Value = { Min = 0, Max = 1, Default = 0 },
+    Flag = "prediction",
     Callback = function(val)
         pendingSliderValues["prediction"] = val
     end
@@ -885,6 +916,7 @@ end
 ColorpickerFOV = SettingsTab:Colorpicker({
     Title = "FOV圈颜色",
     Default = Color3.fromRGB(255, 255, 255),
+    Flag = "fovColor",
     Callback = function(color)
         Linni_Aim.Settings.FOVColor = color
         notify("FOV圈颜色", "已更新")
@@ -893,137 +925,166 @@ ColorpickerFOV = SettingsTab:Colorpicker({
 
 SettingsTab:Divider()
 
-local ConfigManager = Window.ConfigManager
-local ConfigName = "default"
-local CurrentConfig = nil
+local cfgMgr = Window.ConfigManager
+local cfgName = ""
+local selCfg = nil
+local autoLoadOn = false
 
-SettingsTab:Input({
-    Title = "配置名称",
-    Value = ConfigName,
-    Placeholder = "输入配置名称",
+local function cfgPath(name)
+    return cfgMgr.Path .. name .. ".json"
+end
+local function cfgFileAutoLoad(name)
+    if not isfile(cfgPath(name)) then return false end
+    local ok, d = pcall(function() return HttpService:JSONDecode(readfile(cfgPath(name))) end)
+    return ok and d and d.__autoload == true
+end
+local function setAutoLoadFile(name, v)
+    if not isfile(cfgPath(name)) then return end
+    local ok, d = pcall(function() return HttpService:JSONDecode(readfile(cfgPath(name))) end)
+    if ok and d then
+        d.__autoload = v
+        writefile(cfgPath(name), HttpService:JSONEncode(d))
+    end
+end
+local function cfgFileCustom(name)
+    if not isfile(cfgPath(name)) then return nil end
+    local ok, d = pcall(function() return HttpService:JSONDecode(readfile(cfgPath(name))) end)
+    if ok and d then return d.__custom end
+    return nil
+end
+local function flushPending()
+    for id, val in pairs(pendingSliderValues) do
+        if sliderReleaseActions[id] then pcall(sliderReleaseActions[id], val) end
+        pendingSliderValues[id] = nil
+    end
+end
+local function applyCustomData(d)
+    if not d then return end
+    if d.aimlockType then Linni_Aim.Settings.AimlockType = d.aimlockType end
+    if d.fovType then Linni_Aim.Settings.FOVType = d.fovType end
+end
+
+ConfigTab:Input({
+    Title = "配置名字",
+    Placeholder = "输入配置名字",
     Callback = function(text)
-        ConfigName = text or "default"
+        cfgName = text or ""
     end
 })
 
-SettingsTab:Button({
+local cfgDD, autoLoadT
+
+local function refreshCfgList()
+    local list = cfgMgr:AllConfigs()
+    cfgDD.Values = list
+    pcall(function() cfgDD:Refresh(list) end)
+end
+
+ConfigTab:Button({
     Title = "保存配置",
-    Desc = "保存当前所有设置到文件",
     Callback = function()
-        CurrentConfig = ConfigManager:CreateConfig(ConfigName)
-        CurrentConfig:Register("aimEnabled", ToggleAim)
-        CurrentConfig:Register("lockView", ToggleLockView)
-        CurrentConfig:Register("crosshair", ToggleCrosshair)
-        CurrentConfig:Register("crosshairSpin", ToggleCrosshairSpin)
-        CurrentConfig:Register("wallCheck", ToggleWallCheck)
-        CurrentConfig:Register("teamCheck", ToggleTeamCheck)
-        CurrentConfig:Register("smoothAim", ToggleSmoothAim)
-        CurrentConfig:Register("autoFire", ToggleAutoFire)
-        CurrentConfig:Register("showFOV", ToggleShowFOV)
-        CurrentConfig:Register("rainbowFOV", ToggleRainbowFOV)
-        CurrentConfig:Register("enableFOV", ToggleEnableFOV)
-        CurrentConfig:Register("fovColor", ColorpickerFOV)
-        CurrentConfig:Register("bulletTracer", ToggleBulletTracer)
-        CurrentConfig:Register("bulletColor", ColorpickerBulletTracer)
-        CurrentConfig:Set("bulletWidth", BulletTracers.Width)
-        CurrentConfig:Set("bulletDuration", BulletTracers.Duration)
-        CurrentConfig:Set("aimlockType", Linni_Aim.Settings.AimlockType)
-        CurrentConfig:Set("fovType", Linni_Aim.Settings.FOVType)
-        CurrentConfig:Set("fovSize", Linni_Aim.Settings.FOVSize)
-        CurrentConfig:Set("fovStroke", Linni_Aim.Settings.FOVStrokeThickness)
-        CurrentConfig:Set("aimlockMaxDist", Linni_Aim.Settings.AimlockMaxDist)
-        CurrentConfig:Set("mouseMaxDist", Linni_Aim.Settings.MouseMaxDist)
-        CurrentConfig:Set("fovMaxDist", Linni_Aim.Settings.FOVMaxDist)
-        CurrentConfig:Set("aimbotSmoothness", Linni_Aim.Settings.AimbotSmoothness)
-        CurrentConfig:Set("fireDelay", Linni_Aim.Settings.AimlockFireDelay)
-        CurrentConfig:Set("rainbowSpeed", Linni_Aim.Settings.RainbowFOVSpeed)
-        CurrentConfig:Set("offsetY", Linni_Aim.Settings.AimlockOffsetY)
-        CurrentConfig:Set("prediction", Linni_Aim.Settings.PredictionAmount)
-        if CurrentConfig:Save() then
-            notify("保存成功", "配置已保存: " .. ConfigName)
-        else
-            notify("保存失败", "无法保存配置")
+        if cfgName == "" then notify("保存失败", "请先输入配置名字") return end
+        loadingCfg = true
+        local cfgObj = cfgMgr.Configs[cfgName]
+        local cfg = (type(cfgObj) == "table") and cfgObj or cfgMgr:CreateConfig(cfgName)
+        cfg:SetAutoLoad(autoLoadOn)
+        cfg:Set("aimlockType", Linni_Aim.Settings.AimlockType)
+        cfg:Set("fovType", Linni_Aim.Settings.FOVType)
+        cfg:Save()
+        selCfg = cfgName
+        refreshCfgList()
+        pcall(function() cfgDD:Select(cfgName) end)
+        task.delay(1.5, function()
+            loadingCfg = false
+            flushPending()
+            notify("保存成功", "配置已保存: " .. cfgName)
+        end)
+    end
+})
+
+autoLoadT = ConfigTab:Toggle({
+    Title = "下次启动自动加载此配置",
+    Value = false,
+    Callback = function(state)
+        autoLoadOn = state
+        local target = selCfg or (cfgName ~= "" and cfgName or nil)
+        if target and isfile(cfgPath(target)) then
+            setAutoLoadFile(target, state)
         end
     end
 })
 
-SettingsTab:Button({
+cfgDD = ConfigTab:Dropdown({
+    Title = "已有配置",
+    Values = cfgMgr:AllConfigs(),
+    Value = nil,
+    Multi = false,
+    Callback = function(v)
+        selCfg = v
+        local auto = cfgFileAutoLoad(v)
+        autoLoadOn = auto
+        autoLoadT:Set(auto)
+    end
+})
+
+ConfigTab:Button({
+    Title = "刷新配置列表",
+    Callback = function()
+        refreshCfgList()
+        notify("配置", "配置列表已刷新")
+    end
+})
+
+ConfigTab:Button({
     Title = "加载配置",
-    Desc = "从文件加载配置",
     Callback = function()
-        CurrentConfig = ConfigManager:CreateConfig(ConfigName)
-        local loaded = CurrentConfig:Load()
-        if loaded then
-            if loaded.aimlockType then Linni_Aim.Settings.AimlockType = loaded.aimlockType end
-            if loaded.fovType then Linni_Aim.Settings.FOVType = loaded.fovType end
-            if loaded.fovSize then Linni_Aim.Settings.FOVSize = loaded.fovSize end
-            if loaded.fovStroke then Linni_Aim.Settings.FOVStrokeThickness = loaded.fovStroke end
-            if loaded.aimlockMaxDist then Linni_Aim.Settings.AimlockMaxDist = loaded.aimlockMaxDist end
-            if loaded.mouseMaxDist then Linni_Aim.Settings.MouseMaxDist = loaded.mouseMaxDist end
-            if loaded.fovMaxDist then Linni_Aim.Settings.FOVMaxDist = loaded.fovMaxDist end
-            if loaded.aimbotSmoothness then Linni_Aim.Settings.AimbotSmoothness = loaded.aimbotSmoothness end
-            if loaded.fireDelay then Linni_Aim.Settings.AimlockFireDelay = loaded.fireDelay end
-            if loaded.rainbowSpeed then Linni_Aim.Settings.RainbowFOVSpeed = loaded.rainbowSpeed end
-            if loaded.offsetY then Linni_Aim.Settings.AimlockOffsetY = loaded.offsetY end
-            if loaded.prediction then Linni_Aim.Settings.PredictionAmount = loaded.prediction end
-            if loaded.bulletWidth then BulletTracers.Width = loaded.bulletWidth end
-            if loaded.bulletDuration then BulletTracers.Duration = loaded.bulletDuration end
-            notify("加载成功", "已加载配置: " .. ConfigName)
-        else
-            notify("加载失败", "配置不存在或已损坏")
-        end
+        if not selCfg then notify("加载失败", "请先在选定框选择配置") return end
+        if not isfile(cfgPath(selCfg)) then notify("加载失败", "配置文件不存在") return end
+        loadingCfg = true
+        local cfgObj = cfgMgr.Configs[selCfg]
+        local cfg = (type(cfgObj) == "table") and cfgObj or cfgMgr:CreateConfig(selCfg)
+        task.wait(0.8)
+        local loaded = cfg:Load()
+        applyCustomData(loaded)
+        task.delay(1, function()
+            flushPending()
+            loadingCfg = false
+            notify("加载成功", "已加载配置: " .. selCfg)
+        end)
     end
 })
 
-SettingsTab:Button({
+ConfigTab:Button({
     Title = "删除配置",
-    Desc = "删除选定的配置文件",
     Callback = function()
-        local all = ConfigManager:AllConfigs()
-        if all[ConfigName] then
-            ConfigManager:DeleteConfig(ConfigName)
-            notify("删除成功", "已删除配置: " .. ConfigName)
+        if not selCfg then notify("删除失败", "请先在选定框选择配置") return end
+        if isfile(cfgPath(selCfg)) then
+            cfgMgr:DeleteConfig(selCfg)
+            refreshCfgList()
+            notify("删除成功", "已删除配置: " .. selCfg)
+            selCfg = nil
         else
             notify("删除失败", "配置不存在")
         end
     end
 })
 
-local autoLoadEnabled = false
-SettingsTab:Toggle({
-    Title = "自动加载配置",
-    Desc = "启动时自动加载选定配置",
-    Value = false,
-    Callback = function(state)
-        autoLoadEnabled = state
-        if state then
-            notify("自动加载", "已开启，下次启动将自动加载: " .. ConfigName)
-        else
-            notify("自动加载", "已关闭")
-        end
-    end
-})
-
-pcall(function()
-    if autoLoadEnabled and ConfigName ~= "" then
-        CurrentConfig = ConfigManager:CreateConfig(ConfigName)
-        local loaded = CurrentConfig:Load()
-        if loaded then
-            if loaded.aimlockType then Linni_Aim.Settings.AimlockType = loaded.aimlockType end
-            if loaded.fovType then Linni_Aim.Settings.FOVType = loaded.fovType end
-            if loaded.fovSize then Linni_Aim.Settings.FOVSize = loaded.fovSize end
-            if loaded.fovStroke then Linni_Aim.Settings.FOVStrokeThickness = loaded.fovStroke end
-            if loaded.aimlockMaxDist then Linni_Aim.Settings.AimlockMaxDist = loaded.aimlockMaxDist end
-            if loaded.mouseMaxDist then Linni_Aim.Settings.MouseMaxDist = loaded.mouseMaxDist end
-            if loaded.fovMaxDist then Linni_Aim.Settings.FOVMaxDist = loaded.fovMaxDist end
-            if loaded.aimbotSmoothness then Linni_Aim.Settings.AimbotSmoothness = loaded.aimbotSmoothness end
-            if loaded.fireDelay then Linni_Aim.Settings.AimlockFireDelay = loaded.fireDelay end
-            if loaded.rainbowSpeed then Linni_Aim.Settings.RainbowFOVSpeed = loaded.rainbowSpeed end
-            if loaded.offsetY then Linni_Aim.Settings.AimlockOffsetY = loaded.offsetY end
-            if loaded.prediction then Linni_Aim.Settings.PredictionAmount = loaded.prediction end
-            if loaded.bulletWidth then BulletTracers.Width = loaded.bulletWidth end
-            if loaded.bulletDuration then BulletTracers.Duration = loaded.bulletDuration end
-            notify("自动加载", "已自动加载配置: " .. ConfigName)
+task.spawn(function()
+    task.wait(2)
+    for _, name in ipairs(cfgMgr:AllConfigs()) do
+        if cfgFileAutoLoad(name) then
+            loadingCfg = true
+            selCfg = name
+            cfgMgr:CreateConfig(name)
+            task.delay(2.5, function()
+                applyCustomData(cfgFileCustom(name))
+                flushPending()
+                pcall(function() cfgDD:Select(name) end)
+                autoLoadT:Set(true)
+                loadingCfg = false
+                notify("自动加载", "已自动加载配置: " .. name)
+            end)
+            break
         end
     end
 end)
