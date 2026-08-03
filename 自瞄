@@ -122,7 +122,7 @@ Linni_Aim.Settings = {
     AimlockAutoFire = false,
     AimlockFireDelay = 0.05,
     SmoothAimlock = false,
-    AimbotSmoothness = 25,
+    AimbotSmoothness = 100,
     FOVSize = 150,
     FOVStrokeThickness = 2.5,
     RainbowFOV = false,
@@ -848,7 +848,7 @@ end
 
 SettingsTab:Slider({
     Title = "平滑度",
-    Value = { Min = 1, Max = 100, Default = 25 },
+    Value = { Min = 1, Max = 100, Default = 100 },
     Flag = "aimbotSmoothness",
     Callback = function(val)
         pendingSliderValues["aimbotsmoothness"] = val
