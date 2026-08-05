@@ -223,7 +223,7 @@ local function loadFlightScript()
                     currentBv:Destroy()
                     currentBv = nil
                 end
-                if hum then
+                if hum and hum.Parent then
                     hum:SetStateEnabled(Enum.HumanoidStateType.Climbing,false)
                     hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown,false)
                     hum:SetStateEnabled(Enum.HumanoidStateType.Flying,false)
@@ -241,17 +241,17 @@ local function loadFlightScript()
                     hum:SetStateEnabled(Enum.HumanoidStateType.Swimming,false)
                     hum:ChangeState(Enum.HumanoidStateType.Swimming)
                 end
-                if chr.Animate then
+                if chr and chr.Parent and chr:FindFirstChild("Animate") then
                     chr.Animate.Disabled=true
                 end
-                if hum then
+                if hum and hum.Parent then
                     for i,v in next,hum:GetPlayingAnimationTracks() do
                         v:AdjustSpeed(0)
                     end
                 end
                 local runService = game:GetService("RunService")
                 moveConnection = runService.Heartbeat:Connect(function()
-                    if not nowe or not chr or not hum then
+                    if not nowe or not chr or not chr.Parent or not hum or not hum.Parent then
                         moveConnection:Disconnect()
                         moveConnection = nil
                         return
@@ -260,7 +260,7 @@ local function loadFlightScript()
                         chr:TranslateBy(hum.MoveDirection * speeds)
                     end
                 end)
-                if hum.RigType==Enum.HumanoidRigType.R6 then
+                if hum and hum.Parent and hum.RigType==Enum.HumanoidRigType.R6 then
                     local torso=chr:WaitForChild("Torso")
                     local bg=Instance.new("BodyGyro",torso)
                     bg.P=9e4
@@ -275,17 +275,17 @@ local function loadFlightScript()
                     currentBg = bg
                     currentBv = bv
                     renderConnection = game:GetService("RunService").RenderStepped:Connect(function()
-                        if not nowe or not chr or not hum or hum.Health<=0 or not bg.Parent then
+                        if not nowe or not chr or not chr.Parent or not hum or not hum.Parent or hum.Health<=0 or not bg.Parent then
                             renderConnection:Disconnect()
                             renderConnection = nil
                             bg:Destroy()
                             bv:Destroy()
                             currentBg = nil
                             currentBv = nil
-                            if hum then
+                            if hum and hum.Parent then
                                 hum.PlatformStand=false
                             end
-                            if chr and chr.Animate then
+                            if chr and chr.Parent and chr:FindFirstChild("Animate") then
                                 chr.Animate.Disabled=false
                             end
                             return
@@ -294,7 +294,7 @@ local function loadFlightScript()
                             bg.CFrame=workspace.CurrentCamera.CoordinateFrame
                         end
                     end)
-                else
+                elseif hum and hum.Parent then
                     local UpperTorso=chr:WaitForChild("UpperTorso")
                     local bg=Instance.new("BodyGyro",UpperTorso)
                     bg.P=9e4
@@ -309,17 +309,17 @@ local function loadFlightScript()
                     currentBg = bg
                     currentBv = bv
                     renderConnection = game:GetService("RunService").RenderStepped:Connect(function()
-                        if not nowe or not chr or not hum or hum.Health<=0 or not bg.Parent then
+                        if not nowe or not chr or not chr.Parent or not hum or not hum.Parent or hum.Health<=0 or not bg.Parent then
                             renderConnection:Disconnect()
                             renderConnection = nil
                             bg:Destroy()
                             bv:Destroy()
                             currentBg = nil
                             currentBv = nil
-                            if hum then
+                            if hum and hum.Parent then
                                 hum.PlatformStand=false
                             end
-                            if chr and chr.Animate then
+                            if chr and chr.Parent and chr:FindFirstChild("Animate") then
                                 chr.Animate.Disabled=false
                             end
                             return
@@ -347,21 +347,36 @@ local function loadFlightScript()
                     currentBv:Destroy()
                     currentBv = nil
                 end
-                if hum then
+                if hum and hum.Parent then
                     for _, state in pairs(Enum.HumanoidStateType:GetEnumItems()) do
-                        hum:SetStateEnabled(state, true)
+                        pcall(function() hum:SetStateEnabled(state, true) end)
                     end
-                    hum:ChangeState(Enum.HumanoidStateType.Running)
-                    hum.PlatformStand = false
+                    pcall(function() hum:ChangeState(Enum.HumanoidStateType.Running) end)
+                    pcall(function() hum.PlatformStand = false end)
                 end
-                if chr and chr.Animate then
+                if chr and chr.Parent and chr:FindFirstChild("Animate") then
                     chr.Animate.Disabled=false
                 end
             end
             speaker.CharacterAdded:Connect(function(newChar)
                 nowe = false
                 onof.Text = "飞"
-                stopFlight()
+                if moveConnection then
+                    moveConnection:Disconnect()
+                    moveConnection = nil
+                end
+                if renderConnection then
+                    renderConnection:Disconnect()
+                    renderConnection = nil
+                end
+                if currentBg then
+                    currentBg:Destroy()
+                    currentBg = nil
+                end
+                if currentBv then
+                    currentBv:Destroy()
+                    currentBv = nil
+                end
                 chr = newChar
                 hum = chr:WaitForChild("Humanoid")
             end)
