@@ -1,32 +1,57 @@
-local Player = game:GetService("Players").LocalPlayer
-local TweenService = game:GetService("TweenService")
-local PlayerGui = Player:WaitForChild("PlayerGui")
-local Gui = Instance.new("ScreenGui")
-Gui.Parent = PlayerGui
-Gui.IgnoreGuiInset = true
-Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-local Image = Instance.new("ImageLabel")
-Image.Parent = Gui
-Image.Size = UDim2.new(1, 0, 1, 0)
-Image.Position = UDim2.new(0, 0, 0, 0)
-Image.BackgroundTransparency = 1
-Image.Image = "rbxassetid://113517588654522"
-Image.ScaleType = Enum.ScaleType.Stretch
-Image.ImageTransparency = 1
-Image.ZIndex = 99999
-local show = TweenService:Create(Image, TweenInfo.new(0.5), {ImageTransparency = 0})
-show:Play()
-task.wait(0.5)
-task.wait(1)
-local hide = TweenService:Create(Image, TweenInfo.new(0.5), {ImageTransparency = 1})
-hide:Play()
-task.wait(0.5)
-Gui:Destroy()
-print("动画全部结束，主脚本开始运行")
-local ok, matched = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本加载器"))()
-end)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ErrorNotice"
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
 
-if not ok or not matched then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本源码"))()
-end
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+MainFrame.BorderSizePixel = 2
+MainFrame.Size = UDim2.new(0, 400, 0, 230)
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -115)
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Parent = MainFrame
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Size = UDim2.new(1, 0, 0, 40)
+TitleLabel.Position = UDim2.new(0, 0, 0, 10)
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.Text = "停用公告"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+TitleLabel.TextSize = 24
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+local ContentLabel = Instance.new("TextLabel")
+ContentLabel.Name = "ContentLabel"
+ContentLabel.Parent = MainFrame
+ContentLabel.BackgroundTransparency = 1
+ContentLabel.Size = UDim2.new(1, -20, 0, 130)
+ContentLabel.Position = UDim2.new(0, 10, 0, 50)
+ContentLabel.Font = Enum.Font.SourceSans
+ContentLabel.Text = "恐脚本已暂时停用，请耐心等待"
+ContentLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+ContentLabel.TextSize = 18
+ContentLabel.TextXAlignment = Enum.TextXAlignment.Center
+ContentLabel.TextWrapped = true
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Parent = MainFrame
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+CloseButton.Size = UDim2.new(0, 80, 0, 30)
+CloseButton.Position = UDim2.new(0.5, -40, 0, 190)
+CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.Text = "关闭"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 16
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
