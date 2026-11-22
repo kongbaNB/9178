@@ -2574,7 +2574,6 @@ if SaveManager then
 end
 Notify("在超市生存一周脚本已就绪")
 ]===]
-
 ServerScripts["亡命速递"] = [===[
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -4346,6 +4345,28 @@ local autoCollectEnabled = false
 local autoCollectThread = nil
 local autoDiveAfterCollectEnabled = false
 
+-- 不拾取不可卖物品
+local skipUnsellableInteract = false
+local skipUnsellableCollect = false
+
+local function isUnsellableItem(item)
+	local lootUI = item:FindFirstChild("LootUI", true)
+	if not lootUI then return false end
+	local frame = lootUI:FindFirstChild("Frame", true)
+	if not frame then return false end
+	local priceLbl = frame:FindFirstChild("Price", true)
+	if not priceLbl then return false end
+	local txt = priceLbl.Text or ""
+	if txt == "" then return false end
+	if txt:find("不可卖", 1, true) or txt:find("非卖", 1, true) or txt:find("禁售", 1, true) then
+		return true
+	end
+	local n = tonumber(txt:match("%d+"))
+	if not n then return true end
+	if n <= 0 then return true end
+	return false
+end
+
 local ElevatorDropoff = nil
 local PlayerLoots = nil
 pcall(function() ElevatorDropoff = Workspace.GameSystem.Loots.ElevatorCollect.SoundPlay end)
@@ -4417,7 +4438,9 @@ local function setAutoInteract(state)
 		autoInteractThread = task.spawn(function()
 			while autoInteractEnabled do
 				for _, item in ipairs(getLootsInRange(autoInteractRange)) do
-					remoteInteractItem(item)
+					if not (skipUnsellableInteract and isUnsellableItem(item)) then
+						remoteInteractItem(item)
+					end
 				end
 				local char = LocalPlayer.Character
 				local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -4505,7 +4528,7 @@ local function setAutoCollect(state)
 				for _, item in pairs(WorldLoots:GetChildren()) do
 					local part = item:FindFirstChildWhichIsA("BasePart", true)
 					if (item:IsA("Model") or item:IsA("Tool")) and item:FindFirstChild("LootUI", true) and not (fails[item] and fails[item] >= 3) then
-						if part then
+						if part and not (skipUnsellableCollect and isUnsellableItem(item)) then
 							table.insert(targets, { item = item, part = part, dist = (part.Position - hrp.Position).Magnitude })
 						end
 					end
@@ -4527,7 +4550,7 @@ local function setAutoCollect(state)
 						if hrp2 then
 							for _, item in pairs(WorldLoots:GetChildren()) do
 								local part = item:FindFirstChildWhichIsA("BasePart", true)
-								if part and (part.Position - hrp2.Position).Magnitude <= 10 then
+								if part and (part.Position - hrp2.Position).Magnitude <= 10 and not (skipUnsellableCollect and isUnsellableItem(item)) then
 									remoteInteractItem(item)
 									pressE()
 								end
@@ -4861,6 +4884,10 @@ end})
 MainRight:AddToggle("AutoInteract",{ Text="自动交互", Default=false, Callback=function(v)
 	setAutoInteract(v) Notify("自动交互: "..(v and "开启" or "关闭"))
 end})
+MainRight:AddToggle("SkipUnsellableInteract",{ Text="不拾取不可卖物品（自动拾取）", Default=false, Callback=function(v)
+	skipUnsellableInteract = v
+	Notify("不拾取不可卖物品: "..(v and "开启" or "关闭"))
+end})
 MainRight:AddSlider("AutoInteractRange",{ Text="自动交互距离", Default=20, Min=5, Max=200, Rounding=0, Suffix=" studs", Callback=function(v)
 	autoInteractRange = v
 end})
@@ -4869,6 +4896,10 @@ MainRight:AddSlider("AutoInteractSpeed",{ Text="自动交互速度", Default=0.1
 end})
 MainRight:AddToggle("AutoCollect",{ Text="自动收集", Default=false, Callback=function(v)
 	setAutoCollect(v) Notify("自动收集: "..(v and "开启" or "关闭"))
+end})
+MainRight:AddToggle("SkipUnsellableCollect",{ Text="不拾取不可卖物品（自动收集）", Default=false, Callback=function(v)
+	skipUnsellableCollect = v
+	Notify("不拾取不可卖物品: "..(v and "开启" or "关闭"))
 end})
 MainRight:AddToggle("InfiniteStamina",{ Text="无限体力", Default=false, Callback=function(v)
 	setInfiniteStamina(v) Notify("无限体力: "..(v and "开启" or "关闭"))
@@ -4938,6 +4969,7 @@ end
 startESPWatcher()
 Notify("亡命速递脚本已加载")
 ]===]
+
 
 ServerScripts["墨水游戏"] = [===[
 local function safeLoad(url)
