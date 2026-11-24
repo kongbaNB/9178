@@ -4349,21 +4349,63 @@ local autoDiveAfterCollectEnabled = false
 local skipUnsellableInteract = false
 local skipUnsellableCollect = false
 
-local function isUnsellableItem(item)
-	local lootUI = item:FindFirstChild("LootUI", true)
-	if not lootUI then return false end
-	local frame = lootUI:FindFirstChild("Frame", true)
-	if not frame then return false end
-	local priceLbl = frame:FindFirstChild("Price", true)
-	if not priceLbl then return false end
-	local txt = priceLbl.Text or ""
-	if txt == "" then return false end
-	if txt:find("不可卖", 1, true) or txt:find("非卖", 1, true) or txt:find("禁售", 1, true) then
-		return true
+local UNS_WORDS = {
+	"不可卖", "不可出售", "不可售", "不可交易", "不可贩卖", "不可拾取",
+	"非卖", "非卖品", "禁售", "禁止出售",
+	"无法出售", "无法售卖", "不能出售", "不能卖", "绑定", "装备后绑定",
+	"unsellable", "not sellable", "no sell", "cannot sell",
+	"soulbound", "not for sale", "bound",
+}
+
+local function hasUnsWord(txt)
+	if type(txt) ~= "string" or txt == "" then return false end
+	local low = string.lower(txt)
+	for _, w in ipairs(UNS_WORDS) do
+		if string.find(low, w, 1, true) then return true end
 	end
+	return false
+end
+
+local function judgeFrame(frame)
+	if not frame then return true end
+
+	local nameLbl = frame:FindFirstChild("ItemName", true)
+	local nameTxt = (nameLbl and nameLbl.Text) or ""
+	if hasUnsWord(nameTxt) then return true end
+
+	local priceLbl = frame:FindFirstChild("Price", true)
+	if not priceLbl then
+		if nameTxt ~= "" then return true end
+		return false
+	end
+
+	local txt = priceLbl.Text or ""
+	if hasUnsWord(txt) then return true end
+
 	local n = tonumber(txt:match("%d+"))
 	if not n then return true end
 	if n <= 0 then return true end
+
+	return false
+end
+
+local function isUnsellableItem(item)
+	if not item or not item.Parent then return false end
+
+	local frames = {}
+	local ok = pcall(function()
+		for _, d in ipairs(item:GetDescendants()) do
+			if d.Name == "Frame" and d.Parent and d.Parent.Name == "LootUI" then
+				frames[#frames + 1] = d
+			end
+		end
+	end)
+	if not ok or #frames == 0 then return false end
+
+	for _, f in ipairs(frames) do
+		if judgeFrame(f) then return true end
+	end
+
 	return false
 end
 
@@ -4403,7 +4445,12 @@ local function switchToMobileMode()
 	end)
 end
 
-local function remoteInteractItem(item)
+local function remoteInteractItem(item, ctx)
+	if ctx == "interact" then
+		if skipUnsellableInteract and isUnsellableItem(item) then return end
+	elseif ctx == "collect" then
+		if skipUnsellableCollect and isUnsellableItem(item) then return end
+	end
 	if (item:IsA("Model") or item:IsA("Tool")) and item:HasTag("Interactable") and item:GetAttribute("en") then
 		pcall(function()
 			TEvent.FireRemote("Interactable", item)
@@ -4438,9 +4485,7 @@ local function setAutoInteract(state)
 		autoInteractThread = task.spawn(function()
 			while autoInteractEnabled do
 				for _, item in ipairs(getLootsInRange(autoInteractRange)) do
-					if not (skipUnsellableInteract and isUnsellableItem(item)) then
-						remoteInteractItem(item)
-					end
+					remoteInteractItem(item, "interact")
 				end
 				local char = LocalPlayer.Character
 				local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -4449,7 +4494,7 @@ local function setAutoInteract(state)
 						if item:IsA("Model") or item:IsA("Tool") then
 							local part = item.PrimaryPart or item:FindFirstChildWhichIsA("BasePart", true)
 							if part and (part.Position - hrp.Position).Magnitude <= autoInteractRange then
-								remoteInteractItem(item)
+								remoteInteractItem(item, "interact")
 							end
 						end
 					end
@@ -4511,7 +4556,7 @@ local function setAutoCollect(state)
 	if state then
 		setAnySell(true)
 		for _, item in pairs(InteractiveItems:GetChildren()) do
-			remoteInteractItem(item)
+			remoteInteractItem(item, "collect")
 		end
 		autoCollectThread = task.spawn(function()
 			local fails = {}
@@ -4550,15 +4595,15 @@ local function setAutoCollect(state)
 						if hrp2 then
 							for _, item in pairs(WorldLoots:GetChildren()) do
 								local part = item:FindFirstChildWhichIsA("BasePart", true)
-								if part and (part.Position - hrp2.Position).Magnitude <= 10 and not (skipUnsellableCollect and isUnsellableItem(item)) then
-									remoteInteractItem(item)
+								if part and (part.Position - hrp2.Position).Magnitude <= 10 then
+									remoteInteractItem(item, "collect")
 									pressE()
 								end
 							end
 							for _, item in pairs(InteractiveItems:GetChildren()) do
 								local part = item.PrimaryPart or item:FindFirstChildWhichIsA("BasePart", true)
 								if part and (part.Position - hrp2.Position).Magnitude <= 10 then
-									remoteInteractItem(item)
+									remoteInteractItem(item, "collect")
 									pressE()
 								end
 							end
@@ -4582,7 +4627,7 @@ local function setAutoCollect(state)
 					pcall(function()
 						cam.CFrame = CFrame.lookAt(hrp.Position + Vector3.new(0, 8, 0), hrp.Position)
 					end)
-					remoteInteractItem(target.item)
+					remoteInteractItem(target.item, "collect")
 					pressE()
 					task.wait(0.15)
 				end
