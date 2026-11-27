@@ -4349,64 +4349,25 @@ local autoDiveAfterCollectEnabled = false
 local skipUnsellableInteract = false
 local skipUnsellableCollect = false
 
-local UNS_WORDS = {
-	"不可卖", "不可出售", "不可售", "不可交易", "不可贩卖", "不可拾取",
-	"非卖", "非卖品", "禁售", "禁止出售",
-	"无法出售", "无法售卖", "不能出售", "不能卖", "绑定", "装备后绑定",
-	"unsellable", "not sellable", "no sell", "cannot sell",
-	"soulbound", "not for sale", "bound",
-}
-
-local function hasUnsWord(txt)
-	if type(txt) ~= "string" or txt == "" then return false end
-	local low = string.lower(txt)
-	for _, w in ipairs(UNS_WORDS) do
-		if string.find(low, w, 1, true) then return true end
-	end
-	return false
-end
-
-local function judgeFrame(frame)
-	if not frame then return true end
-
-	local nameLbl = frame:FindFirstChild("ItemName", true)
-	local nameTxt = (nameLbl and nameLbl.Text) or ""
-	if hasUnsWord(nameTxt) then return true end
-
-	local priceLbl = frame:FindFirstChild("Price", true)
-	if not priceLbl then
-		if nameTxt ~= "" then return true end
-		return false
-	end
-
-	local txt = priceLbl.Text or ""
-	if hasUnsWord(txt) then return true end
-
-	local n = tonumber(txt:match("%d+"))
-	if not n then return true end
-	if n <= 0 then return true end
-
-	return false
-end
+local LootShare = require(ReplicatedStorage.Shared.Features.LootShare)
+local ConstFunc = require(ReplicatedStorage.Shared.Core.ConstFunc)
 
 local function isUnsellableItem(item)
-	if not item or not item.Parent then return false end
+	if not item or not item.Parent then return true end
 
-	local frames = {}
-	local ok = pcall(function()
-		for _, d in ipairs(item:GetDescendants()) do
-			if d.Name == "Frame" and d.Parent and d.Parent.Name == "LootUI" then
-				frames[#frames + 1] = d
-			end
+	local ok, blocked = pcall(function()
+		-- CanAutoSell 接收物品数据表，不是 Instance；价格不代表能自动出售。
+		local data = item:GetAttributes()
+		if data.id == nil then
+			-- 无物品数据的战利品暂缓拾取；普通容器、机关仍可交互。
+			return item:IsA("Tool") or item:IsDescendantOf(WorldLoots)
+				or item:HasTag("Loots") or item:FindFirstChild("LootUI", true) ~= nil
 		end
+		if ConstFunc.GetType(data.id) == "Unknown" then return true end
+		return LootShare.CanAutoSell(data) ~= true
 	end)
-	if not ok or #frames == 0 then return false end
-
-	for _, f in ipairs(frames) do
-		if judgeFrame(f) then return true end
-	end
-
-	return false
+	if not ok then return true end
+	return blocked
 end
 
 local ElevatorDropoff = nil
@@ -4415,7 +4376,9 @@ pcall(function() ElevatorDropoff = Workspace.GameSystem.Loots.ElevatorCollect.So
 pcall(function() PlayerLoots = Workspace.GameSystem.Loots.Player end)
 
 local function pressE()
-	pcall(function()
+	-- E 键由游戏选择当前焦点，过滤开启时只使用绑定 item 的交互。
+	if skipUnsellableCollect then return false end
+	return pcall(function()
 		if keypress and keyrelease then
 			keypress(0x45)
 			task.wait(0.05)
@@ -4446,17 +4409,20 @@ local function switchToMobileMode()
 end
 
 local function remoteInteractItem(item, ctx)
+	if not item or not item.Parent then return false, "invalid" end
 	if ctx == "interact" then
-		if skipUnsellableInteract and isUnsellableItem(item) then return end
+		if skipUnsellableInteract and isUnsellableItem(item) then return false, "filtered" end
 	elseif ctx == "collect" then
-		if skipUnsellableCollect and isUnsellableItem(item) then return end
+		if skipUnsellableCollect and isUnsellableItem(item) then return false, "filtered" end
 	end
 	if (item:IsA("Model") or item:IsA("Tool")) and item:HasTag("Interactable") and item:GetAttribute("en") then
-		pcall(function()
+		local ok = pcall(function()
 			TEvent.FireRemote("Interactable", item)
 			TEvent.FireBindable("Interactable", item)
 		end)
+		return ok, ok and "sent" or "failed"
 	end
+	return false, "inactive"
 end
 
 local function getLootsInRange(range)
@@ -4596,15 +4562,15 @@ local function setAutoCollect(state)
 							for _, item in pairs(WorldLoots:GetChildren()) do
 								local part = item:FindFirstChildWhichIsA("BasePart", true)
 								if part and (part.Position - hrp2.Position).Magnitude <= 10 then
-									remoteInteractItem(item, "collect")
-									pressE()
+									local sent = remoteInteractItem(item, "collect")
+									if sent then pressE() end
 								end
 							end
 							for _, item in pairs(InteractiveItems:GetChildren()) do
 								local part = item.PrimaryPart or item:FindFirstChildWhichIsA("BasePart", true)
 								if part and (part.Position - hrp2.Position).Magnitude <= 10 then
-									remoteInteractItem(item, "collect")
-									pressE()
+									local sent = remoteInteractItem(item, "collect")
+									if sent then pressE() end
 								end
 							end
 							task.wait(0.3)
@@ -4622,16 +4588,18 @@ local function setAutoCollect(state)
 				local cam = Workspace.CurrentCamera
 				pcall(function() cam.CameraType = Enum.CameraType.Scriptable end)
 				local startTime = os.clock()
+				local filtered = false
 				while os.clock() - startTime < 1.2 and autoCollectEnabled do
 					if not target.item.Parent or not target.item:FindFirstChild("LootUI", true) then break end
 					pcall(function()
 						cam.CFrame = CFrame.lookAt(hrp.Position + Vector3.new(0, 8, 0), hrp.Position)
 					end)
-					remoteInteractItem(target.item, "collect")
-					pressE()
+					local sent, reason = remoteInteractItem(target.item, "collect")
+					if reason == "filtered" then filtered = true break end
+					if sent then pressE() end
 					task.wait(0.15)
 				end
-				if target.item.Parent and target.item:FindFirstChild("LootUI", true) then
+				if not filtered and target.item.Parent and target.item:FindFirstChild("LootUI", true) then
 					fails[target.item] = (fails[target.item] or 0) + 1
 				end
 				task.wait(0.1)
